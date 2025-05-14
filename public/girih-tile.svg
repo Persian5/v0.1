@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="girihPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+      <!-- Star pattern base -->
+      <path d="M50,10 L58,40 L90,50 L58,60 L50,90 L42,60 L10,50 L42,40 Z" fill="#277C52" fill-opacity="0.1" />
+      <!-- Pentagon inner shape -->
+      <path d="M50,20 L62,45 L50,70 L38,45 Z" fill="#D61043" fill-opacity="0.05" />
+      <!-- Connecting lines -->
+      <path d="M10,50 L90,50 M50,10 L50,90 M42,40 L58,60 M58,40 L42,60" stroke="#277C52" stroke-opacity="0.1" stroke-width="1" fill="none" />
+      <!-- Decorative dots -->
+      <circle cx="50" cy="50" r="3" fill="#277C52" fill-opacity="0.15" />
+      <circle cx="50" cy="10" r="2" fill="#D61043" fill-opacity="0.15" />
+      <circle cx="50" cy="90" r="2" fill="#D61043" fill-opacity="0.15" />
+      <circle cx="10" cy="50" r="2" fill="#D61043" fill-opacity="0.15" />
+      <circle cx="90" cy="50" r="2" fill="#D61043" fill-opacity="0.15" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="100" height="100" fill="url(#girihPattern)" />
+</svg> 
