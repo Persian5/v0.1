@@ -221,7 +221,7 @@ export default function HomePage() {
               {/* Left Column: Image - stays on left for desktop */}
               <div className="w-1/3 md:w-2/5 flex justify-center md:justify-end">
                 <img 
-                  src="/icons/Icon1.png" 
+                  src="/icons/icon1.png" 
                   alt="Iranopedia Logo" 
                   className="w-full max-w-[180px] md:max-w-[280px] lg:max-w-[320px] object-contain"
                 />
@@ -269,7 +269,7 @@ export default function HomePage() {
               {/* Mobile: Image between text and buttons */}
               <div className="w-[60%] max-w-[200px] flex justify-center mb-5">
                 <img 
-                  src="/icons/Icon1.png" 
+                  src="/icons/icon1.png" 
                   alt="Iranopedia Logo" 
                   className="w-full object-contain"
                 />

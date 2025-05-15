@@ -14,11 +14,11 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: "Iranopedia",
+  title: "Learn Persian by Iranopedia",
   description: "Learn Persian. Reconnect with Your Roots.",
   icons: {
-    icon: '/favicon.PNG',
-    apple: '/favicon.PNG',
+    icon: '/favicon.png',
+    apple: '/favicon.png',
   }
 }
 
