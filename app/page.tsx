@@ -152,7 +152,7 @@ export default function HomePage() {
   const buttonContent = isClient ? (
     <Button
       size="lg"
-      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-full px-8 py-6 text-lg"
+      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto"
       aria-label="Preview Lesson 1"
       onClick={() => {
         window.location.href = '/modules/module1/lesson1';
@@ -163,7 +163,7 @@ export default function HomePage() {
   ) : (
     <Button
       size="lg"
-      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-full px-8 py-6 text-lg"
+      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto"
       aria-label="Preview Lesson 1"
       disabled
     >
@@ -208,20 +208,81 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1">
-        {/* Hero Section with Toranj Medallion background element */}
-        <section className="bg-primary/10 py-6 px-3 sm:px-4 relative overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full border-8 border-primary/5 opacity-20"></div>
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full border-8 border-accent/5 opacity-20"></div>
-          <div className="max-w-4xl mx-auto text-center flex flex-col items-center relative z-10">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-primary mb-2">
-              Learn Persian. Reconnect with Your Roots.
-            </h1>
-            <div className="p-2 rounded-lg">
-              <p className="text-lg sm:text-xl text-muted-foreground mb-4">
+        {/* Hero Section with Duolingo-style layout */}
+        <section className="bg-primary/10 flex items-center justify-center px-3 sm:px-6 md:px-8 lg:px-12 pt-6 pb-12 sm:pt-8 sm:pb-16 md:pt-12 md:pb-24">
+          <div className="max-w-6xl mx-auto w-full">
+            {/* Desktop layout: side by side */}
+            <div className="hidden sm:flex flex-row items-center justify-between gap-6 md:gap-12">
+              {/* Left Column: Image - stays on left for desktop */}
+              <div className="w-1/3 md:w-2/5 flex justify-center md:justify-end">
+                <img 
+                  src="/icons/Icon1.png" 
+                  alt="Iranopedia Logo" 
+                  className="w-full max-w-[180px] md:max-w-[280px] lg:max-w-[320px] object-contain"
+                />
+              </div>
+              
+              {/* Right Column: Text and Buttons - stays on right for desktop */}
+              <div className="w-2/3 md:w-3/5 flex flex-col items-start text-left">
+                <p className="text-xs text-emerald-700 font-normal mb-3 sm:mb-4 tracking-wide uppercase">
+                  An Iranopedia App
+                </p>
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-2 md:mb-5">
+                  Learn Persian. Reconnect with Your Roots.
+                </h1>
+                <p className="text-lg md:text-2xl text-muted-foreground mb-4 md:mb-7 max-w-md">
+                  Start speaking Persian today — with fun, bite-sized lessons
+                </p>
+                <div className="flex flex-row gap-3 w-auto">
+                  {buttonContent}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-8 py-6 text-lg w-auto"
+                    onClick={scrollToWaitlist}
+                    aria-label="Join the Waitlist"
+                  >
+                    Join the Waitlist
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile layout: stacked with image between subheading and buttons */}
+            <div className="flex sm:hidden flex-col items-center text-center">
+              <p className="text-xs text-emerald-700 font-normal mb-3 tracking-wide uppercase">
+                An Iranopedia App
+              </p>
+              <h1 className="text-4xl font-bold tracking-tight text-primary mb-3 leading-tight">
+                Learn Persian.<br />
+                <span className="whitespace-nowrap text-3xl">Reconnect with Your Roots.</span>
+              </h1>
+              <p className="text-sm text-muted-foreground mb-4 max-w-md">
                 Start speaking Persian today — with fun, bite-sized lessons
               </p>
+              
+              {/* Mobile: Image between text and buttons */}
+              <div className="w-[60%] max-w-[200px] flex justify-center mb-5">
+                <img 
+                  src="/icons/Icon1.png" 
+                  alt="Iranopedia Logo" 
+                  className="w-full object-contain"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-3 w-full">
+                {buttonContent}
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-4 py-4 text-base w-full"
+                  onClick={scrollToWaitlist}
+                  aria-label="Join the Waitlist"
+                >
+                  Join the Waitlist
+                </Button>
+              </div>
             </div>
-            {buttonContent}
           </div>
         </section>
 
@@ -237,14 +298,7 @@ export default function HomePage() {
               Join The Hundreds Already On The Waitlist To Learn Persian With Iranopedia!
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 mb-6">Iranian culture is everywhere. You belong here.</p>
-            <Button
-              size="lg"
-              className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-full px-8 py-6 text-lg"
-              onClick={scrollToWaitlist}
-              aria-label="Click Here For Free Beta Access"
-            >
-              Join the Waitlist
-            </Button>
+            {/* Join the Waitlist button moved to hero section */}
           </div>
         </section>
 
