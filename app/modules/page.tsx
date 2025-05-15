@@ -49,7 +49,7 @@ export default function ModulesPage() {
           <div className="flex items-center gap-2">
             <Link href="/pricing">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Pricing
+                Pricing + FAQ
               </Button>
             </Link>
             {isClient ? (

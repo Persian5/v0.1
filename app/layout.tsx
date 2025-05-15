@@ -15,7 +15,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Iranopedia",
-  description: "Learn Persian. Reconnect with Your Roots."
+  description: "Learn Persian. Reconnect with Your Roots.",
+  icons: {
+    icon: '/favicon.PNG',
+    apple: '/favicon.PNG',
+  }
 }
 
 export default function RootLayout({

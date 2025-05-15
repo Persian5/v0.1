@@ -1,13 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check, Sparkles } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Confetti from 'react-confetti'
+import { Input } from "@/components/ui/input"
 
 interface SummaryPageProps {
   learnedWords?: string[];
@@ -21,6 +22,7 @@ export default function SummaryPage({
   resetLesson
 }: SummaryPageProps) {
   const { moduleId, lessonId } = useParams();
+  const router = useRouter()
   
   // Waitlist form state
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
@@ -76,6 +78,11 @@ export default function SummaryPage({
     } finally {
       setIsLoading(false)
     }
+  }
+  
+  // Function to navigate to pricing page
+  const navigateToPricing = () => {
+    router.push('/pricing')
   }
   
   return (
@@ -158,17 +165,19 @@ export default function SummaryPage({
           {/* Footer Buttons */}
           <div className="pt-4 flex flex-col sm:flex-row justify-between gap-2">
             <Button 
-              variant="outline"
               onClick={resetLesson}
+              variant="outline"
               className="w-full sm:w-auto"
             >
               Practice Again
             </Button>
             
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Link href="/pricing">
-                FAQ
-              </Link>
+            <Button 
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={navigateToPricing}
+            >
+              FAQ
             </Button>
           </div>
         </CardContent>

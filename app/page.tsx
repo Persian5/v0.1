@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Sparkles } from "lucide-react"
 
@@ -44,6 +44,7 @@ export default function HomePage() {
   const [isClient, setIsClient] = useState(false)
   const [waitlistCount, setWaitlistCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [isWaitlistPopupOpen, setIsWaitlistPopupOpen] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -87,8 +88,12 @@ export default function HomePage() {
     }
   }, [currentPhraseIndex])
 
-  const scrollToWaitlist = () => {
-    document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" })
+  const openWaitlistPopup = () => {
+    setIsWaitlistPopupOpen(true)
+  }
+
+  const closeWaitlistPopup = () => {
+    setIsWaitlistPopupOpen(false)
   }
 
   const handleMiniGameAnswer = (selectedAnswer: string) => {
@@ -183,7 +188,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <Link href="/pricing">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Pricing
+                Pricing + FAQ
               </Button>
             </Link>
             {isClient ? (
@@ -194,7 +199,7 @@ export default function HomePage() {
                   </Button>
                 </Link>
               ) : (
-                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white" onClick={scrollToWaitlist}>
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white" onClick={openWaitlistPopup}>
                   Start Now
                 </Button>
               )
@@ -228,8 +233,8 @@ export default function HomePage() {
                   An Iranopedia App
                 </p>
                 <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-2 md:mb-5">
-                  Learn Persian. Reconnect with Your Roots.
-                </h1>
+              Learn Persian. Reconnect with Your Roots.
+            </h1>
                 <p className="text-lg md:text-2xl text-muted-foreground mb-4 md:mb-7 max-w-md">
                   Start speaking Persian today — with fun, bite-sized lessons
                 </p>
@@ -239,10 +244,10 @@ export default function HomePage() {
                     size="lg"
                     variant="outline"
                     className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-8 py-6 text-lg w-auto"
-                    onClick={scrollToWaitlist}
-                    aria-label="Join the Waitlist"
+                    onClick={openWaitlistPopup}
+                    aria-label="Get Early Access"
                   >
-                    Join the Waitlist
+                    Get Early Access
                   </Button>
                 </div>
               </div>
@@ -276,10 +281,10 @@ export default function HomePage() {
                   size="lg"
                   variant="outline"
                   className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-4 py-4 text-base w-full"
-                  onClick={scrollToWaitlist}
-                  aria-label="Join the Waitlist"
+                  onClick={openWaitlistPopup}
+                  aria-label="Get Early Access"
                 >
-                  Join the Waitlist
+                  Get Early Access
                 </Button>
               </div>
             </div>
@@ -294,7 +299,7 @@ export default function HomePage() {
           <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48cGF0aCBkPSJNMCAwaDQwdjQwSDBWMHptMjAgMTBMMTAgMjBoMjBMMjAgMTB6IiBmaWxsPSIjMjc3QzUyIiBmaWxsLW9wYWNpdHk9IjAuMSIvPjwvc3ZnPg==')]"></div>
           <div className="absolute inset-x-0 bottom-0 h-48 opacity-15 bg-[url('/tehran.png')] bg-bottom bg-contain bg-repeat-x"></div>
           <div className="max-w-6xl mx-auto text-center relative z-10">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-4">
+            <h2 className="sm:text-3xl md:text-4xl font-bold text-primary mb-4" style={{ fontSize: '19px' }}>
               Join The Hundreds Already On The Waitlist To Learn Persian With Iranopedia!
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 mb-6">Iranian culture is everywhere. You belong here.</p>
@@ -319,27 +324,27 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-6 md:gap-8">
               {/* Card 1: Leaderboard Mockup */}
-              <div className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6 card-hover h-full relative overflow-hidden">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10"></div>
-                <h3 className="text-xl font-bold mb-4 flex justify-center items-center">
-                  <span className="text-2xl mr-2">🏆</span> Leaderboard
+                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
+                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🏆</span> Leaderboard
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 bg-gray-50 rounded-lg text-xs sm:text-base">
                     <span className="font-medium">PersianPro92</span>
                     <span className="text-gray-600">2,540 XP</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 px-3">
+                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 text-xs sm:text-base">
                     <span className="font-medium">PersianFanatic</span>
                     <span className="text-gray-600">2,210 XP</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 bg-gray-50 rounded-lg text-xs sm:text-base">
                     <span className="font-medium">KoobidehKing</span>
                     <span className="text-gray-600">1,980 XP</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 px-3 bg-blue-50 rounded-lg">
+                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 bg-blue-50 rounded-lg text-xs sm:text-base">
                     <span className="font-medium text-blue-600">You</span>
                     <span className="text-blue-600">1,450 XP</span>
                   </div>
@@ -347,53 +352,96 @@ export default function HomePage() {
               </div>
 
               {/* Card 2: Streak Popup Mockup */}
-              <div className="bg-gradient-to-br from-yellow-100 via-orange-50 to-amber-100 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6 card-hover text-center h-full relative overflow-hidden">
+              <div className="bg-gradient-to-br from-yellow-100 via-orange-50 to-amber-100 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover text-center h-full relative">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/10 via-accent/30 to-accent/10"></div>
-                <h3 className="text-xl font-bold mb-3 flex justify-center items-center">
-                  <span className="text-2xl mr-2">🔥</span> Well Done!
-                </h3>
-                <p className="text-gray-700 mb-4">You've completed today's lesson!</p>
-                <div className="text-4xl font-bold text-orange-500 mb-4">5-Day Streak</div>
-                <div className="py-3 px-4 bg-white/60 backdrop-blur-sm rounded-xl">
-                  <p className="text-gray-700 font-medium">Keep it going tomorrow!</p>
-                </div>
-                <div className="absolute -top-2 -right-2 w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center text-white text-xl font-bold opacity-80">
+                <div className="absolute -top-3 -right-3 w-8 h-8 sm:w-12 sm:h-12 bg-orange-400 rounded-full flex items-center justify-center text-white text-base sm:text-xl font-bold opacity-80 shadow-sm">
                   +5
+                </div>
+                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-3 flex justify-center items-center">
+                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🔥</span> Well Done!
+                </h3>
+                <p className="text-gray-700 mb-2 sm:mb-4 text-xs sm:text-base">You've completed today's lesson!</p>
+                <div className="text-2xl sm:text-4xl font-bold text-orange-500 mb-2 sm:mb-4">5-Day Streak</div>
+                <div className="py-2 sm:py-3 px-2 sm:px-4 bg-white/60 backdrop-blur-sm rounded-lg sm:rounded-xl text-xs sm:text-base">
+                  <p className="text-gray-700 font-medium">Keep it going tomorrow!</p>
                 </div>
               </div>
 
               {/* Card 3: Pronunciation Score Mockup */}
-              <div className="bg-gradient-to-br from-purple-50 via-white to-pink-50 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6 card-hover text-center h-full relative overflow-hidden">
+              <div className="bg-gradient-to-br from-purple-50 via-white to-pink-50 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover text-center h-full relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-                <h3 className="text-xl font-bold mb-4 flex justify-center items-center">
-                  <span className="text-2xl mr-2">🎤</span> Pronunciation Score
+                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
+                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🎤</span> Pronunciation Score
                 </h3>
-                <div className="text-6xl mb-6 animate-pulse">🎙️</div>
-                <div className="text-2xl font-bold mb-4">Your score: 82%</div>
-                <button className="bg-primary/10 hover:bg-primary/20 text-primary font-medium py-3 px-6 rounded-full transition-all duration-300 hover:scale-105">
+                <div className="text-4xl sm:text-6xl mb-3 sm:mb-6 animate-pulse">🎙️</div>
+                <div className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">Your score: 82%</div>
+                <button className="bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 sm:py-3 sm:px-6 rounded-full transition-all duration-300 hover:scale-105 text-xs sm:text-base">
                   Try Again!
                 </button>
               </div>
 
               {/* Card 4: Mini Games */}
-              <div className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6 card-hover h-full relative overflow-hidden">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/10 via-accent/30 to-accent/10"></div>
-                <h3 className="text-xl font-bold mb-4 flex justify-center items-center">
-                  <span className="text-2xl mr-2">🎮</span> Mini Games
+                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
+                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🎮</span> Mini Games
                 </h3>
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 text-center">
-                    <div className="text-4xl mb-2">🎯</div>
-                    <p className="font-medium text-primary">Today's Challenge</p>
-                    <p className="text-lg font-bold text-gray-700">Match 10 Persian Words</p>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg sm:rounded-xl p-2 sm:p-4 text-center">
+                    <div className="text-2xl sm:text-4xl mb-1 sm:mb-2">🎯</div>
+                    <p className="font-medium text-primary text-xs sm:text-base">Today's Challenge</p>
+                    <p className="text-sm sm:text-lg font-bold text-gray-700">Match 10 Persian Words</p>
                   </div>
 
                   <div className="relative">
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full bg-primary rounded-full" style={{ width: '20%' }}></div>
                     </div>
-                    <div className="text-center text-sm text-gray-500 mt-2">2/10 Words</div>
+                    <div className="text-center text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">2/10 Words</div>
                   </div>
+                </div>
+              </div>
+
+              {/* Card 5: Unlockables */}
+              <div className="bg-gradient-to-br from-indigo-50 via-white to-teal-50 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10"></div>
+                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
+                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">📖</span> Story Mode
+                </h3>
+                <div className="flex flex-col items-center text-center">
+                  <p className="text-gray-700 text-xs sm:text-base font-medium mb-2">New Story Unlocked!</p>
+                  <p className="text-base sm:text-lg font-bold text-primary mb-2 sm:mb-3">
+                    🧆 "Nowruz at Grandma's House"
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                    Place yourself in real-world conversations and learn Persian through immersive stories!
+                  </p>
+                  <button className="bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 sm:py-3 sm:px-6 rounded-full transition-all duration-300 hover:scale-105 text-xs sm:text-base inline-flex items-center">
+                    <span className="mr-1">▶️</span> Start Story
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 6: Badge Preview */}
+              <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/10 via-accent/30 to-accent/10"></div>
+                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
+                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🎖️</span> Badge Preview
+                </h3>
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                    <span className="text-2xl sm:text-3xl">👨‍👩‍👧‍👦</span>
+                  </div>
+                  <p className="font-bold text-base sm:text-lg text-primary mb-2">Mehmooni Ready</p>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 text-center">
+                  You can now properly introduce yourself at Persian gatherings.
+                </p>
+                <div className="flex flex-col items-center">
+                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden mb-1">
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: '3%' }}></div>
+                  </div>
+                  <p className="text-xs text-gray-500">Badges Unlocked: 1 of 35</p>
                 </div>
               </div>
             </div>
@@ -447,90 +495,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Waitlist Section with Khatam-inspired border */}
-        <section id="waitlist" className="py-8 px-3 sm:px-4 bg-green-50 relative overflow-hidden min-h-[200px] flex items-center justify-center">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-          {showConfetti && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 pointer-events-none"
-            >
-              <div className="absolute inset-0 bg-primary/5" />
-              <Sparkles className="absolute top-0 left-1/2 -translate-x-1/2 text-primary" size={48} />
-            </motion.div>
-          )}
-          
-          <div className="max-w-4xl mx-auto relative w-full">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center justify-center"
-            >
-              {isSubscribed ? (
-                <div className="text-center">
-                  <h3 className="text-2xl sm:text-3xl font-bold text-primary mb-6">
-                    <div>You're in 🎉</div>
-                    <div>Your first lesson is ready, let's get started!</div>
-                    <div>We'll keep you posted on new features and launch updates.</div>
-                  </h3>
-                  
-                  <Link href="/modules/module1/lesson1">
-                    <Button 
-                      size="lg"
-                      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-full px-8 py-6 text-lg"
-                      aria-label="Preview Lesson 1"
-                    >
-                      Preview Lesson 1
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-primary text-center">
-                    Join Our Free Beta Waitlist + Instant Access to Module 1 Today
-                  </h3>
-                  <p className="text-lg sm:text-xl text-center text-gray-600 mb-6">
-                    Join the Waitlist to be Notified when the Full Platform Launches!
-                  </p>
-                  <form onSubmit={handleWaitlistSubmit} className="w-full max-w-md mx-auto">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="flex-1 text-lg"
-                        disabled={isLoading}
-                        aria-label="Email address"
-                        aria-describedby="email-error"
-                      />
-                      <Button 
-                        type="submit" 
-                        className="bg-primary hover:bg-primary/90 text-white text-lg"
-                        disabled={isLoading}
-                        aria-label="Join waitlist"
-                      >
-                        {isLoading ? 'Joining...' : 'Join Waitlist'}
-                      </Button>
-                    </div>
-                    {error && (
-                      <p id="email-error" className="text-red-500 mt-2 text-sm text-center" role="alert">
-                        {error}
-                      </p>
-                    )}
-                  </form>
-                </>
-              )}
-            </motion.div>
-          </div>
-        </section>
-
         {/* Emotional Callout Section - MOVED HERE */}
         <section className="py-4 px-3 sm:px-4 bg-gradient-to-r from-primary/5 to-accent/5 relative overflow-hidden">
           <div className="absolute inset-0 opacity-5">
@@ -581,75 +545,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* Badge Preview with decorative Shamseh corner elements */}
-        <section className="py-8 px-3 sm:px-4 bg-white relative overflow-hidden">
-          <div className="absolute top-2 right-2 w-24 h-24 opacity-5">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <path d="M50,10 C70,10 90,30 90,50 C90,70 70,90 50,90 C30,90 10,70 10,50 C10,30 30,10 50,10 Z M50,20 C35,20 20,35 20,50 C20,65 35,80 50,80 C65,80 80,65 80,50 C80,35 65,20 50,20 Z" fill="#277C52" />
-              <path d="M50,0 L55,20 L70,5 L65,25 L90,20 L70,35 L90,50 L70,65 L90,80 L65,75 L70,95 L50,80 L30,95 L35,75 L10,80 L30,65 L10,50 L30,35 L10,20 L35,25 L30,5 L50,20 Z" fill="#D61043" fill-opacity="0.3" />
-            </svg>
-          </div>
-          <div className="absolute bottom-2 left-2 w-24 h-24 opacity-5">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <path d="M50,0 L60,40 L100,50 L60,60 L50,100 L40,60 L0,50 L40,40 Z" fill="#D61043" />
-            </svg>
-          </div>
-          <div className="max-w-6xl mx-auto relative z-10">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-primary text-center">🎖️ Badge Preview</h2>
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              <Card className="shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
-                <CardHeader className="pb-3 bg-primary/5">
-                  <CardTitle className="text-lg sm:text-xl flex items-center gap-3">
-                    <span>👨‍👩‍👧‍👦</span> Mehmooni Ready
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <p className="text-base text-muted-foreground">
-                    You can now introduce yourself at Persian gatherings
-                  </p>
-                </CardContent>
-                <CardFooter>
-                  <Badge variant="outline" className="bg-accent/10 text-accent text-sm">
-                    Beginner
-                  </Badge>
-                </CardFooter>
-              </Card>
-
-              <Card className="shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
-                <CardHeader className="pb-3 bg-primary/5">
-                  <CardTitle className="text-lg sm:text-xl flex items-center gap-3">
-                    <span>🍚</span> Tahdig Lover
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <p className="text-base text-muted-foreground">You've learned Persian food vocab</p>
-                </CardContent>
-                <CardFooter>
-                  <Badge variant="outline" className="bg-primary/10 text-primary text-sm">
-                    Cultural
-                  </Badge>
-                </CardFooter>
-              </Card>
-
-              <Card className="shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden sm:col-span-2 lg:col-span-1">
-                <CardHeader className="pb-3 bg-primary/5">
-                  <CardTitle className="text-lg sm:text-xl flex items-center gap-3">
-                    <span>🎉</span> Nowruz Novice
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <p className="text-base text-muted-foreground">You unlocked your first cultural story</p>
-                </CardContent>
-                <CardFooter>
-                  <Badge variant="outline" className="bg-blue-500/10 text-blue-500 text-sm">
-                    Advanced
-                  </Badge>
-                </CardFooter>
-              </Card>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer with What is Iranopedia section - Eslimi border */}
@@ -683,20 +578,20 @@ export default function HomePage() {
             {/* Nav Links */}
             <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
               <a 
-                href="#waitlist" 
+                href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  scrollToWaitlist();
+                  openWaitlistPopup();
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
               >
                 Start Learning
               </a>
               <a 
-                href="#waitlist" 
+                href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  scrollToWaitlist();
+                  openWaitlistPopup();
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
               >
@@ -730,6 +625,104 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Waitlist Popup */}
+      <AnimatePresence>
+        {isWaitlistPopupOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto p-4"
+            onClick={closeWaitlistPopup}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-xl shadow-xl max-w-xl w-full mx-auto relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
+              
+              <div className="p-6 sm:p-8">
+                {showConfetti && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 pointer-events-none"
+                  >
+                    <div className="absolute inset-0 bg-primary/5" />
+                    <Sparkles className="absolute top-0 left-1/2 -translate-x-1/2 text-primary" size={48} />
+                  </motion.div>
+                )}
+                
+                <div id="waitlist" className="relative">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex flex-col items-center justify-center"
+                  >
+                    {isSubscribed ? (
+                      <div className="text-center">
+                        <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-primary text-center">
+                          You're on the list! 🎉
+                        </h3>
+                        <p className="text-lg sm:text-xl text-center text-gray-600 mb-6">
+                          You're officially part of the early access crew! We'll let you know the moment the full platform is ready.
+                        </p>
+                        <Button 
+                          onClick={closeWaitlistPopup}
+                          className="w-full bg-primary hover:bg-primary/90 text-white text-lg"
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-primary text-center">
+                          Join Our Free Beta Waitlist + Instant Access to Module 1 Today
+                        </h3>
+                        <p className="text-lg sm:text-xl text-center text-gray-600 mb-6">
+                          Be the first to explore the platform and get early access before anyone else
+                        </p>
+                        <form onSubmit={handleWaitlistSubmit} className="w-full max-w-md mx-auto">
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Input
+                              type="email"
+                              placeholder="Enter your email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              required
+                              className="flex-1 text-lg"
+                              disabled={isLoading}
+                              aria-label="Email address"
+                              aria-describedby="email-error"
+                            />
+                            <Button 
+                              type="submit" 
+                              className="bg-primary hover:bg-primary/90 text-white text-lg"
+                              disabled={isLoading}
+                              aria-label="Join waitlist"
+                            >
+                              {isLoading ? 'Joining...' : 'Join Waitlist'}
+                            </Button>
+                          </div>
+                          {error && (
+                            <p id="email-error" className="text-red-500 mt-2 text-sm text-center" role="alert">
+                              {error}
+                            </p>
+                          )}
+                        </form>
+                      </>
+                    )}
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
