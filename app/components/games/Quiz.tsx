@@ -50,7 +50,14 @@ export function Quiz({
     if (formattedOptions[index].correct) {
       // Play success sound when the correct answer is selected
       playSuccessSound();
-      setShowXp(true)  // trigger XP animation
+      
+      // Award XP immediately when user selects correct answer
+      if (onXpStart) {
+        onXpStart();
+      }
+      
+      // Trigger XP animation for visual feedback
+      setShowXp(true)
     } else {
       setTimeout(() => {
         setShowFeedback(false)
@@ -71,7 +78,7 @@ export function Quiz({
         <XpAnimation 
           amount={points} 
           show={showXp}
-          onStart={onXpStart}
+          onStart={undefined}
           onComplete={() => {
             setShowXp(false)  // reset for next use
             onComplete(true)

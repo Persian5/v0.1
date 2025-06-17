@@ -43,7 +43,14 @@ export function InputExercise({
     if (isAnswerCorrect) {
       // Play success sound for correct answers
       playSuccessSound();
-      setShowXp(true)  // trigger XP animation
+      
+      // Award XP immediately when user submits correct answer
+      if (onXpStart) {
+        onXpStart();
+      }
+      
+      // Trigger XP animation for visual feedback
+      setShowXp(true)
     } else {
       // If incorrect, show feedback briefly and then reset
       setTimeout(() => {
@@ -68,7 +75,7 @@ export function InputExercise({
         <XpAnimation 
           amount={points} 
           show={showXp}
-          onStart={onXpStart}
+          onStart={undefined}
           onComplete={() => {
             setShowXp(false)  // reset for next use
             onComplete(true)

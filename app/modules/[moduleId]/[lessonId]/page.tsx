@@ -14,6 +14,8 @@ import SummaryPage from "./summary/page"
 import { motion, AnimatePresence } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import { Sparkles } from "lucide-react"
+import { useXp } from "@/hooks/use-xp"
+import { XpService } from "@/lib/services/xp-service"
 
 export default function LessonPage() {
   const params = useParams();
@@ -22,7 +24,11 @@ export default function LessonPage() {
   const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
   const lessonId = typeof params.lessonId === 'string' ? params.lessonId : '';
   
-  const [xp, setXp] = useState(0);
+  // Use the new XP hook with persistence - Global XP across all lessons
+  const { xp, addXp, setXp, isLoading: xpLoading } = useXp({
+    storageKey: 'global-user-xp', // Global XP that persists across all lessons
+  });
+  
   const [progress, setProgress] = useState(0);
   const [currentView, setCurrentView] = useState('welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
@@ -170,7 +176,7 @@ export default function LessonPage() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 overflow-x-auto">
               <Star className="h-5 w-5 text-yellow-500" />
-              <span className="text-sm font-medium">{xp} XP</span>
+              <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
             </div>
             <Button 
               size="sm" 
@@ -224,7 +230,7 @@ export default function LessonPage() {
               <LessonRunner 
                 steps={getLessonSteps(moduleId, lessonId)} 
                 xp={xp}
-                onXpChange={setXp}
+                addXp={addXp}
                 progress={progress}
                 onProgressChange={setProgress}
                 currentView={currentView}
@@ -234,14 +240,7 @@ export default function LessonPage() {
             )}
           </div>
           
-          {/* XP Disclaimer - Only visible when not on welcome/intro screen */}
-          {currentView !== 'welcome' && (
-            <div className="w-full text-center mt-3 mb-1">
-              <p className="text-xs text-muted-foreground opacity-70">
-                Heads up: XP resets on refresh — full tracking and leaderboards coming at official launch!
-              </p>
-            </div>
-          )}
+          {/* XP is now persistent - no disclaimer needed */}
           
           {/* Removed the old Back Button container from here */}
         </div>

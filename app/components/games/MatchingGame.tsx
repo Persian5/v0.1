@@ -4,21 +4,21 @@ import { XpAnimation } from "./XpAnimation"
 import { motion, AnimatePresence } from "framer-motion"
 import { playSuccessSound } from "./Flashcard"
 
-interface DragDropGameProps {
-  words: { id: string; text: string; slotId: string }[]  // two draggable words
-  slots:  { id: string; text: string }[]                // four drop targets
+interface MatchingGameProps {
+  words: { id: string; text: string; slotId: string }[]  // words to match
+  slots:  { id: string; text: string }[]                // match targets
   points: number
   onXpStart?: () => void
   onComplete: (allCorrect: boolean) => void
 }
 
-export function DragDropGame({ 
+export function MatchingGame({ 
   words,
   slots,
   points,
   onXpStart,
   onComplete,
-}: DragDropGameProps) {
+}: MatchingGameProps) {
   const [matches, setMatches] = useState<Record<string,string>>({})  // slotId→wordId
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null)
   const [showXp, setShowXp] = useState(false)
@@ -76,6 +76,13 @@ export function DragDropGame({
       // If this was the final match, award XP and advance
       if (nextCount === words.length) {
         playSuccessSound();
+        
+        // Award XP immediately when all words are matched
+        if (onXpStart) {
+          onXpStart();
+        }
+        
+        // Trigger XP animation for visual feedback
         setShowXp(true);
         setTimeout(() => {
           onComplete(true);
@@ -115,7 +122,7 @@ export function DragDropGame({
         <XpAnimation 
           amount={points} 
           show={showXp}
-          onStart={onXpStart}
+          onStart={undefined}
           onComplete={() => {
             // Just hide animation - don't call onComplete again
             setShowXp(false);

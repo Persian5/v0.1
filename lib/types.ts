@@ -22,7 +22,7 @@ export interface Lesson {
 }
 
 // Step types
-export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'dragdrop' | 'final' | 'completion' | 'summary';
+export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'completion' | 'summary';
 
 // Define base step type
 export interface BaseStep {
@@ -35,6 +35,10 @@ export interface WelcomeStep extends BaseStep {
   type: 'welcome';
   title: string;
   description: string;
+  data?: {
+    objectives?: string[];
+    lessonType?: string;
+  };
 }
 
 // Flashcard step
@@ -65,19 +69,12 @@ export interface InputStep extends BaseStep {
   };
 }
 
-// DragDrop step
-export interface DragDropStep extends BaseStep {
-  type: 'dragdrop';
+// Matching step (renamed from DragDrop)
+export interface MatchingStep extends BaseStep {
+  type: 'matching';
   data: {
-    words: {
-      id: string;
-      text: string;
-      slotId: string;
-    }[];
-    slots: {
-      id: string;
-      text: string;
-    }[];
+    words: { id: string; text: string; slotId: string }[];
+    slots: { id: string; text: string }[];
   };
 }
 
@@ -100,7 +97,7 @@ export type LessonStep =
   | FlashcardStep
   | QuizStep
   | InputStep
-  | DragDropStep 
+  | MatchingStep
   | FinalStep;
 
 // State types

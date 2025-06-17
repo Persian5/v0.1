@@ -7,6 +7,7 @@ interface WelcomeIntroProps {
   title?: string;
   description?: string;
   objectives?: string[];
+  lessonType?: string;
 }
 
 export function WelcomeIntro({ 
@@ -18,8 +19,79 @@ export function WelcomeIntro({
     "Ask how someone is doing",
     "Welcome someone",
     "Say goodbye properly"
-  ]
+  ],
+  lessonType = "greetings"
 }: WelcomeIntroProps) {
+
+  // For politeness lesson (Lesson 2), show simple layout without images
+  if (lessonType === "politeness") {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary">{title}</h1>
+          <p className="text-lg sm:text-xl text-muted-foreground mt-4 max-w-3xl mx-auto">{description}</p>
+        </div>
+        
+        {/* Main Content Card */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-primary/10 mb-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-4">What You'll Learn</h2>
+            <p className="text-muted-foreground mb-6">
+              This lesson focuses on essential responses that every Persian learner needs to know.
+            </p>
+          </div>
+          
+          {/* Learning Objectives */}
+          <div className="grid gap-4 mb-8">
+            {objectives.map((objective, index) => (
+              <div key={index} className="flex items-center justify-center gap-4 p-4 bg-primary/5 rounded-lg">
+                <span className="text-2xl">
+                  {index === 0 ? "😊" : index === 1 ? "🙏" : index === 2 ? "✅" : "❌"}
+                </span>
+                <span className="text-base sm:text-lg font-medium">{objective}</span>
+              </div>
+            ))}
+          </div>
+          
+          {/* Vocabulary Preview */}
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-semibold text-primary mb-3">Vocabulary Preview</h3>
+            <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+              <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
+                <div className="text-lg font-bold text-primary">Khoobam</div>
+                <div className="text-sm text-muted-foreground">I'm good</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
+                <div className="text-lg font-bold text-primary">Merci</div>
+                <div className="text-sm text-muted-foreground">Thank you</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
+                <div className="text-lg font-bold text-primary">Baleh</div>
+                <div className="text-sm text-muted-foreground">Yes</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
+                <div className="text-lg font-bold text-primary">Na</div>
+                <div className="text-sm text-muted-foreground">No</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Start Button */}
+        <div className="flex justify-center">
+          <Button
+            onClick={onStart}
+            className="py-6 px-10 text-lg w-full sm:w-auto"
+          >
+            Start Learning! <ArrowRight className="ml-2 h-6 w-6" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Default layout for other lessons (like Lesson 1 with Ali)
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
       {/* Header Section - Title stays outside cards on both layouts */}
@@ -112,22 +184,14 @@ export function WelcomeIntro({
               <div className="flex-grow">
                 <p className="font-bold mb-3 text-center">Your mission is to get Ali ready. Help him:</p>
                 <ul className="space-y-2 text-center">
-                  <li className="flex items-center justify-center gap-3">
-                    <span className="text-xl">👋</span>
-                    <span>Say "hello" like a local</span>
-                  </li>
-                  <li className="flex items-center justify-center gap-3">
-                    <span className="text-xl">🤔</span>
-                    <span>Ask "how are you?"</span>
-                  </li>
-                  <li className="flex items-center justify-center gap-3">
-                    <span className="text-xl">🙏</span>
-                    <span>Welcome people properly</span>
-                  </li>
-                  <li className="flex items-center justify-center gap-3">
-                    <span className="text-xl">👋</span>
-                    <span>Say goodbye the right way</span>
-                  </li>
+                  {objectives.map((objective, index) => (
+                    <li key={index} className="flex items-center justify-center gap-3">
+                      <span className="text-xl">
+                        {index === 0 ? "👋" : index === 1 ? "🤔" : index === 2 ? "🙏" : "👋"}
+                      </span>
+                      <span>{objective}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>

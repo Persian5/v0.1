@@ -87,9 +87,14 @@ export function FinalChallenge({
     if (isOrderCorrect) {
       // Play success sound for correct order
       playSuccessSound();
-      setShowXp(true)  // trigger XP animation
       
-      // Don't award XP here - it will be handled by XpAnimation onStart
+      // Award XP immediately when correct order is achieved
+      if (onXpStart) {
+        onXpStart();
+      }
+      
+      // Trigger XP animation for visual feedback
+      setShowXp(true)
       
       // Trigger confetti
       if (typeof window !== 'undefined') {
@@ -158,10 +163,9 @@ export function FinalChallenge({
           <XpAnimation 
             amount={points} 
             show={showXp}
-            onStart={onXpStart}
+            onStart={undefined}
             onComplete={() => {
-              // Don't call onComplete here - it will award XP again
-              // Just reset component state
+              // Just hide animation - don't call onComplete again
               setShowXp(false)  // reset for next use
               // Now call onComplete only after animation is done
               onComplete(true)

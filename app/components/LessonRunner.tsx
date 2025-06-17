@@ -2,15 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import { Flashcard } from '@/app/components/games/Flashcard'
 import { Quiz } from '@/app/components/games/Quiz'
 import { InputExercise } from '@/app/components/games/InputExercise'
-import { DragDropGame } from '@/app/components/games/DragDropGame'
+import { MatchingGame } from '@/app/components/games/MatchingGame'
 import { FinalChallenge } from '@/app/components/games/FinalChallenge'
 import { WelcomeIntro } from '@/app/components/games/WelcomeIntro'
-import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, DragDropStep, FinalStep } from '@/lib/types'
+import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep } from '@/lib/types'
+import { XpService } from '@/lib/services/xp-service'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
   xp: number;
-  onXpChange: (xp: number) => void;
+  addXp: (amount: number, source: string, metadata?: any) => void;
   progress?: number;
   onProgressChange?: (progress: number) => void;
   currentView?: string;
@@ -21,7 +22,7 @@ interface LessonRunnerProps {
 export function LessonRunner({ 
   steps, 
   xp, 
-  onXpChange, 
+  addXp, 
   progress, 
   onProgressChange,
   currentView,
@@ -80,7 +81,7 @@ export function LessonRunner({
     return (
       <div className="p-8 text-center">
         <h2 className="text-2xl font-bold mb-4">Lesson Complete!</h2>
-        <p>You earned {xp} XP</p>
+        <p>You earned {XpService.formatXp(xp)}</p>
       </div>
     );
   }
@@ -99,8 +100,24 @@ export function LessonRunner({
     setIdx(i => i + 1);
   }
 
-  // Increment XP when each game completes
-  const handleXpStart = () => onXpChange(xp + step.points)
+  // Create activity-specific XP handlers using the XP service
+  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final') => {
+    return () => {
+      const xpReward = XpService.getReward(
+        activityType === 'flashcard' ? 'FLASHCARD_FLIP' :
+        activityType === 'quiz' ? 'QUIZ_CORRECT' :
+        activityType === 'input' ? 'INPUT_CORRECT' :
+        activityType === 'matching' ? 'MATCHING_COMPLETE' :
+        'FINAL_CHALLENGE'
+      );
+      
+      // Directly add XP amount instead of doing math with current total
+      addXp(xpReward.amount, xpReward.source, {
+        activityType,
+        stepIndex: idx
+      });
+    };
+  };
   
   // Generic handler for all components except Flashcard
   const handleItemComplete = () => {
@@ -133,7 +150,9 @@ export function LessonRunner({
       {step.type === 'welcome' ? (
         <WelcomeIntro 
           title={(step as WelcomeStep).title} 
-          description={(step as WelcomeStep).description} 
+          description={(step as WelcomeStep).description}
+          objectives={(step as WelcomeStep).data?.objectives}
+          lessonType={(step as WelcomeStep).data?.lessonType}
           onStart={next} 
         />
       ) : step.type === 'flashcard' ? (
@@ -145,7 +164,7 @@ export function LessonRunner({
           isFlipped={isFlipped}
           onFlip={handleFlip}
           showContinueButton={showContinue}
-          onXpStart={handleXpStart}
+          onXpStart={createXpHandler('flashcard')}
         />
       ) : step.type === 'quiz' ? (
         <Quiz
@@ -154,7 +173,7 @@ export function LessonRunner({
           correct={(step as QuizStep).data.correct}
           points={step.points}
           onComplete={handleItemComplete}
-          onXpStart={handleXpStart}
+          onXpStart={createXpHandler('quiz')}
         />
       ) : step.type === 'input' ? (
         <InputExercise
@@ -162,22 +181,22 @@ export function LessonRunner({
           answer={(step as InputStep).data.answer}
           points={step.points}
           onComplete={handleItemComplete}
-          onXpStart={handleXpStart}
+          onXpStart={createXpHandler('input')}
         />
-      ) : step.type === 'dragdrop' ? (
-        <DragDropGame
-          words={(step as DragDropStep).data.words}
-          slots={(step as DragDropStep).data.slots}
+      ) : step.type === 'matching' ? (
+        <MatchingGame
+          words={(step as MatchingStep).data.words}
+          slots={(step as MatchingStep).data.slots}
           points={step.points}
           onComplete={handleItemComplete}
-          onXpStart={handleXpStart}
+          onXpStart={createXpHandler('matching')}
         />
       ) : step.type === 'final' ? (
         <FinalChallenge
           targetWords={(step as FinalStep).data.targetWords}
           points={step.points}
           onComplete={handleItemComplete}
-          onXpStart={handleXpStart}
+          onXpStart={createXpHandler('final')}
         />
       ) : null}
     </>

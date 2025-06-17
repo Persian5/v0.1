@@ -165,8 +165,12 @@ export function Flashcard({
     // Play success sound when continuing
     playSuccessSound();
     
-    // Don't award XP here - it will be handled by XpAnimation
-    // Trigger XP animation
+    // Award XP immediately when user clicks Continue
+    if (onXpStart) {
+      onXpStart();
+    }
+    
+    // Trigger XP animation for visual feedback
     setShowXp(true);
   }
 
@@ -185,7 +189,7 @@ export function Flashcard({
         <XpAnimation
           amount={points}
           show={showXp}
-          onStart={onXpStart}
+          onStart={undefined}
           onComplete={handleXpComplete}
         />
 

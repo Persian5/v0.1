@@ -67,8 +67,8 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "dragdrop",
-            points: 2,
+            type: "matching",
+            points: 3,
             data: {
               words: [
                 { id: "word1", text: "Salam", slotId: "slot1" },
@@ -92,7 +92,7 @@ export const curriculumData: Module[] = [
           },
           {
             type: "final",
-            points: 2,
+            points: 4,
             data: {
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
@@ -111,8 +111,121 @@ export const curriculumData: Module[] = [
         description: "Master polite responses and common conversational phrases",
         emoji: "🙏",
         progress: 0,
-        locked: true,
-        steps: []
+        locked: false,
+        steps: [
+          {
+            type: "welcome",
+            title: "Politeness & Responses",
+            description: "Master essential polite responses and learn to answer basic questions like a native Persian speaker.",
+            points: 0,
+            data: {
+              objectives: [
+                "Respond when someone asks how you are",
+                "Say thank you properly in Persian",
+                "Answer yes and no questions confidently", 
+                "Use polite responses in conversations"
+              ],
+              lessonType: "politeness"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              front: "😊 I'm good",
+              back: "Khoobam"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'Khoobam' mean?",
+              options: ["I'm good", "Thank you", "Yes", "No"],
+              correct: 0
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              front: "🙏 Thank you",
+              back: "Merci"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'Thank you' in Persian?",
+              answer: "Merci"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              front: "✅ Yes",
+              back: "Baleh"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'Yes' in Persian?",
+              options: ["Na", "Merci", "Baleh", "Khoobam"],
+              correct: 2
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              front: "❌ No",
+              back: "Na"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'No' in Persian?",
+              answer: "Na"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Khoobam", slotId: "slot1" },
+                { id: "word2", text: "Merci", slotId: "slot2" },
+                { id: "word3", text: "Baleh", slotId: "slot3" },
+                { id: "word4", text: "Na", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "I'm good" },
+                { id: "slot2", text: "Thank you" },
+                { id: "slot3", text: "Yes" },
+                { id: "slot4", text: "No" }
+              ]
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "khoobam", text: "Khoobam", translation: "I'm good" },
+                { id: "merci", text: "Merci", translation: "Thank you" },
+                { id: "baleh", text: "Baleh", translation: "Yes" },
+                { id: "na", text: "Na", translation: "No" }
+              ],
+              targetWords: ["khoobam", "merci", "baleh", "na"]
+            }
+          }
+        ]
       },
       {
         id: "lesson3",
