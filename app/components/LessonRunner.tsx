@@ -37,8 +37,6 @@ export function LessonRunner({
   onSaveState
 }: LessonRunnerProps) {
   const [idx, setIdx] = useState(0)
-  const [isFlipped, setIsFlipped] = useState(false) // For flashcard
-  const [showContinue, setShowContinue] = useState(false) // For flashcard
   const [remediationQueue, setRemediationQueue] = useState<string[]>([]) // Words needing remediation
   const [isInRemediation, setIsInRemediation] = useState(false) // Are we in remediation mode?
   const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
@@ -55,8 +53,6 @@ export function LessonRunner({
     const handleGoBack = (e: any) => {
       const { stepIndex } = e.detail;
       setIdx(stepIndex);
-      setIsFlipped(false);
-      setShowContinue(false);
       setIsInRemediation(false);
       setRemediationQueue([]);
       setPendingRemediation([]);
@@ -121,7 +117,6 @@ export function LessonRunner({
     
     // Check if we have pending remediation to start AFTER user got current question right
     if (pendingRemediation.length > 0 && !isInRemediation) {
-      console.log('User got question correct, now starting pending remediation for:', pendingRemediation);
       setRemediationQueue([...pendingRemediation]);
       setPendingRemediation([]);
       setIsInRemediation(true);
@@ -136,8 +131,6 @@ export function LessonRunner({
   const handleRemediationNeeded = (vocabularyId: string | undefined) => {
     if (!vocabularyId) return; // Skip if no vocabulary ID
     
-    console.log(`Remediation needed for word: ${vocabularyId} - adding to pending queue for after user gets current question correct`);
-    
     // Add to pending remediation queue if not already there
     if (!pendingRemediation.includes(vocabularyId)) {
       setPendingRemediation(prev => [...prev, vocabularyId]);
@@ -151,8 +144,6 @@ export function LessonRunner({
     if (remediationStep === 'flashcard') {
       // Move to quiz step
       setRemediationStep('quiz');
-      setIsFlipped(false);
-      setShowContinue(false);
     } else {
       // Quiz completed, remove from queue and continue
       const currentWord = remediationQueue[0];
@@ -166,8 +157,6 @@ export function LessonRunner({
       } else {
         // More words to remediate, start with next word
         setRemediationStep('flashcard');
-        setIsFlipped(false);
-        setShowContinue(false);
       }
     }
   };
@@ -245,8 +234,6 @@ export function LessonRunner({
   
   // Generic handler for all components except Flashcard
   const handleItemComplete = (wasCorrect: boolean = true) => {
-    console.log('handleItemComplete called, isInRemediation:', isInRemediation, 'wasCorrect:', wasCorrect);
-    
     if (isInRemediation) {
       completeRemediation();
     } else {
@@ -256,27 +243,6 @@ export function LessonRunner({
       }
       // If incorrect, don't advance - let user try again on same question
     }
-  }
-
-  // Flashcard specific handlers
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
-    if (!isFlipped) {
-      setShowContinue(true);
-    }
-  }
-
-  const handleFlashcardContinue = () => {
-    console.log('handleFlashcardContinue called, isInRemediation:', isInRemediation);
-    
-    if (isInRemediation) {
-      completeRemediation();
-    } else {
-      next();
-    }
-    // Reset flashcard state for next time we see a flashcard
-    setIsFlipped(false);
-    setShowContinue(false);
   }
 
   // Render remediation content
@@ -300,10 +266,7 @@ export function LessonRunner({
           <Flashcard
             vocabularyItem={vocabItem}
             points={1}
-            onContinue={handleFlashcardContinue}
-            isFlipped={isFlipped}
-            onFlip={handleFlip}
-            showContinueButton={showContinue}
+            onContinue={() => completeRemediation()}
             onXpStart={createXpHandler('flashcard')}
           />
         </>
@@ -360,6 +323,7 @@ export function LessonRunner({
         />
       ) : step.type === 'flashcard' ? (
         <Flashcard
+          key={`flashcard-${idx}-${(step as FlashcardStep).data.vocabularyId}`}
           front={(step as FlashcardStep).data.front}
           back={(step as FlashcardStep).data.back}
           vocabularyItem={
@@ -368,10 +332,7 @@ export function LessonRunner({
               : undefined
           }
           points={step.points}
-          onContinue={handleFlashcardContinue}
-          isFlipped={isFlipped}
-          onFlip={handleFlip}
-          showContinueButton={showContinue}
+          onContinue={() => handleItemComplete(true)}
           onXpStart={createXpHandler('flashcard')}
         />
       ) : step.type === 'quiz' ? (
