@@ -7,6 +7,24 @@ import { Check } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
+import { getModules } from "@/lib/config/curriculum"
+
+// Generate static params for all module/lesson combinations
+export async function generateStaticParams() {
+  const modules = getModules()
+  const params: { moduleId: string; lessonId: string }[] = []
+  
+  modules.forEach((module) => {
+    module.lessons.forEach((lesson) => {
+      params.push({
+        moduleId: module.id,
+        lessonId: lesson.id,
+      })
+    })
+  })
+  
+  return params
+}
 
 interface SummaryPageProps {
   learnedWords: string[];

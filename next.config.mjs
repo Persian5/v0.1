@@ -27,6 +27,10 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  // Add proper handling for static export
+  trailingSlash: false,
+  // Ensure proper static file serving
+  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
 }
 
 if (userConfig) {

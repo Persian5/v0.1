@@ -1,11 +1,31 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Medal, Star, Sparkles, ArrowRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import confetti from "canvas-confetti"
+import { useParams, useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
+import { getModules } from "@/lib/config/curriculum"
+
+// Generate static params for all module/lesson combinations
+export async function generateStaticParams() {
+  const modules = getModules()
+  const params: { moduleId: string; lessonId: string }[] = []
+  
+  modules.forEach((module) => {
+    module.lessons.forEach((lesson) => {
+      params.push({
+        moduleId: module.id,
+        lessonId: lesson.id,
+      })
+    })
+  })
+  
+  return params
+}
 
 interface CompletionPageProps {
   xp?: number;

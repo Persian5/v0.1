@@ -8,6 +8,11 @@ import { Lock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
 
+// Generate static params for modules page (empty array means this route is always available)
+export async function generateStaticParams() {
+  return []
+}
+
 export default function ModulesPage() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
