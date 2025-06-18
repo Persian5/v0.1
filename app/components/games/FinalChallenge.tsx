@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,13 +40,19 @@ export function FinalChallenge({
   onComplete,
   onXpStart
 }: FinalChallengeProps) {
+  // SYSTEMATIC RANDOMIZATION: Randomize word bank display order once on mount
+  // Following same pattern as Quiz component for consistency
+  const shuffledWords = useMemo(() => {
+    return [...words].sort(() => Math.random() - 0.5);
+  }, [words]);
+
   // Generate dynamic description if none provided
   const getDynamicDescription = () => {
     if (description) return description;
     
     // Show the English translations in the correct order so students know the target conversation flow
     const orderedTranslations = targetWords.map(targetId => {
-      const word = words.find(w => w.id === targetId);
+      const word = shuffledWords.find(w => w.id === targetId);
       return word ? word.translation : '';
     }).filter(Boolean);
     
@@ -59,7 +65,7 @@ export function FinalChallenge({
 
   // Initialize items from props instead of hardcoding
   const [items, setItems] = useState(() => 
-    words.map(word => ({
+    shuffledWords.map(word => ({
       id: word.id,
       text: word.text,
       translation: word.translation,
@@ -82,7 +88,7 @@ export function FinalChallenge({
 
   // Reset items and slots when props change
   useEffect(() => {
-    setItems(words.map(word => ({
+    setItems(shuffledWords.map(word => ({
       id: word.id,
       text: word.text,
       translation: word.translation,
@@ -96,7 +102,7 @@ export function FinalChallenge({
     
     setShowFeedback(false)
     setIsCorrect(false)
-  }, [words, targetWords])
+  }, [shuffledWords, targetWords])
 
   // Handle clicking on a phrase to add it to the next available slot
   const handlePhraseClick = (itemId: string) => {

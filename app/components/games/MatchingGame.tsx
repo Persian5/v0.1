@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "../../../components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -19,6 +19,16 @@ export function MatchingGame({
   onXpStart,
   onComplete,
 }: MatchingGameProps) {
+  // SYSTEMATIC RANDOMIZATION: Randomize both words and slots display order once on mount
+  // Following same pattern as Quiz component for consistency
+  const shuffledWords = useMemo(() => {
+    return [...words].sort(() => Math.random() - 0.5);
+  }, [words]);
+
+  const shuffledSlots = useMemo(() => {
+    return [...slots].sort(() => Math.random() - 0.5);
+  }, [slots]);
+
   const [matches, setMatches] = useState<Record<string,string>>({})  // slotId→wordId
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null)
   const [showXp, setShowXp] = useState(false)
@@ -60,7 +70,7 @@ export function MatchingGame({
     if (showFeedback) return;
     
     // Find the word object for the selected ID
-    const selectedWord = words.find(w => w.id === selectedWordId);
+    const selectedWord = shuffledWords.find(w => w.id === selectedWordId);
     if (!selectedWord) return;
     
     // Check if this is the correct slot for the selected word
@@ -74,7 +84,7 @@ export function MatchingGame({
       // Clear selection
       setSelectedWordId(null);
       // If this was the final match, award XP and advance
-      if (nextCount === words.length) {
+      if (nextCount === shuffledWords.length) {
         playSuccessSound();
         
         // Award XP immediately when all words are matched
@@ -135,7 +145,7 @@ export function MatchingGame({
           
           {/* Persian words - side by side */}
           <div className="flex flex-row justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-            {words.map(w => {
+            {shuffledWords.map(w => {
               const isMatched = isWordMatched(w.id);
               const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.wordId === w.id;
               
@@ -175,9 +185,9 @@ export function MatchingGame({
           
           {/* English word bank - below */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {slots.map(slot => {
+            {shuffledSlots.map(slot => {
               const matchedWordId = matches[slot.id];
-              const matchedWord = matchedWordId ? words.find(w => w.id === matchedWordId) : null;
+              const matchedWord = matchedWordId ? shuffledWords.find(w => w.id === matchedWordId) : null;
               const isCorrect = matchedWord ? matchedWord.slotId === slot.id : false;
               const isMatched = isSlotMatched(slot.id);
               const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.slotId === slot.id;
