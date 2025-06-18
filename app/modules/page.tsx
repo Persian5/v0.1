@@ -43,9 +43,9 @@ export default function ModulesPage() {
                 Pricing + FAQ
               </Button>
             </Link>
-            <Link href="/modules/module1/lesson1">
+            <Link href="/account">
               <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-                Start Learning
+                Account
               </Button>
             </Link>
           </div>

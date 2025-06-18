@@ -34,9 +34,11 @@ export default function ModulePage() {
             <span className="hidden sm:inline">Back to Modules</span>
             <span className="sm:hidden">Back</span>
           </Link>
-          <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-            Start Learning
-          </Button>
+          <Link href="/account">
+            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+              Account
+            </Button>
+          </Link>
         </div>
       </header>
 

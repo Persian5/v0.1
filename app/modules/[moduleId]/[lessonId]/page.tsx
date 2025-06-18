@@ -119,9 +119,9 @@ export default function LessonPage() {
             <Button 
               size="sm" 
               className="bg-accent hover:bg-accent/90 text-white"
-              onClick={navigateToModules}
+              onClick={() => router.push('/account')}
             >
-              More Lessons
+              Account
             </Button>
           </div>
         </div>

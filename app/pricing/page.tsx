@@ -28,9 +28,9 @@ export default function PricingPage() {
           <Link href="/" className="flex items-center gap-2 font-bold text-base sm:text-lg text-primary">
             Home
           </Link>
-          <Link href="/modules">
+          <Link href="/account">
             <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-              Start Learning
+              Account
             </Button>
           </Link>
         </div>

@@ -4,7 +4,7 @@ import { Quiz } from '@/app/components/games/Quiz'
 import { InputExercise } from '@/app/components/games/InputExercise'
 import { MatchingGame } from '@/app/components/games/MatchingGame'
 import { FinalChallenge } from '@/app/components/games/FinalChallenge'
-import { WelcomeIntro } from '@/app/components/games/WelcomeIntro'
+import { LessonIntro } from '@/app/components/games/WelcomeIntro'
 import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 
@@ -148,11 +148,26 @@ export function LessonRunner({
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
       {/* Render current step based on type */}
       {step.type === 'welcome' ? (
-        <WelcomeIntro 
+        <LessonIntro 
           title={(step as WelcomeStep).title} 
           description={(step as WelcomeStep).description}
           objectives={(step as WelcomeStep).data?.objectives}
-          lessonType={(step as WelcomeStep).data?.lessonType}
+          useSimpleLayout={false}
+          objectiveEmojis={(step as WelcomeStep).title === "Basic Greetings" ? ["👋", "🤔", "🙏", "👋"] : ["😊", "🙏", "✅", "❌"]}
+          backgroundImage="/icons/tehranairport.png"
+          backgroundImageAlt="Tehran Airport Background"
+          foregroundImage="/icons/ali.png"
+          foregroundImageAlt="Ali with a speech bubble"
+          missionTitle={(step as WelcomeStep).title === "Basic Greetings" ? "Let's Help Ali!" : "Help Ali Be Polite!"}
+          missionDescription={(step as WelcomeStep).title === "Basic Greetings" ? 
+            "Ali just landed in Tehran and wants to greet people the right way. You'll meet him again at the end of this lesson — let's make sure you're ready to help him when the time comes." : 
+            "Now that Ali can greet people, he needs to learn how to respond politely in conversations. Help him master these essential responses!"
+          }
+          missionInstructions={(step as WelcomeStep).title === "Basic Greetings" ? "Your mission is to get Ali ready. Help him:" : "Help Ali learn to:"}
+          sectionTitle={(step as WelcomeStep).data?.sectionTitle}
+          sectionDescription={(step as WelcomeStep).data?.sectionDescription}
+          vocabularyItems={[]}
+          buttonText="Let's Start!"
           onStart={next} 
         />
       ) : step.type === 'flashcard' ? (

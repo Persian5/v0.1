@@ -38,6 +38,8 @@ export interface WelcomeStep extends BaseStep {
   data?: {
     objectives?: string[];
     lessonType?: string;
+    sectionTitle?: string;
+    sectionDescription?: string;
   };
 }
 

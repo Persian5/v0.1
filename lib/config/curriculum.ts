@@ -23,7 +23,16 @@ export const curriculumData: Module[] = [
             type: "welcome",
             title: "Basic Greetings",
             description: "Learn common Persian greetings used in everyday conversations.",
-            points: 0
+            points: 0,
+            data: {
+              objectives: [
+                "Say hello and greet someone",
+                "Ask how someone is doing",
+                "Welcome someone",
+                "Say goodbye properly"
+              ],
+              lessonType: "greetings"
+            }
           },
           {
             type: "flashcard",
@@ -125,7 +134,9 @@ export const curriculumData: Module[] = [
                 "Answer yes and no questions confidently", 
                 "Use polite responses in conversations"
               ],
-              lessonType: "politeness"
+              lessonType: "greetings",
+              sectionTitle: "Essential Politeness Skills",
+              sectionDescription: "These four key responses will help you navigate everyday Persian conversations with confidence and cultural awareness."
             }
           },
           {
