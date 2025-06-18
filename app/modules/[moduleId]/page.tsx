@@ -5,16 +5,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronRight, ChevronLeft } from "lucide-react"
-import { getModule, getModules } from "@/lib/config/curriculum"
+import { getModule } from "@/lib/config/curriculum"
 import { useParams } from "next/navigation"
-
-// Generate static params for all modules
-export async function generateStaticParams() {
-  const modules = getModules()
-  return modules.map((module) => ({
-    moduleId: module.id,
-  }))
-}
 
 export default function ModulePage() {
   const { moduleId } = useParams()

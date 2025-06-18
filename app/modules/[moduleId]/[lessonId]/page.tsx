@@ -9,28 +9,11 @@ import { Star, ChevronLeft, Home } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
-import { getLesson, getModule, getLessonSteps, getModules } from "@/lib/config/curriculum"
+import { getLesson, getModule, getLessonSteps } from "@/lib/config/curriculum"
 import { LessonRunner } from "@/app/components/LessonRunner"
 import CompletionPage from "./completion/page"
 import SummaryPage from "./summary/page"
 import { motion, AnimatePresence } from "framer-motion"
-
-// Generate static params for all module/lesson combinations
-export async function generateStaticParams() {
-  const modules = getModules()
-  const params: { moduleId: string; lessonId: string }[] = []
-  
-  modules.forEach((module) => {
-    module.lessons.forEach((lesson) => {
-      params.push({
-        moduleId: module.id,
-        lessonId: lesson.id,
-      })
-    })
-  })
-  
-  return params
-}
 
 export default function LessonPage() {
   const params = useParams()
