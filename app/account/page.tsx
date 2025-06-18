@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Star, User, Trophy, Target } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
+import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 export default function AccountPage() {
   const [mounted, setMounted] = useState(false)
@@ -17,6 +18,11 @@ export default function AccountPage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Get the next lesson to continue from
+  const getNextLesson = () => {
+    return LessonProgressService.getFirstAvailableLesson();
+  }
 
   if (!mounted) {
     return null
@@ -158,12 +164,12 @@ export default function AccountPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/modules" className="flex-1">
                   <Button className="w-full bg-accent hover:bg-accent/90 text-white">
-                    Continue Learning
+                    Browse Modules
                   </Button>
                 </Link>
-                <Link href="/modules/module1/lesson1" className="flex-1">
+                <Link href={`/modules/${getNextLesson().moduleId}/${getNextLesson().lessonId}`} className="flex-1">
                   <Button variant="outline" className="w-full">
-                    Practice Lesson 1
+                    Continue Learning
                   </Button>
                 </Link>
                 <Link href="/pricing" className="flex-1">

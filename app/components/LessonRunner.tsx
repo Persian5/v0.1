@@ -7,6 +7,7 @@ import { FinalChallenge } from '@/app/components/games/FinalChallenge'
 import { LessonIntro } from '@/app/components/games/WelcomeIntro'
 import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
+import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 
 interface LessonRunnerProps {
@@ -76,6 +77,9 @@ export function LessonRunner({
 
   // If we've gone through all steps, show completion
   if (idx >= steps.length) {
+    // Mark lesson as completed when all steps are finished
+    LessonProgressService.markLessonCompleted(moduleId, lessonId);
+    
     if (onProgressChange) {
       onProgressChange(100);
     }

@@ -4,12 +4,13 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { ChevronRight, X } from "lucide-react"
+import { ChevronRight, X, Heart } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 export default function HomePage() {
   const router = useRouter()
@@ -104,18 +105,19 @@ export default function HomePage() {
     <Button
       size="lg"
       className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto"
-      aria-label="Preview Lesson 1"
+      aria-label="Preview Lesson"
       onClick={() => {
-        window.location.href = '/modules/module1/lesson1';
+        const firstLesson = LessonProgressService.getFirstAvailableLesson();
+        window.location.href = `/modules/${firstLesson.moduleId}/${firstLesson.lessonId}`;
       }}
     >
-      Preview Lesson 1
+      Preview Lesson
     </Button>
   ) : (
     <Button
       size="lg"
       className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto"
-      aria-label="Preview Lesson 1"
+      aria-label="Preview Lesson"
       disabled
     >
       Loading...
