@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
@@ -20,6 +20,7 @@ export default function SummaryPage({
   resetLesson
 }: SummaryPageProps) {
   const router = useRouter()
+  const { moduleId, lessonId } = useParams()
 
   // Safety check for empty learned words
   const wordsToShow = learnedWords || [];
@@ -32,7 +33,10 @@ export default function SummaryPage({
 
   // Function to navigate to next lesson
   const navigateToNextLesson = () => {
-    const nextLesson = LessonProgressService.getFirstAvailableLesson();
+    const nextLesson = LessonProgressService.getNextSequentialLesson(
+      moduleId as string, 
+      lessonId as string
+    );
     router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
   }
   

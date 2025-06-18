@@ -39,7 +39,10 @@ export default function CompletionPage({
   };
 
   const navigateToNextLesson = () => {
-    const nextLesson = LessonProgressService.getFirstAvailableLesson();
+    const nextLesson = LessonProgressService.getNextSequentialLesson(
+      moduleId as string, 
+      lessonId as string
+    );
     router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
   };
 
