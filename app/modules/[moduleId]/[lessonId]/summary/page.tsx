@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 interface SummaryPageProps {
   learnedWords: string[];
@@ -29,9 +30,10 @@ export default function SummaryPage({
     router.push('/pricing')
   }
 
-  // Function to navigate to modules page
-  const navigateToModules = () => {
-    router.push('/modules')
+  // Function to navigate to next lesson
+  const navigateToNextLesson = () => {
+    const nextLesson = LessonProgressService.getFirstAvailableLesson();
+    router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
   }
   
   return (
@@ -104,9 +106,9 @@ export default function SummaryPage({
             </p>
             <Button 
               className="w-full mt-2"
-              onClick={navigateToModules}
+              onClick={navigateToNextLesson}
             >
-              Continue Learning
+              Next Lesson
             </Button>
           </div>
           

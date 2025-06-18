@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Medal, Star, Sparkles, ArrowRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 interface CompletionPageProps {
   xp?: number;
@@ -37,8 +38,9 @@ export default function CompletionPage({
     }
   };
 
-  const navigateToModules = () => {
-    router.push('/modules');
+  const navigateToNextLesson = () => {
+    const nextLesson = LessonProgressService.getFirstAvailableLesson();
+    router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
   };
 
   return (
@@ -78,9 +80,9 @@ export default function CompletionPage({
       <div className="space-y-4">
         <Button 
           className="w-full text-lg py-6" 
-          onClick={navigateToModules}
+          onClick={navigateToNextLesson}
         >
-          Continue Learning Persian
+          Next Lesson
         </Button>
         
         <Button 
