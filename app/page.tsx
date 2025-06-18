@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { ChevronRight, X, Heart } from "lucide-react"
+import { ChevronRight, X, Heart, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -40,6 +40,8 @@ export default function HomePage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [isLearningNavigating, setIsLearningNavigating] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -97,21 +99,33 @@ export default function HomePage() {
   }
 
   const handleStartLearning = () => {
+    setIsLearningNavigating(true)
     router.push('/modules')
+  }
+
+  const handlePreviewLesson = () => {
+    setIsNavigating(true)
+    const firstLesson = LessonProgressService.getFirstAvailableLesson();
+    window.location.href = `/modules/${firstLesson.moduleId}/${firstLesson.lessonId}`;
   }
 
   // Only render the button content after hydration
   const buttonContent = isClient ? (
     <Button
       size="lg"
-      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto"
+      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto hover:scale-105"
       aria-label="Preview Lesson"
-      onClick={() => {
-        const firstLesson = LessonProgressService.getFirstAvailableLesson();
-        window.location.href = `/modules/${firstLesson.moduleId}/${firstLesson.lessonId}`;
-      }}
+      onClick={handlePreviewLesson}
+      disabled={isNavigating}
     >
-      Preview Lesson
+      {isNavigating ? (
+        <>
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          Loading...
+        </>
+      ) : (
+        "Preview Lesson"
+      )}
     </Button>
   ) : (
     <Button
@@ -120,6 +134,7 @@ export default function HomePage() {
       aria-label="Preview Lesson"
       disabled
     >
+      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
       Loading...
     </Button>
   );
@@ -179,11 +194,19 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-8 py-6 text-lg w-auto"
+                    className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-8 py-6 text-lg w-auto hover:scale-105"
                     onClick={handleStartLearning}
                     aria-label="Start Learning Persian"
+                    disabled={isLearningNavigating}
                   >
-                    Start Learning
+                    {isLearningNavigating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Start Learning"
+                    )}
                   </Button>
                 </div>
               </div>
@@ -216,11 +239,19 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-4 py-4 text-base w-full"
+                  className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-4 py-4 text-base w-full hover:scale-105"
                   onClick={handleStartLearning}
                   aria-label="Start Learning Persian"
+                  disabled={isLearningNavigating}
                 >
-                  Start Learning
+                  {isLearningNavigating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Start Learning"
+                  )}
                 </Button>
               </div>
             </div>

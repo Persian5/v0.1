@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronRight, ChevronLeft } from "lucide-react"
 import { getModule } from "@/lib/config/curriculum"
+import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 export default function Module1Page() {
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null)
@@ -22,6 +23,10 @@ export default function Module1Page() {
 
   const lessons = module.lessons
 
+  // Get user's progress to show "Continue" vs "Start" 
+  const progress = LessonProgressService.getProgress()
+  const firstAvailable = LessonProgressService.getFirstAvailableLesson()
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
@@ -31,11 +36,23 @@ export default function Module1Page() {
             <ChevronLeft className="h-5 w-5" />
             <span>Modules</span>
           </Link>
-          <Link href="/">
-            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-              Home
+          <div className="flex items-center gap-2">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => {
+                window.location.href = `/modules/${firstAvailable.moduleId}/${firstAvailable.lessonId}`;
+              }}
+              className="hidden sm:flex"
+            >
+              Continue Learning
             </Button>
-          </Link>
+            <Link href="/">
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+                Home
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -56,38 +73,48 @@ export default function Module1Page() {
         <section className="py-8 px-3 sm:px-4 bg-white">
           <div className="max-w-6xl mx-auto">
             <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
-              {lessons.map((lesson) => (
-                <Card
-                  key={lesson.id}
-                  className={`border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl ${
-                    lesson.locked ? "opacity-50" : ""
-                  }`}
-                >
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
-                      <span className="text-2xl sm:text-3xl">{lesson.emoji}</span>
-                      {lesson.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-base sm:text-lg">{lesson.description}</p>
-                  </CardContent>
-                  <CardFooter className="py-4">
-                    <Link href={`/modules/module1/${lesson.id === 'lesson1' ? 'lesson1' : lesson.id}`} className="w-full">
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-between group hover:bg-primary/10 py-6 text-lg ${
-                          lesson.locked ? "cursor-not-allowed" : ""
-                        }`}
-                        disabled={lesson.locked}
-                      >
-                        {lesson.locked ? "Locked" : "Start Lesson"}
-                        {!lesson.locked && <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
-                      </Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              ))}
+              {lessons.map((lesson) => {
+                const lessonKey = `${module.id}-${lesson.id}`
+                const isCompleted = progress[lessonKey] || false
+                
+                return (
+                  <Card
+                    key={lesson.id}
+                    className={`border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl ${
+                      lesson.locked ? "opacity-50" : ""
+                    } ${isCompleted ? "ring-2 ring-green-200 bg-green-50" : ""}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+                        <span className="text-2xl sm:text-3xl">{lesson.emoji}</span>
+                        <div className="flex flex-col items-start">
+                          <span>{lesson.title}</span>
+                          {isCompleted && (
+                            <span className="text-xs text-green-600 font-normal">✓ Completed</span>
+                          )}
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-base sm:text-lg">{lesson.description}</p>
+                    </CardContent>
+                    <CardFooter className="py-4">
+                      <Link href={`/modules/${module.id}/${lesson.id}`} className="w-full">
+                        <Button
+                          variant="outline"
+                          className={`w-full justify-between group hover:bg-primary/10 py-6 text-lg ${
+                            lesson.locked ? "cursor-not-allowed" : ""
+                          }`}
+                          disabled={lesson.locked}
+                        >
+                          {lesson.locked ? "Locked" : isCompleted ? "Review Lesson" : "Start Lesson"}
+                          {!lesson.locked && <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                )
+              })}
             </div>
           </div>
         </section>

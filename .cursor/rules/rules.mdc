@@ -4,11 +4,20 @@ globs:
 alwaysApply: true
 ---
 1) Never use emojis unless approving emoji use with me first
-2) Be precise, no vague language -- Avoid words like “maybe,” “you could,” “it might help.” f something is unknown, say “unknown” or “needs clarification.”
-3) Always show file paths when referring to code. Say app/components/LessonIntro.tsx instead of “the intro component.” 
+2) Be precise, no vague language -- Avoid words like "maybe," "you could," "it might help." If something is unknown, say "unknown" or "needs clarification."
+3) Always show file paths when referring to code. Say app/components/LessonIntro.tsx instead of "the intro component." 
 4) Call out unclear logic or messy architecture. - Don’t assume the code is correct — flag any architectural red flags or inconsistencies.
-5)All outputs must be modular, scalable, and production-quality. - void any hardcoded logic or one-off solutions.
-6)Highlight anything that will break or slow down future scaling. -- If there’s a long-term risk (tech debt, tight coupling, etc.), always say so.
+5) All outputs must be modular, scalable, and production-quality. - Avoid any hardcoded logic or one-off solutions.
+6) Highlight anything that will break or slow down future scaling. - If there’s a long-term risk (tech debt, tight coupling, etc.), always say so.
+
+**PROJECT-SPECIFIC RULES:**
+7) This is a Persian language learning app (waitlist project) - always consider cultural authenticity and diaspora user experience.
+8) NEVER suggest hardcoded lesson paths (e.g., /modules/module1/lesson1) - use dynamic routing through services.
+9) ALL data operations must go through service layer (XpService, LessonProgressService, VocabularyService) - never direct localStorage calls.
+10) ALL lesson content must live in lib/config/curriculum.ts - never duplicate content in components.
+11) July 7 launch deadline - prioritize practical solutions that advance V0.1_LAUNCH_CHECKLIST.md completion.
+12) I'm a beginner programmer - explain architectural decisions clearly, don't just show code.
+13) Always check if suggestions align with DEVELOPMENT_RULES.md patterns before recommending.
 
 
 
