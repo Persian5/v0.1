@@ -6,37 +6,97 @@ import { XpAnimation } from "./XpAnimation"
 import { X } from "lucide-react"
 import { playSuccessSound } from "./Flashcard"
 
+interface WordItem {
+  id: string;
+  text: string;
+  translation: string;
+}
+
 export interface FinalChallengeProps {
+  // Data structure
+  words: WordItem[];
   targetWords: string[];
+  
+  // Content configuration
+  title?: string;
+  description?: string;
+  successMessage?: string;
+  incorrectMessage?: string;
+  
+  // Gameplay
   points: number;
   onComplete: (success: boolean) => void;
   onXpStart?: () => void;
 }
 
 export function FinalChallenge({ 
-  targetWords = ["salam", "khosh_ahmadid", "chetori", "khodafez"], 
+  words,
+  targetWords,
+  title = "Final Challenge",
+  description,
+  successMessage = "Perfect! You got the order right!",
+  incorrectMessage = "Almost there—let's try that order again!",
   points = 20, 
   onComplete,
   onXpStart
 }: FinalChallengeProps) {
-  const [items, setItems] = useState([
-    { id: "khodafez", text: "Khodafez", order: null as number | null },
-    { id: "chetori", text: "Chetori", order: null as number | null },
-    { id: "salam", text: "Salam", order: null as number | null },
-    { id: "khosh_ahmadid", text: "Khosh Amadid", order: null as number | null },
-  ])
+  // Generate dynamic description if none provided
+  const getDynamicDescription = () => {
+    if (description) return description;
+    
+    // Create ordered list based on targetWords
+    const orderedTranslations = targetWords.map(targetId => {
+      const word = words.find(w => w.id === targetId);
+      return word ? `${word.text} (${word.translation})` : '';
+    }).filter(Boolean);
+    
+    if (orderedTranslations.length === 0) {
+      return "Put the words in the correct order:";
+    }
+    
+    return `Put these in the correct order: ${orderedTranslations.join(' → ')}`;
+  };
+
+  // Initialize items from props instead of hardcoding
+  const [items, setItems] = useState(() => 
+    words.map(word => ({
+      id: word.id,
+      text: word.text,
+      translation: word.translation,
+      order: null as number | null
+    }))
+  )
   
-  const [slots, setSlots] = useState([
-    { id: 1, itemId: null as string | null },
-    { id: 2, itemId: null as string | null },
-    { id: 3, itemId: null as string | null },
-    { id: 4, itemId: null as string | null },
-  ])
+  // Initialize slots based on targetWords length
+  const [slots, setSlots] = useState(() => 
+    targetWords.map((_, index) => ({
+      id: index + 1,
+      itemId: null as string | null
+    }))
+  )
   
   const [showFeedback, setShowFeedback] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [showXp, setShowXp] = useState(false)
   const confettiCanvasRef = useRef<HTMLDivElement>(null)
+
+  // Reset items and slots when props change
+  useEffect(() => {
+    setItems(words.map(word => ({
+      id: word.id,
+      text: word.text,
+      translation: word.translation,
+      order: null as number | null
+    })))
+    
+    setSlots(targetWords.map((_, index) => ({
+      id: index + 1,
+      itemId: null as string | null
+    })))
+    
+    setShowFeedback(false)
+    setIsCorrect(false)
+  }, [words, targetWords])
 
   // Handle clicking on a phrase to add it to the next available slot
   const handlePhraseClick = (itemId: string) => {
@@ -151,10 +211,9 @@ export function FinalChallenge({
       <div ref={confettiCanvasRef} className="fixed inset-0 pointer-events-none z-50"></div>
       
       <div className="text-center mb-4">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-1 text-primary">Final Challenge</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-1 text-primary">{title}</h2>
         <p className="text-muted-foreground text-sm sm:text-base mb-2">
-          Ali meets a new friend in Tehran. Put their conversation in the correct order: 
-          Ali says Hello, welcomes his friend, asks how they are, and finally says Goodbye.
+          {getDynamicDescription()}
         </p>
       </div>
 
@@ -275,7 +334,7 @@ export function FinalChallenge({
             {isCorrect ? (
               <div>
                 <div className="font-bold text-base sm:text-lg mb-1">
-                  🎉 You're a natural—Ali made a great impression!
+                  {successMessage}
                 </div>
                 <div className="text-base">
                   +{points} XP!
@@ -283,7 +342,7 @@ export function FinalChallenge({
               </div>
             ) : (
               <div>
-                <div className="font-bold">Almost there—let's try that order again!</div>
+                <div className="font-bold">{incorrectMessage}</div>
               </div>
             )}
           </motion.div>

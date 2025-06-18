@@ -90,6 +90,11 @@ export interface FinalStep extends BaseStep {
       translation: string;
     }[];
     targetWords: string[];
+    // Optional content configuration
+    title?: string;
+    description?: string;
+    successMessage?: string;
+    incorrectMessage?: string;
   };
 }
 

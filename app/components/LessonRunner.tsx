@@ -208,7 +208,12 @@ export function LessonRunner({
         />
       ) : step.type === 'final' ? (
         <FinalChallenge
+          words={(step as FinalStep).data.words}
           targetWords={(step as FinalStep).data.targetWords}
+          title={(step as FinalStep).data.title}
+          description={(step as FinalStep).data.description}
+          successMessage={(step as FinalStep).data.successMessage}
+          incorrectMessage={(step as FinalStep).data.incorrectMessage}
           points={step.points}
           onComplete={handleItemComplete}
           onXpStart={createXpHandler('final')}

@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+1) Never use emojis unless approving emoji use with me first
+2) Be precise, no vague language -- Avoid words like “maybe,” “you could,” “it might help.” f something is unknown, say “unknown” or “needs clarification.”
+3) Always show file paths when referring to code. Say app/components/LessonIntro.tsx instead of “the intro component.” 
+4) Call out unclear logic or messy architecture. - Don’t assume the code is correct — flag any architectural red flags or inconsistencies.
+5)All outputs must be modular, scalable, and production-quality. - void any hardcoded logic or one-off solutions.
+6)Highlight anything that will break or slow down future scaling. -- If there’s a long-term risk (tech debt, tight coupling, etc.), always say so.
+
+
+

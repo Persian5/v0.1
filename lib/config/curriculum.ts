@@ -109,7 +109,10 @@ export const curriculumData: Module[] = [
                 { id: "khosh_ahmadid", text: "Khosh Amadid", translation: "Welcome" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "khosh_ahmadid", "chetori", "khodafez"]
+              targetWords: ["salam", "khosh_ahmadid", "chetori", "khodafez"],
+              title: "Ali's First Conversation",
+              successMessage: "🎉 You're a natural—Ali made a great impression!",
+              incorrectMessage: "Almost there—let's try that conversation order again!"
             }
           }
         ]
@@ -233,7 +236,10 @@ export const curriculumData: Module[] = [
                 { id: "baleh", text: "Baleh", translation: "Yes" },
                 { id: "na", text: "Na", translation: "No" }
               ],
-              targetWords: ["khoobam", "merci", "baleh", "na"]
+              targetWords: ["khoobam", "merci", "baleh", "na"],
+              title: "Polite Response Challenge",
+              successMessage: "🌟 Perfect! Ali's politeness will take him far in Persian culture!",
+              incorrectMessage: "Close! Let's try that polite response sequence again."
             }
           }
         ]
