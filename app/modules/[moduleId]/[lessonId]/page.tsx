@@ -1,102 +1,35 @@
 "use client"
 
-import Link from "next/link"
-import { ChevronLeft, Star } from "lucide-react"
-import { useParams } from "next/navigation"
-import { getLessonSteps, getLesson, getModule } from "@/lib/config/curriculum"
-import { LessonRunner } from "@/app/components/LessonRunner"
-import { Progress } from "@/components/ui/progress"
-import { Button } from "@/components/ui/button"
-import "./styles.css"
 import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import { Star, ChevronLeft } from "lucide-react"
+import { useXp } from "@/hooks/use-xp"
+import { XpService } from "@/lib/services/xp-service"
+import { getLesson, getModule, getLessonSteps } from "@/lib/config/curriculum"
+import { LessonRunner } from "@/app/components/LessonRunner"
 import CompletionPage from "./completion/page"
 import SummaryPage from "./summary/page"
 import { motion, AnimatePresence } from "framer-motion"
-import { Input } from "@/components/ui/input"
-import { Sparkles } from "lucide-react"
-import { useXp } from "@/hooks/use-xp"
-import { XpService } from "@/lib/services/xp-service"
+import { useRouter } from "next/navigation"
 
 export default function LessonPage() {
-  const params = useParams();
+  const params = useParams()
+  const router = useRouter()
   
   // Validate route parameters
   const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
   const lessonId = typeof params.lessonId === 'string' ? params.lessonId : '';
   
-  // Use the new XP hook with persistence - Global XP across all lessons
-  const { xp, addXp, setXp, isLoading: xpLoading } = useXp({
-    storageKey: 'global-user-xp', // Global XP that persists across all lessons
+  const { xp, addXp, setXp } = useXp({
+    storageKey: 'global-user-xp'
   });
   
   const [progress, setProgress] = useState(0);
   const [currentView, setCurrentView] = useState('welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
-  
-  // Waitlist states
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [isWaitlistPopupOpen, setIsWaitlistPopupOpen] = useState(false);
-  
-  useEffect(() => {
-    setIsClient(true);
-    const storedValue = localStorage.getItem('isSubscribed');
-    setIsSubscribed(storedValue === 'true');
-  }, []);
-  
-  // Waitlist popup functions
-  const openWaitlistPopup = () => {
-    setIsWaitlistPopupOpen(true);
-  };
-  
-  const closeWaitlistPopup = () => {
-    setIsWaitlistPopupOpen(false);
-  };
-  
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      // Check if the response is JSON
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to subscribe');
-        }
-        setIsSubscribed(true);
-        localStorage.setItem('isSubscribed', 'true');
-        setShowConfetti(true);
-        setEmail("");
-
-        // Hide confetti after 3 seconds
-        setTimeout(() => setShowConfetti(false), 3000);
-      } else {
-        // If not JSON, get the text and throw an error
-        const text = await response.text();
-        throw new Error('Server error: ' + text);
-      }
-    } catch (err) {
-      console.error('Waitlist submission error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to subscribe. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   // Get data from config
   const lesson = getLesson(moduleId, lessonId);
@@ -147,6 +80,11 @@ export default function LessonPage() {
     setCurrentView('summary');
   };
 
+  // Navigate to modules page
+  const navigateToModules = () => {
+    router.push('/modules');
+  };
+
   // Get the list of words learned in this lesson
   const getLearnedWords = () => {
     const steps = getLessonSteps(moduleId, lessonId);
@@ -181,9 +119,9 @@ export default function LessonPage() {
             <Button 
               size="sm" 
               className="bg-accent hover:bg-accent/90 text-white"
-              onClick={openWaitlistPopup}
+              onClick={navigateToModules}
             >
-              Get Full Access
+              More Lessons
             </Button>
           </div>
         </div>
@@ -245,104 +183,6 @@ export default function LessonPage() {
           {/* Removed the old Back Button container from here */}
         </div>
       </main>
-
-      {/* Waitlist Popup */}
-      <AnimatePresence>
-        {isWaitlistPopupOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto p-4"
-            onClick={closeWaitlistPopup}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="bg-white rounded-xl shadow-xl max-w-xl w-full mx-auto relative overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-              
-              <div className="p-6 sm:p-8">
-                {showConfetti && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 pointer-events-none"
-                  >
-                    <div className="absolute inset-0 bg-primary/5" />
-                    <Sparkles className="absolute top-0 left-1/2 -translate-x-1/2 text-primary" size={48} />
-                  </motion.div>
-                )}
-                
-                <div id="waitlist" className="relative">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex flex-col items-center justify-center"
-                  >
-                    {isSubscribed ? (
-                      <div className="text-center">
-                        <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-primary text-center">
-                          You're on the list! 🎉
-                        </h3>
-                        <p className="text-lg sm:text-xl text-center text-gray-600 mb-6">
-                          You're officially part of the early access crew! We'll let you know the moment the full platform is ready.
-                        </p>
-                        <Button 
-                          onClick={closeWaitlistPopup}
-                          className="w-full bg-primary hover:bg-primary/90 text-white text-lg"
-                        >
-                          Close
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-primary text-center">
-                          Join Our Free Beta Waitlist + Instant Access to Module 1 Today
-                        </h3>
-                        <p className="text-lg sm:text-xl text-center text-gray-600 mb-6">
-                          Be the first to explore the platform and get early access before anyone else
-                        </p>
-                        <form onSubmit={handleWaitlistSubmit} className="w-full max-w-md mx-auto">
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <Input
-                              type="email"
-                              placeholder="Enter your email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              required
-                              className="flex-1 text-lg"
-                              disabled={isLoading}
-                              aria-label="Email address"
-                              aria-describedby="email-error"
-                            />
-                            <Button 
-                              type="submit" 
-                              className="bg-primary hover:bg-primary/90 text-white text-lg"
-                              disabled={isLoading}
-                              aria-label="Join waitlist"
-                            >
-                              {isLoading ? 'Joining...' : 'Join Waitlist'}
-                            </Button>
-                          </div>
-                          {error && (
-                            <p id="email-error" className="text-red-500 mt-2 text-sm text-center" role="alert">
-                              {error}
-                            </p>
-                          )}
-                        </form>
-                      </>
-                    )}
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 } 

@@ -9,8 +9,10 @@ import { Badge } from "../components/ui/badge"
 import { ChevronRight, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Sparkles } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function HomePage() {
+  const router = useRouter()
   const [quizAnswer, setQuizAnswer] = useState<string | null>(null)
   const [quizSubmitted, setQuizSubmitted] = useState(false)
   const [progressValue, setProgressValue] = useState(0)
@@ -36,20 +38,10 @@ export default function HomePage() {
   const [miniGameAnswer, setMiniGameAnswer] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
-
-  // Waitlist Section
-  const [email, setEmail] = useState("")
-  const [error, setError] = useState("")
-  const [isSubscribed, setIsSubscribed] = useState(false)
   const [isClient, setIsClient] = useState(false)
-  const [waitlistCount, setWaitlistCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isWaitlistPopupOpen, setIsWaitlistPopupOpen] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
-    const storedValue = localStorage.getItem('isSubscribed')
-    setIsSubscribed(storedValue === 'true')
   }, [])
 
   // Animate progress bar on page load
@@ -88,14 +80,6 @@ export default function HomePage() {
     }
   }, [currentPhraseIndex])
 
-  const openWaitlistPopup = () => {
-    setIsWaitlistPopupOpen(true)
-  }
-
-  const closeWaitlistPopup = () => {
-    setIsWaitlistPopupOpen(false)
-  }
-
   const handleMiniGameAnswer = (selectedAnswer: string) => {
     setMiniGameAnswer(selectedAnswer)
     if (selectedAnswer === "Salam") {
@@ -111,46 +95,8 @@ export default function HomePage() {
     }
   }
 
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
-
-    try {
-      const response = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      })
-
-      // Check if the response is JSON
-      const contentType = response.headers.get("content-type")
-      if (contentType && contentType.includes("application/json")) {
-        const data = await response.json()
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to subscribe')
-        }
-        setIsSubscribed(true)
-        localStorage.setItem('isSubscribed', 'true')
-        setShowConfetti(true)
-        setWaitlistCount(prev => prev + 1)
-        setEmail("")
-
-        // Hide confetti after 3 seconds
-        setTimeout(() => setShowConfetti(false), 3000)
-      } else {
-        // If not JSON, get the text and throw an error
-        const text = await response.text()
-        throw new Error('Server error: ' + text)
-      }
-    } catch (err) {
-      console.error('Waitlist submission error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to subscribe. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
+  const handleStartLearning = () => {
+    router.push('/modules')
   }
 
   // Only render the button content after hydration
@@ -191,23 +137,11 @@ export default function HomePage() {
                 Pricing + FAQ
               </Button>
             </Link>
-            {isClient ? (
-              isSubscribed ? (
-                <Link href="/modules/module1/lesson1">
-                  <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-                    Start Now
-                  </Button>
-                </Link>
-              ) : (
-                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white" onClick={openWaitlistPopup}>
-                  Start Now
-                </Button>
-              )
-            ) : (
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white" disabled>
-                Loading...
+            <Link href="/modules">
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+                Start Learning
               </Button>
-            )}
+            </Link>
           </div>
         </div>
       </header>
@@ -244,10 +178,10 @@ export default function HomePage() {
                     size="lg"
                     variant="outline"
                     className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-8 py-6 text-lg w-auto"
-                    onClick={openWaitlistPopup}
-                    aria-label="Get Early Access"
+                    onClick={handleStartLearning}
+                    aria-label="Start Learning Persian"
                   >
-                    Get Early Access
+                    Start Learning
                   </Button>
                 </div>
               </div>
@@ -281,10 +215,10 @@ export default function HomePage() {
                   size="lg"
                   variant="outline"
                   className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-4 py-4 text-base w-full"
-                  onClick={openWaitlistPopup}
-                  aria-label="Get Early Access"
+                  onClick={handleStartLearning}
+                  aria-label="Start Learning Persian"
                 >
-                  Get Early Access
+                  Start Learning
                 </Button>
               </div>
             </div>
@@ -300,10 +234,9 @@ export default function HomePage() {
           <div className="absolute inset-x-0 bottom-0 h-48 opacity-15 bg-[url('/tehran.png')] bg-bottom bg-contain bg-repeat-x"></div>
           <div className="max-w-6xl mx-auto text-center relative z-10">
             <h2 className="sm:text-3xl md:text-4xl font-bold text-primary mb-4" style={{ fontSize: '19px' }}>
-              Join The Hundreds Already On The Waitlist To Learn Persian With Iranopedia!
+              Start Your Persian Learning Journey Today!
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 mb-6">Iranian culture is everywhere. You belong here.</p>
-            {/* Join the Waitlist button moved to hero section */}
           </div>
         </section>
 
@@ -320,7 +253,7 @@ export default function HomePage() {
                 and climb the leaderboard as you grow.
               </p>
               <p className="text-base text-gray-600">
-                Join other learners already on the journey — and get early access when we launch.
+                Join thousands of learners already on the journey — start learning Persian today.
               </p>
             </div>
 
@@ -447,104 +380,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* Feature Cards with Khatam Inlay Border */}
-        <section className="py-8 px-3 sm:px-4 bg-white">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-primary text-center mb-6">What's Included?</h2>
-            <div className="grid gap-4 sm:gap-5 md:grid-cols-3">
-              <Card className="border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10"></div>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
-                    <span className="text-2xl sm:text-3xl">📚</span> Bite-sized Lessons
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-base sm:text-lg">
-                    <img src="/icons/pistachio.svg" className="inline w-4 h-4 mr-1" alt="Pistachio bullet point" />
-                    Learn Persian in 5-minute chunks that fit into your busy schedule.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-accent/10 via-accent/30 to-accent/10"></div>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
-                    <span className="text-2xl sm:text-3xl">🍚</span> Real Iranian Culture
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-base sm:text-lg">From tahdig to Nowruz, learn language in its cultural context.</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
-                    <span className="text-2xl sm:text-3xl">✍️</span> Finglish + Persian
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-base sm:text-lg">Start in Latin letters, move to Persian script when ready.</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Emotional Callout Section - MOVED HERE */}
-        <section className="py-4 px-3 sm:px-4 bg-gradient-to-r from-primary/5 to-accent/5 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 blur-2xl"></div>
-          </div>
-          <div className="max-w-6xl mx-auto relative z-10">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-2">
-                Your Future Self Will Thank You
-              </h2>
-              <p className="text-lg sm:text-xl text-gray-700 leading-relaxed">
-                Whether it's to speak with your grandparents, pass it on to your kids, or finally understand those songs
-                you grew up with — you're not too late. You're right on time.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Persian Phrases Section with Shamseh sunburst background */}
-        <section className="py-8 px-3 sm:px-4 bg-gradient-to-r from-primary/5 to-accent/5 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 blur-2xl"></div>
-          </div>
-          <div className="max-w-6xl mx-auto relative z-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-primary text-center mb-6">
-              Learn Your First Persian Phrases
-            </h2>
-
-            <div className="flex justify-center">
-              <div
-                className={`transition-opacity duration-500 ${isPhraseFading ? "opacity-0" : "opacity-100"} bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-sm relative overflow-hidden`}
-              >
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-                <div className="text-5xl sm:text-6xl mb-4">{phrases[currentPhraseIndex].emoji}</div>
-                <div className="text-2xl sm:text-3xl font-bold text-primary mb-2">
-                  {phrases[currentPhraseIndex].persian}
-                </div>
-                <div className="text-lg sm:text-xl text-gray-600 mb-4">{phrases[currentPhraseIndex].english}</div>
-
-                {/* Progress bar instead of dots */}
-                <div className="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
-                  <div
-                    className="bg-primary h-full rounded-full transition-all duration-100 ease-linear"
-                    style={{ width: `${phraseProgressValue}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer with What is Iranopedia section - Eslimi border */}
@@ -577,26 +412,18 @@ export default function HomePage() {
 
             {/* Nav Links */}
             <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-              <a 
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  openWaitlistPopup();
-                }}
+              <Link 
+                href="/modules"
                 className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
               >
                 Start Learning
-              </a>
-              <a 
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  openWaitlistPopup();
-                }}
+              </Link>
+              <Link 
+                href="/modules"
                 className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
               >
                 Learn Phrases
-              </a>
+              </Link>
               <a 
                 href="https://iranopedia.com" 
                 target="_blank" 
@@ -625,104 +452,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* Waitlist Popup */}
-      <AnimatePresence>
-        {isWaitlistPopupOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto p-4"
-            onClick={closeWaitlistPopup}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="bg-white rounded-xl shadow-xl max-w-xl w-full mx-auto relative overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-              
-              <div className="p-6 sm:p-8">
-                {showConfetti && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 pointer-events-none"
-                  >
-                    <div className="absolute inset-0 bg-primary/5" />
-                    <Sparkles className="absolute top-0 left-1/2 -translate-x-1/2 text-primary" size={48} />
-                  </motion.div>
-                )}
-                
-                <div id="waitlist" className="relative">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex flex-col items-center justify-center"
-                  >
-                    {isSubscribed ? (
-                      <div className="text-center">
-                        <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-primary text-center">
-                          You're on the list! 🎉
-                        </h3>
-                        <p className="text-lg sm:text-xl text-center text-gray-600 mb-6">
-                          You're officially part of the early access crew! We'll let you know the moment the full platform is ready.
-                        </p>
-                        <Button 
-                          onClick={closeWaitlistPopup}
-                          className="w-full bg-primary hover:bg-primary/90 text-white text-lg"
-                        >
-                          Close
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-primary text-center">
-                          Join Our Free Beta Waitlist + Instant Access to Module 1 Today
-                        </h3>
-                        <p className="text-lg sm:text-xl text-center text-gray-600 mb-6">
-                          Be the first to explore the platform and get early access before anyone else
-                        </p>
-                        <form onSubmit={handleWaitlistSubmit} className="w-full max-w-md mx-auto">
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <Input
-                              type="email"
-                              placeholder="Enter your email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              required
-                              className="flex-1 text-lg"
-                              disabled={isLoading}
-                              aria-label="Email address"
-                              aria-describedby="email-error"
-                            />
-                            <Button 
-                              type="submit" 
-                              className="bg-primary hover:bg-primary/90 text-white text-lg"
-                              disabled={isLoading}
-                              aria-label="Join waitlist"
-                            >
-                              {isLoading ? 'Joining...' : 'Join Waitlist'}
-                            </Button>
-                          </div>
-                          {error && (
-                            <p id="email-error" className="text-red-500 mt-2 text-sm text-center" role="alert">
-                              {error}
-                            </p>
-                          )}
-                        </form>
-                      </>
-                    )}
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

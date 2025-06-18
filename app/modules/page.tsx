@@ -10,15 +10,10 @@ import { getModules } from "@/lib/config/curriculum"
 
 export default function ModulesPage() {
   const [mounted, setMounted] = useState(false)
-  const [isSubscribed, setIsSubscribed] = useState(false)
-  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
-    setIsClient(true)
-    const storedValue = localStorage.getItem('isSubscribed')
-    setIsSubscribed(storedValue === 'true')
   }, [])
 
   const modules = getModules().map((module, index) => ({
@@ -29,10 +24,6 @@ export default function ModulesPage() {
     href: module.available ? `/modules/${module.id}` : "#",
     available: module.available
   }))
-
-  const handleWaitlistClick = () => {
-    router.push('/#waitlist')
-  }
 
   if (!mounted) {
     return null
@@ -52,23 +43,11 @@ export default function ModulesPage() {
                 Pricing + FAQ
               </Button>
             </Link>
-            {isClient ? (
-              isSubscribed ? (
-                <Link href="/modules/module1/lesson1">
-                  <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-                    Start Now
-                  </Button>
-                </Link>
-              ) : (
-                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white" onClick={handleWaitlistClick}>
-                  Start Now
-                </Button>
-              )
-            ) : (
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white" disabled>
-                Loading...
+            <Link href="/modules/module1/lesson1">
+              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+                Start Learning
               </Button>
-            )}
+            </Link>
           </div>
         </div>
       </header>
