@@ -44,17 +44,17 @@ export function FinalChallenge({
   const getDynamicDescription = () => {
     if (description) return description;
     
-    // Create ordered list based on targetWords
+    // Show the English translations in the correct order so students know the target conversation flow
     const orderedTranslations = targetWords.map(targetId => {
       const word = words.find(w => w.id === targetId);
-      return word ? `${word.text} (${word.translation})` : '';
+      return word ? word.translation : '';
     }).filter(Boolean);
     
     if (orderedTranslations.length === 0) {
-      return "Put the words in the correct order:";
+      return "Arrange these words to create a conversation.";
     }
     
-    return `Put these in the correct order: ${orderedTranslations.join(' → ')}`;
+    return `Build this conversation: ${orderedTranslations.join(' → ')}`;
   };
 
   // Initialize items from props instead of hardcoding

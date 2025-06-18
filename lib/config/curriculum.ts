@@ -29,7 +29,7 @@ export const curriculumData: Module[] = [
           },
           {
             id: "chetori",
-            en: "How are you?",
+            en: "How Are You?",
             fa: "چطوری",
             finglish: "Chetori",
             phonetic: "che-TOH-ree",
@@ -158,7 +158,7 @@ export const curriculumData: Module[] = [
         vocabulary: [
           {
             id: "khoobam",
-            en: "I'm good",
+            en: "I'm Good",
             fa: "خوبم",
             finglish: "Khoobam",
             phonetic: "khoo-BAHM",
@@ -166,7 +166,7 @@ export const curriculumData: Module[] = [
           },
           {
             id: "merci",
-            en: "Thank you",
+            en: "Thank You",
             fa: "مرسی",
             finglish: "Merci",
             phonetic: "mer-SEE",
@@ -213,17 +213,28 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "flashcard",
-            points: 1,
+            type: "quiz",
+            points: 2,
             data: {
-              vocabularyId: "merci"
+              prompt: "Complete the greeting pattern: Salam, ___ (Hello, How are you?)",
+              options: ["Chetori", "Khoobam", "Merci", "Baleh"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you respond to 'Chetori?' (How are you?)",
+              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
+              correct: 0
             }
           },
           {
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "baleh"
+              vocabularyId: "merci"
             }
           },
           {
@@ -237,8 +248,8 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete: Salam, ___ (How are you?)",
-              options: ["Chetori", "Khoobam", "Merci", "Baleh"],
+              prompt: "What does 'Khodafez' mean?",
+              options: ["Goodbye", "Hello", "Thank you", "Yes"],
               correct: 0
             }
           },
@@ -246,25 +257,25 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "How do you respond to 'Chetori?'",
-              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
+              prompt: "How do you say 'No, thank you' in Persian?",
+              options: ["Na, merci", "Baleh, merci", "Salam, merci", "Khoobam, merci"],
               correct: 0
             }
           },
           {
-            type: "input",
-            points: 2,
+            type: "flashcard",
+            points: 1,
             data: {
-              question: "Type the Persian word for 'Hello'",
-              answer: "Salam"
+              vocabularyId: "baleh"
             }
           },
           {
-            type: "input",
+            type: "quiz",
             points: 2,
             data: {
-              question: "How do you say 'Thank you' in Persian?",
-              answer: "Merci"
+              prompt: "How do you say 'I'm good, thank you' in Persian?",
+              options: ["Khoobam, merci", "Salam, merci", "Baleh, merci", "Na, merci"],
+              correct: 0
             }
           },
           {
@@ -272,15 +283,31 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               words: [
-                { id: "word1", text: "Khodafez", slotId: "slot1" },
-                { id: "word2", text: "Khosh Amadid", slotId: "slot2" },
-                { id: "word3", text: "Khoobam", slotId: "slot3" },
+                { id: "word1", text: "Baleh", slotId: "slot1" },
+                { id: "word2", text: "Na", slotId: "slot2" }
+              ],
+              slots: [
+                { id: "slot1", text: "Yes" },
+                { id: "slot2", text: "No" },
+                { id: "slot3", text: "Maybe" },
+                { id: "slot4", text: "Hello" }
+              ]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Khosh Amadid", slotId: "slot1" },
+                { id: "word2", text: "Chetori", slotId: "slot2" },
+                { id: "word3", text: "Khodafez", slotId: "slot3" },
                 { id: "word4", text: "Baleh", slotId: "slot4" }
               ],
               slots: [
-                { id: "slot1", text: "Goodbye" },
-                { id: "slot2", text: "Welcome" },
-                { id: "slot3", text: "I'm good" },
+                { id: "slot1", text: "Welcome" },
+                { id: "slot2", text: "How are you?" },
+                { id: "slot3", text: "Goodbye" },
                 { id: "slot4", text: "Yes" }
               ]
             }
@@ -293,9 +320,10 @@ export const curriculumData: Module[] = [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "chetori", text: "Chetori", translation: "How are you?" },
                 { id: "khoobam", text: "Khoobam", translation: "I'm good" },
-                { id: "merci", text: "Merci", translation: "Thank you" }
+                { id: "merci", text: "Merci", translation: "Thank you" },
+                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "chetori", "khoobam", "merci"],
+              targetWords: ["salam", "chetori", "khoobam", "merci", "khodafez"],
               title: "Ali's Polite Conversation",
               successMessage: "🎉 Perfect! You helped Ali have a polite conversation!",
               incorrectMessage: "Almost there—let's practice that conversation flow again!"
@@ -314,7 +342,7 @@ export const curriculumData: Module[] = [
         vocabulary: [
           {
             id: "man_hastam",
-            en: "I am",
+            en: "I Am",
             fa: "من هستم",
             finglish: "Man hastam",
             phonetic: "man has-TAHM",
@@ -322,7 +350,7 @@ export const curriculumData: Module[] = [
           },
           {
             id: "esme_man",
-            en: "My name is",
+            en: "My Name Is",
             fa: "اسم من",
             finglish: "Esme man",
             phonetic: "es-MEH man",
@@ -330,7 +358,7 @@ export const curriculumData: Module[] = [
           },
           {
             id: "shoma_chi",
-            en: "What about you?",
+            en: "What About You?",
             fa: "شما چی؟",
             finglish: "Shoma chi?",
             phonetic: "sho-MAH chee",
@@ -338,7 +366,7 @@ export const curriculumData: Module[] = [
           },
           {
             id: "az_koja",
-            en: "Where from?",
+            en: "Where From?",
             fa: "از کجا",
             finglish: "Az koja",
             phonetic: "az ko-JAH",

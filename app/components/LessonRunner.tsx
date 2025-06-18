@@ -41,12 +41,19 @@ export function LessonRunner({
   const [isInRemediation, setIsInRemediation] = useState(false) // Are we in remediation mode?
   const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
   const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
+  const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
   const stateRef = useRef<HTMLDivElement>(null);
 
   // Get all vocabulary for this lesson (including review vocabulary)
   const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
   const reviewVocab = VocabularyService.getReviewVocabulary(moduleId, lessonId);
-  const allVocab = [...currentLessonVocab, ...reviewVocab];
+  
+  // SYSTEMATIC FIX: For vocabulary extraction, we need access to ALL curriculum vocabulary
+  // This ensures that any vocabulary word mentioned in any quiz can be properly identified
+  // and remediated, regardless of lesson boundaries (following DEVELOPMENT_RULES.md)
+  const allCurriculumVocab = VocabularyService.getAllCurriculumVocabulary();
+  const allVocab = [...currentLessonVocab, ...reviewVocab]; // For lesson content
+  const allVocabForExtraction = allCurriculumVocab; // For vocabulary extraction
 
   // Setup event listener for going back
   useEffect(() => {
@@ -128,8 +135,21 @@ export function LessonRunner({
   }
 
   // Handle remediation when a word is answered incorrectly - queue it for after current step completion
-  const handleRemediationNeeded = (vocabularyId: string | undefined) => {
-    if (!vocabularyId) return; // Skip if no vocabulary ID
+  const handleRemediationNeeded = (dataOrId?: any) => {
+    if (!dataOrId) return; // Nothing provided
+
+    // Determine if we received a direct vocabulary ID (string) or full quiz step data (object)
+    let vocabularyId: string | undefined;
+
+    if (typeof dataOrId === 'string') {
+      // Direct vocabulary ID provided (e.g., from InputExercise)
+      vocabularyId = dataOrId;
+    } else {
+      // Assume object representing quiz step data – extract vocabulary intelligently
+      vocabularyId = VocabularyService.extractVocabularyFromQuiz(dataOrId, allVocabForExtraction);
+    }
+
+    if (!vocabularyId) return; // Skip if we can't identify the vocabulary
     
     // Add to pending remediation queue if not already there
     if (!pendingRemediation.includes(vocabularyId)) {
@@ -163,13 +183,41 @@ export function LessonRunner({
 
   // Find vocabulary item by ID across all available vocabulary
   const findVocabularyById = (vocabId: string): VocabularyItem | undefined => {
-    return allVocab.find(item => item.id === vocabId);
+    return VocabularyService.findVocabularyById(vocabId);
   };
 
   // Safe vocabulary lookup that handles undefined
   const safeFindVocabularyById = (vocabId: string | undefined): VocabularyItem | undefined => {
     if (!vocabId) return undefined;
     return findVocabularyById(vocabId);
+  };
+
+  // Helper function to generate stable quiz keys
+  const generateQuizKey = (step: QuizStep, attemptCounter: number) => {
+    const promptHash = (step.data.prompt || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    return `quiz-${idx}-${promptHash}-${attemptCounter}`;
+  };
+
+  // ENHANCED: Extract vocabulary ID from failed quiz step intelligently
+  const extractVocabularyFromFailedQuiz = (step: LessonStep): string | undefined => {
+    if (step.type === 'quiz') {
+      const quizStep = step as QuizStep;
+      return VocabularyService.extractVocabularyFromQuiz(quizStep.data, allVocabForExtraction);
+    }
+    
+    // For other step types, use existing logic
+    return getStepVocabularyId(step);
+  };
+
+  // DYNAMIC: Generate remediation quiz using VocabularyService
+  const generateRemediationQuiz = (vocabularyId: string): { prompt: string, options: { text: string, correct: boolean }[] } | null => {
+    const targetVocab = findVocabularyById(vocabularyId);
+    if (!targetVocab) return null;
+
+    const prompt = VocabularyService.generateQuizPrompt(targetVocab);
+    const options = VocabularyService.generateQuizOptions(targetVocab, allVocabForExtraction);
+
+    return { prompt, options };
   };
 
   // Get vocabularyId for current step if applicable
@@ -239,9 +287,14 @@ export function LessonRunner({
     } else {
       // Only advance if the answer was correct
       if (wasCorrect) {
+        // Reset quiz attempt counter when advancing to next step
+        setQuizAttemptCounter(0);
         next();
+      } else {
+        // Increment attempt counter to force new Quiz component instance
+        // This ensures clean state for retry attempts
+        setQuizAttemptCounter(prev => prev + 1);
       }
-      // If incorrect, don't advance - let user try again on same question
     }
   }
 
@@ -272,7 +325,15 @@ export function LessonRunner({
         </>
       );
     } else {
-      // Quiz step for remediation
+      // DYNAMIC Quiz step for remediation - completely systemized
+      const remediationQuizData = generateRemediationQuiz(currentWord);
+      
+      if (!remediationQuizData) {
+        // If we can't generate a quiz, skip this remediation
+        completeRemediation();
+        return null;
+      }
+
       return (
         <>
           <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
@@ -280,13 +341,14 @@ export function LessonRunner({
             <p className="text-sm text-orange-600 font-medium">🎯 Practice Again</p>
           </div>
           <Quiz
-            prompt={`What does "${vocabItem.finglish}" mean?`}
-            options={[vocabItem.en, "Goodbye", "Thank you", "Please"]}
-            correct={0}
+            key={`remediation-quiz-${currentWord}-${quizAttemptCounter}`}
+            prompt={remediationQuizData.prompt}
+            options={remediationQuizData.options}
+            correct={0} // This will be ignored since we're passing QuizOption objects
             points={2}
             onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
             onXpStart={createXpHandler('quiz')}
-            vocabularyId={vocabItem.id}
+            vocabularyId={currentWord}
             onRemediationNeeded={handleRemediationNeeded}
           />
         </>
@@ -337,17 +399,19 @@ export function LessonRunner({
         />
       ) : step.type === 'quiz' ? (
         <Quiz
+          key={generateQuizKey(step as QuizStep, quizAttemptCounter)}
           prompt={(step as QuizStep).data.prompt}
           options={(step as QuizStep).data.options}
           correct={(step as QuizStep).data.correct}
           points={step.points}
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createXpHandler('quiz')}
-          vocabularyId={getStepVocabularyId(step)}
-          onRemediationNeeded={handleRemediationNeeded}
+          vocabularyId={extractVocabularyFromFailedQuiz(step)}
+          onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as QuizStep).data)}
         />
       ) : step.type === 'input' ? (
         <InputExercise
+          key={`input-${idx}`}
           question={(step as InputStep).data.question}
           answer={(step as InputStep).data.answer}
           points={step.points}
@@ -358,6 +422,7 @@ export function LessonRunner({
         />
       ) : step.type === 'matching' ? (
         <MatchingGame
+          key={`matching-${idx}`}
           words={(step as MatchingStep).data.words}
           slots={(step as MatchingStep).data.slots}
           points={step.points}
@@ -366,6 +431,7 @@ export function LessonRunner({
         />
       ) : step.type === 'final' ? (
         <FinalChallenge
+          key={`final-${idx}`}
           words={(step as FinalStep).data.words}
           targetWords={(step as FinalStep).data.targetWords}
           title={(step as FinalStep).data.title}

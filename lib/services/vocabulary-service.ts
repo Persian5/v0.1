@@ -149,45 +149,13 @@ export class VocabularyService {
     // Get vocabulary items from all previous lessons that match review IDs
     const allVocab: VocabularyItem[] = [];
     
-    // For now, get from current module's previous lessons
-    // This is a simplified approach - in production you'd want to search across all lessons
     reviewIds.forEach((reviewId: string) => {
-      // Find the vocabulary item across all lessons in current module
-      // This is simplified - you might want to enhance this lookup
-      const vocab = this.findVocabularyById(reviewId, moduleId);
+      // Use the new public findVocabularyById method
+      const vocab = this.findVocabularyById(reviewId);
       if (vocab) allVocab.push(vocab);
     });
     
     return allVocab;
-  }
-
-  // Helper method to find vocabulary by ID across all lessons in curriculum
-  private static findVocabularyById(vocabId: string, moduleId: string): VocabularyItem | undefined {
-    const module = require('../config/curriculum').getModule(moduleId);
-    if (!module) return undefined;
-    
-    // Search through all lessons in the module for the vocabulary item
-    for (const lesson of module.lessons) {
-      if (lesson.vocabulary) {
-        const found = lesson.vocabulary.find((item: VocabularyItem) => item.id === vocabId);
-        if (found) return found;
-      }
-    }
-    
-    // If not found in current module, search across all modules
-    const allModules = require('../config/curriculum').getModules();
-    for (const mod of allModules) {
-      if (mod.id === moduleId) continue; // Skip current module, already searched
-      
-      for (const lesson of mod.lessons) {
-        if (lesson.vocabulary) {
-          const found = lesson.vocabulary.find((item: VocabularyItem) => item.id === vocabId);
-          if (found) return found;
-        }
-      }
-    }
-    
-    return undefined;
   }
 
   // Mark a lesson as completed with its vocabulary
@@ -228,5 +196,157 @@ export class VocabularyService {
     return lessonProgress.wordsLearned
       .map(wordId => vocabulary.find(item => item.id === wordId)?.finglish)
       .filter(Boolean) as string[];
+  }
+
+  // NEW METHODS FOR DYNAMIC REMEDIATION
+
+  // Find vocabulary item by ID across all curriculum (make public)
+  static findVocabularyById(vocabId: string): VocabularyItem | undefined {
+    const allModules = require('../config/curriculum').getModules();
+    
+    for (const module of allModules) {
+      for (const lesson of module.lessons) {
+        if (lesson.vocabulary) {
+          const found = lesson.vocabulary.find((item: VocabularyItem) => item.id === vocabId);
+          if (found) return found;
+        }
+      }
+    }
+    
+    return undefined;
+  }
+
+  // SYSTEMATIC METHOD: Get all vocabulary from entire curriculum
+  // This ensures vocabulary extraction can work for any word mentioned in any quiz,
+  // regardless of lesson boundaries (following DEVELOPMENT_RULES.md scalability)
+  static getAllCurriculumVocabulary(): VocabularyItem[] {
+    const allModules = require('../config/curriculum').getModules();
+    const allVocabulary: VocabularyItem[] = [];
+    
+    for (const module of allModules) {
+      for (const lesson of module.lessons) {
+        if (lesson.vocabulary) {
+          allVocabulary.push(...lesson.vocabulary);
+        }
+      }
+    }
+    
+    return allVocabulary;
+  }
+
+  // Generate contextual quiz options for a vocabulary item
+  static generateQuizOptions(targetVocab: VocabularyItem, allVocab: VocabularyItem[]): { text: string, correct: boolean }[] {
+    // Create correct answer
+    const options = [
+      { text: targetVocab.en, correct: true }
+    ];
+
+    // Generate distractors from same lesson's vocabulary (context-appropriate)
+    // Sort alphabetically to ensure deterministic order
+    const distractors = allVocab
+      .filter(vocab => vocab.id !== targetVocab.id) // Exclude target word
+      .map(vocab => vocab.en) // Get English translations
+      .filter(en => en !== targetVocab.en) // Avoid duplicates
+      .sort() // DETERMINISTIC: Sort alphabetically
+      .slice(0, 3); // Take first 3 as distractors
+
+    // Add distractors as incorrect options
+    distractors.forEach(distractor => {
+      options.push({ text: distractor, correct: false });
+    });
+
+    // If we don't have enough distractors from lesson context, add common ones
+    const commonDistractors = ["Goodbye", "Thank you", "Please", "Yes", "No", "Welcome"];
+    while (options.length < 4) {
+      const commonDistractor = commonDistractors.find(common => 
+        !options.some(opt => opt.text === common)
+      );
+      if (commonDistractor) {
+        options.push({ text: commonDistractor, correct: false });
+      } else {
+        break; // No more unique distractors available
+      }
+    }
+
+    return options;
+  }
+
+  // Generate contextual quiz prompt for a vocabulary item
+  static generateQuizPrompt(targetVocab: VocabularyItem): string {
+    return `What does "${targetVocab.finglish}" mean?`;
+  }
+
+  // Extract vocabulary ID from quiz step data (enhanced)
+  static extractVocabularyFromQuiz(quizData: any, allVocab: VocabularyItem[]): string | undefined {
+    const prompt = quizData.prompt?.toLowerCase() || '';
+    const options = quizData.options || [];
+    const correctIndex = quizData.correct || 0;
+
+    // PRIORITY 1: Check if correct answer matches any vocabulary (WHAT USER GOT WRONG)
+    // This should be primary since we want to remediate the concept they missed
+    if (typeof options[correctIndex] === 'string') {
+      const correctAnswer = options[correctIndex].toLowerCase();
+      for (const vocab of allVocab) {
+        if (vocab.en.toLowerCase() === correctAnswer || 
+            vocab.finglish.toLowerCase() === correctAnswer) {
+          return vocab.id;
+        }
+      }
+    }
+
+    // PRIORITY 2: Check if any vocabulary words are mentioned in prompt (CONTEXT VALIDATION)
+    // Use this for context when correct answer doesn't directly match vocabulary
+    for (const vocab of allVocab) {
+      // Pattern 1: Direct quotes - "What does 'Khodafez' mean?"
+      if (prompt.includes(`'${vocab.finglish.toLowerCase()}'`) || 
+          prompt.includes(`"${vocab.finglish.toLowerCase()}"`)) {
+        return vocab.id;
+      }
+      
+      // Pattern 2: English in quotes - "What does 'Goodbye' mean?"
+      if (prompt.includes(`'${vocab.en.toLowerCase()}'`) || 
+          prompt.includes(`"${vocab.en.toLowerCase()}"`)) {
+        return vocab.id;
+      }
+      
+      // Pattern 3: Complete/Fill patterns - "Complete: Salam, ___ Ali"
+      if (prompt.includes('complete') && 
+          (prompt.includes(vocab.finglish.toLowerCase()) || prompt.includes(vocab.en.toLowerCase()))) {
+        return vocab.id;
+      }
+      
+      // Pattern 4: "How do you say" patterns - "How do you say 'Thank you' in Persian?"
+      if (prompt.includes('how do you say') && 
+          (prompt.includes(`'${vocab.en.toLowerCase()}'`) || prompt.includes(`"${vocab.en.toLowerCase()}"`))) {
+        return vocab.id;
+      }
+      
+      // Pattern 5: Response patterns - "How do you respond to 'Chetori?'"
+      if (prompt.includes('respond to') && 
+          (prompt.includes(`'${vocab.finglish.toLowerCase()}'`) || prompt.includes(`"${vocab.finglish.toLowerCase()}"`))) {
+        return vocab.id;
+      }
+      
+      // Pattern 6: Fallback - any occurrence (less specific)
+      if (prompt.includes(vocab.finglish.toLowerCase()) || prompt.includes(vocab.en.toLowerCase())) {
+        return vocab.id;
+      }
+    }
+
+    // PRIORITY 3: Check if any vocabulary words appear in options (LOWEST PRIORITY)
+    // Only use this as last resort since options contain distractors
+    for (const vocab of allVocab) {
+      if (options.some((opt: any) => {
+        const optText = typeof opt === 'string' ? opt : opt.text;
+        return optText && (
+          optText.toLowerCase() === vocab.finglish.toLowerCase() || 
+          optText.toLowerCase() === vocab.en.toLowerCase()
+        );
+      })) {
+        return vocab.id;
+      }
+    }
+
+    return undefined;
   }
 } 

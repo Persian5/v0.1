@@ -83,6 +83,18 @@ export function InputExercise({
     setShowHint(prev => !prev);
   }
 
+  // Generate dynamic hint based on the answer
+  const generateHint = (answer: string): string => {
+    const cleanAnswer = answer.toLowerCase().trim();
+    if (cleanAnswer.length <= 2) {
+      return cleanAnswer; // For very short answers, show the whole thing
+    } else if (cleanAnswer.length <= 4) {
+      return cleanAnswer.substring(0, 2) + "..."; // Show first 2 characters
+    } else {
+      return cleanAnswer.substring(0, 3) + "..."; // Show first 3 characters
+    }
+  };
+
   return (
     <div className="w-full max-w-[90vw] sm:max-w-[80vw] mx-auto py-4">
       <div className="text-center mb-4">
@@ -167,7 +179,7 @@ export function InputExercise({
                 {showHint && (
                   <div className="px-4 pb-3 pt-1">
                     <p className="text-center text-green-700 font-medium">
-                      <span className="mr-1">📣</span> Starts with: "che..."
+                      <span className="mr-1">📣</span> Starts with: {generateHint(answer)}
                     </p>
                   </div>
                 )}
