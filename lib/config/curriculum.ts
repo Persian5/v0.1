@@ -333,58 +333,58 @@ export const curriculumData: Module[] = [
       },
       {
         id: "lesson3",
-        title: "Introducing Yourself and Asking Questions",
-        description: "Learn how to introduce yourself and ask basic questions",
+        title: "Basic Pronouns and Question Words",
+        description: "Master essential pronouns (I, You) and question words (What, Name)",
         emoji: "🧑‍💼",
         progress: 0,
         locked: false,
         reviewVocabulary: ["salam", "chetori", "khoobam", "merci"],
         vocabulary: [
           {
-            id: "man_hastam",
-            en: "I Am",
-            fa: "من هستم",
-            finglish: "Man hastam",
-            phonetic: "man has-TAHM",
+            id: "man",
+            en: "I / Me",
+            fa: "من",
+            finglish: "Man",
+            phonetic: "man",
             lessonId: "module1-lesson3"
           },
           {
-            id: "esme_man",
-            en: "My Name Is",
-            fa: "اسم من",
-            finglish: "Esme man",
-            phonetic: "es-MEH man",
+            id: "shoma",
+            en: "You",
+            fa: "شما",
+            finglish: "Shoma",
+            phonetic: "sho-MAH",
             lessonId: "module1-lesson3"
           },
           {
-            id: "shoma_chi",
-            en: "What About You?",
-            fa: "شما چی؟",
-            finglish: "Shoma chi?",
-            phonetic: "sho-MAH chee",
+            id: "esm",
+            en: "Name",
+            fa: "اسم",
+            finglish: "Esm",
+            phonetic: "esm",
             lessonId: "module1-lesson3"
           },
           {
-            id: "az_koja",
-            en: "Where From?",
-            fa: "از کجا",
-            finglish: "Az koja",
-            phonetic: "az ko-JAH",
+            id: "chi",
+            en: "What",
+            fa: "چی",
+            finglish: "Chi",
+            phonetic: "chee",
             lessonId: "module1-lesson3"
           }
         ],
         steps: [
           {
             type: "welcome",
-            title: "Introducing Yourself",
-            description: "Learn how to introduce yourself and ask questions about others in Persian.",
+            title: "Basic Pronouns & Question Words",
+            description: "Learn essential pronouns and question words that form the foundation of Persian conversation.",
             points: 0,
             data: {
               objectives: [
-                "Introduce yourself with your name",
-                "Ask others about themselves",
-                "Ask where someone is from",
-                "Build on previous greetings"
+                "Learn basic pronouns: I/Me and You",
+                "Use 'Name' and 'What' in conversations",
+                "Build simple sentences with basic words",
+                "Practice combining pronouns with greetings"
               ],
               lessonType: "introductions"
             }
@@ -393,7 +393,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "man_hastam"
+              vocabularyId: "man"
             }
           },
           {
@@ -401,7 +401,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "Complete: Salam, ___ Ali. (Hello, I am Ali)",
-              options: ["Man hastam", "Chetori", "Khoobam", "Merci"],
+              options: ["Man", "Chetori", "Khoobam", "Merci"],
               correct: 0
             }
           },
@@ -409,15 +409,15 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "esme_man"
+              vocabularyId: "shoma"
             }
           },
           {
             type: "input",
             points: 2,
             data: {
-              question: "How do you say 'My name is' in Persian?",
-              answer: "Esme man"
+              question: "How do you say 'You' in Persian?",
+              answer: "Shoma"
             }
           },
           {
@@ -425,7 +425,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "How do you respond to 'Chetori?' (Review from Lesson 2)",
-              options: ["Khoobam", "Salam", "Man hastam", "Esme man"],
+              options: ["Khoobam", "Salam", "Man", "Shoma"],
               correct: 0
             }
           },
@@ -433,22 +433,22 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "shoma_chi"
+              vocabularyId: "esm"
             }
           },
           {
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "az_koja"
+              vocabularyId: "chi"
             }
           },
           {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete: Esme man Ali. ___ (My name is Ali. What about you?)",
-              options: ["Shoma chi?", "Chetori", "Az koja", "Merci"],
+              prompt: "Complete: Esm Ali. ___ (My name is Ali. What about you?)",
+              options: ["Shoma", "Chetori", "Chi", "Merci"],
               correct: 0
             }
           },
@@ -465,16 +465,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               words: [
-                { id: "word1", text: "Man hastam", slotId: "slot1" },
-                { id: "word2", text: "Shoma chi?", slotId: "slot2" },
+                { id: "word1", text: "Man", slotId: "slot1" },
+                { id: "word2", text: "Shoma", slotId: "slot2" },
                 { id: "word3", text: "Merci", slotId: "slot3" },
-                { id: "word4", text: "Az koja", slotId: "slot4" }
+                { id: "word4", text: "Chi", slotId: "slot4" }
               ],
               slots: [
-                { id: "slot1", text: "I am" },
-                { id: "slot2", text: "What about you?" },
+                { id: "slot1", text: "I / Me" },
+                { id: "slot2", text: "You" },
                 { id: "slot3", text: "Thank you" },
-                { id: "slot4", text: "Where from?" }
+                { id: "slot4", text: "What" }
               ]
             }
           },
@@ -484,11 +484,11 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "man_hastam", text: "Man hastam", translation: "I am" },
-                { id: "esme_man", text: "Esme man", translation: "My name is" },
-                { id: "shoma_chi", text: "Shoma chi?", translation: "What about you?" }
+                { id: "man", text: "Man", translation: "I / Me" },
+                { id: "esm", text: "Esm", translation: "Name" },
+                { id: "shoma", text: "Shoma", translation: "You" }
               ],
-              targetWords: ["salam", "man_hastam", "esme_man", "shoma_chi"],
+              targetWords: ["salam", "man", "esm", "shoma"],
               title: "Ali Introduces Himself",
               successMessage: "🎉 Perfect! Ali can now introduce himself confidently!",
               incorrectMessage: "Almost there—let's practice that introduction again!"

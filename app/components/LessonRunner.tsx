@@ -289,7 +289,7 @@ export function LessonRunner({
       if (wasCorrect) {
         // Reset quiz attempt counter when advancing to next step
         setQuizAttemptCounter(0);
-        next();
+    next();
       } else {
         // Increment attempt counter to force new Quiz component instance
         // This ensures clean state for retry attempts
@@ -363,7 +363,7 @@ export function LessonRunner({
       {step.type === 'welcome' ? (
         <LessonIntro 
           title={(step as WelcomeStep).title} 
-          description={(step as WelcomeStep).description}
+          description={(step as WelcomeStep).description} 
           objectives={(step as WelcomeStep).data?.objectives}
           useSimpleLayout={false}
           objectiveEmojis={(step as WelcomeStep).title === "Basic Greetings" ? ["👋", "🤔", "🙏", "👋"] : ["😊", "🙏", "✅", "❌"]}
