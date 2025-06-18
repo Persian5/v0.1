@@ -1,5 +1,0 @@
-{ persian: "Khoobam", english: "I'm good", emoji: "😌" },
-{ persian: "Esme shoma chieh?", english: "What's your name?", emoji: "🧑‍💼" },
-{ persian: "Khodafez", english: "Goodbye", emoji: "👋" },
-{ persian: "Dooset Daram", english: "I love you", emoji: "❤️" },
-{ persian: "Chetori?", english: "How are you?", emoji: "🙂" }, 

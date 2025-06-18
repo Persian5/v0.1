@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
-import { XpAnimation } from "@/app/components/games/XpAnimation"
+import { XpAnimation } from "./XpAnimation"
 
 // Reusable success sound player that can be exported and used by other components
 export function playSuccessSound() {
