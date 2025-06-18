@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { XpAnimation } from "./XpAnimation"
 import { playSuccessSound } from "./Flashcard"
+import { VocabularyService } from "@/lib/services/vocabulary-service"
 
 export interface InputExerciseProps {
   question: string
@@ -12,6 +13,8 @@ export interface InputExerciseProps {
   points?: number
   onComplete: (correct: boolean) => void
   onXpStart?: () => void
+  vocabularyId?: string; // Optional: for tracking vocabulary performance
+  onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
 }
 
 export function InputExercise({ 
@@ -19,7 +22,9 @@ export function InputExercise({
   answer = "Chetori",
   points = 2,
   onComplete,
-  onXpStart
+  onXpStart,
+  vocabularyId,
+  onRemediationNeeded
 }: InputExerciseProps) {
   const [input, setInput] = useState("")
   const [showFeedback, setShowFeedback] = useState(false)
@@ -40,6 +45,19 @@ export function InputExercise({
     setIsCorrect(isAnswerCorrect)
     setShowFeedback(true)
 
+    // Track vocabulary performance if vocabularyId is provided
+    if (vocabularyId) {
+      if (isAnswerCorrect) {
+        VocabularyService.recordCorrectAnswer(vocabularyId);
+      } else {
+        VocabularyService.recordIncorrectAnswer(vocabularyId);
+        // Trigger remediation if callback provided
+        if (onRemediationNeeded) {
+          onRemediationNeeded(vocabularyId);
+        }
+      }
+    }
+
     if (isAnswerCorrect) {
       // Play success sound for correct answers
       playSuccessSound();
@@ -52,10 +70,11 @@ export function InputExercise({
       // Trigger XP animation for visual feedback
       setShowXp(true)
     } else {
-      // If incorrect, show feedback briefly and then reset
+      // If incorrect, show feedback briefly and reset for retry - don't advance
       setTimeout(() => {
         setShowFeedback(false);
         setInput("");
+        // Don't call onComplete for incorrect answers - let user try again
       }, 1500); // Reset after 1.5 seconds
     }
   }
@@ -78,7 +97,7 @@ export function InputExercise({
           onStart={undefined}
           onComplete={() => {
             setShowXp(false)  // reset for next use
-            onComplete(true)
+            onComplete(isCorrect)
           }}
         />
         

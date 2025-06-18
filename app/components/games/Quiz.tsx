@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { XpAnimation } from "./XpAnimation"
 import { playSuccessSound } from "./Flashcard"
+import { VocabularyService } from "@/lib/services/vocabulary-service"
 
 type QuizOption = {
   text: string;
@@ -17,6 +18,8 @@ export interface QuizProps {
   points?: number;
   onComplete: (correct: boolean) => void;
   onXpStart?: () => void;
+  vocabularyId?: string; // Optional: for tracking vocabulary performance
+  onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
 }
 
 export function Quiz({ 
@@ -25,12 +28,15 @@ export function Quiz({
   correct = 0,
   points = 2,
   onComplete,
-  onXpStart
+  onXpStart,
+  vocabularyId,
+  onRemediationNeeded
 }: QuizProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showXp, setShowXp] = useState(false)
   const [isDisabled, setIsDisabled] = useState(false)
+  const [isCorrectAnswer, setIsCorrectAnswer] = useState(false)
 
   // Convert string[] to QuizOption[] if needed
   const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
@@ -42,7 +48,23 @@ export function Quiz({
     setShowFeedback(true)
     setIsDisabled(true)
     
-    if (formattedOptions[index].correct) {
+    const isCorrect = formattedOptions[index].correct;
+    setIsCorrectAnswer(isCorrect);
+    
+    // Track vocabulary performance if vocabularyId is provided
+    if (vocabularyId) {
+      if (isCorrect) {
+        VocabularyService.recordCorrectAnswer(vocabularyId);
+      } else {
+        VocabularyService.recordIncorrectAnswer(vocabularyId);
+        // Trigger remediation if callback provided
+        if (onRemediationNeeded) {
+          onRemediationNeeded(vocabularyId);
+        }
+      }
+    }
+    
+    if (isCorrect) {
       // Play success sound when the correct answer is selected
       playSuccessSound();
       
@@ -54,10 +76,12 @@ export function Quiz({
       // Trigger XP animation for visual feedback
       setShowXp(true)
     } else {
+      // For incorrect answers, reset after showing feedback - don't advance
       setTimeout(() => {
         setShowFeedback(false)
         setSelectedOption(null)
         setIsDisabled(false)
+        // Don't call onComplete for incorrect answers - let user try again
       }, 700)
     }
   }
@@ -76,7 +100,7 @@ export function Quiz({
           onStart={undefined}
           onComplete={() => {
             setShowXp(false)  // reset for next use
-            onComplete(true)
+            onComplete(isCorrectAnswer)
           }}
         />
         

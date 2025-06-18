@@ -31,6 +31,7 @@ export interface Lesson {
   locked: boolean;
   steps: LessonStep[];
   vocabulary?: VocabularyItem[];  // Optional vocabulary bank for this lesson
+  reviewVocabulary?: string[];    // Vocabulary IDs from previous lessons to review
 }
 
 // Step types

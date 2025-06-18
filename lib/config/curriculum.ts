@@ -154,6 +154,7 @@ export const curriculumData: Module[] = [
         emoji: "🙏",
         progress: 0,
         locked: false,
+        reviewVocabulary: ["salam", "chetori"],
         vocabulary: [
           {
             id: "khoobam",
@@ -198,12 +199,10 @@ export const curriculumData: Module[] = [
               objectives: [
                 "Respond when someone asks how you are",
                 "Say thank you properly in Persian",
-                "Answer yes and no questions confidently", 
-                "Use polite responses in conversations"
+                "Answer yes and no questions confidently",
+                "Build simple conversations using greetings"
               ],
-              lessonType: "greetings",
-              sectionTitle: "Essential Politeness Skills",
-              sectionDescription: "These four key responses will help you navigate everyday Persian conversations with confidence and cultural awareness."
+              lessonType: "politeness"
             }
           },
           {
@@ -214,19 +213,50 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "quiz",
-            points: 2,
+            type: "flashcard",
+            points: 1,
             data: {
-              prompt: "What does 'Khoobam' mean?",
-              options: ["I'm good", "Thank you", "Yes", "No"],
-              correct: 0
+              vocabularyId: "merci"
             }
           },
           {
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "merci"
+              vocabularyId: "baleh"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "na"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Complete: Salam, ___ (How are you?)",
+              options: ["Chetori", "Khoobam", "Merci", "Baleh"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you respond to 'Chetori?'",
+              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the Persian word for 'Hello'",
+              answer: "Salam"
             }
           },
           {
@@ -238,51 +268,20 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "baleh"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'Yes' in Persian?",
-              options: ["Na", "Merci", "Baleh", "Khoobam"],
-              correct: 2
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "na"
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'No' in Persian?",
-              answer: "Na"
-            }
-          },
-          {
             type: "matching",
             points: 3,
             data: {
               words: [
-                { id: "word1", text: "Khoobam", slotId: "slot1" },
-                { id: "word2", text: "Merci", slotId: "slot2" },
-                { id: "word3", text: "Baleh", slotId: "slot3" },
-                { id: "word4", text: "Na", slotId: "slot4" }
+                { id: "word1", text: "Khodafez", slotId: "slot1" },
+                { id: "word2", text: "Khosh Amadid", slotId: "slot2" },
+                { id: "word3", text: "Khoobam", slotId: "slot3" },
+                { id: "word4", text: "Baleh", slotId: "slot4" }
               ],
               slots: [
-                { id: "slot1", text: "I'm good" },
-                { id: "slot2", text: "Thank you" },
-                { id: "slot3", text: "Yes" },
-                { id: "slot4", text: "No" }
+                { id: "slot1", text: "Goodbye" },
+                { id: "slot2", text: "Welcome" },
+                { id: "slot3", text: "I'm good" },
+                { id: "slot4", text: "Yes" }
               ]
             }
           },
@@ -291,15 +290,15 @@ export const curriculumData: Module[] = [
             points: 4,
             data: {
               words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "chetori", text: "Chetori", translation: "How are you?" },
                 { id: "khoobam", text: "Khoobam", translation: "I'm good" },
-                { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "baleh", text: "Baleh", translation: "Yes" },
-                { id: "na", text: "Na", translation: "No" }
+                { id: "merci", text: "Merci", translation: "Thank you" }
               ],
-              targetWords: ["khoobam", "merci", "baleh", "na"],
-              title: "Polite Response Challenge",
-              successMessage: "🌟 Perfect! Ali's politeness will take him far in Persian culture!",
-              incorrectMessage: "Close! Let's try that polite response sequence again."
+              targetWords: ["salam", "chetori", "khoobam", "merci"],
+              title: "Ali's Polite Conversation",
+              successMessage: "🎉 Perfect! You helped Ali have a polite conversation!",
+              incorrectMessage: "Almost there—let's practice that conversation flow again!"
             }
           }
         ]
@@ -310,8 +309,164 @@ export const curriculumData: Module[] = [
         description: "Learn how to introduce yourself and ask basic questions",
         emoji: "🧑‍💼",
         progress: 0,
-        locked: true,
-        steps: []
+        locked: false,
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci"],
+        vocabulary: [
+          {
+            id: "man_hastam",
+            en: "I am",
+            fa: "من هستم",
+            finglish: "Man hastam",
+            phonetic: "man has-TAHM",
+            lessonId: "module1-lesson3"
+          },
+          {
+            id: "esme_man",
+            en: "My name is",
+            fa: "اسم من",
+            finglish: "Esme man",
+            phonetic: "es-MEH man",
+            lessonId: "module1-lesson3"
+          },
+          {
+            id: "shoma_chi",
+            en: "What about you?",
+            fa: "شما چی؟",
+            finglish: "Shoma chi?",
+            phonetic: "sho-MAH chee",
+            lessonId: "module1-lesson3"
+          },
+          {
+            id: "az_koja",
+            en: "Where from?",
+            fa: "از کجا",
+            finglish: "Az koja",
+            phonetic: "az ko-JAH",
+            lessonId: "module1-lesson3"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Introducing Yourself",
+            description: "Learn how to introduce yourself and ask questions about others in Persian.",
+            points: 0,
+            data: {
+              objectives: [
+                "Introduce yourself with your name",
+                "Ask others about themselves",
+                "Ask where someone is from",
+                "Build on previous greetings"
+              ],
+              lessonType: "introductions"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "man_hastam"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Complete: Salam, ___ Ali. (Hello, I am Ali)",
+              options: ["Man hastam", "Chetori", "Khoobam", "Merci"],
+              correct: 0
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "esme_man"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'My name is' in Persian?",
+              answer: "Esme man"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you respond to 'Chetori?' (Review from Lesson 2)",
+              options: ["Khoobam", "Salam", "Man hastam", "Esme man"],
+              correct: 0
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "shoma_chi"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "az_koja"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Complete: Esme man Ali. ___ (My name is Ali. What about you?)",
+              options: ["Shoma chi?", "Chetori", "Az koja", "Merci"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the Persian greeting from Lesson 1",
+              answer: "Salam"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Man hastam", slotId: "slot1" },
+                { id: "word2", text: "Shoma chi?", slotId: "slot2" },
+                { id: "word3", text: "Merci", slotId: "slot3" },
+                { id: "word4", text: "Az koja", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "I am" },
+                { id: "slot2", text: "What about you?" },
+                { id: "slot3", text: "Thank you" },
+                { id: "slot4", text: "Where from?" }
+              ]
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "man_hastam", text: "Man hastam", translation: "I am" },
+                { id: "esme_man", text: "Esme man", translation: "My name is" },
+                { id: "shoma_chi", text: "Shoma chi?", translation: "What about you?" }
+              ],
+              targetWords: ["salam", "man_hastam", "esme_man", "shoma_chi"],
+              title: "Ali Introduces Himself",
+              successMessage: "🎉 Perfect! Ali can now introduce himself confidently!",
+              incorrectMessage: "Almost there—let's practice that introduction again!"
+            }
+          }
+        ]
       },
       {
         id: "lesson4",

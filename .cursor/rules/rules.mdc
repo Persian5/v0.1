@@ -9,9 +9,10 @@ alwaysApply: true
 4) Call out unclear logic or messy architecture. - Don’t assume the code is correct — flag any architectural red flags or inconsistencies.
 5) All outputs must be modular, scalable, and production-quality. - Avoid any hardcoded logic or one-off solutions.
 6) Highlight anything that will break or slow down future scaling. - If there’s a long-term risk (tech debt, tight coupling, etc.), always say so.
+7) ALWAYS ASK ME CLARIFYING QUESTIONS IF YOU ARE EVEN 0.01% UNSURE ABOUT SOMETHING
 
 **PROJECT-SPECIFIC RULES:**
-7) This is a Persian language learning app (waitlist project) - always consider cultural authenticity and diaspora user experience.
+7) This is a Persian language learning app (fun way to learn conversational Persian-phonetic) - always consider cultural authenticity and diaspora user experience.
 8) NEVER suggest hardcoded lesson paths (e.g., /modules/module1/lesson1) - use dynamic routing through services.
 9) ALL data operations must go through service layer (XpService, LessonProgressService, VocabularyService) - never direct localStorage calls.
 10) ALL lesson content must live in lib/config/curriculum.ts - never duplicate content in components.

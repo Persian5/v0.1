@@ -5,9 +5,10 @@ import { InputExercise } from '@/app/components/games/InputExercise'
 import { MatchingGame } from '@/app/components/games/MatchingGame'
 import { FinalChallenge } from '@/app/components/games/FinalChallenge'
 import { LessonIntro } from '@/app/components/games/WelcomeIntro'
-import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep } from '@/lib/types'
+import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, VocabularyItem } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
+import { VocabularyService } from '@/lib/services/vocabulary-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 
 interface LessonRunnerProps {
@@ -38,7 +39,16 @@ export function LessonRunner({
   const [idx, setIdx] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false) // For flashcard
   const [showContinue, setShowContinue] = useState(false) // For flashcard
+  const [remediationQueue, setRemediationQueue] = useState<string[]>([]) // Words needing remediation
+  const [isInRemediation, setIsInRemediation] = useState(false) // Are we in remediation mode?
+  const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
+  const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
   const stateRef = useRef<HTMLDivElement>(null);
+
+  // Get all vocabulary for this lesson (including review vocabulary)
+  const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
+  const reviewVocab = VocabularyService.getReviewVocabulary(moduleId, lessonId);
+  const allVocab = [...currentLessonVocab, ...reviewVocab];
 
   // Setup event listener for going back
   useEffect(() => {
@@ -47,6 +57,9 @@ export function LessonRunner({
       setIdx(stepIndex);
       setIsFlipped(false);
       setShowContinue(false);
+      setIsInRemediation(false);
+      setRemediationQueue([]);
+      setPendingRemediation([]);
     };
 
     const stateEl = stateRef.current;
@@ -63,20 +76,20 @@ export function LessonRunner({
 
   // Update progress when step changes
   useEffect(() => {
-    if (onProgressChange) {
+    if (onProgressChange && !isInRemediation) {
       // Calculate progress based on current step index
       const progressValue = Math.min(100, Math.round((idx / steps.length) * 100));
       onProgressChange(progressValue);
     }
     
     // Update current view type
-    if (onViewChange && idx < steps.length) {
+    if (onViewChange && idx < steps.length && !isInRemediation) {
       onViewChange(steps[idx].type);
     }
-  }, [idx, steps.length, onProgressChange, onViewChange, steps]);
+  }, [idx, steps.length, onProgressChange, onViewChange, steps, isInRemediation]);
 
   // If we've gone through all steps, show completion
-  if (idx >= steps.length) {
+  if (idx >= steps.length && !isInRemediation) {
     // Mark lesson as completed when all steps are finished
     LessonProgressService.markLessonCompleted(moduleId, lessonId);
     
@@ -99,15 +112,116 @@ export function LessonRunner({
 
   const next = () => {
     // Save current state before moving to next step
-    if (onSaveState) {
+    if (onSaveState && !isInRemediation) {
       onSaveState({
         progress: progress || 0,
         currentStep: idx
       });
     }
     
+    // Check if we have pending remediation to start AFTER user got current question right
+    if (pendingRemediation.length > 0 && !isInRemediation) {
+      console.log('User got question correct, now starting pending remediation for:', pendingRemediation);
+      setRemediationQueue([...pendingRemediation]);
+      setPendingRemediation([]);
+      setIsInRemediation(true);
+      setRemediationStep('flashcard');
+      return; // Don't advance step, start remediation
+    }
+    
     setIdx(i => i + 1);
   }
+
+  // Handle remediation when a word is answered incorrectly - queue it for after current step completion
+  const handleRemediationNeeded = (vocabularyId: string | undefined) => {
+    if (!vocabularyId) return; // Skip if no vocabulary ID
+    
+    console.log(`Remediation needed for word: ${vocabularyId} - adding to pending queue for after user gets current question correct`);
+    
+    // Add to pending remediation queue if not already there
+    if (!pendingRemediation.includes(vocabularyId)) {
+      setPendingRemediation(prev => [...prev, vocabularyId]);
+    }
+    
+    // Don't start remediation now - wait until user gets current question correct
+  };
+
+  // Complete current remediation and continue to next lesson step
+  const completeRemediation = () => {
+    if (remediationStep === 'flashcard') {
+      // Move to quiz step
+      setRemediationStep('quiz');
+      setIsFlipped(false);
+      setShowContinue(false);
+    } else {
+      // Quiz completed, remove from queue and continue
+      const currentWord = remediationQueue[0];
+      setRemediationQueue(prev => prev.slice(1));
+      
+      if (remediationQueue.length <= 1) {
+        // No more words to remediate, advance to next lesson step
+        setIsInRemediation(false);
+        setRemediationStep('flashcard');
+        setIdx(i => i + 1);
+      } else {
+        // More words to remediate, start with next word
+        setRemediationStep('flashcard');
+        setIsFlipped(false);
+        setShowContinue(false);
+      }
+    }
+  };
+
+  // Find vocabulary item by ID across all available vocabulary
+  const findVocabularyById = (vocabId: string): VocabularyItem | undefined => {
+    return allVocab.find(item => item.id === vocabId);
+  };
+
+  // Safe vocabulary lookup that handles undefined
+  const safeFindVocabularyById = (vocabId: string | undefined): VocabularyItem | undefined => {
+    if (!vocabId) return undefined;
+    return findVocabularyById(vocabId);
+  };
+
+  // Get vocabularyId for current step if applicable
+  const getStepVocabularyId = (step: LessonStep): string | undefined => {
+    if (step.type === 'flashcard') {
+      return (step as FlashcardStep).data.vocabularyId;
+    }
+    
+    // For quiz steps, try to extract vocabulary ID from prompt or content
+    if (step.type === 'quiz') {
+      const quizStep = step as QuizStep;
+      const prompt = quizStep.data.prompt.toLowerCase();
+      
+      // Look for vocabulary words mentioned in the prompt
+      for (const vocab of allVocab) {
+        if (prompt.includes(vocab.finglish.toLowerCase()) || 
+            prompt.includes(vocab.en.toLowerCase()) ||
+            quizStep.data.options.some(opt => 
+              typeof opt === 'string' && 
+              (opt.toLowerCase().includes(vocab.finglish.toLowerCase()) || 
+               opt.toLowerCase().includes(vocab.en.toLowerCase()))
+            )) {
+          return vocab.id;
+        }
+      }
+    }
+    
+    // For input steps, match answer with vocabulary
+    if (step.type === 'input') {
+      const inputStep = step as InputStep;
+      const answer = inputStep.data.answer.toLowerCase();
+      
+      for (const vocab of allVocab) {
+        if (vocab.finglish.toLowerCase() === answer || vocab.en.toLowerCase() === answer) {
+          return vocab.id;
+        }
+      }
+    }
+    
+    return undefined;
+  };
 
   // Create activity-specific XP handlers using the XP service
   const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final') => {
@@ -123,16 +237,25 @@ export function LessonRunner({
       // Directly add XP amount instead of doing math with current total
       addXp(xpReward.amount, xpReward.source, {
         activityType,
-        stepIndex: idx
+        stepIndex: idx,
+        isRemediation: isInRemediation
       });
     };
   };
   
   // Generic handler for all components except Flashcard
-  const handleItemComplete = () => {
-    // Don't award XP here - it's already handled in each component via onXpStart
-    // Just advance to next step
-    next();
+  const handleItemComplete = (wasCorrect: boolean = true) => {
+    console.log('handleItemComplete called, isInRemediation:', isInRemediation, 'wasCorrect:', wasCorrect);
+    
+    if (isInRemediation) {
+      completeRemediation();
+    } else {
+      // Only advance if the answer was correct
+      if (wasCorrect) {
+        next();
+      }
+      // If incorrect, don't advance - let user try again on same question
+    }
   }
 
   // Flashcard specific handlers
@@ -144,12 +267,68 @@ export function LessonRunner({
   }
 
   const handleFlashcardContinue = () => {
-    // Don't award XP here - it's already handled in the Flashcard component via onXpStart
-    // Just advance to the next step
-    next();
+    console.log('handleFlashcardContinue called, isInRemediation:', isInRemediation);
+    
+    if (isInRemediation) {
+      completeRemediation();
+    } else {
+      next();
+    }
     // Reset flashcard state for next time we see a flashcard
     setIsFlipped(false);
     setShowContinue(false);
+  }
+
+  // Render remediation content
+  if (isInRemediation && remediationQueue.length > 0) {
+    const currentWord = remediationQueue[0];
+    const vocabItem = findVocabularyById(currentWord);
+    
+    if (!vocabItem) {
+      // If vocabulary item not found, skip remediation
+      setIsInRemediation(false);
+      return null;
+    }
+
+    if (remediationStep === 'flashcard') {
+      return (
+        <>
+          <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
+          <div className="mb-4 text-center">
+            <p className="text-sm text-orange-600 font-medium">📚 Quick Review</p>
+          </div>
+          <Flashcard
+            vocabularyItem={vocabItem}
+            points={1}
+            onContinue={handleFlashcardContinue}
+            isFlipped={isFlipped}
+            onFlip={handleFlip}
+            showContinueButton={showContinue}
+            onXpStart={createXpHandler('flashcard')}
+          />
+        </>
+      );
+    } else {
+      // Quiz step for remediation
+      return (
+        <>
+          <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
+          <div className="mb-4 text-center">
+            <p className="text-sm text-orange-600 font-medium">🎯 Practice Again</p>
+          </div>
+          <Quiz
+            prompt={`What does "${vocabItem.finglish}" mean?`}
+            options={[vocabItem.en, "Goodbye", "Thank you", "Please"]}
+            correct={0}
+            points={2}
+            onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
+            onXpStart={createXpHandler('quiz')}
+            vocabularyId={vocabItem.id}
+            onRemediationNeeded={handleRemediationNeeded}
+          />
+        </>
+      );
+    }
   }
 
   return (
@@ -185,9 +364,7 @@ export function LessonRunner({
           back={(step as FlashcardStep).data.back}
           vocabularyItem={
             (step as FlashcardStep).data.vocabularyId 
-              ? getLessonVocabulary(moduleId, lessonId).find(
-                  vocab => vocab.id === (step as FlashcardStep).data.vocabularyId
-                )
+              ? safeFindVocabularyById((step as FlashcardStep).data.vocabularyId)
               : undefined
           }
           points={step.points}
@@ -203,16 +380,20 @@ export function LessonRunner({
           options={(step as QuizStep).data.options}
           correct={(step as QuizStep).data.correct}
           points={step.points}
-          onComplete={handleItemComplete}
+          onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createXpHandler('quiz')}
+          vocabularyId={getStepVocabularyId(step)}
+          onRemediationNeeded={handleRemediationNeeded}
         />
       ) : step.type === 'input' ? (
         <InputExercise
           question={(step as InputStep).data.question}
           answer={(step as InputStep).data.answer}
           points={step.points}
-          onComplete={handleItemComplete}
+          onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createXpHandler('input')}
+          vocabularyId={getStepVocabularyId(step)}
+          onRemediationNeeded={handleRemediationNeeded}
         />
       ) : step.type === 'matching' ? (
         <MatchingGame

@@ -48,23 +48,19 @@
 - **Authentic Representation**: Respectful, nuanced portrayal of Iranian culture
 
 ### **Lesson Development Approach**
-- **ChatGPT Collaboration**: Uses AI for content generation with human curation
 - **Scenario-Based**: Prefers real-world situations over academic exercises
 - **Progressive Building**: Each lesson builds on previous vocabulary
 - **Variety Focus**: No two lessons should feel identical
 
 ### **Content Quality Standards**
-- **4-6 words per lesson**: Focused, not overwhelming
+- **4-6 NEW words per lesson**: Focused, not overwhelming
 - **Cultural Context**: Every word/phrase has real-world relevance
 - **Engagement Priority**: Fun and interesting over strictly educational
-- **Progressive Difficulty**: Lessons should get harder, not stay easy
+- **Progressive Difficulty**: Lessons should get slightly harder, not stay easy
 
----
-
-## 🚀 **Business Mindset**
 
 ### **Launch Timeline**
-- **July 7 Target**: Hard deadline with 200-person waitlist waiting
+- **July 7 Target**: Hard deadline with hundreds person waitlist waiting
 - **MVP Philosophy**: Get to market with core features, iterate based on feedback
 - **Revenue Priority**: Freemium model ($4.99/month) must work on day one
 - **Growth Focus**: Platform that can scale to thousands of users
