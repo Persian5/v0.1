@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Star, ChevronLeft, Home } from "lucide-react"
+import { Star, ChevronLeft } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
@@ -14,6 +14,7 @@ import { LessonRunner } from "@/app/components/LessonRunner"
 import CompletionPage from "./completion/page"
 import SummaryPage from "./summary/page"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 export default function LessonPage() {
   const params = useParams()

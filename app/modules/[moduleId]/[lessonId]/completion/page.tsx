@@ -1,12 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Medal, Star, Sparkles, ArrowRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import confetti from "canvas-confetti"
-import { useParams, useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 interface CompletionPageProps {

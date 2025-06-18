@@ -27,8 +27,6 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
-  // Add proper handling for static export
-  trailingSlash: false,
 }
 
 if (userConfig) {
