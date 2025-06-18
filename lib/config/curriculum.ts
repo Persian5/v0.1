@@ -1,4 +1,4 @@
-import { Module, LessonStep } from "../types";
+import { Module, LessonStep, VocabularyItem } from "../types";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -18,6 +18,40 @@ export const curriculumData: Module[] = [
         emoji: "👋",
         progress: 0,
         locked: false,
+        vocabulary: [
+          {
+            id: "salam",
+            en: "Hello",
+            fa: "سلام",
+            finglish: "Salam",
+            phonetic: "sah-LUHM",
+            lessonId: "module1-lesson1"
+          },
+          {
+            id: "chetori",
+            en: "How are you?",
+            fa: "چطوری",
+            finglish: "Chetori",
+            phonetic: "che-TOH-ree",
+            lessonId: "module1-lesson1"
+          },
+          {
+            id: "khosh_amadid",
+            en: "Welcome",
+            fa: "خوش آمدید",
+            finglish: "Khosh Amadid",
+            phonetic: "khosh uh-mah-DEED",
+            lessonId: "module1-lesson1"
+          },
+          {
+            id: "khodafez",
+            en: "Goodbye",
+            fa: "خداحافظ",
+            finglish: "Khodafez",
+            phonetic: "kho-DUH-fez",
+            lessonId: "module1-lesson1"
+          }
+        ],
         steps: [
           {
             type: "welcome",
@@ -38,8 +72,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "👋 Hello",
-              back: "Salam"
+              vocabularyId: "salam"
             }
           },
           {
@@ -55,8 +88,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "🤔 How are you?",
-              back: "Chetori"
+              vocabularyId: "chetori"
             }
           },
           {
@@ -71,8 +103,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "🤗 Welcome",
-              back: "Khosh Amadid"
+              vocabularyId: "khosh_amadid"
             }
           },
           {
@@ -95,8 +126,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "🚪 Goodbye",
-              back: "Khodafez"
+              vocabularyId: "khodafez"
             }
           },
           {
@@ -124,6 +154,40 @@ export const curriculumData: Module[] = [
         emoji: "🙏",
         progress: 0,
         locked: false,
+        vocabulary: [
+          {
+            id: "khoobam",
+            en: "I'm good",
+            fa: "خوبم",
+            finglish: "Khoobam",
+            phonetic: "khoo-BAHM",
+            lessonId: "module1-lesson2"
+          },
+          {
+            id: "merci",
+            en: "Thank you",
+            fa: "مرسی",
+            finglish: "Merci",
+            phonetic: "mer-SEE",
+            lessonId: "module1-lesson2"
+          },
+          {
+            id: "baleh",
+            en: "Yes",
+            fa: "بله",
+            finglish: "Baleh",
+            phonetic: "bah-LEH",
+            lessonId: "module1-lesson2"
+          },
+          {
+            id: "na",
+            en: "No",
+            fa: "نه",
+            finglish: "Na",
+            phonetic: "nah",
+            lessonId: "module1-lesson2"
+          }
+        ],
         steps: [
           {
             type: "welcome",
@@ -146,8 +210,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "😊 I'm good",
-              back: "Khoobam"
+              vocabularyId: "khoobam"
             }
           },
           {
@@ -163,8 +226,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "🙏 Thank you",
-              back: "Merci"
+              vocabularyId: "merci"
             }
           },
           {
@@ -179,8 +241,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "✅ Yes",
-              back: "Baleh"
+              vocabularyId: "baleh"
             }
           },
           {
@@ -196,8 +257,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              front: "❌ No",
-              back: "Na"
+              vocabularyId: "na"
             }
           },
           {
@@ -393,4 +453,10 @@ export function getFlashcards(moduleId: string, lessonId: string) {
     .filter(step => step.type === 'flashcard')
     .map(step => (step.type === 'flashcard' ? step.data : null))
     .filter(Boolean);
+}
+
+// Get vocabulary for a specific lesson
+export function getLessonVocabulary(moduleId: string, lessonId: string): VocabularyItem[] {
+  const lesson = getLesson(moduleId, lessonId);
+  return lesson?.vocabulary || [];
 } 

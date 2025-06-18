@@ -8,17 +8,21 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface SummaryPageProps {
-  learnedWords?: string[];
+  learnedWords: string[];
   xp?: number;
   resetLesson?: () => void;
 }
 
 export default function SummaryPage({
-  learnedWords = ["Salam", "Chetori", "Khosh Amadid", "Khodafez"],
+  learnedWords,
   xp = 0,
   resetLesson
 }: SummaryPageProps) {
   const router = useRouter()
+
+  // Safety check for empty learned words
+  const wordsToShow = learnedWords || [];
+  const wordCount = wordsToShow.length;
 
   // Function to navigate to pricing page
   const navigateToPricing = () => {
@@ -49,9 +53,9 @@ export default function SummaryPage({
                   <Check className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-medium">Learned {learnedWords.length} essential Persian words</p>
+                  <p className="font-medium">Learned {wordCount} essential Persian words</p>
                   <ul className="grid grid-cols-2 gap-2 mt-2">
-                    {learnedWords.map((word, index) => (
+                    {wordsToShow.map((word, index) => (
                       <li key={index} className="bg-primary/5 p-2 rounded">{word}</li>
                     ))}
                   </ul>

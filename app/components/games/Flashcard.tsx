@@ -16,8 +16,17 @@ export function playSuccessSound() {
 }
 
 interface FlashcardProps {
-  front: string
-  back: string
+  // Legacy format
+  front?: string
+  back?: string
+  // New vocabulary-based format
+  vocabularyItem?: {
+    id: string;
+    en: string;
+    finglish: string;
+    phonetic: string;
+    audio?: string;
+  }
   points?: number
   onContinue: () => void
   onXpStart?: () => void
@@ -67,6 +76,7 @@ function getPronunciation(text: string): string {
 export function Flashcard({
   front,
   back,
+  vocabularyItem,
   points = 2,
   onContinue,
   onXpStart,
@@ -91,7 +101,7 @@ export function Flashcard({
     if (!componentMountedRef.current) {
       componentMountedRef.current = true;
       
-      const audioFile = getAudioFilename(front);
+      const audioFile = getAudioFilename(front || "");
       
       if (audioFile) {
         const audio = new Audio(`/audio/${audioFile}`);
@@ -110,8 +120,8 @@ export function Flashcard({
     // Only play audio if the flip state has actually changed
     if (isFlipped !== lastFlipState) {
       const audioFile = isFlipped 
-        ? getAudioFilename(back) 
-        : getAudioFilename(front);
+        ? getAudioFilename(back || "") 
+        : getAudioFilename(front || "");
       
       if (audioFile) {
         // Create a new audio instance each time to ensure it plays
@@ -210,7 +220,7 @@ export function Flashcard({
               }`}
             >
               <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center px-2">
-                {front}
+                {front || vocabularyItem?.en}
               </h2>
               <p className="text-xs xs:text-sm text-muted-foreground mt-1 sm:mt-2">Click to flip</p>
             </div>
@@ -222,7 +232,7 @@ export function Flashcard({
               }`}
             >
               <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center px-2">
-                {back}
+                {back || vocabularyItem?.finglish}
               </h2>
               <p className="text-xs xs:text-sm text-muted-foreground mt-1 sm:mt-2">Click to flip back</p>
             </div>
@@ -237,7 +247,7 @@ export function Flashcard({
                 <div className="flex items-center justify-center gap-2">
                   <span role="img" aria-label="pronunciation" className="text-base sm:text-lg">🗣️</span>
                   <p className="text-sm sm:text-base text-primary/90 font-semibold">
-                    {getPronunciation(back)}
+                    {vocabularyItem?.phonetic || getPronunciation(back || "")}
                   </p>
                 </div>
               </div>

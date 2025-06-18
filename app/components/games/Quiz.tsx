@@ -20,13 +20,8 @@ export interface QuizProps {
 }
 
 export function Quiz({ 
-  prompt = "Ali smiles and says 'Hello'. What's the right Persian word?",
-  options = [
-    { text: "Salam", correct: true },
-    { text: "Khodafez", correct: false },
-    { text: "Shab Bekheir", correct: false },
-    { text: "Chetori", correct: false },
-  ],
+  prompt,
+  options,
   correct = 0,
   points = 2,
   onComplete,

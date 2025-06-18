@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { Star, ChevronLeft } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
+import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { getLesson, getModule, getLessonSteps } from "@/lib/config/curriculum"
 import { LessonRunner } from "@/app/components/LessonRunner"
 import CompletionPage from "./completion/page"
@@ -87,19 +88,8 @@ export default function LessonPage() {
 
   // Get the list of words learned in this lesson
   const getLearnedWords = () => {
-    const steps = getLessonSteps(moduleId, lessonId);
-    const words: string[] = [];
-    
-    steps.forEach(step => {
-      if (step.type === 'flashcard' && step.data?.back) {
-        const back = step.data.back;
-        // Remove emoji if present
-        const cleaned = typeof back === 'string' ? back.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim() : '';
-        words.push(cleaned);
-      }
-    });
-    
-    return words;
+    // Use vocabulary service to get words from this specific lesson
+    return VocabularyService.getLearnedWordsFromLesson(moduleId, lessonId);
   };
 
   return (
@@ -167,6 +157,8 @@ export default function LessonPage() {
               /* Always drive from config */
               <LessonRunner 
                 steps={getLessonSteps(moduleId, lessonId)} 
+                moduleId={moduleId}
+                lessonId={lessonId}
                 xp={xp}
                 addXp={addXp}
                 progress={progress}

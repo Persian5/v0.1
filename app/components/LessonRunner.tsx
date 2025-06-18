@@ -7,9 +7,12 @@ import { FinalChallenge } from '@/app/components/games/FinalChallenge'
 import { LessonIntro } from '@/app/components/games/WelcomeIntro'
 import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
+import { getLessonVocabulary } from '@/lib/config/curriculum'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
+  moduleId: string;
+  lessonId: string;
   xp: number;
   addXp: (amount: number, source: string, metadata?: any) => void;
   progress?: number;
@@ -21,6 +24,8 @@ interface LessonRunnerProps {
 
 export function LessonRunner({ 
   steps, 
+  moduleId, 
+  lessonId, 
   xp, 
   addXp, 
   progress, 
@@ -174,6 +179,13 @@ export function LessonRunner({
         <Flashcard
           front={(step as FlashcardStep).data.front}
           back={(step as FlashcardStep).data.back}
+          vocabularyItem={
+            (step as FlashcardStep).data.vocabularyId 
+              ? getLessonVocabulary(moduleId, lessonId).find(
+                  vocab => vocab.id === (step as FlashcardStep).data.vocabularyId
+                )
+              : undefined
+          }
           points={step.points}
           onContinue={handleFlashcardContinue}
           isFlipped={isFlipped}

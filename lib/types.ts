@@ -10,6 +10,17 @@ export interface Module {
   lessons: Lesson[];
 }
 
+// Vocabulary types
+export interface VocabularyItem {
+  id: string;           // e.g., "salam"
+  en: string;           // English meaning
+  fa: string;           // Persian script
+  finglish: string;     // Latin transliteration
+  phonetic: string;     // Pronunciation guide (e.g., "sah-LUHM")
+  lessonId: string;     // "module1-lesson1"
+  audio?: string;       // optional audio file path
+}
+
 // Lesson types
 export interface Lesson {
   id: string;
@@ -19,6 +30,7 @@ export interface Lesson {
   progress?: number;
   locked: boolean;
   steps: LessonStep[];
+  vocabulary?: VocabularyItem[];  // Optional vocabulary bank for this lesson
 }
 
 // Step types
@@ -47,8 +59,11 @@ export interface WelcomeStep extends BaseStep {
 export interface FlashcardStep extends BaseStep {
   type: 'flashcard';
   data: {
-    front: string;
-    back: string;
+    // Legacy format (still supported for backward compatibility)
+    front?: string;
+    back?: string;
+    // New vocabulary-based format
+    vocabularyId?: string;  // References a vocabulary item ID from lesson.vocabulary
   };
 }
 
