@@ -114,14 +114,14 @@ export default function LessonPage() {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-3 sm:px-4">
-          <Link href={`/modules/${moduleId}`} className="font-bold text-base sm:text-lg text-primary">
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <Link href={`/modules/${moduleId}`} className="font-bold text-lg text-primary">
             <span className="hidden sm:inline">Module 1</span>
             <span className="sm:hidden">Module 1</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 overflow-x-auto">
-              <Star className="h-5 w-5 text-yellow-500" />
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
               <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
             </div>
             <Button 
@@ -142,22 +142,23 @@ export default function LessonPage() {
         </div>
       )}
 
-      <main className="flex-1 flex flex-col px-4 pt-4 pb-4 w-full overflow-hidden">
+      <main className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pt-4 pb-4 w-full overflow-hidden">
         {/* Main content area with Back button */}
-        <div className="w-full max-w-4xl mx-auto flex flex-col flex-1 min-h-0">
+        <div className="w-full max-w-6xl mx-auto flex flex-col flex-1 min-h-0">
           
           {/* Back Button container - Moved above main content but below progress */}
           <div className="h-8 flex items-center"> {/* Fixed height container */}
             {currentView !== 'welcome' && currentView !== 'completion' && currentView !== 'summary' && previousStates.length > 0 && (
               <Button variant="ghost" onClick={handleBack} className="text-sm flex items-center self-start pl-0 hover:bg-transparent">
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Go Back
+                <span className="hidden sm:inline">Go Back</span>
+                <span className="sm:hidden">Back</span>
               </Button>
             )}
           </div>
 
           {/* Content Area - takes remaining space */}
-          <div className="flex-1 flex flex-col items-center justify-start min-h-0">
+          <div className="flex-1 flex flex-col items-center justify-start min-h-0 w-full">
             {/* Render the appropriate content based on currentView */}
             {currentView === 'completion' ? (
               <CompletionPage 
@@ -187,10 +188,6 @@ export default function LessonPage() {
               />
             )}
           </div>
-          
-          {/* XP is now persistent - no disclaimer needed */}
-          
-          {/* Removed the old Back Button container from here */}
         </div>
       </main>
     </div>

@@ -31,6 +31,7 @@ export function MatchingGame({
 
   const [matches, setMatches] = useState<Record<string,string>>({})  // slotId→wordId
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null)
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null) // NEW: track selected slot
   const [showXp, setShowXp] = useState(false)
   const [showFeedback, setShowFeedback] = useState<{ 
     slotId: string; 
@@ -43,12 +44,19 @@ export function MatchingGame({
     if (showFeedback && !showFeedback.correct) {
       const timer = setTimeout(() => {
         setShowFeedback(null);
-        setSelectedWordId(null); // Clear selection when feedback disappears
+        setSelectedWordId(null);
+        setSelectedSlotId(null); // Clear both selections
       }, 1500);
       
       return () => clearTimeout(timer);
     }
   }, [showFeedback]);
+
+  // Clear selection when switching between word and slot
+  const clearSelections = () => {
+    setSelectedWordId(null);
+    setSelectedSlotId(null);
+  };
 
   // Handle word selection
   const handleWordClick = (wordId: string) => {
@@ -58,19 +66,38 @@ export function MatchingGame({
     // If we have a feedback showing, don't allow new selection
     if (showFeedback) return;
     
-    setSelectedWordId(wordId);
+    // If we have a slot selected, try to match them
+    if (selectedSlotId) {
+      tryMatch(wordId, selectedSlotId);
+    } else {
+      // Clear any previous selections and select this word
+      clearSelections();
+      setSelectedWordId(wordId);
+    }
   };
 
-  // Handle slot selection
+  // Handle slot selection  
   const handleSlotClick = (slotId: string) => {
-    // If no word selected, do nothing
-    if (!selectedWordId) return;
+    // If this slot is already matched, do nothing
+    if (isSlotMatched(slotId)) return;
     
-    // If we have a feedback showing, don't allow new matches
+    // If we have a feedback showing, don't allow new selection
     if (showFeedback) return;
     
+    // If we have a word selected, try to match them
+    if (selectedWordId) {
+      tryMatch(selectedWordId, slotId);
+    } else {
+      // Clear any previous selections and select this slot
+      clearSelections();
+      setSelectedSlotId(slotId);
+    }
+  };
+
+  // NEW: Unified matching logic
+  const tryMatch = (wordId: string, slotId: string) => {
     // Find the word object for the selected ID
-    const selectedWord = shuffledWords.find(w => w.id === selectedWordId);
+    const selectedWord = shuffledWords.find(w => w.id === wordId);
     if (!selectedWord) return;
     
     // Check if this is the correct slot for the selected word
@@ -80,9 +107,9 @@ export function MatchingGame({
       // Track next match count
       const nextCount = Object.keys(matches).length + 1;
       // Add to matches (no sound per-match)
-      setMatches(prev => ({ ...prev, [slotId]: selectedWordId }));
-      // Clear selection
-      setSelectedWordId(null);
+      setMatches(prev => ({ ...prev, [slotId]: wordId }));
+      // Clear selections
+      clearSelections();
       // If this was the final match, award XP and advance
       if (nextCount === shuffledWords.length) {
         playSuccessSound();
@@ -103,7 +130,7 @@ export function MatchingGame({
       // Show error feedback
       setShowFeedback({ 
         slotId, 
-        wordId: selectedWordId,
+        wordId,
         correct: false 
       });
     }
@@ -124,7 +151,7 @@ export function MatchingGame({
       <div className="text-center mb-3 sm:mb-5">
         <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-primary">Match the Words</h2>
         <p className="text-sm xs:text-base text-muted-foreground">
-          Click a Persian word, then click its English meaning to match.
+          Click any word, then click its match to connect them.
         </p>
       </div>
       
@@ -147,6 +174,7 @@ export function MatchingGame({
           <div className="flex flex-row justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
             {shuffledWords.map(w => {
               const isMatched = isWordMatched(w.id);
+              const isSelected = selectedWordId === w.id;
               const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.wordId === w.id;
               
               return (
@@ -157,8 +185,8 @@ export function MatchingGame({
                         ? "border-green-500 bg-green-100" // Matched state - green border with light green fill
                         : isIncorrect
                           ? "border-red-500 bg-red-100" // Incorrect selection - red border with light red fill
-                          : selectedWordId === w.id 
-                            ? "border-primary bg-green-100" // Selected state - light green fill
+                          : isSelected 
+                            ? "border-primary bg-blue-100" // Selected state - blue fill to distinguish from match
                             : "border-primary/20 bg-primary/5" // Default state - very light primary bg
                     } shadow-md ${isMatched || isIncorrect ? "cursor-default" : "cursor-pointer"} h-full flex items-center justify-center min-h-[80px] sm:min-h-[100px] md:min-h-[120px] transition-all hover:scale-[1.02] active:scale-[0.98]`}
                     onClick={() => {
@@ -190,6 +218,7 @@ export function MatchingGame({
               const matchedWord = matchedWordId ? shuffledWords.find(w => w.id === matchedWordId) : null;
               const isCorrect = matchedWord ? matchedWord.slotId === slot.id : false;
               const isMatched = isSlotMatched(slot.id);
+              const isSelected = selectedSlotId === slot.id;
               const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.slotId === slot.id;
               
               return (
@@ -203,7 +232,9 @@ export function MatchingGame({
                       ? 'border-green-500 bg-green-100' // Matched state - green border with light green fill
                       : isIncorrect
                         ? 'border-red-500 bg-red-100' // Incorrect state - red border with light red fill
-                        : 'border-gray-200 hover:border-gray-300 bg-gray-50' // Default with light gray bg
+                        : isSelected
+                          ? 'border-primary bg-blue-100' // Selected state - blue fill to distinguish from match
+                          : 'border-gray-200 hover:border-gray-300 bg-gray-50' // Default with light gray bg
                   } ${!isMatched && !isIncorrect ? 'cursor-pointer' : 'cursor-default'} min-h-[70px] sm:min-h-[90px] md:min-h-[100px] shadow-md flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]`}
                   animate={
                     isIncorrect

@@ -10,7 +10,6 @@ import { ChevronRight, X, Heart, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 export default function HomePage() {
   const router = useRouter()
@@ -40,7 +39,6 @@ export default function HomePage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isClient, setIsClient] = useState(false)
-  const [isNavigating, setIsNavigating] = useState(false)
   const [isLearningNavigating, setIsLearningNavigating] = useState(false)
 
   useEffect(() => {
@@ -103,42 +101,6 @@ export default function HomePage() {
     router.push('/modules')
   }
 
-  const handlePreviewLesson = () => {
-    setIsNavigating(true)
-    const firstLesson = LessonProgressService.getFirstAvailableLesson();
-    window.location.href = `/modules/${firstLesson.moduleId}/${firstLesson.lessonId}`;
-  }
-
-  // Only render the button content after hydration
-  const buttonContent = isClient ? (
-    <Button
-      size="lg"
-      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto hover:scale-105"
-      aria-label="Preview Lesson"
-      onClick={handlePreviewLesson}
-      disabled={isNavigating}
-    >
-      {isNavigating ? (
-        <>
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          Loading...
-        </>
-      ) : (
-        "Preview Lesson"
-      )}
-    </Button>
-  ) : (
-    <Button
-      size="lg"
-      className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full sm:px-8 sm:py-6 px-4 py-4 text-base sm:text-lg w-full sm:w-auto"
-      aria-label="Preview Lesson"
-      disabled
-    >
-      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-      Loading...
-    </Button>
-  );
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Navbar with Eslimi-inspired border */}
@@ -165,43 +127,48 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section with Duolingo-style layout */}
-        <section className="bg-primary/10 flex items-center justify-center px-3 sm:px-6 md:px-8 lg:px-12 pt-6 pb-12 sm:pt-8 sm:pb-16 md:pt-12 md:pb-24">
+        <section className="bg-primary/10 flex items-center justify-center px-3 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16">
           <div className="max-w-6xl mx-auto w-full">
             {/* Desktop layout: side by side */}
-            <div className="hidden sm:flex flex-row items-center justify-between gap-6 md:gap-12">
-              {/* Left Column: Image - stays on left for desktop */}
-              <div className="w-1/3 md:w-2/5 flex justify-center md:justify-end">
-                <img 
-                  src="/icons/icon1.png" 
-                  alt="Iranopedia Logo" 
-                  className="w-full max-w-[180px] md:max-w-[280px] lg:max-w-[320px] object-contain"
-                />
+            <div className="hidden sm:flex flex-col items-center gap-6 md:gap-8">
+              {/* Top row: Image and Text aligned */}
+              <div className="flex flex-row items-center justify-between gap-6 md:gap-12 w-full">
+                {/* Left Column: Image */}
+                <div className="w-1/3 md:w-2/5 flex justify-center md:justify-end">
+                  <img 
+                    src="/icons/icon1.png" 
+                    alt="Iranopedia Logo" 
+                    className="w-full max-w-[180px] md:max-w-[280px] lg:max-w-[320px] object-contain"
+                  />
+                </div>
+                
+                {/* Right Column: Text only */}
+                <div className="w-2/3 md:w-3/5 flex flex-col items-start text-left">
+                  <p className="text-xs text-emerald-700 font-normal mb-3 sm:mb-4 tracking-wide uppercase">
+                    An Iranopedia App
+                  </p>
+                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-2 md:mb-5">
+                Learn Persian. Reconnect with Your Roots.
+              </h1>
+                  <p className="text-lg md:text-2xl text-muted-foreground mb-0">
+                    Start speaking Persian today — with fun, bite-sized lessons
+                  </p>
+                </div>
               </div>
               
-              {/* Right Column: Text and Buttons - stays on right for desktop */}
-              <div className="w-2/3 md:w-3/5 flex flex-col items-start text-left">
-                <p className="text-xs text-emerald-700 font-normal mb-3 sm:mb-4 tracking-wide uppercase">
-                  An Iranopedia App
-                </p>
-                <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-2 md:mb-5">
-              Learn Persian. Reconnect with Your Roots.
-            </h1>
-                <p className="text-lg md:text-2xl text-muted-foreground mb-4 md:mb-7 max-w-md">
-                  Start speaking Persian today — with fun, bite-sized lessons
-                </p>
-                <div className="flex flex-row gap-3 w-auto">
-                  {buttonContent}
+              {/* Bottom row: Start Learning button centered under everything - spans from image center to text end */}
+              <div className="flex justify-center w-full">
+                <div className="w-2/3">
                   <Button
                     size="lg"
-                    variant="outline"
-                    className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-8 py-6 text-lg w-auto hover:scale-105"
+                    className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-12 py-4 text-xl font-semibold hover:scale-105 shadow-lg hover:shadow-xl w-full"
                     onClick={handleStartLearning}
                     aria-label="Start Learning Persian"
                     disabled={isLearningNavigating}
                   >
                     {isLearningNavigating ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-5 w-5 mr-3 animate-spin" />
                         Loading...
                       </>
                     ) : (
@@ -234,19 +201,18 @@ export default function HomePage() {
                 />
               </div>
               
-              <div className="flex flex-col gap-3 w-full">
-                {buttonContent}
+              {/* Single larger Start Learning button for mobile */}
+              <div className="w-full">
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="border-accent text-accent hover:bg-accent/10 transition-all duration-300 rounded-full px-4 py-4 text-base w-full hover:scale-105"
+                  className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-8 py-4 text-lg font-semibold w-full hover:scale-105 shadow-lg"
                   onClick={handleStartLearning}
                   aria-label="Start Learning Persian"
                   disabled={isLearningNavigating}
                 >
                   {isLearningNavigating ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                       Loading...
                     </>
                   ) : (
