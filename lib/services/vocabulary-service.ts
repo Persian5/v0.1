@@ -309,7 +309,7 @@ export class VocabularyService {
         return vocab.id;
       }
       
-      // Pattern 3: Complete/Fill patterns - "Complete: Salam, ___ Ali"
+      // Pattern 3: Complete/Fill patterns - "Complete: Salam, ___ Sara"
       if (prompt.includes('complete') && 
           (prompt.includes(vocab.finglish.toLowerCase()) || prompt.includes(vocab.en.toLowerCase()))) {
         return vocab.id;

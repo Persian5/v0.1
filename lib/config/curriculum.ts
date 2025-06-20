@@ -107,6 +107,21 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "chetori",
+              distractors: ["salam", "khosh_amadid", "khodafez"]
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "khosh_amadid"]
+            }
+          },
+          {
             type: "matching",
             points: 3,
             data: {
@@ -140,8 +155,8 @@ export const curriculumData: Module[] = [
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
               targetWords: ["salam", "khosh_ahmadid", "chetori", "khodafez"],
-              title: "Ali's First Conversation",
-              successMessage: "🎉 You're a natural—Ali made a great impression!",
+              title: "Your First Conversation",
+              successMessage: "You're a natural—you made a great impression!",
               incorrectMessage: "Almost there—let's try that conversation order again!"
             }
           }
@@ -324,8 +339,8 @@ export const curriculumData: Module[] = [
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
               targetWords: ["salam", "chetori", "khoobam", "merci", "khodafez"],
-              title: "Ali's Polite Conversation",
-              successMessage: "🎉 Perfect! You helped Ali have a polite conversation!",
+              title: "Your Polite Conversation",
+              successMessage: "Perfect! You handled that polite conversation beautifully!",
               incorrectMessage: "Almost there—let's practice that conversation flow again!"
             }
           }
@@ -446,7 +461,7 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete: Esme ___ Ali-ye (My name is Ali)",
+              prompt: "Complete: Esme ___ Sara-ye (My name is Sara)",
               options: ["man", "shoma", "chi", "esm"],
               correct: 0
             }
@@ -506,7 +521,7 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete the introduction: Salam, esme man Ali-ye. ___?",
+              prompt: "Complete the introduction: Salam, esme man Sara-ye. ___?",
               options: ["Esme shoma chiye?", "Chetori?", "Merci", "Khodafez"],
               correct: 0
             }
@@ -549,8 +564,8 @@ export const curriculumData: Module[] = [
                 { id: "chiye", text: "Chiye", translation: "What is it?" }
               ],
               targetWords: ["salam", "esme", "man", "shoma", "chiye"],
-              title: "Ali Introduces Himself",
-              successMessage: "🎉 Perfect! Ali can now introduce himself and ask names confidently!",
+              title: "Your Perfect Introduction",
+              successMessage: "Incredible! You can now have complete, polite conversations!",
               incorrectMessage: "Almost there—let's practice that introduction conversation again!"
             }
           }
@@ -655,7 +670,7 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete the conversation: 'Salam, esme man Ali-ye.' Response: '___'",
+              prompt: "Complete the conversation: 'Salam, esme man Sara-ye.' Response: '___'",
               options: ["Khoshbakhtam, esme man Sara-ye", "Chetori", "Merci", "Khodafez"],
               correct: 0
             }
@@ -760,8 +775,8 @@ export const curriculumData: Module[] = [
                 { id: "khoshbakhtam", text: "Khoshbakhtam", translation: "Nice to meet you" }
               ],
               targetWords: ["salam", "esme", "man", "chiye", "khoshbakhtam"],
-              title: "Ali's Perfect Introduction",
-              successMessage: "🎉 Incredible! Ali can now have complete, polite conversations!",
+              title: "Your Perfect Introduction",
+              successMessage: "Incredible! You can now have complete, polite conversations!",
               incorrectMessage: "Almost perfect—let's practice that full conversation one more time!"
             }
           }

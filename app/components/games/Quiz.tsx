@@ -49,10 +49,10 @@ export function Quiz({
 
   // Randomize options ONCE on mount - more efficient than useEffect
   const shuffledOptions = useMemo(() => {
-    // Convert string[] to QuizOption[] if needed
-    const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
-      ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
-      : options as QuizOption[];
+  // Convert string[] to QuizOption[] if needed
+  const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
+    ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
+    : options as QuizOption[];
 
     // Shuffle the options once using stable seed
     return [...formattedOptions].sort(() => Math.random() - 0.5);
@@ -166,12 +166,12 @@ export function Quiz({
       <div className="w-full max-w-full sm:max-w-[85vw] mx-auto px-2 py-2 sm:px-4 sm:py-4 flex-grow flex flex-col justify-between relative min-h-0">
         {/* XP Animation - only show for correct answers */}
         {quizState === 'showing-result' && isCorrectAnswer && (
-          <XpAnimation 
-            amount={points} 
+        <XpAnimation 
+          amount={points} 
             show={true}
             onStart={undefined}
             onComplete={() => {}} // Handle completion in handleSelect instead
-          />
+        />
         )}
         
         <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">

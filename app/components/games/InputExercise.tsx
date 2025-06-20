@@ -17,6 +17,153 @@ export interface InputExerciseProps {
   onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
 }
 
+// Letter validation component for real-time feedback
+function ValidatedLetterInput({ 
+  value, 
+  targetAnswer, 
+  onChange, 
+  onSubmit,
+  placeholder,
+  disabled,
+  className 
+}: {
+  value: string;
+  targetAnswer: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  placeholder: string;
+  disabled: boolean;
+  className?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Normalize answers for comparison (handle multiple valid formats)
+  const normalizeAnswer = (text: string): string => {
+    return text.toLowerCase().trim().replace(/[^a-z]/g, ''); // Remove spaces, hyphens, etc.
+  };
+
+  const normalizedTarget = normalizeAnswer(targetAnswer);
+  const normalizedInput = normalizeAnswer(value);
+
+  // Validate each character
+  const validateCharacter = (char: string, index: number): 'correct' | 'incorrect' | 'pending' => {
+    if (index >= normalizedInput.length) return 'pending';
+    if (index >= normalizedTarget.length) return 'incorrect';
+    return normalizedInput[index] === normalizedTarget[index] ? 'correct' : 'incorrect';
+  };
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+    
+    // Remove auto-submit - let user click "Check Answer" button instead
+  };
+
+  // Handle key presses
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSubmit();
+    }
+  };
+
+  return (
+    <div className={`relative ${className}`}>
+      {/* Hidden input for actual text entry */}
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        className="absolute inset-0 opacity-0 w-full h-full z-10 cursor-text"
+        disabled={disabled}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+      />
+      
+      {/* Visual letter display */}
+      <div 
+        className="w-full px-4 py-3 text-base sm:text-lg bg-gray-100 rounded-full shadow-sm border-2 border-transparent focus-within:border-primary/50 transition-all min-h-[48px] flex items-center cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        <div className="flex flex-wrap gap-1 w-full justify-center">
+          {/* Show target letters with validation colors */}
+          {normalizedTarget.split('').map((targetChar, index) => {
+            const status = validateCharacter(targetChar, index);
+            const userChar = index < normalizedInput.length ? normalizedInput[index] : '';
+            
+            return (
+              <motion.span
+                key={index}
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className={`
+                  inline-flex items-center justify-center min-w-[24px] h-[28px] rounded text-sm font-medium transition-all duration-200
+                  ${status === 'correct' 
+                    ? 'bg-green-100 text-green-700 border border-green-300' 
+                    : status === 'incorrect'
+                    ? 'bg-red-100 text-red-700 border border-red-300'
+                    : 'bg-gray-50 text-gray-400 border border-gray-200'
+                  }
+                `}
+              >
+                {status === 'pending' ? (
+                  <span className="text-gray-300">_</span>
+                ) : status === 'correct' ? (
+                  userChar
+                ) : (
+                  userChar
+                )}
+              </motion.span>
+            );
+          })}
+          
+          {/* Show extra characters (beyond target length) in red */}
+          {normalizedInput.length > normalizedTarget.length && (
+            normalizedInput.slice(normalizedTarget.length).split('').map((char, index) => (
+              <motion.span
+                key={`extra-${index}`}
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className="inline-flex items-center justify-center min-w-[24px] h-[28px] rounded text-sm font-medium bg-red-100 text-red-700 border border-red-300"
+              >
+                {char}
+              </motion.span>
+            ))
+          )}
+          
+          {/* Typing cursor */}
+          {!disabled && (
+            <motion.span
+              animate={{ opacity: [1, 0, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="inline-flex items-center justify-center w-[2px] h-[28px] bg-primary ml-1"
+            />
+          )}
+        </div>
+      </div>
+      
+      {/* Placeholder text - centered below character boxes, disappears when typing starts */}
+      {value.length === 0 && (
+        <div className="text-center mt-2">
+          <span className="text-sm text-gray-400">
+            {placeholder}
+          </span>
+        </div>
+      )}
+      
+      {/* Progress indicator */}
+      <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+        <span>{Math.min(normalizedInput.length, normalizedTarget.length)}/{normalizedTarget.length} letters</span>
+      </div>
+    </div>
+  );
+}
+
 export function InputExercise({ 
   question = "Type 'How are you?' in Persian (Finglish)",
   answer = "Chetori",
@@ -32,16 +179,23 @@ export function InputExercise({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showHint, setShowHint] = useState(false)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value)
+  const handleInputChange = (value: string) => {
+    setInput(value)
     if (showFeedback && !isCorrect) {
       setShowFeedback(false)
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const isAnswerCorrect = input.toLowerCase().trim() === answer.toLowerCase().trim()
+  const handleSubmit = () => {
+    // Normalize both input and answer for comparison
+    const normalizeForComparison = (text: string): string => {
+      return text.toLowerCase().trim().replace(/[^a-z]/g, '');
+    };
+    
+    const normalizedInput = normalizeForComparison(input);
+    const normalizedAnswer = normalizeForComparison(answer);
+    const isAnswerCorrect = normalizedInput === normalizedAnswer;
+    
     setIsCorrect(isAnswerCorrect)
     setShowFeedback(true)
 
@@ -70,12 +224,11 @@ export function InputExercise({
       // Trigger XP animation for visual feedback
       setShowXp(true)
     } else {
-      // If incorrect, show feedback briefly and reset for retry - don't advance
+      // If incorrect, show feedback briefly and allow retry
       setTimeout(() => {
         setShowFeedback(false);
-        setInput("");
-        // Don't call onComplete for incorrect answers - let user try again
-      }, 1500); // Reset after 1.5 seconds
+        // Don't clear input - let user see their mistakes and correct them
+      }, 1500); // Reset feedback after 1.5 seconds
     }
   }
 
@@ -99,7 +252,7 @@ export function InputExercise({
     <div className="w-full max-w-[90vw] sm:max-w-[80vw] mx-auto py-4">
       <div className="text-center mb-4">
         <h2 className="text-2xl sm:text-3xl font-bold mb-1 text-primary">Practice</h2>
-        <p className="text-muted-foreground">Type the correct word in Finglish</p>
+        <p className="text-muted-foreground">Type the correct word - watch the letters turn green!</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-lg p-4 relative">
@@ -120,46 +273,25 @@ export function InputExercise({
             </p>
           </div>
 
-          <form id="answerForm" onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <motion.div
               initial={false}
               animate={showFeedback && !isCorrect ? { x: [0, -5, 5, -5, 5, 0] } : {}}
               transition={{ duration: 0.5 }}
               className="relative"
             >
-              <Input
-                type="text"
+              <ValidatedLetterInput
                 value={input}
+                targetAnswer={answer}
                 onChange={handleInputChange}
-                placeholder="Type your answer..."
-                className={`w-full pr-10 text-base sm:text-lg bg-gray-100 text-gray-800 px-4 py-3 rounded-full shadow-sm transition-all ${
-                  showFeedback
-                    ? isCorrect
-                      ? "ring-2 ring-green-300"
-                      : "ring-2 ring-red-300"
-                    : "focus:ring-2 focus:ring-primary/50"
-                }`}
+                onSubmit={handleSubmit}
+                placeholder="Start typing..."
                 disabled={showFeedback && isCorrect}
+                className="w-full"
               />
-              <AnimatePresence>
-                {showFeedback && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute right-3 top-0 bottom-0 flex items-center"
-                  >
-                    {isCorrect ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
 
-            {/* Hint Toggle (Collapsible Pill) - Added more margin, responsive */}
+            {/* Hint Toggle (Collapsible Pill) */}
             <div className="mt-3 mb-4 sm:mb-6">
               <div className="bg-gray-100 rounded-full">
                 <button 
@@ -175,7 +307,6 @@ export function InputExercise({
                   }
                 </button>
                 
-                {/* Simplified hint display without height animation */}
                 {showHint && (
                   <div className="px-4 pb-3 pt-1">
                     <p className="text-center text-green-700 font-medium">
@@ -185,7 +316,7 @@ export function InputExercise({
                 )}
               </div>
             </div>
-          </form>
+          </div>
 
           <AnimatePresence>
             {showFeedback && !isCorrect && (
@@ -195,26 +326,25 @@ export function InputExercise({
                 exit={{ opacity: 0 }}
                 className="text-center text-red-500 mt-3 text-sm"
               >
-                Almost! Try again.
+                Not quite right. Try again!
               </motion.p>
             )}
           </AnimatePresence>
         </div>
       </div>
       
-      {/* Motivation Bubble - Moved outside the main container */}
+      {/* Motivation Bubble */}
       <div className="mt-5 mb-4 sm:mt-6 sm:mb-5">
         <div className="bg-primary/5 p-3 rounded-xl text-center">
           <p className="text-sm text-gray-600 font-normal">
-            💡 Remember what you learned from the flashcard!
+            💡 Green letters are correct, red letters need fixing!
           </p>
         </div>
       </div>
       
-      {/* Submit button - Moved outside the main container */}
+      {/* Submit button */}
       <Button
-        type="submit"
-        form="answerForm"
+        onClick={handleSubmit}
         className="w-full text-base sm:text-lg py-3 mt-2"
         disabled={showFeedback && isCorrect}
       >

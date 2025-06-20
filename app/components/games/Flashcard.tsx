@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
+import { AudioService } from "@/lib/services/audio-service"
 
 // Reusable success sound player that can be exported and used by other components
 export function playSuccessSound() {
@@ -35,7 +36,8 @@ interface FlashcardProps {
   showContinueButton?: boolean
 }
 
-// Helper function to convert card text to audio filename
+// Helper function to convert card text to audio filename - DEPRECATED
+// Keeping for legacy flashcard format support only
 function getAudioFilename(text: string): string {
   // Remove emoji and trim whitespace
   const cleanText = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
@@ -57,7 +59,8 @@ function getAudioFilename(text: string): string {
   return audioMap[cleanText] || "";
 }
 
-// First, need to add a helper function to get the pronunciation for each Persian word
+// Helper function to get pronunciation for legacy format - DEPRECATED
+// Modern flashcards should use vocabularyItem.phonetic instead
 function getPronunciation(text: string): string {
   // Clean text to remove emoji and leading/trailing space
   const cleanText = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
@@ -89,53 +92,53 @@ export function Flashcard({
   const [showXp, setShowXp] = useState(false)
   const [lastFlipState, setLastFlipState] = useState(false)
   const [hasBeenFlipped, setHasBeenFlipped] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
   const componentMountedRef = useRef(false)
 
   const isFlipped = extFlipped ?? localFlip
   const showNext  = showContinueButton ?? localShowNext
 
-  // Auto-play English audio when component mounts
+  // Auto-play audio when component mounts (English side)
   useEffect(() => {
     // Only play on initial mount, not on re-renders
     if (!componentMountedRef.current) {
       componentMountedRef.current = true;
       
-      const audioFile = getAudioFilename(front || "");
-      
-      if (audioFile) {
-        const audio = new Audio(`/audio/${audioFile}`);
-        audioRef.current = audio;
-        
-        // Play the audio and handle any errors
-        audio.play().catch(error => {
-          console.error("Error playing initial audio:", error);
-        });
+      // Play audio for the front side (English) using AudioService
+      if (vocabularyItem?.id) {
+        AudioService.playVocabularyAudio(vocabularyItem.id, 'english');
+      } else if (front) {
+        // Fallback for legacy flashcard format
+        const audioFile = getAudioFilename(front);
+        if (audioFile) {
+          AudioService.playAudio(`/audio/${audioFile}`);
+        }
       }
     }
-  }, [front]);
+  }, [vocabularyItem?.id, front]);
 
   // Play audio when flip state changes
   useEffect(() => {
     // Only play audio if the flip state has actually changed
     if (isFlipped !== lastFlipState) {
-      const audioFile = isFlipped 
-        ? getAudioFilename(back || "") 
-        : getAudioFilename(front || "");
       
-      if (audioFile) {
-        // Create a new audio instance each time to ensure it plays
-        if (audioRef.current) {
-          audioRef.current.pause();
+      if (vocabularyItem?.id) {
+        // Use AudioService for vocabulary-based flashcards
+        if (isFlipped) {
+          // Persian audio when showing finglish side
+          AudioService.playVocabularyAudio(vocabularyItem.id, 'persian');
+        } else {
+          // English audio when showing English side
+          AudioService.playVocabularyAudio(vocabularyItem.id, 'english');
         }
+      } else {
+        // Fallback for legacy front/back format
+        const audioFile = isFlipped 
+          ? getAudioFilename(back || "") 
+          : getAudioFilename(front || "");
         
-        const audio = new Audio(`/audio/${audioFile}`);
-        audioRef.current = audio;
-        
-        // Play the audio and handle any errors
-        audio.play().catch(error => {
-          console.error("Error playing audio:", error);
-        });
+        if (audioFile) {
+          AudioService.playAudio(`/audio/${audioFile}`);
+        }
       }
       
       // Update last flip state
@@ -146,7 +149,7 @@ export function Flashcard({
         setHasBeenFlipped(true);
       }
     }
-  }, [isFlipped, front, back, lastFlipState, hasBeenFlipped]);
+  }, [isFlipped, vocabularyItem?.id, front, back, lastFlipState, hasBeenFlipped]);
 
   const handleXpComplete = () => {
     // Reset local state

@@ -25,7 +25,7 @@ export default function SummaryPage({
   // Safety check for empty learned words
   const wordsToShow = learnedWords || [];
   const wordCount = wordsToShow.length;
-
+  
   // Function to navigate to pricing page
   const navigateToPricing = () => {
     router.push('/pricing')
@@ -91,9 +91,9 @@ export default function SummaryPage({
                   <Check className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-medium">Helped Ali navigate his day</p>
+                  <p className="font-medium">Applied skills in conversation practice</p>
                   <p className="text-sm text-muted-foreground">
-                    Applied greetings and phrases in a realistic conversation
+                    Used greetings and phrases in realistic conversation scenarios
                   </p>
                 </div>
               </div>

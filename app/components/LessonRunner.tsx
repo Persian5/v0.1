@@ -6,7 +6,9 @@ import { MatchingGame } from '@/app/components/games/MatchingGame'
 import { FinalChallenge } from '@/app/components/games/FinalChallenge'
 import { LessonIntro } from '@/app/components/games/WelcomeIntro'
 import { GrammarConcept } from '@/app/components/games/GrammarConcept'
-import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, VocabularyItem } from '@/lib/types'
+import { AudioMeaning } from '@/app/components/games/AudioMeaning'
+import { AudioSequence } from '@/app/components/games/AudioSequence'
+import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, AudioMeaningStep, AudioSequenceStep, VocabularyItem } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
@@ -292,13 +294,15 @@ export function LessonRunner({
   };
 
   // Create activity-specific XP handlers using the XP service
-  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final') => {
+  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'audio-meaning' | 'audio-sequence') => {
     return () => {
       const xpReward = XpService.getReward(
         activityType === 'flashcard' ? 'FLASHCARD_FLIP' :
         activityType === 'quiz' ? 'QUIZ_CORRECT' :
         activityType === 'input' ? 'INPUT_CORRECT' :
         activityType === 'matching' ? 'MATCHING_COMPLETE' :
+        activityType === 'audio-meaning' ? 'QUIZ_CORRECT' :
+        activityType === 'audio-sequence' ? 'MATCHING_COMPLETE' :
         'FINAL_CHALLENGE'
       );
       
@@ -400,14 +404,13 @@ export function LessonRunner({
           objectiveEmojis={(step as WelcomeStep).title === "Basic Greetings" ? ["👋", "🤔", "🙏", "👋"] : ["😊", "🙏", "✅", "❌"]}
           backgroundImage="/icons/tehranairport.png"
           backgroundImageAlt="Tehran Airport Background"
-          foregroundImage="/icons/ali.png"
-          foregroundImageAlt="Ali with a speech bubble"
-          missionTitle={(step as WelcomeStep).title === "Basic Greetings" ? "Let's Help Ali!" : "Help Ali Be Polite!"}
+          foregroundImage="/icons/student.png"
+          foregroundImageAlt="Student learning Persian"
           missionDescription={(step as WelcomeStep).title === "Basic Greetings" ? 
-            "Ali just landed in Tehran and wants to greet people the right way. You'll meet him again at the end of this lesson — let's make sure you're ready to help him when the time comes." : 
-            "Now that Ali can greet people, he needs to learn how to respond politely in conversations. Help him master these essential responses!"
+            "You're about to learn essential Persian greetings that will help you connect with people. By the end of this lesson, you'll be ready to start conversations confidently." : 
+            "Now that you can greet people, you'll learn how to respond politely in conversations. Master these essential responses to sound natural!"
           }
-          missionInstructions={(step as WelcomeStep).title === "Basic Greetings" ? "Your mission is to get Ali ready. Help him:" : "Help Ali learn to:"}
+          missionInstructions={(step as WelcomeStep).title === "Basic Greetings" ? "Your mission is to learn these skills. You'll:" : "You'll learn to:"}
           sectionTitle={(step as WelcomeStep).data?.sectionTitle}
           sectionDescription={(step as WelcomeStep).data?.sectionDescription}
           vocabularyItems={[]}
@@ -480,6 +483,27 @@ export function LessonRunner({
           points={step.points}
           onComplete={handleItemComplete}
           onXpStart={createXpHandler('quiz')}
+        />
+      ) : step.type === 'audio-meaning' ? (
+        <AudioMeaning
+          key={`audio-meaning-${idx}`}
+          vocabularyId={(step as AudioMeaningStep).data.vocabularyId}
+          distractors={(step as AudioMeaningStep).data.distractors}
+          vocabularyBank={allVocab}
+          points={step.points}
+          autoPlay={(step as AudioMeaningStep).data.autoPlay}
+          onContinue={() => handleItemComplete(true)}
+          onXpStart={createXpHandler('audio-meaning')}
+        />
+      ) : step.type === 'audio-sequence' ? (
+        <AudioSequence
+          key={`audio-sequence-${idx}`}
+          sequence={(step as AudioSequenceStep).data.sequence}
+          vocabularyBank={allVocab}
+          points={step.points}
+          autoPlay={(step as AudioSequenceStep).data.autoPlay}
+          onContinue={() => handleItemComplete(true)}
+          onXpStart={createXpHandler('audio-sequence')}
         />
       ) : null}
     </>

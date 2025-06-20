@@ -59,12 +59,12 @@ export default function CompletionPage({
       
       {/* Celebration Heading */}
       <h2 className="text-4xl font-bold mb-2 text-primary">
-        🥳 INCREDIBLE JOB!
+        INCREDIBLE JOB!
       </h2>
       
       {/* Subheading */}
       <p className="text-xl text-muted-foreground mb-4">
-        You helped Ali master his greetings!
+        You mastered these essential greetings!
       </p>
       
       {/* XP Badge */}

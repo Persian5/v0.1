@@ -35,9 +35,9 @@ export interface Lesson {
 }
 
 // Step types
-export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary';
+export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary' | 'audio-meaning' | 'audio-sequence';
 
-export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept';
+export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'audio-meaning' | 'audio-sequence';
 
 // Define base step type
 export interface BaseStep {
@@ -124,6 +124,25 @@ export interface GrammarConceptStep {
   };
 }
 
+// Audio-meaning step (listen to Persian audio, select English meaning)
+export interface AudioMeaningStep extends BaseStep {
+  type: 'audio-meaning';
+  data: {
+    vocabularyId: string;  // The target vocabulary item to test
+    distractors: string[]; // Other vocabulary IDs to use as wrong answers
+    autoPlay?: boolean;    // Whether to auto-play audio on load (default: true)
+  };
+}
+
+// Audio-sequence step (listen to multiple Persian words, arrange English meanings in order)
+export interface AudioSequenceStep extends BaseStep {
+  type: 'audio-sequence';
+  data: {
+    sequence: string[];       // Array of vocabulary IDs in the order they should be played
+    autoPlay?: boolean;       // Whether to auto-play audio sequence on load (default: false)
+  };
+}
+
 // Union type for all step types
 export type LessonStep = 
   | WelcomeStep
@@ -132,7 +151,9 @@ export type LessonStep =
   | InputStep
   | MatchingStep
   | FinalStep
-  | GrammarConceptStep;
+  | GrammarConceptStep
+  | AudioMeaningStep
+  | AudioSequenceStep;
 
 // State types
 export interface LessonState {

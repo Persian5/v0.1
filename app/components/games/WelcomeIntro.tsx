@@ -140,9 +140,8 @@ export function LessonIntro({
             <Image 
               src={backgroundImage}
               alt={backgroundImageAlt}
-              layout="fill"
-              objectFit="cover"
-              className="opacity-90"
+              fill
+              className="opacity-90 object-cover"
             />
           )}
           
@@ -162,10 +161,10 @@ export function LessonIntro({
         </div>
         
         {/* Content below image */}
-        <div className="px-4 pb-4 pt-4"> {/* Added top padding */} 
-          <h2 className="text-2xl font-bold mb-3 text-primary text-center">{missionTitle}</h2>
+        <div className="px-4 pb-4 pt-2"> {/* Reduced top padding */} 
+          {/* Removed missionTitle header */}
           
-          <p className="text-sm mb-3 text-muted-foreground text-center">
+          <p className="text-lg mb-4 text-muted-foreground text-center font-medium">
             {missionDescription}
           </p>
           
@@ -190,9 +189,8 @@ export function LessonIntro({
                 <Image 
                   src={backgroundImage}
                   alt={backgroundImageAlt}
-                  layout="fill"
-                  objectFit="cover"
-                  className="opacity-80"
+                  fill
+                  className="opacity-80 object-cover"
                 />
               )}
               {/* Foreground Image */} 
@@ -214,9 +212,9 @@ export function LessonIntro({
           {/* Right column - Mission Card with increased width */}
           <div className="w-3/5">
             <div className="bg-white rounded-2xl p-6 shadow-md border border-primary/10 h-full flex flex-col">
-              <h2 className="text-2xl font-bold mb-3 text-primary text-center">{missionTitle}</h2>
+              {/* Removed missionTitle header */}
               
-              <p className="text-base mb-4 text-muted-foreground text-center">
+              <p className="text-lg mb-6 text-muted-foreground text-center font-medium">
                 {missionDescription}
               </p>
               

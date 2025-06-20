@@ -36,7 +36,7 @@ export const grammarConcepts: GrammarConcept[] = [
         baseDefinition: "name", 
         transformedDefinition: "name of",
         explanation: "Add -e to connect 'name' to something else, like 'name of me'",
-        exampleBefore: "Esm Ali (Name Ali)", // Just stating a name
+        exampleBefore: "Esm Sara (Name Sara)", // Just stating a name
         exampleAfter: "Esme man (My name / Name of me)", // Connecting "name of me"
         points: 1
       }
