@@ -10,6 +10,7 @@ import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingSt
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
+import { PhraseTrackingService } from '@/lib/services/phrase-tracking-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 
 interface LessonRunnerProps {
@@ -135,26 +136,55 @@ export function LessonRunner({
     setIdx(i => i + 1);
   }
 
-  // Handle remediation when a word is answered incorrectly - queue it for after current step completion
+  // Handle remediation when a word is answered incorrectly - HYBRID phrase + vocabulary approach
   const handleRemediationNeeded = (dataOrId?: any) => {
     if (!dataOrId) return; // Nothing provided
 
     // Determine if we received a direct vocabulary ID (string) or full quiz step data (object)
-    let vocabularyId: string | undefined;
-
     if (typeof dataOrId === 'string') {
       // Direct vocabulary ID provided (e.g., from InputExercise)
-      vocabularyId = dataOrId;
+      const vocabularyId = dataOrId;
+      
+      // Add to pending remediation queue if not already there
+      if (!pendingRemediation.includes(vocabularyId)) {
+        setPendingRemediation(prev => [...prev, vocabularyId]);
+      }
     } else {
-      // Assume object representing quiz step data – extract vocabulary intelligently
-      vocabularyId = VocabularyService.extractVocabularyFromQuiz(dataOrId, allVocabForExtraction);
-    }
-
-    if (!vocabularyId) return; // Skip if we can't identify the vocabulary
-    
-    // Add to pending remediation queue if not already there
-    if (!pendingRemediation.includes(vocabularyId)) {
-      setPendingRemediation(prev => [...prev, vocabularyId]);
+      // Quiz step data - implement hybrid phrase + vocabulary logic
+      const quizData = dataOrId;
+      
+      // STEP 1: Check if this is a phrase-based question
+      const phraseId = VocabularyService.extractPhraseFromQuiz(quizData);
+      
+      if (phraseId) {
+        // This is a phrase-based question - track phrase failure
+        PhraseTrackingService.recordPhraseIncorrect(phraseId);
+        
+        // Get critical vocabulary for this phrase
+        const criticalVocab = VocabularyService.getCriticalVocabularyForPhrase(phraseId);
+        
+        // Determine which critical vocabulary actually needs remediation
+        const vocabForRemediation = VocabularyService.getVocabularyForRemediation(criticalVocab);
+        
+        // Add critical vocabulary that needs help to remediation queue
+        for (const vocabId of vocabForRemediation) {
+          if (!pendingRemediation.includes(vocabId)) {
+            setPendingRemediation(prev => [...prev, vocabId]);
+          }
+        }
+        
+        console.log(`Phrase "${phraseId}" failed. Critical vocab for remediation:`, vocabForRemediation);
+      } else {
+        // Fallback to individual vocabulary word logic
+        const vocabularyId = VocabularyService.extractVocabularyFromQuiz(quizData, allVocabForExtraction);
+        
+        if (vocabularyId) {
+          // Add to pending remediation queue if not already there
+          if (!pendingRemediation.includes(vocabularyId)) {
+            setPendingRemediation(prev => [...prev, vocabularyId]);
+          }
+        }
+      }
     }
     
     // Don't start remediation now - wait until user gets current question correct

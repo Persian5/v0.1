@@ -327,8 +327,12 @@ export class VocabularyService {
         return vocab.id;
       }
       
-      // Pattern 6: Fallback - any occurrence (less specific)
-      if (prompt.includes(vocab.finglish.toLowerCase()) || prompt.includes(vocab.en.toLowerCase())) {
+      // Pattern 6: FIXED - Word boundary matching instead of substring
+      // Use regex to match whole words only, preventing "na" from matching "name"
+      const wordBoundaryRegex = new RegExp(`\\b${vocab.finglish.toLowerCase()}\\b`, 'i');
+      const englishWordBoundaryRegex = new RegExp(`\\b${vocab.en.toLowerCase()}\\b`, 'i');
+      
+      if (wordBoundaryRegex.test(prompt) || englishWordBoundaryRegex.test(prompt)) {
         return vocab.id;
       }
     }
@@ -348,5 +352,93 @@ export class VocabularyService {
     }
 
     return undefined;
+  }
+
+  // NEW: Extract phrase ID from quiz step data for phrase-based questions
+  static extractPhraseFromQuiz(quizData: any): string | undefined {
+    const prompt = quizData.prompt?.toLowerCase() || '';
+    const options = quizData.options || [];
+    const correctIndex = quizData.correct || 0;
+
+    // Import phrase data (avoiding circular imports by requiring here)
+    const { CURRICULUM_PHRASES } = require('./phrase-tracking-service');
+    
+    // Check if correct answer matches any phrase
+    if (typeof options[correctIndex] === 'string') {
+      const correctAnswer = options[correctIndex].toLowerCase().replace(/[?!.,]/g, '');
+      for (const phrase of CURRICULUM_PHRASES) {
+        const cleanPhrase = phrase.phrase.toLowerCase().replace(/[?!.,]/g, '');
+        if (cleanPhrase === correctAnswer) {
+          return phrase.id;
+        }
+      }
+    }
+
+    // Check if prompt is asking about a specific phrase
+    for (const phrase of CURRICULUM_PHRASES) {
+      const cleanPhrase = phrase.phrase.toLowerCase().replace(/[?!.,]/g, '');
+      const cleanTranslation = phrase.translation.toLowerCase();
+      
+      // Pattern: "How do you ask 'What is your name?' in Persian?"
+      if (prompt.includes('how do you ask') && 
+          (prompt.includes(`'${cleanTranslation}'`) || prompt.includes(`"${cleanTranslation}"`))) {
+        return phrase.id;
+      }
+      
+      // Pattern: "How do you say 'Hello, how are you?' in Persian?"
+      if (prompt.includes('how do you say') && 
+          (prompt.includes(`'${cleanTranslation}'`) || prompt.includes(`"${cleanTranslation}"`))) {
+        return phrase.id;
+      }
+    }
+
+    return undefined;
+  }
+
+  // NEW: Get critical vocabulary words that should be remediated for a phrase
+  static getCriticalVocabularyForPhrase(phraseId: string): string[] {
+    const { CURRICULUM_PHRASES } = require('./phrase-tracking-service');
+    const phraseData = CURRICULUM_PHRASES.find((p: any) => p.id === phraseId);
+    
+    if (!phraseData) return [];
+
+    // Define critical words per phrase (semantic backbone)
+    const criticalWordsMap: { [key: string]: string[] } = {
+      'esme-shoma-chiye': ['chi', 'esm'], // "what" and "name" are semantic backbone
+      'esme-man': ['esm', 'man'], // Both words are critical for "my name"
+      'khoobam-merci': ['khoobam'], // "I'm good" is more critical than "thank you"
+      'na-merci': ['na'], // "No" is the key semantic word
+      'salam-chetori': ['salam', 'chetori'] // Both are equally important for greeting
+    };
+
+    return criticalWordsMap[phraseId] || [];
+  }
+
+  // NEW: Determine which vocabulary words need remediation based on mastery
+  static getVocabularyForRemediation(vocabularyIds: string[]): string[] {
+    const needsRemediation: string[] = [];
+    
+    for (const vocabId of vocabularyIds) {
+      const performance = this.getWordPerformance()[vocabId];
+      
+      // Flag for remediation if:
+      // 1. Never seen before (new)
+      // 2. More incorrect than correct attempts (weak)
+      // 3. Currently marked as needs review
+      if (!performance || 
+          performance.timesIncorrect >= performance.timesCorrect ||
+          performance.needsReview) {
+        needsRemediation.push(vocabId);
+      }
+    }
+    
+    return needsRemediation;
+  }
+
+  // Clear all vocabulary progress (for reset functionality)
+  static clearAllProgress(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(VOCABULARY_PROGRESS_KEY);
+    localStorage.removeItem(WORD_PERFORMANCE_KEY);
   }
 } 

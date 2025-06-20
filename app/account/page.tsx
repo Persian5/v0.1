@@ -9,6 +9,7 @@ import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
+import { PhraseTrackingService } from "@/lib/services/phrase-tracking-service"
 
 export default function AccountPage() {
   const [mounted, setMounted] = useState(false)
@@ -40,21 +41,16 @@ export default function AccountPage() {
     setShowResetConfirmation(true)
   }
 
-  // Execute the actual reset
+  // Execute reset - clear all progress
   const executeReset = async () => {
     setIsResetting(true)
     
     try {
-      // Reset XP using the hook's resetXp method
+      // Clear all progress data
       resetXp()
-      
-      // Clear lesson progress through service layer
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('user-lesson-progress')
-        localStorage.removeItem('vocabulary-progress')
-        localStorage.removeItem('word-performance')
-        localStorage.removeItem('global-user-xp-history')
-      }
+      LessonProgressService.saveProgress({})
+      VocabularyService.clearAllProgress()
+      PhraseTrackingService.clearAllProgress()
       
       // Show success message
       setResetSuccess(true)
@@ -76,6 +72,9 @@ export default function AccountPage() {
   const cancelReset = () => {
     setShowResetConfirmation(false)
   }
+
+  const completedLessons = mounted ? LessonProgressService.getCompletedLessonCount() : 0
+  const phrasesLearned = mounted ? PhraseTrackingService.getPhrasesLearnedCount() : 0
 
   if (!mounted) {
     return (
@@ -105,6 +104,7 @@ export default function AccountPage() {
                 <li>• All XP points</li>
                 <li>• Lesson completion progress</li>
                 <li>• Vocabulary learning progress</li>
+                <li>• Phrases learned and practice data</li>
                 <li>• Performance tracking data</li>
               </ul>
               <p className="text-sm font-medium text-red-600 mb-6">
@@ -225,7 +225,13 @@ export default function AccountPage() {
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-muted-foreground text-sm sm:text-base">Lessons Completed</span>
                     <span className="font-semibold text-sm sm:text-base">
-                      {xp > 0 ? Math.floor(xp / 10) : 0}
+                      {completedLessons}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-muted-foreground text-sm sm:text-base">Phrases Learned</span>
+                    <span className="font-semibold text-sm sm:text-base">
+                      {phrasesLearned}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
