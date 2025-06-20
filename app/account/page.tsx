@@ -4,15 +4,19 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star, User, Trophy, Target, Loader2 } from "lucide-react"
+import { Star, User, Trophy, Target, Loader2, RotateCcw, AlertTriangle, Check } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
+import { VocabularyService } from "@/lib/services/vocabulary-service"
 
 export default function AccountPage() {
   const [mounted, setMounted] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
-  const { xp } = useXp({
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState(false)
+  const { xp, resetXp } = useXp({
     storageKey: 'global-user-xp'
   });
 
@@ -31,6 +35,48 @@ export default function AccountPage() {
     window.location.href = `/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`
   }
 
+  // Handle reset progress confirmation
+  const handleResetProgress = () => {
+    setShowResetConfirmation(true)
+  }
+
+  // Execute the actual reset
+  const executeReset = async () => {
+    setIsResetting(true)
+    
+    try {
+      // Reset XP using the hook's resetXp method
+      resetXp()
+      
+      // Clear lesson progress through service layer
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user-lesson-progress')
+        localStorage.removeItem('vocabulary-progress')
+        localStorage.removeItem('word-performance')
+        localStorage.removeItem('global-user-xp-history')
+      }
+      
+      // Show success message
+      setResetSuccess(true)
+      setShowResetConfirmation(false)
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setResetSuccess(false)
+      }, 3000)
+      
+    } catch (error) {
+      console.error('Error resetting progress:', error)
+    } finally {
+      setIsResetting(false)
+    }
+  }
+
+  // Cancel reset
+  const cancelReset = () => {
+    setShowResetConfirmation(false)
+  }
+
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -41,6 +87,73 @@ export default function AccountPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* Reset Confirmation Modal */}
+      {showResetConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                Are you sure?
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-6">
+                This will permanently delete all your progress including:
+              </p>
+              <ul className="text-sm text-muted-foreground mb-6 space-y-1">
+                <li>• All XP points</li>
+                <li>• Lesson completion progress</li>
+                <li>• Vocabulary learning progress</li>
+                <li>• Performance tracking data</li>
+              </ul>
+              <p className="text-sm font-medium text-red-600 mb-6">
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={cancelReset}
+                  className="flex-1"
+                  disabled={isResetting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={executeReset}
+                  className="flex-1"
+                  disabled={isResetting}
+                >
+                  {isResetting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Resetting...
+                    </>
+                  ) : (
+                    "Reset Progress"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Success Message */}
+      {resetSuccess && (
+        <div className="fixed top-4 right-4 z-50">
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-green-800">
+                <Check className="h-4 w-4" />
+                <span className="font-medium">Progress reset successfully!</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center justify-between px-3 sm:px-4">
@@ -168,41 +281,68 @@ export default function AccountPage() {
             </Card>
           </div>
 
-          {/* Quick Actions */}
-          <Card className="hover:shadow-md transition-shadow duration-300">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-                <Link href="/modules" className="flex-1">
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-white transition-all duration-200 hover:scale-105 py-3 sm:py-2 text-base sm:text-sm">
-                    Browse Modules
+          {/* Action Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Quick Actions */}
+            <Card className="hover:shadow-md transition-shadow duration-300">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg sm:text-xl">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-3">
+                  <Link href="/modules" className="w-full">
+                    <Button className="w-full bg-accent hover:bg-accent/90 text-white transition-all duration-200 hover:scale-105 py-3 text-base">
+                      Browse Modules
+                    </Button>
+                  </Link>
+                  <Button 
+                    onClick={handleContinueLearning}
+                    variant="outline" 
+                    className="w-full transition-all duration-200 hover:scale-105 py-3 text-base hover:bg-primary/10"
+                    disabled={isNavigating}
+                  >
+                    {isNavigating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Continue Learning"
+                    )}
                   </Button>
-                </Link>
+                  <Link href="/pricing" className="w-full">
+                    <Button variant="outline" className="w-full transition-all duration-200 hover:scale-105 py-3 text-base hover:bg-primary/10">
+                      FAQ
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reset Progress Card */}
+            <Card className="hover:shadow-md transition-shadow duration-300 border-red-200">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg sm:text-xl flex items-center gap-2 text-red-600">
+                  <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Reset Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Clear all your learning progress and start fresh. This will reset your XP, lesson progress, and vocabulary tracking.
+                </p>
                 <Button 
-                  onClick={handleContinueLearning}
-                  variant="outline" 
-                  className="flex-1 w-full transition-all duration-200 hover:scale-105 py-3 sm:py-2 text-base sm:text-sm hover:bg-primary/10"
-                  disabled={isNavigating}
+                  onClick={handleResetProgress}
+                  variant="destructive" 
+                  className="w-full transition-all duration-200 hover:scale-105 py-3 text-base"
+                  disabled={isResetting}
                 >
-                  {isNavigating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    "Continue Learning"
-                  )}
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Reset All Progress
                 </Button>
-                <Link href="/pricing" className="flex-1">
-                  <Button variant="outline" className="w-full transition-all duration-200 hover:scale-105 py-3 sm:py-2 text-base sm:text-sm hover:bg-primary/10">
-                    FAQ
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </div>

@@ -35,7 +35,9 @@ export interface Lesson {
 }
 
 // Step types
-export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'completion' | 'summary';
+export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary';
+
+export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept';
 
 // Define base step type
 export interface BaseStep {
@@ -114,6 +116,14 @@ export interface FinalStep extends BaseStep {
   };
 }
 
+export interface GrammarConceptStep {
+  type: 'grammar-concept';
+  points: number;
+  data: {
+    conceptId: string; // References grammar-concepts.ts
+  };
+}
+
 // Union type for all step types
 export type LessonStep = 
   | WelcomeStep
@@ -121,7 +131,8 @@ export type LessonStep =
   | QuizStep
   | InputStep
   | MatchingStep
-  | FinalStep;
+  | FinalStep
+  | GrammarConceptStep;
 
 // State types
 export interface LessonState {

@@ -5,7 +5,8 @@ import { InputExercise } from '@/app/components/games/InputExercise'
 import { MatchingGame } from '@/app/components/games/MatchingGame'
 import { FinalChallenge } from '@/app/components/games/FinalChallenge'
 import { LessonIntro } from '@/app/components/games/WelcomeIntro'
-import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, VocabularyItem } from '@/lib/types'
+import { GrammarConcept } from '@/app/components/games/GrammarConcept'
+import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, VocabularyItem } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
@@ -441,6 +442,14 @@ export function LessonRunner({
           points={step.points}
           onComplete={handleItemComplete}
           onXpStart={createXpHandler('final')}
+        />
+      ) : step.type === 'grammar-concept' ? (
+        <GrammarConcept
+          key={`grammar-concept-${idx}`}
+          conceptId={(step as GrammarConceptStep).data.conceptId}
+          points={step.points}
+          onComplete={handleItemComplete}
+          onXpStart={createXpHandler('quiz')}
         />
       ) : null}
     </>

@@ -1,19 +1,26 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronRight, ChevronLeft } from "lucide-react"
+import { ChevronRight, ChevronLeft, Star } from "lucide-react"
 import { getModule } from "@/lib/config/curriculum"
 import { useParams } from "next/navigation"
+import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 export default function ModulePage() {
   const { moduleId } = useParams()
-  const [selectedLesson, setSelectedLesson] = useState<string | null>(null)
+  const [progress, setProgress] = useState<{[key: string]: boolean}>({})
+
+  // Get data from config
   const module = getModule(moduleId as string)
   
-  // If module isn't found, handle gracefully
+  useEffect(() => {
+    // Load lesson progress when component mounts
+    setProgress(LessonProgressService.getProgress())
+  }, [])
+
   if (!module) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -59,38 +66,53 @@ export default function ModulePage() {
         <section className="py-8 px-3 sm:px-4 bg-white">
           <div className="max-w-6xl mx-auto">
             <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
-              {lessons.map((lesson) => (
-                <Card
-                  key={lesson.id}
-                  className={`border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl ${
-                    lesson.locked ? "opacity-50" : ""
-                  }`}
-                >
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
-                      <span className="text-2xl sm:text-3xl">{lesson.emoji}</span>
-                      {lesson.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-base sm:text-lg">{lesson.description}</p>
-                  </CardContent>
-                  <CardFooter className="py-4">
-                    <Link href={`/modules/${moduleId}/${lesson.id}`} className="w-full">
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-between group hover:bg-primary/10 py-6 text-lg ${
-                          lesson.locked ? "cursor-not-allowed" : ""
-                        }`}
-                        disabled={lesson.locked}
-                      >
-                        {lesson.locked ? "Locked" : "Start Lesson"}
-                        {!lesson.locked && <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
-                      </Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              ))}
+              {lessons.map((lesson) => {
+                const lessonKey = `${module.id}-${lesson.id}`
+                const isCompleted = progress[lessonKey] || false
+                const isAccessible = LessonProgressService.isLessonAccessible(module.id, lesson.id)
+                const isLocked = !isAccessible
+                
+                return (
+                  <Card
+                    key={lesson.id}
+                    className={`border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl ${
+                      isLocked ? "opacity-50" : ""
+                    } ${isCompleted ? "ring-2 ring-green-200 bg-green-50" : ""}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+                        <span className="text-2xl sm:text-3xl">{lesson.emoji}</span>
+                        <div className="flex flex-col items-start">
+                          <span>{lesson.title}</span>
+                          {isCompleted && (
+                            <span className="text-xs text-green-600 font-normal">✓ Completed</span>
+                          )}
+                          {isLocked && !isCompleted && (
+                            <span className="text-xs text-orange-600 font-normal">Complete previous lesson first</span>
+                          )}
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-base sm:text-lg">{lesson.description}</p>
+                    </CardContent>
+                    <CardFooter className="py-4">
+                      <Link href={`/modules/${module.id}/${lesson.id}`} className="w-full">
+                        <Button
+                          variant="outline"
+                          className={`w-full justify-between group hover:bg-primary/10 py-6 text-lg ${
+                            isLocked ? "cursor-not-allowed" : ""
+                          }`}
+                          disabled={isLocked}
+                        >
+                          {isLocked ? "Complete Previous Lesson" : isCompleted ? "Review Lesson" : "Start Lesson"}
+                          {!isLocked && <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                )
+              })}
             </div>
           </div>
         </section>

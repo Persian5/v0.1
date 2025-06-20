@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronRight, ChevronLeft } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChevronRight, ChevronLeft, Star } from "lucide-react"
 import { getModule } from "@/lib/config/curriculum"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
@@ -76,12 +76,14 @@ export default function Module1Page() {
               {lessons.map((lesson) => {
                 const lessonKey = `${module.id}-${lesson.id}`
                 const isCompleted = progress[lessonKey] || false
+                const isAccessible = LessonProgressService.isLessonAccessible(module.id, lesson.id)
+                const isLocked = !isAccessible
                 
                 return (
                   <Card
                     key={lesson.id}
                     className={`border-primary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl ${
-                      lesson.locked ? "opacity-50" : ""
+                      isLocked ? "opacity-50" : ""
                     } ${isCompleted ? "ring-2 ring-green-200 bg-green-50" : ""}`}
                   >
                     <CardHeader className="pb-3">
@@ -91,6 +93,9 @@ export default function Module1Page() {
                           <span>{lesson.title}</span>
                           {isCompleted && (
                             <span className="text-xs text-green-600 font-normal">✓ Completed</span>
+                          )}
+                          {isLocked && !isCompleted && (
+                            <span className="text-xs text-orange-600 font-normal">Complete previous lesson first</span>
                           )}
                         </div>
                       </CardTitle>
@@ -103,12 +108,12 @@ export default function Module1Page() {
                         <Button
                           variant="outline"
                           className={`w-full justify-between group hover:bg-primary/10 py-6 text-lg ${
-                            lesson.locked ? "cursor-not-allowed" : ""
+                            isLocked ? "cursor-not-allowed" : ""
                           }`}
-                          disabled={lesson.locked}
+                          disabled={isLocked}
                         >
-                          {lesson.locked ? "Locked" : isCompleted ? "Review Lesson" : "Start Lesson"}
-                          {!lesson.locked && <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
+                          {isLocked ? "Complete Previous Lesson" : isCompleted ? "Review Lesson" : "Start Lesson"}
+                          {!isLocked && <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />}
                         </Button>
                       </Link>
                     </CardFooter>

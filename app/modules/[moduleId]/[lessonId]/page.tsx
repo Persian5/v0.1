@@ -15,6 +15,7 @@ import CompletionPage from "./completion/page"
 import SummaryPage from "./summary/page"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
+import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 
 export default function LessonPage() {
   const params = useParams()
@@ -36,11 +37,28 @@ export default function LessonPage() {
   const lesson = getLesson(moduleId, lessonId);
   const module = getModule(moduleId);
   
+  // Check if lesson is accessible
+  const isAccessible = LessonProgressService.isLessonAccessible(moduleId, lessonId);
+  
   // If lesson or module isn't found, handle gracefully
   if (!lesson || !module) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-lg text-muted-foreground">Lesson not found</p>
+      </div>
+    );
+  }
+  
+  // If lesson isn't accessible (previous lesson not completed), redirect to modules
+  if (!isAccessible) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground mb-4">You need to complete the previous lesson first!</p>
+          <Button onClick={() => router.push(`/modules/${moduleId}`)}>
+            Back to Module
+          </Button>
+        </div>
       </div>
     );
   }

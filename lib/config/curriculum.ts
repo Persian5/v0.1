@@ -397,11 +397,57 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "esm"
+            }
+          },
+          {
+            type: "grammar-concept",
+            points: 2,
+            data: {
+              conceptId: "ezafe-connector"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Esm", slotId: "slot1" },
+                { id: "word2", text: "Man", slotId: "slot2" },
+                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
+                { id: "word4", text: "Khodafez", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Name" },
+                { id: "slot2", text: "I / Me" },
+                { id: "slot3", text: "Welcome" },
+                { id: "slot4", text: "Goodbye" }
+              ]
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "chi"
+            }
+          },
+          {
+            type: "grammar-concept",
+            points: 2,
+            data: {
+              conceptId: "verb-contraction"
+            }
+          },
+          {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete: Salam, ___ Ali. (Hello, I am Ali)",
-              options: ["Man", "Chetori", "Khoobam", "Merci"],
+              prompt: "Complete: Esme ___ Ali-ye (My name is Ali)",
+              options: ["man", "shoma", "chi", "esm"],
               correct: 0
             }
           },
@@ -416,39 +462,52 @@ export const curriculumData: Module[] = [
             type: "input",
             points: 2,
             data: {
-              question: "How do you say 'You' in Persian?",
-              answer: "Shoma"
+              question: "What is 'name' in Farsi?",
+              answer: "esm"
             }
           },
           {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "How do you respond to 'Chetori?' (Review from Lesson 2)",
-              options: ["Khoobam", "Salam", "Man", "Shoma"],
+              prompt: "What does 'Shoma' mean?",
+              options: ["You", "I / Me", "Name", "What"],
               correct: 0
             }
           },
           {
-            type: "flashcard",
-            points: 1,
+            type: "quiz",
+            points: 2,
             data: {
-              vocabularyId: "esm"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "chi"
+              prompt: "How do you say 'my name' in Farsi?",
+              options: ["esme man", "man esm", "shoma esm", "esm chi"],
+              correct: 0
             }
           },
           {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete: Esm Ali. ___ (My name is Ali. What about you?)",
-              options: ["Shoma", "Chetori", "Chi", "Merci"],
+              prompt: "How do you ask 'What is your name?' in Persian?",
+              options: ["Esme shoma chiye?", "Esm shoma?", "Chi shoma?", "Shoma chi?"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'Salam' mean? (Review from Lesson 1)",
+              options: ["Hello", "Goodbye", "Thank you", "How are you"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Complete the introduction: Salam, esme man Ali-ye. ___?",
+              options: ["Esme shoma chiye?", "Chetori?", "Merci", "Khodafez"],
               correct: 0
             }
           },
@@ -456,8 +515,8 @@ export const curriculumData: Module[] = [
             type: "input",
             points: 2,
             data: {
-              question: "Type the Persian greeting from Lesson 1",
-              answer: "Salam"
+              question: "Type how you ask 'What is it?' in Persian",
+              answer: "chiye"
             }
           },
           {
@@ -467,14 +526,14 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "word1", text: "Man", slotId: "slot1" },
                 { id: "word2", text: "Shoma", slotId: "slot2" },
-                { id: "word3", text: "Merci", slotId: "slot3" },
-                { id: "word4", text: "Chi", slotId: "slot4" }
+                { id: "word3", text: "Chi", slotId: "slot3" },
+                { id: "word4", text: "Salam", slotId: "slot4" }
               ],
               slots: [
                 { id: "slot1", text: "I / Me" },
                 { id: "slot2", text: "You" },
-                { id: "slot3", text: "Thank you" },
-                { id: "slot4", text: "What" }
+                { id: "slot3", text: "What" },
+                { id: "slot4", text: "Hello" }
               ]
             }
           },
@@ -484,26 +543,229 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "esme", text: "Esme", translation: "Name of" },
                 { id: "man", text: "Man", translation: "I / Me" },
-                { id: "esm", text: "Esm", translation: "Name" },
-                { id: "shoma", text: "Shoma", translation: "You" }
+                { id: "shoma", text: "Shoma", translation: "You" },
+                { id: "chiye", text: "Chiye", translation: "What is it?" }
               ],
-              targetWords: ["salam", "man", "esm", "shoma"],
+              targetWords: ["salam", "esme", "man", "shoma", "chiye"],
               title: "Ali Introduces Himself",
-              successMessage: "🎉 Perfect! Ali can now introduce himself confidently!",
-              incorrectMessage: "Almost there—let's practice that introduction again!"
+              successMessage: "🎉 Perfect! Ali can now introduce himself and ask names confidently!",
+              incorrectMessage: "Almost there—let's practice that introduction conversation again!"
             }
           }
         ]
       },
       {
         id: "lesson4",
-        title: "Basic Greetings Continued",
-        description: "Expand your greeting vocabulary with more formal and informal options",
+        title: "Complete Conversations & Meeting People",
+        description: "Put it all together! Practice full conversations and learn to end introductions politely",
         emoji: "💬",
         progress: 0,
-        locked: true,
-        steps: []
+        locked: false,
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi"],
+        vocabulary: [
+          {
+            id: "khoshbakhtam",
+            en: "Nice to Meet You",
+            fa: "خوشبختم",
+            finglish: "Khoshbakhtam",
+            phonetic: "khosh-BAHKH-tam",
+            lessonId: "module1-lesson4"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Complete Conversations & Meeting People",
+            description: "Master full conversations by combining everything you've learned with one essential new phrase.",
+            points: 0,
+            data: {
+              objectives: [
+                "Complete full introduction conversations",
+                "Review all vocabulary from lessons 1-3",
+                "Learn to end conversations politely",
+                "Practice natural conversation flow"
+              ],
+              lessonType: "conversations"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khoshbakhtam"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "After someone tells you their name, what should you say?",
+              options: ["Khoshbakhtam", "Chetori", "Merci", "Khodafez"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Salam", slotId: "slot1" },
+                { id: "word2", text: "Chetori", slotId: "slot2" },
+                { id: "word3", text: "Khoobam", slotId: "slot3" },
+                { id: "word4", text: "Merci", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "How are you?" },
+                { id: "slot3", text: "I'm good" },
+                { id: "slot4", text: "Thank you" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What's the difference between 'chi' and 'chiye'?",
+              options: ["Chi = what, Chiye = what is it", "Chi = who, Chiye = what", "Chi = name, Chiye = question", "No difference"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Man", slotId: "slot1" },
+                { id: "word2", text: "Shoma", slotId: "slot2" },
+                { id: "word3", text: "Esme", slotId: "slot3" },
+                { id: "word4", text: "Chiye", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "I / Me" },
+                { id: "slot2", text: "You" },
+                { id: "slot3", text: "Name of" },
+                { id: "slot4", text: "What is it?" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Complete the conversation: 'Salam, esme man Ali-ye.' Response: '___'",
+              options: ["Khoshbakhtam, esme man Sara-ye", "Chetori", "Merci", "Khodafez"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type a complete introduction: 'My name is [YourName]'",
+              answer: "esme man"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you politely ask someone's name?",
+              options: ["Esme shoma chiye?", "Chi shoma?", "Shoma chi?", "Man esm?"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Review: How do you respond to 'Chetori?'",
+              options: ["Khoobam, merci", "Salam", "Baleh", "Khoshbakhtam"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Baleh", slotId: "slot1" },
+                { id: "word2", text: "Na", slotId: "slot2" },
+                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
+                { id: "word4", text: "Khodafez", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Yes" },
+                { id: "slot2", text: "No" },
+                { id: "slot3", text: "Welcome" },
+                { id: "slot4", text: "Goodbye" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Put the conversation in order: 1) Salam 2) ? 3) Khoshbakhtam",
+              options: ["Esme shoma chiye?", "Chetori?", "Merci", "Khodafez"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type how you ask 'What is your name?' in Persian",
+              answer: "esme shoma chiye"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Complete: 'Esme man Sara-ye. ___'",
+              options: ["Esme shoma chiye?", "Khoobam", "Baleh", "Na"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Khoshbakhtam", slotId: "slot1" },
+                { id: "word2", text: "Esme man", slotId: "slot2" },
+                { id: "word3", text: "Chetori", slotId: "slot3" },
+                { id: "word4", text: "Khoobam", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Nice to meet you" },
+                { id: "slot2", text: "My name" },
+                { id: "slot3", text: "How are you?" },
+                { id: "slot4", text: "I'm good" }
+              ]
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "esme", text: "Esme", translation: "Name of" },
+                { id: "man", text: "Man", translation: "I / Me" },
+                { id: "chiye", text: "Chiye", translation: "What is it?" },
+                { id: "khoshbakhtam", text: "Khoshbakhtam", translation: "Nice to meet you" }
+              ],
+              targetWords: ["salam", "esme", "man", "chiye", "khoshbakhtam"],
+              title: "Ali's Perfect Introduction",
+              successMessage: "🎉 Incredible! Ali can now have complete, polite conversations!",
+              incorrectMessage: "Almost perfect—let's practice that full conversation one more time!"
+            }
+          }
+        ]
       }
     ]
   },
