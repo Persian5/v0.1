@@ -13,6 +13,8 @@ import { getLesson, getModule, getLessonSteps } from "@/lib/config/curriculum"
 import { LessonRunner } from "@/app/components/LessonRunner"
 import CompletionPage from "./completion/page"
 import SummaryPage from "./summary/page"
+import { ModuleCompletion } from "@/app/components/ModuleCompletion"
+import { ModuleProgressService } from "@/lib/services/module-progress-service"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
@@ -166,6 +168,11 @@ export default function LessonPage() {
                 resetLesson={resetLesson}
                 handleViewSummary={handleViewSummary}
               />
+            ) : currentView === 'module-completion' ? (
+              <ModuleCompletion 
+                moduleId={moduleId}
+                totalXpEarned={ModuleProgressService.getModuleCompletion(moduleId)?.totalXpEarned || 0}
+              />
             ) : currentView === 'summary' ? (
               <SummaryPage 
                 xp={xp}
@@ -178,6 +185,7 @@ export default function LessonPage() {
                 steps={getLessonSteps(moduleId, lessonId)} 
                 moduleId={moduleId}
                 lessonId={lessonId}
+                lessonData={lesson}
                 xp={xp}
                 addXp={addXp}
                 progress={progress}

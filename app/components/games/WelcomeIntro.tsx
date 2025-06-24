@@ -137,26 +137,26 @@ export function LessonIntro({
         <div className="relative w-full h-64"> {/* Container for layering */} 
           {/* Background Image */} 
           {backgroundImage && (
-            <Image 
+          <Image 
               src={backgroundImage}
               alt={backgroundImageAlt}
               fill
               className="opacity-90 object-cover"
-            />
+          />
           )}
           
           {/* Foreground Image */} 
           {foregroundImage && (
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10 w-2/5 max-w-[180px]">
-              <Image 
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10 w-2/5 max-w-[180px]">
+            <Image 
                 src={foregroundImage}
                 alt={foregroundImageAlt}
-                width={180} 
-                height={180}
-                className="w-full h-auto object-contain drop-shadow-lg"
-                priority
-              />
-            </div>
+              width={180} 
+              height={180}
+              className="w-full h-auto object-contain drop-shadow-lg"
+              priority
+            />
+          </div>
           )}
         </div>
         
@@ -186,25 +186,25 @@ export function LessonIntro({
             <div className="relative w-full h-full min-h-[400px] rounded-2xl overflow-hidden shadow-md border border-primary/10">
               {/* Background Image */} 
               {backgroundImage && (
-                <Image 
+              <Image 
                   src={backgroundImage}
                   alt={backgroundImageAlt}
                   fill
                   className="opacity-80 object-cover"
-                />
+              />
               )}
               {/* Foreground Image */} 
               {foregroundImage && (
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10 w-3/5 max-w-[280px]">
-                  <Image 
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-10 w-3/5 max-w-[280px]">
+                <Image 
                     src={foregroundImage}
                     alt={foregroundImageAlt}
-                    width={280} 
-                    height={280}
-                    className="w-full h-auto object-contain drop-shadow-xl"
-                    priority
-                  />
-                </div>
+                  width={280} 
+                  height={280}
+                  className="w-full h-auto object-contain drop-shadow-xl"
+                  priority
+                />
+              </div>
               )}
             </div>
           </div>
@@ -222,16 +222,16 @@ export function LessonIntro({
                 {objectives.length > 0 && (
                   <>
                     <p className="font-bold mb-3 text-center">{missionInstructions}</p>
-                    <ul className="space-y-2 text-center">
+                <ul className="space-y-2 text-center">
                       {objectives.map((objective, index) => (
                         <li key={index} className="flex items-center justify-center gap-3">
                           <span className="text-xl">
                             {objectiveEmojis[index] || "📚"}
                           </span>
                           <span>{objective}</span>
-                        </li>
+                  </li>
                       ))}
-                    </ul>
+                </ul>
                   </>
                 )}
               </div>

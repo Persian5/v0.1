@@ -8,17 +8,20 @@ import { LessonIntro } from '@/app/components/games/WelcomeIntro'
 import { GrammarConcept } from '@/app/components/games/GrammarConcept'
 import { AudioMeaning } from '@/app/components/games/AudioMeaning'
 import { AudioSequence } from '@/app/components/games/AudioSequence'
-import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, AudioMeaningStep, AudioSequenceStep, VocabularyItem } from '@/lib/types'
+import { StoryConversation } from '@/app/components/games/StoryConversation'
+import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, AudioMeaningStep, AudioSequenceStep, StoryConversationStep, VocabularyItem, Lesson } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
 import { PhraseTrackingService } from '@/lib/services/phrase-tracking-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
+import { ModuleProgressService } from '@/lib/services/module-progress-service'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
   moduleId: string;
   lessonId: string;
+  lessonData?: Lesson; // Add lesson data to detect story lessons
   xp: number;
   addXp: (amount: number, source: string, metadata?: any) => void;
   progress?: number;
@@ -32,6 +35,7 @@ export function LessonRunner({
   steps, 
   moduleId, 
   lessonId, 
+  lessonData,
   xp, 
   addXp, 
   progress, 
@@ -46,6 +50,7 @@ export function LessonRunner({
   const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
   const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
   const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
+  const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
   const stateRef = useRef<HTMLDivElement>(null);
 
   // Get all vocabulary for this lesson (including review vocabulary)
@@ -96,23 +101,64 @@ export function LessonRunner({
   }, [idx, steps.length, onProgressChange, onViewChange, steps, isInRemediation]);
 
   // If we've gone through all steps, show completion
-  if (idx >= steps.length && !isInRemediation) {
-    // Mark lesson as completed when all steps are finished
-    LessonProgressService.markLessonCompleted(moduleId, lessonId);
+  if (idx >= steps.length && !isInRemediation && !storyCompleted) {
+    // Check if this is a story lesson using the lesson data
+    const isStoryLesson = lessonData?.isStoryLesson || false;
     
-    if (onProgressChange) {
-      onProgressChange(100);
+    if (isStoryLesson) {
+      // Story lessons go directly to module completion, don't mark lesson as completed
+      if (onProgressChange) {
+        onProgressChange(100);
+      }
+      
+      if (onViewChange) {
+        // Calculate total XP for the module
+        const totalModuleXp = ModuleProgressService.calculateModuleXp(moduleId);
+        
+        // Mark module as completed
+        ModuleProgressService.markModuleCompleted(moduleId, totalModuleXp);
+        
+        onViewChange('module-completion');
+      }
+      
+      return (
+        <div className="p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4">Story Complete!</h2>
+          <p>You earned {XpService.formatXp(xp)}</p>
+        </div>
+      );
+    } else {
+      // Regular lesson completion logic
+      LessonProgressService.markLessonCompleted(moduleId, lessonId);
+      
+      // Check if this completes the entire module
+      const isModuleCompleted = ModuleProgressService.checkModuleCompletion(moduleId);
+      
+      if (onProgressChange) {
+        onProgressChange(100);
+      }
+      if (onViewChange) {
+        // If module is completed, trigger module completion
+        if (isModuleCompleted && !ModuleProgressService.isModuleCompleted(moduleId)) {
+          // Calculate total XP for the module
+          const totalModuleXp = ModuleProgressService.calculateModuleXp(moduleId);
+          
+          // Mark module as completed
+          ModuleProgressService.markModuleCompleted(moduleId, totalModuleXp);
+          
+          onViewChange('module-completion');
+        } else {
+          onViewChange('completion');
+        }
+      }
+      
+      return (
+        <div className="p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4">Lesson Complete!</h2>
+          <p>You earned {XpService.formatXp(xp)}</p>
+        </div>
+      );
     }
-    if (onViewChange) {
-      onViewChange('completion');
-    }
-    
-    return (
-      <div className="p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Lesson Complete!</h2>
-        <p>You earned {XpService.formatXp(xp)}</p>
-      </div>
-    );
   }
 
   const step = steps[idx]
@@ -214,6 +260,35 @@ export function LessonRunner({
     }
   };
 
+  // Special handler for story completion - bypasses lesson completion and goes directly to module completion
+  const handleStoryComplete = () => {
+    // Set flag to prevent normal lesson completion logic from running
+    setStoryCompleted(true);
+    
+    // Check if this completes the entire module
+    const isModuleCompleted = ModuleProgressService.checkModuleCompletion(moduleId);
+    
+    if (onProgressChange) {
+      onProgressChange(100);
+    }
+    
+    if (onViewChange) {
+      // Story completion always triggers module completion (don't mark lesson as completed)
+      if (!ModuleProgressService.isModuleCompleted(moduleId)) {
+        // Calculate total XP for the module
+        const totalModuleXp = ModuleProgressService.calculateModuleXp(moduleId);
+        
+        // Mark module as completed
+        ModuleProgressService.markModuleCompleted(moduleId, totalModuleXp);
+        
+        onViewChange('module-completion');
+      } else {
+        // Module already completed, just show story completion
+        onViewChange('completion');
+      }
+    }
+  };
+
   // Find vocabulary item by ID across all available vocabulary
   const findVocabularyById = (vocabId: string): VocabularyItem | undefined => {
     return VocabularyService.findVocabularyById(vocabId);
@@ -294,7 +369,7 @@ export function LessonRunner({
   };
 
   // Create activity-specific XP handlers using the XP service
-  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'audio-meaning' | 'audio-sequence') => {
+  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'audio-meaning' | 'audio-sequence' | 'story-conversation') => {
     return () => {
       const xpReward = XpService.getReward(
         activityType === 'flashcard' ? 'FLASHCARD_FLIP' :
@@ -303,6 +378,7 @@ export function LessonRunner({
         activityType === 'matching' ? 'MATCHING_COMPLETE' :
         activityType === 'audio-meaning' ? 'QUIZ_CORRECT' :
         activityType === 'audio-sequence' ? 'MATCHING_COMPLETE' :
+        activityType === 'story-conversation' ? 'QUIZ_CORRECT' :
         'FINAL_CHALLENGE'
       );
       
@@ -504,6 +580,14 @@ export function LessonRunner({
           autoPlay={(step as AudioSequenceStep).data.autoPlay}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createXpHandler('audio-sequence')}
+        />
+      ) : step.type === 'story-conversation' ? (
+        <StoryConversation
+          key={`story-conversation-${idx}-${(step as StoryConversationStep).data.storyId}`}
+          step={step as StoryConversationStep}
+          onComplete={handleStoryComplete}
+          onXpStart={createXpHandler('story-conversation')}
+          addXp={addXp}
         />
       ) : null}
     </>

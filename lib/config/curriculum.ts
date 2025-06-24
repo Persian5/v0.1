@@ -7,8 +7,8 @@ export const curriculumData: Module[] = [
     title: "Module 1: Greetings & Politeness",
     description: "Start a conversation the right way. Learn how to say hello, goodbye, thank you, please, and the difference between formal and casual tone.",
     emoji: "👋",
-    lessonCount: 4,
-    estimatedTime: "20 minutes",
+    lessonCount: 5,
+    estimatedTime: "25 minutes",
     available: true,
     lessons: [
       {
@@ -778,6 +778,208 @@ export const curriculumData: Module[] = [
               title: "Your Perfect Introduction",
               successMessage: "Incredible! You can now have complete, polite conversations!",
               incorrectMessage: "Almost perfect—let's practice that full conversation one more time!"
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson5",
+        title: "Story Mode: Meeting Someone New",
+        description: "Practice your greetings in a real conversation with Sara at a friend's house",
+        emoji: "🗣️",
+        locked: false,
+        isStoryLesson: true,
+        vocabulary: [], // Uses vocabulary from previous lessons
+        steps: [
+          {
+            type: "story-conversation",
+            points: 7, // Total XP for completing the story
+            data: {
+              storyId: "module1-story",
+              title: "Meeting Someone New",
+              description: "Practice a real conversation using all your greeting skills",
+              setting: "You're walking down the street when someone new approaches you",
+              characterName: "Sara",
+              characterEmoji: "👩",
+              requiresPersonalization: true,
+              exchanges: [
+                {
+                  id: "exchange1",
+                  initiator: "user",
+                  characterMessage: "",
+                  choices: [
+                    {
+                      id: "choice1a",
+                      text: "Salam",
+                      vocabularyUsed: ["salam"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Salam! Chetori?"
+                    },
+                    {
+                      id: "choice1b", 
+                      text: "Salam, khosh amadid",
+                      vocabularyUsed: ["salam", "khosh_amadid"],
+                      isCorrect: false,
+                      points: 0
+                    }
+                  ]
+                },
+                {
+                  id: "exchange2",
+                  initiator: "character",
+                  characterMessage: "Salam! Chetori?",
+                  choices: [
+                    {
+                      id: "choice2a",
+                      text: "Baleh",
+                      vocabularyUsed: ["baleh"],
+                      isCorrect: false,
+                      points: 0
+                    },
+                    {
+                      id: "choice2b",
+                      text: "Khoobam, merci!",
+                      vocabularyUsed: ["khoobam", "merci"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: ""
+                    },
+                    {
+                      id: "choice2c",
+                      text: "Esme man {name}-e?",
+                      vocabularyUsed: ["esme_man"],
+                      isCorrect: false,
+                      points: 0
+                    }
+                  ]
+                },
+                {
+                  id: "exchange3",
+                  initiator: "user",
+                  characterMessage: "",
+                  choices: [
+                    {
+                      id: "choice3a",
+                      text: "Shoma chetori?",
+                      vocabularyUsed: ["shoma", "chetori"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Khoobam, merci! Esme shoma chiye?"
+                    },
+                    {
+                      id: "choice3b",
+                      text: "Salam chetori?", 
+                      vocabularyUsed: ["salam", "chetori"],
+                      isCorrect: false,
+                      points: 0
+                    }
+                  ]
+                },
+                {
+                  id: "exchange4",
+                  initiator: "character",
+                  characterMessage: "Khoobam, merci! Esme shoma chiye?",
+                  choices: [
+                    {
+                      id: "choice4a",
+                      text: "Esme man {name}-e",
+                      vocabularyUsed: ["esme_man"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: ""
+                    },
+                    {
+                      id: "choice4b",
+                      text: "Esme shoma {name}-e",
+                      vocabularyUsed: ["esme_shoma"],
+                      isCorrect: false,
+                      points: 0
+                    }
+                  ]
+                },
+                {
+                  id: "exchange5",
+                  initiator: "user",
+                  characterMessage: "",
+                  choices: [
+                    {
+                      id: "choice5a",
+                      text: "Esme shoma chiye?",
+                      vocabularyUsed: ["esme_shoma", "chiye"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Esme man Sara-e"
+                    },
+                    {
+                      id: "choice5b",
+                      text: "Esme man chiye?",
+                      vocabularyUsed: ["esme_man", "chiye"],
+                      isCorrect: false,
+                      points: 0
+                    }
+                  ]
+                },
+                {
+                  id: "exchange6",
+                  initiator: "character",
+                  characterMessage: "Esme man Sara-e",
+                  choices: [
+                    {
+                      id: "choice6a",
+                      text: "Khoshbakhtam Sara",
+                      vocabularyUsed: ["khoshbakhtam"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Khoshbakhtam {name}!"
+                    },
+                    {
+                      id: "choice6b",
+                      text: "Khoshbakhtam",
+                      vocabularyUsed: ["khoshbakhtam"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Khoshbakhtam {name}!"
+                    }
+                  ]
+                },
+                {
+                  id: "exchange7",
+                  initiator: "user",
+                  characterMessage: "",
+                  choices: [
+                    {
+                      id: "choice7a",
+                      text: "Khodafez Sara",
+                      vocabularyUsed: ["khodafez"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Khodafez {name}!"
+                    },
+                    {
+                      id: "choice7b",
+                      text: "Salam Sara",
+                      vocabularyUsed: ["salam"],
+                      isCorrect: false,
+                      points: 0
+                    },
+                    {
+                      id: "choice7c",
+                      text: "Baleh Sara",
+                      vocabularyUsed: ["baleh"],
+                      isCorrect: false,
+                      points: 0
+                    },
+                    {
+                      id: "choice7d",
+                      text: "Na Sara",
+                      vocabularyUsed: ["na"],
+                      isCorrect: false,
+                      points: 0
+                    }
+                  ]
+                }
+              ]
             }
           }
         ]

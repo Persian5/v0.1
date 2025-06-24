@@ -29,15 +29,16 @@ export interface Lesson {
   emoji: string;
   progress?: number;
   locked: boolean;
+  isStoryLesson?: boolean; // Flag to indicate this lesson should go directly to module completion
   steps: LessonStep[];
   vocabulary?: VocabularyItem[];  // Optional vocabulary bank for this lesson
   reviewVocabulary?: string[];    // Vocabulary IDs from previous lessons to review
 }
 
 // Step types
-export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary' | 'audio-meaning' | 'audio-sequence';
+export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary' | 'audio-meaning' | 'audio-sequence' | 'story-conversation';
 
-export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'audio-meaning' | 'audio-sequence';
+export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'audio-meaning' | 'audio-sequence' | 'story-conversation';
 
 // Define base step type
 export interface BaseStep {
@@ -143,6 +144,54 @@ export interface AudioSequenceStep extends BaseStep {
   };
 }
 
+// Story conversation step (modular for all modules)
+export interface StoryConversationStep extends BaseStep {
+  type: 'story-conversation';
+  data: {
+    storyId: string;
+    title: string;
+    description: string;
+    setting: string;
+    characterName: string;
+    characterEmoji: string;
+    exchanges: StoryExchange[];
+    successMessage?: string; // Made optional
+    requiresPersonalization?: boolean; // For name input
+  };
+}
+
+// Individual exchange in story conversation
+export interface StoryExchange {
+  id: string;
+  initiator: 'user' | 'character';
+  characterMessage?: string; // What character says (if character initiates)
+  choices: StoryChoice[];
+  correctChoiceIds?: string[]; // Multiple correct answers allowed
+  nextExchangeId?: string; // For complex branching (future)
+}
+
+// Individual choice in an exchange
+export interface StoryChoice {
+  id: string;
+  text: string; // Persian text to display
+  vocabularyUsed: string[]; // Track vocabulary usage
+  isCorrect: boolean;
+  points: number; // 1 XP for correct first try
+  responseMessage?: string; // Character's response to this choice
+}
+
+// Story progress tracking
+export interface StoryProgress {
+  storyId: string;
+  completed: boolean;
+  currentExchange: number;
+  totalExchanges: number;
+  correctChoices: number;
+  totalChoices: number;
+  vocabularyPracticed: string[];
+  userPersonalization?: { [key: string]: string }; // Store user name, etc.
+}
+
 // Union type for all step types
 export type LessonStep = 
   | WelcomeStep
@@ -153,7 +202,8 @@ export type LessonStep =
   | FinalStep
   | GrammarConceptStep
   | AudioMeaningStep
-  | AudioSequenceStep;
+  | AudioSequenceStep
+  | StoryConversationStep;
 
 // State types
 export interface LessonState {

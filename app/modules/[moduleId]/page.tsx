@@ -33,16 +33,16 @@ export default function ModulePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
+      {/* Header - Much more compact on mobile */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <Link href="/modules" className="flex items-center gap-2 font-bold text-lg text-primary">
-            <ChevronLeft className="h-5 w-5" />
+        <div className="flex h-12 sm:h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <Link href="/modules" className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary">
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="hidden sm:inline">Back to Modules</span>
             <span className="sm:hidden">Back</span>
           </Link>
           <Link href="/account">
-            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">
               Account
             </Button>
           </Link>
@@ -50,22 +50,22 @@ export default function ModulePage() {
       </header>
 
       <main className="flex-1">
-        {/* Module Overview */}
-        <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-primary/5">
+        {/* Module Overview - Much more compact on mobile */}
+        <section className="py-4 sm:py-8 lg:py-12 px-3 sm:px-6 lg:px-8 bg-primary/5">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary mb-2 sm:mb-4">
               {module.title}
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Master the art of Persian {module.id.replace('module', '').toLowerCase() === '1' ? 'greetings' : module.description.split(' ')[1].toLowerCase()}
             </p>
           </div>
         </section>
 
-        {/* Lessons Grid */}
-        <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-white">
+        {/* Lessons Grid - Compact mobile layout */}
+        <section className="py-4 sm:py-8 lg:py-12 px-3 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {lessons.map((lesson) => {
                 const lessonKey = `${module.id}-${lesson.id}`
                 const isCompleted = progress[lessonKey] || false
@@ -81,9 +81,9 @@ export default function ModulePage() {
                       "border-accent/30 hover:border-accent hover:scale-105"
                     }`}
                   >
-                    <CardHeader className="pb-4">
+                    <CardHeader className="pb-2 sm:pb-4 pt-3 sm:pt-6 px-3 sm:px-6">
                       <CardTitle className="text-center">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight mb-3">
+                        <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 leading-tight mb-2 sm:mb-3">
                           {lesson.title}
                         </h3>
                         {/* Single small status indicator */}
@@ -102,17 +102,17 @@ export default function ModulePage() {
                         )}
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-sm sm:text-base text-gray-600 text-center min-h-[60px] sm:min-h-[80px] flex items-center justify-center">
+                    <CardContent className="pt-0 px-3 sm:px-6">
+                      <p className="text-xs sm:text-sm lg:text-base text-gray-600 text-center min-h-[40px] sm:min-h-[60px] lg:min-h-[80px] flex items-center justify-center">
                         {lesson.description}
                       </p>
                     </CardContent>
-                    <CardFooter className="pt-0">
+                    <CardFooter className="pt-0 pb-3 sm:pb-6 px-3 sm:px-6">
                       <div className="w-full">
                         <Link href={`/modules/${module.id}/${lesson.id}`} className="block">
                           <Button
                             variant={isCompleted ? "outline" : "default"}
-                            className={`w-full justify-between group py-3 font-semibold ${
+                            className={`w-full justify-between group py-2 sm:py-3 font-semibold text-xs sm:text-sm ${
                               isLocked ? "cursor-not-allowed bg-gray-100 text-gray-500" : 
                               isCompleted ? "border-green-300 text-green-700 hover:bg-green-50" :
                               "bg-accent hover:bg-accent/90 text-white"
@@ -122,7 +122,7 @@ export default function ModulePage() {
                             <span className="flex-1 text-center">
                               {isLocked ? "Complete Previous" : isCompleted ? "Practice Again" : "Start Lesson"}
                             </span>
-                            {!isLocked && <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                            {!isLocked && <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />}
                           </Button>
                         </Link>
                       </div>
@@ -132,11 +132,11 @@ export default function ModulePage() {
               })}
             </div>
             
-            {/* Progress Summary */}
-            <div className="mt-12 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-sm text-gray-600">
+            {/* Progress Summary - More compact on mobile */}
+            <div className="mt-6 sm:mt-8 lg:mt-12 text-center">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-full shadow-sm border">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>
+                <span className="text-xs sm:text-sm text-gray-600">
                   {Object.values(progress).filter(Boolean).length} of {lessons.length} lessons completed
                 </span>
               </div>

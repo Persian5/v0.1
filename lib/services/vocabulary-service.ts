@@ -181,6 +181,27 @@ export class VocabularyService {
     return progress[lessonKey]?.completed || false;
   }
 
+  // Get all vocabulary from a specific module
+  static getModuleVocabulary(moduleId: string): VocabularyItem[] {
+    const { getModule } = require('../config/curriculum');
+    const module = getModule(moduleId);
+    
+    if (!module) {
+      return [];
+    }
+    
+    const moduleVocabulary: VocabularyItem[] = [];
+    
+    // Aggregate vocabulary from all lessons in the module
+    for (const lesson of module.lessons) {
+      if (lesson.vocabulary) {
+        moduleVocabulary.push(...lesson.vocabulary);
+      }
+    }
+    
+    return moduleVocabulary;
+  }
+
   // Get words learned from a specific lesson (checking progress)
   static getWordsLearnedFromLesson(moduleId: string, lessonId: string): string[] {
     const lessonKey = `${moduleId}-${lessonId}`;
