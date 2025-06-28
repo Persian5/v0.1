@@ -23,6 +23,13 @@ export interface FinalChallengeProps {
   successMessage?: string;
   incorrectMessage?: string;
   
+  // Conversation flow for realistic Persian patterns
+  conversationFlow?: {
+    description: string;           // "A polite introduction conversation"
+    expectedPhrase: string;        // "Hello, what is your name, goodbye, thank you"
+    persianSequence: string[];     // ["salam", "esme", "shoma", "chiye", "khodafez", "merci"]
+  };
+  
   // Gameplay
   points: number;
   onComplete: (success: boolean) => void;
@@ -36,19 +43,54 @@ export function FinalChallenge({
   description,
   successMessage = "Perfect! You got the order right!",
   incorrectMessage = "Almost there—let's try that order again!",
+  conversationFlow,
   points = 20, 
   onComplete,
   onXpStart
 }: FinalChallengeProps) {
+  // ENHANCED WORD BANK: Handle conversation flow patterns
+  const enhancedWords = useMemo(() => {
+    if (!conversationFlow) {
+      return words; // Use original words if no conversation flow
+    }
+    
+    // Create enhanced word bank with conversation-aware vocabulary
+    const conversationWords: WordItem[] = [];
+    const usedWordIds = new Set<string>();
+    
+    // Add words needed for the conversation sequence
+    conversationFlow.persianSequence.forEach(seqId => {
+      const originalWord = words.find(w => w.id === seqId);
+      if (originalWord && !usedWordIds.has(seqId)) {
+        conversationWords.push(originalWord);
+        usedWordIds.add(seqId);
+      }
+    });
+    
+    // Add remaining words as distractors (avoiding duplicates)
+    words.forEach(word => {
+      if (!usedWordIds.has(word.id)) {
+        conversationWords.push(word);
+        usedWordIds.add(word.id);
+      }
+    });
+    
+    return conversationWords;
+  }, [words, conversationFlow]);
+
   // SYSTEMATIC RANDOMIZATION: Randomize word bank display order once on mount
   // Following same pattern as Quiz component for consistency
   const shuffledWords = useMemo(() => {
-    return [...words].sort(() => Math.random() - 0.5);
-  }, [words]);
+    return [...enhancedWords].sort(() => Math.random() - 0.5);
+  }, [enhancedWords]);
 
   // Generate dynamic description if none provided
   const getDynamicDescription = () => {
     if (description) return description;
+    
+    if (conversationFlow) {
+      return `${conversationFlow.description}: "${conversationFlow.expectedPhrase}"`;
+    }
     
     // Show the English translations in the correct order so students know the target conversation flow
     const orderedTranslations = targetWords.map(targetId => {
@@ -73,13 +115,14 @@ export function FinalChallenge({
     }))
   )
   
-  // Initialize slots based on targetWords length
-  const [slots, setSlots] = useState(() => 
-    targetWords.map((_, index) => ({
+  // Initialize slots based on conversation flow or targetWords length
+  const [slots, setSlots] = useState(() => {
+    const sequenceLength = conversationFlow ? conversationFlow.persianSequence.length : targetWords.length;
+    return Array.from({ length: sequenceLength }, (_, index) => ({
       id: index + 1,
       itemId: null as string | null
-    }))
-  )
+    }));
+  });
   
   const [showFeedback, setShowFeedback] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
@@ -95,14 +138,16 @@ export function FinalChallenge({
       order: null as number | null
     })))
     
-    setSlots(targetWords.map((_, index) => ({
+    // Only reset slots when the expected sequence length changes
+    const sequenceLength = conversationFlow ? conversationFlow.persianSequence.length : targetWords.length;
+    setSlots(Array.from({ length: sequenceLength }, (_, index) => ({
       id: index + 1,
       itemId: null as string | null
-    })))
+    })));
     
     setShowFeedback(false)
     setIsCorrect(false)
-  }, [shuffledWords, targetWords])
+  }, [shuffledWords, targetWords, conversationFlow])
 
   // Handle clicking on a phrase to add it to the next available slot
   const handlePhraseClick = (itemId: string) => {
@@ -138,14 +183,29 @@ export function FinalChallenge({
       return item ? item.id : null
     })
     
-    // Check if each filled slot matches the expected target word
-    const filledSlotCount = currentOrder.filter(id => id !== null).length
-    const correctCount = currentOrder.filter((id, index) => 
-      index < targetWords.length && id === targetWords[index]
-    ).length
+    let isOrderCorrect = false;
     
-    // All filled slots must match expected positions
-    const isOrderCorrect = filledSlotCount === targetWords.length && correctCount === targetWords.length
+    if (conversationFlow) {
+      // Use conversation flow validation for realistic Persian patterns
+      const filledSlotCount = currentOrder.filter(id => id !== null).length;
+      const expectedSequence = conversationFlow.persianSequence;
+      
+      // Check if sequence matches conversation flow
+      const correctCount = currentOrder.filter((id, index) => 
+        index < expectedSequence.length && id === expectedSequence[index]
+      ).length;
+      
+      isOrderCorrect = filledSlotCount === expectedSequence.length && correctCount === expectedSequence.length;
+    } else {
+      // Default behavior: match target words order
+      const filledSlotCount = currentOrder.filter(id => id !== null).length;
+      const correctCount = currentOrder.filter((id, index) => 
+        index < targetWords.length && id === targetWords[index]
+      ).length;
+      
+      // All filled slots must match expected positions
+      isOrderCorrect = filledSlotCount === targetWords.length && correctCount === targetWords.length;
+    }
     
     setShowFeedback(true)
     setIsCorrect(isOrderCorrect)
@@ -221,6 +281,11 @@ export function FinalChallenge({
         <p className="text-muted-foreground text-sm sm:text-base mb-2">
           {getDynamicDescription()}
         </p>
+        {conversationFlow && (
+          <p className="text-xs text-blue-600 italic mb-2">
+            Build this conversation in Persian word order
+          </p>
+        )}
       </div>
 
       <Card className="mb-4 w-full">

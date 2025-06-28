@@ -4,6 +4,7 @@ import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem } from "@/lib/types"
+import { PersianGrammarService } from "@/lib/services/persian-grammar-service"
 import { playSuccessSound } from "./Flashcard"
 
 interface AudioSequenceProps {
@@ -11,6 +12,9 @@ interface AudioSequenceProps {
   vocabularyBank: VocabularyItem[] // All available vocabulary for this lesson
   points?: number
   autoPlay?: boolean
+  expectedTranslation?: string // Custom English translation override for phrases
+  targetWordCount?: number // Number of English words expected (overrides sequence.length)
+  maxWordBankSize?: number // Maximum number of options in word bank (prevents crowding)
   onContinue: () => void
   onXpStart?: () => void
 }
@@ -20,6 +24,9 @@ export function AudioSequence({
   vocabularyBank,
   points = 3,
   autoPlay = false,
+  expectedTranslation, // Add support for custom translation
+  targetWordCount, // Add support for custom word count
+  maxWordBankSize = 12, // Default max 12 options for better variety while manageable
   onContinue,
   onXpStart
 }: AudioSequenceProps) {
@@ -29,10 +36,122 @@ export function AudioSequence({
   const [showXp, setShowXp] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
 
-  // Create word bank with all learned vocabulary (shuffled ONLY ONCE on mount)
-  const [allWordBankOptions] = useState(() => 
-    vocabularyBank.map(v => v.id).sort(() => Math.random() - 0.5)
-  )
+  // CURATED WORD BANK: Smart selection to prevent overwhelming users
+  const [allWordBankOptions] = useState<string[] | { vocabItems: VocabularyItem[]; vocabIds: string[] }>(() => {
+    if (!expectedTranslation) {
+      // Default behavior: curated selection from available vocabulary
+      const correctWords = vocabularyBank.filter(v => sequence.includes(v.id));
+      
+      // Add strategic distractors (avoid overwhelming)
+      const maxDistractors = Math.max(0, maxWordBankSize - correctWords.length);
+      const distractors = vocabularyBank
+        .filter(v => !sequence.includes(v.id))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, maxDistractors);
+      
+      const curatedVocab = [...correctWords, ...distractors];
+      return curatedVocab.map(v => v.id).sort(() => Math.random() - 0.5);
+    }
+
+    // SMART PERSIAN GRAMMAR: Use grammar service for transformations
+    const transformedWords = PersianGrammarService.transformSequence(
+      sequence, 
+      vocabularyBank, 
+      expectedTranslation
+    );
+    
+    // Convert to VocabularyItem format
+    const contextualVocab: VocabularyItem[] = transformedWords.map(transformed => ({
+      id: transformed.id,
+      en: transformed.en,
+      fa: transformed.fa,
+      finglish: transformed.finglish,
+      phonetic: transformed.phonetic,
+      lessonId: transformed.lessonId
+    }));
+    
+    // Track used meanings to avoid duplicates
+    const usedEnglishMeanings = new Set(contextualVocab.map(v => v.en.toLowerCase()));
+    
+    // Add strategic distractors (avoid semantic conflicts)
+    const maxDistractors = Math.max(4, maxWordBankSize - contextualVocab.length);
+    const potentialDistractors = vocabularyBank.filter(vocab => {
+      // Skip if meaning already used
+      if (usedEnglishMeanings.has(vocab.en.toLowerCase())) return false;
+      
+      // Skip if this vocab is already in our contextual vocab
+      if (contextualVocab.some(cv => cv.id === vocab.id)) return false;
+      
+      // ENHANCED: Check for semantic similarity with existing contextual vocab
+      const vocabNormalized = vocab.en.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+      const hasSemanticConflict = contextualVocab.some(existingVocab => {
+        const existingNormalized = existingVocab.en.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+        
+        // Check for exact match after normalization
+        if (vocabNormalized === existingNormalized) return true;
+        
+        // Check for substantial word overlap (e.g., "nice to meet you" vs "nice meet you")
+        const vocabWords = vocabNormalized.split(' ');
+        const existingWords = existingNormalized.split(' ');
+        const commonWords = vocabWords.filter(word => existingWords.includes(word));
+        
+        // If more than 50% of words overlap, it's too similar
+        const overlapPercentage = commonWords.length / Math.max(vocabWords.length, existingWords.length);
+        return overlapPercentage > 0.5;
+      });
+      
+      if (hasSemanticConflict) return false;
+      
+      // AVOID words that overlap with expected translation
+      const expectedWords = expectedTranslation.toLowerCase().split(' ');
+      const vocabWords = vocab.en.toLowerCase().split(' ');
+      const hasConfusingOverlap = vocabWords.some(word => 
+        expectedWords.some(expectedWord => {
+          return word === expectedWord || 
+                 (word.includes(expectedWord) && word.length <= expectedWord.length + 2) ||
+                 (expectedWord.includes(word) && expectedWord.length <= word.length + 2);
+        })
+      );
+      
+      return !hasConfusingOverlap;
+    });
+    
+    // Select good distractors
+    const selectedDistractors = potentialDistractors
+      .sort(() => Math.random() - 0.5)
+      .slice(0, maxDistractors);
+    
+    selectedDistractors.forEach(vocab => {
+      contextualVocab.push({
+        id: vocab.id,
+        en: vocab.en,
+        fa: vocab.fa,
+        finglish: vocab.finglish,
+        phonetic: vocab.phonetic,
+        lessonId: vocab.lessonId
+      });
+    });
+    
+    return {
+      vocabItems: contextualVocab,
+      vocabIds: contextualVocab.map(v => v.id).sort(() => Math.random() - 0.5)
+    };
+  })
+
+  // Dynamic vocabulary lookup with contextual support
+  const getVocabularyById = (id: string) => {
+    // First check the original vocabulary bank
+    let vocab = vocabularyBank.find(v => v.id === id)
+    if (vocab) return vocab
+    
+    // Check the contextual vocabulary items we created
+    if (typeof allWordBankOptions === 'object' && 'vocabItems' in allWordBankOptions) {
+      const contextualVocab = allWordBankOptions.vocabItems.find((v: VocabularyItem) => v.id === id)
+      if (contextualVocab) return contextualVocab
+    }
+    
+    return undefined
+  }
 
   const playAudioSequence = async () => {
     try {
@@ -64,9 +183,43 @@ export function AudioSequence({
   }
 
   const handleSubmit = () => {
-    if (userOrder.length !== sequence.length) return
+    // Use targetWordCount if provided, otherwise calculate based on grammar rules
+    let expectedWordCount: number;
+    
+    if (targetWordCount) {
+      expectedWordCount = targetWordCount;
+    } else if (expectedTranslation) {
+      // Use grammar service to determine correct word count
+      expectedWordCount = PersianGrammarService.getExpectedWordCount(
+        sequence, 
+        vocabularyBank, 
+        expectedTranslation
+      );
+    } else {
+      expectedWordCount = sequence.length;
+    }
+    
+    if (userOrder.length !== expectedWordCount) return
 
-    const correct = JSON.stringify(userOrder) === JSON.stringify(sequence)
+    let correct = false
+    
+    if (expectedTranslation) {
+      // For custom phrases, match against expected translation
+      const userTranslation = userOrder.map(id => {
+        const vocab = getVocabularyById(id)
+        return vocab?.en || ''
+      }).join(' ')
+      
+      // Normalize for comparison
+      const normalizedUser = userTranslation.toLowerCase().trim().replace(/\s+/g, ' ')
+      const normalizedExpected = expectedTranslation.toLowerCase().trim().replace(/\s+/g, ' ')
+      
+      correct = normalizedUser === normalizedExpected
+    } else {
+      // Default behavior: match vocabulary ID order
+      correct = JSON.stringify(userOrder) === JSON.stringify(sequence)
+    }
+    
     setIsCorrect(correct)
     setShowResult(true)
 
@@ -75,7 +228,6 @@ export function AudioSequence({
       if (onXpStart) {
         onXpStart()
       }
-      // Show XP animation immediately when correct (same as other games)
       setShowXp(true)
     }
   }
@@ -88,10 +240,6 @@ export function AudioSequence({
     setUserOrder([])
     setShowResult(false)
     setIsCorrect(false)
-  }
-
-  const getVocabularyById = (id: string) => {
-    return vocabularyBank.find(v => v.id === id)
   }
 
   return (
@@ -185,7 +333,10 @@ export function AudioSequence({
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-3 text-center">Word Bank:</h3>
         <div className="flex flex-wrap gap-2 justify-center">
-          {allWordBankOptions.map(id => {
+          {(typeof allWordBankOptions === 'object' && 'vocabIds' in allWordBankOptions 
+            ? allWordBankOptions.vocabIds 
+            : allWordBankOptions
+          ).map((id: string) => {
             const vocab = getVocabularyById(id)
             const isUsed = userOrder.includes(id)
             
@@ -215,11 +366,11 @@ export function AudioSequence({
         <div className="text-center mb-6">
           <Button
             onClick={handleSubmit}
-            disabled={userOrder.length !== sequence.length}
+            disabled={userOrder.length !== (targetWordCount || (expectedTranslation ? PersianGrammarService.getExpectedWordCount(sequence, vocabularyBank, expectedTranslation) : sequence.length))}
             className="gap-2"
             size="lg"
           >
-            Check My Answer ({userOrder.length}/{sequence.length})
+            Check My Answer ({userOrder.length}/{targetWordCount || (expectedTranslation ? PersianGrammarService.getExpectedWordCount(sequence, vocabularyBank, expectedTranslation) : sequence.length)})
           </Button>
         </div>
       )}
@@ -235,7 +386,9 @@ export function AudioSequence({
           <p className="text-sm">
             {isCorrect 
               ? 'You arranged the words in the correct order!'
-              : `Correct order: ${sequence.map(id => getVocabularyById(id)?.en).join(' → ')}`
+              : expectedTranslation 
+                ? `Correct meaning: "${expectedTranslation}"`
+                : `Correct order: ${sequence.map(id => getVocabularyById(id)?.en).join(' → ')}`
             }
           </p>
         </div>

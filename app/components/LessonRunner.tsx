@@ -134,10 +134,10 @@ export function LessonRunner({
       // Check if this completes the entire module
       const isModuleCompleted = ModuleProgressService.checkModuleCompletion(moduleId);
       
-      if (onProgressChange) {
-        onProgressChange(100);
-      }
-      if (onViewChange) {
+    if (onProgressChange) {
+      onProgressChange(100);
+    }
+    if (onViewChange) {
         // If module is completed, trigger module completion
         if (isModuleCompleted && !ModuleProgressService.isModuleCompleted(moduleId)) {
           // Calculate total XP for the module
@@ -148,16 +148,16 @@ export function LessonRunner({
           
           onViewChange('module-completion');
         } else {
-          onViewChange('completion');
+      onViewChange('completion');
         }
-      }
-      
-      return (
-        <div className="p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Lesson Complete!</h2>
+    }
+    
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-2xl font-bold mb-4">Lesson Complete!</h2>
           <p>You earned {XpService.formatXp(xp)}</p>
-        </div>
-      );
+      </div>
+    );
     }
   }
 
@@ -548,6 +548,7 @@ export function LessonRunner({
           description={(step as FinalStep).data.description}
           successMessage={(step as FinalStep).data.successMessage}
           incorrectMessage={(step as FinalStep).data.incorrectMessage}
+          conversationFlow={(step as FinalStep).data.conversationFlow}
           points={step.points}
           onComplete={handleItemComplete}
           onXpStart={createXpHandler('final')}
@@ -578,6 +579,9 @@ export function LessonRunner({
           vocabularyBank={allVocab}
           points={step.points}
           autoPlay={(step as AudioSequenceStep).data.autoPlay}
+          expectedTranslation={(step as AudioSequenceStep).data.expectedTranslation}
+          targetWordCount={(step as AudioSequenceStep).data.targetWordCount}
+          maxWordBankSize={(step as AudioSequenceStep).data.maxWordBankSize}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createXpHandler('audio-sequence')}
         />

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Lightbulb } from "lucide-react"
+import { ArrowRight, Lightbulb, Volume2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { XpAnimation } from "./XpAnimation"
 import { playSuccessSound } from "./Flashcard"
 import { getGrammarConcept, GrammarPhase } from "@/lib/config/grammar-concepts"
+import { AudioService } from "@/lib/services/audio-service"
 
 export interface GrammarConceptProps {
   conceptId: string;
@@ -46,8 +47,15 @@ export function GrammarConcept({
   
   const suffix = getSuffix()
 
-  const handleTransform = () => {
+  const handleTransform = async () => {
     if (showTransformation) return // Prevent double-click
+    
+    // Modified: Only play the transformed word audio when user clicks "Add -e/-ye"
+    try {
+      await AudioService.playVocabularyAudio(currentPhase.transformedWord, 'persian')
+    } catch (error) {
+      console.log('Audio playback error:', error)
+    }
     
     setShowTransformation(true)
     
@@ -66,6 +74,23 @@ export function GrammarConcept({
     setTimeout(() => {
       setPhaseComplete(true)
     }, 800)
+  }
+
+  // Manual audio playback functions
+  const playBaseWordAudio = async () => {
+    try {
+      await AudioService.playVocabularyAudio(currentPhase.baseWord, 'persian')
+    } catch (error) {
+      console.log('Audio playback error:', error)
+    }
+  }
+
+  const playTransformedWordAudio = async () => {
+    try {
+      await AudioService.playVocabularyAudio(currentPhase.transformedWord, 'persian')
+    } catch (error) {
+      console.log('Audio playback error:', error)
+    }
   }
 
   const handleContinue = () => {
@@ -148,9 +173,19 @@ export function GrammarConcept({
                 <div className="text-sm text-gray-600 mb-3">
                   "{currentPhase.baseDefinition}"
                 </div>
-                <div className="text-xs text-gray-500 italic border-t pt-2">
+                <div className="text-xs text-gray-500 italic border-t pt-2 mb-3">
                   Example: {currentPhase.exampleBefore}
                 </div>
+                {/* Audio button for base word */}
+                <Button
+                  onClick={playBaseWordAudio}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs"
+                >
+                  <Volume2 className="h-3 w-3" />
+                  Play Audio
+                </Button>
               </div>
             </motion.div>
 
@@ -189,9 +224,19 @@ export function GrammarConcept({
                     <div className="text-sm text-green-600 mb-3">
                       "{currentPhase.transformedDefinition}"
                     </div>
-                    <div className="text-xs text-green-600 italic border-t border-green-200 pt-2">
+                    <div className="text-xs text-green-600 italic border-t border-green-200 pt-2 mb-3">
                       Example: {currentPhase.exampleAfter}
                     </div>
+                    {/* Audio button for transformed word */}
+                    <Button
+                      onClick={playTransformedWordAudio}
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 text-xs border-green-300 text-green-700 hover:bg-green-100"
+                    >
+                      <Volume2 className="h-3 w-3" />
+                      Play Audio
+                    </Button>
                   </motion.div>
                 ) : (
                   <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4 min-w-[140px] flex items-center justify-center">

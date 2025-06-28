@@ -114,6 +114,12 @@ export interface FinalStep extends BaseStep {
     description?: string;
     successMessage?: string;
     incorrectMessage?: string;
+    // Conversation flow for realistic Persian patterns
+    conversationFlow?: {
+      description: string;           // "A polite introduction conversation"
+      expectedPhrase: string;        // "Hello, what is your name, goodbye, thank you"
+      persianSequence: string[];     // ["salam", "esme", "shoma", "chiye", "khodafez", "merci"]
+    };
   };
 }
 
@@ -141,6 +147,9 @@ export interface AudioSequenceStep extends BaseStep {
   data: {
     sequence: string[];       // Array of vocabulary IDs in the order they should be played
     autoPlay?: boolean;       // Whether to auto-play audio sequence on load (default: false)
+    expectedTranslation?: string; // Custom English meaning override for phrases (e.g., "My name" for "esme man")
+    targetWordCount?: number; // Number of English words expected (overrides sequence.length when provided)
+    maxWordBankSize?: number; // Maximum number of options in word bank (default: 12, prevents crowding while allowing variety)
   };
 }
 

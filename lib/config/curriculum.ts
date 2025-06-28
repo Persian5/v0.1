@@ -1,4 +1,5 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
+import { ConversationFlowService } from "../services/conversation-flow-service";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -80,7 +81,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "What does 'Salam' mean?",
-              options: ["Hello", "Goodbye", "Thank you", "You're welcome"],
+              options: ["Hello", "Goodbye", "Thank you", "How are you"],
               correct: 0
             }
           },
@@ -115,13 +116,6 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "khosh_amadid"]
-            }
-          },
-          {
             type: "matching",
             points: 3,
             data: {
@@ -150,11 +144,11 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "khosh_amadid", text: "Khosh Amadid", translation: "Welcome" },
                 { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "khosh_ahmadid", text: "Khosh Amadid", translation: "Welcome" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "khosh_ahmadid", "chetori", "khodafez"],
+              targetWords: ["salam", "khosh_amadid", "chetori", "khodafez"],
               title: "Your First Conversation",
               successMessage: "You're a natural—you made a great impression!",
               incorrectMessage: "Almost there—let's try that conversation order again!"
@@ -205,6 +199,7 @@ export const curriculumData: Module[] = [
           }
         ],
         steps: [
+          // PHASE 1: FOUNDATION REVIEW
           {
             type: "welcome",
             title: "Politeness & Responses",
@@ -221,6 +216,26 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Salam", slotId: "slot1" },
+                { id: "word2", text: "Chetori", slotId: "slot2" },
+                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
+                { id: "word4", text: "Khodafez", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "How are you?" },
+                { id: "slot3", text: "Welcome" },
+                { id: "slot4", text: "Goodbye" }
+              ]
+            }
+          },
+          
+          // PHASE 2: NEW VOCABULARY INTRODUCTION - "khoobam" & "merci"
+          {
             type: "flashcard",
             points: 1,
             data: {
@@ -228,21 +243,11 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "quiz",
+            type: "audio-meaning",
             points: 2,
             data: {
-              prompt: "Complete the greeting pattern: Salam, ___ (Hello, How are you?)",
-              options: ["Chetori", "Khoobam", "Merci", "Baleh"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you respond to 'Chetori?' (How are you?)",
-              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
-              correct: 0
+              vocabularyId: "khoobam",
+              distractors: ["salam", "chetori", "khodafez"]
             }
           },
           {
@@ -253,30 +258,41 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "flashcard",
-            points: 1,
+            type: "audio-meaning",
+            points: 2,
             data: {
-              vocabularyId: "na"
+              vocabularyId: "merci",
+              distractors: ["salam", "khoobam", "khodafez"]
             }
           },
+          
+          // PHASE 3: INTEGRATION & APPLICATION
           {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "What does 'Khodafez' mean?",
-              options: ["Goodbye", "Hello", "Thank you", "Yes"],
+              prompt: "How do you respond to 'Chetori?' (How are you?)",
+              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
               correct: 0
             }
           },
           {
-            type: "quiz",
+            type: "input",
             points: 2,
             data: {
-              prompt: "How do you say 'No, thank you' in Persian?",
-              options: ["Na, merci", "Baleh, merci", "Salam, merci", "Khoobam, merci"],
-              correct: 0
+              question: "How do you say 'Thank you' in Persian?",
+              answer: "Merci"
             }
           },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["khoobam", "merci"]
+            }
+          },
+          
+          // PHASE 4: YES/NO VOCABULARY - "baleh" & "na"
           {
             type: "flashcard",
             points: 1,
@@ -285,12 +301,18 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "quiz",
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "na"
+            }
+          },
+          {
+            type: "audio-meaning",
             points: 2,
             data: {
-              prompt: "How do you say 'I'm good, thank you' in Persian?",
-              options: ["Khoobam, merci", "Salam, merci", "Baleh, merci", "Na, merci"],
-              correct: 0
+              vocabularyId: "baleh",
+              distractors: ["na", "merci", "khoobam"]
             }
           },
           {
@@ -309,6 +331,36 @@ export const curriculumData: Module[] = [
               ]
             }
           },
+          
+          // PHASE 5: PHRASE BUILDING
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'No, thank you' in Persian?",
+              options: ["Na, merci", "Baleh, merci", "Salam, merci", "Khoobam, merci"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'I'm good' in Persian?",
+              options: ["Khoobam", "Salam", "Baleh", "Na"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'Yes' in Persian?",
+              answer: "Baleh"
+            }
+          },
+          
+          // PHASE 6: COMPREHENSIVE PRACTICE
           {
             type: "matching",
             points: 3,
@@ -380,11 +432,27 @@ export const curriculumData: Module[] = [
             lessonId: "module1-lesson3"
           },
           {
+            id: "esme",
+            en: "Name of",
+            fa: "اسمه",
+            finglish: "Esme",
+            phonetic: "es-MEH",
+            lessonId: "module1-lesson3"
+          },
+          {
             id: "chi",
             en: "What",
             fa: "چی",
             finglish: "Chi",
             phonetic: "chee",
+            lessonId: "module1-lesson3"
+          },
+          {
+            id: "chiye",
+            en: "What is it?",
+            fa: "چیه",
+            finglish: "Chiye",
+            phonetic: "chee-YEH",
             lessonId: "module1-lesson3"
           }
         ],
@@ -404,6 +472,7 @@ export const curriculumData: Module[] = [
               lessonType: "introductions"
             }
           },
+          // PHASE 1: INTRODUCE BASIC VOCABULARY FIRST
           {
             type: "flashcard",
             points: 1,
@@ -415,14 +484,46 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
+              vocabularyId: "shoma"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Man", slotId: "slot1" },
+                { id: "word2", text: "Shoma", slotId: "slot2" }
+              ],
+              slots: [
+                { id: "slot1", text: "I / Me" },
+                { id: "slot2", text: "You" },
+                { id: "slot3", text: "Name" },
+                { id: "slot4", text: "What" }
+              ]
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
               vocabularyId: "esm"
             }
           },
+          // PHASE 2: GRAMMAR CONCEPT - EZAFE CONNECTOR  
           {
             type: "grammar-concept",
             points: 2,
             data: {
               conceptId: "ezafe-connector"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["esme", "man"],
+              expectedTranslation: "My name"
             }
           },
           {
@@ -443,11 +544,20 @@ export const curriculumData: Module[] = [
               ]
             }
           },
+          // PHASE 3: CHI VOCABULARY AND VERB CONTRACTION
           {
             type: "flashcard",
             points: 1,
             data: {
               vocabularyId: "chi"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type how you ask 'What' in Persian?",
+              answer: "chi"
             }
           },
           {
@@ -457,20 +567,21 @@ export const curriculumData: Module[] = [
               conceptId: "verb-contraction"
             }
           },
+          // PHASE 4: AUDIO SEQUENCES WITH SHOMA (NOW PROPERLY INTRODUCED)
           {
-            type: "quiz",
-            points: 2,
+            type: "audio-sequence",
+            points: 3,
             data: {
-              prompt: "Complete: Esme ___ Sara-ye (My name is Sara)",
-              options: ["man", "shoma", "chi", "esm"],
-              correct: 0
+              sequence: ["esme", "shoma"],
+              expectedTranslation: "Your name"
             }
           },
           {
-            type: "flashcard",
-            points: 1,
+            type: "audio-meaning",
+            points: 2,
             data: {
-              vocabularyId: "shoma"
+              vocabularyId: "chiye",
+              distractors: ["esme", "chi", "shoma"]
             }
           },
           {
@@ -481,6 +592,7 @@ export const curriculumData: Module[] = [
               answer: "esm"
             }
           },
+          // PHASE 5: QUIZ SECTION
           {
             type: "quiz",
             points: 2,
@@ -504,7 +616,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "How do you ask 'What is your name?' in Persian?",
-              options: ["Esme shoma chiye?", "Esm shoma?", "Chi shoma?", "Shoma chi?"],
+              options: ["Esme shoma chiye?", "Esme man chiye?", "Chi shoma?", "Shoma chi?"],
               correct: 0
             }
           },
@@ -512,7 +624,7 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "What does 'Salam' mean? (Review from Lesson 1)",
+              prompt: "What does 'Salam' mean?",
               options: ["Hello", "Goodbye", "Thank you", "How are you"],
               correct: 0
             }
@@ -521,9 +633,19 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Complete the introduction: Salam, esme man Sara-ye. ___?",
-              options: ["Esme shoma chiye?", "Chetori?", "Merci", "Khodafez"],
+              prompt: "How do you say 'I am good, thank you' in Persian?",
+              options: ["Man khoobam, merci", "Shoma khoobam, merci", "Shoma chetori, merci", "Man khoobam, khodafez"],
               correct: 0
+            }
+          },
+          // PHASE 6: REVIEW AUDIO SEQUENCE (KEEPING BOTH AS REQUESTED)
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["esme", "man", "chiye"],
+              expectedTranslation: "What is my name",
+              targetWordCount: 4
             }
           },
           {
@@ -535,35 +657,24 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Man", slotId: "slot1" },
-                { id: "word2", text: "Shoma", slotId: "slot2" },
-                { id: "word3", text: "Chi", slotId: "slot3" },
-                { id: "word4", text: "Salam", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "I / Me" },
-                { id: "slot2", text: "You" },
-                { id: "slot3", text: "What" },
-                { id: "slot4", text: "Hello" }
-              ]
-            }
-          },
-          {
             type: "final",
             points: 4,
             data: {
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "esme", text: "Esme", translation: "Name of" },
-                { id: "man", text: "Man", translation: "I / Me" },
-                { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "chiye", text: "Chiye", translation: "What is it?" }
+                { id: "chiye", text: "Chiye", translation: "What is it?" },
+                { id: "shoma", text: "Shoma", translation: "Your" },
+                { id: "esm", text: "Esm", translation: "Name" },
+                { id: "merci", text: "Merci", translation: "Thank you" },
+                { id: "khodafez", text: "Khodafez", translation: "Goodbye" },
+                { id: "esme", text: "Esme", translation: "Name of" }
               ],
-              targetWords: ["salam", "esme", "man", "shoma", "chiye"],
+              targetWords: ["salam", "chiye", "shoma", "esm", "merci", "khodafez"],
+              conversationFlow: {
+                description: "A polite introduction conversation",
+                expectedPhrase: "Hello, what is your name, thank you, goodbye",
+                persianSequence: ["salam", "esme", "shoma", "chiye", "merci", "khodafez"]
+              },
               title: "Your Perfect Introduction",
               successMessage: "Incredible! You can now have complete, polite conversations!",
               incorrectMessage: "Almost there—let's practice that introduction conversation again!"
@@ -578,7 +689,7 @@ export const curriculumData: Module[] = [
         emoji: "💬",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi"],
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi", "khosh_amadid", "khodafez", "baleh", "na", "esme", "chiye"],
         vocabulary: [
           {
             id: "khoshbakhtam",
@@ -605,6 +716,7 @@ export const curriculumData: Module[] = [
               lessonType: "conversations"
             }
           },
+          // NEW ORDER: 3) flashcard is now first after welcome intro
           {
             type: "flashcard",
             points: 1,
@@ -612,157 +724,232 @@ export const curriculumData: Module[] = [
               vocabularyId: "khoshbakhtam"
             }
           },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "After someone tells you their name, what should you say?",
-              options: ["Khoshbakhtam", "Chetori", "Merci", "Khodafez"],
-              correct: 0
-            }
-          },
+          // 1) matching game of salam khodafez khosh amadid khoobam
           {
             type: "matching",
             points: 3,
             data: {
               words: [
                 { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Chetori", slotId: "slot2" },
-                { id: "word3", text: "Khoobam", slotId: "slot3" },
-                { id: "word4", text: "Merci", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "How are you?" },
-                { id: "slot3", text: "I'm good" },
-                { id: "slot4", text: "Thank you" }
-              ]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What's the difference between 'chi' and 'chiye'?",
-              options: ["Chi = what, Chiye = what is it", "Chi = who, Chiye = what", "Chi = name, Chiye = question", "No difference"],
-              correct: 0
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Man", slotId: "slot1" },
-                { id: "word2", text: "Shoma", slotId: "slot2" },
-                { id: "word3", text: "Esme", slotId: "slot3" },
-                { id: "word4", text: "Chiye", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "I / Me" },
-                { id: "slot2", text: "You" },
-                { id: "slot3", text: "Name of" },
-                { id: "slot4", text: "What is it?" }
-              ]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Complete the conversation: 'Salam, esme man Sara-ye.' Response: '___'",
-              options: ["Khoshbakhtam, esme man Sara-ye", "Chetori", "Merci", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type a complete introduction: 'My name is [YourName]'",
-              answer: "esme man"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you politely ask someone's name?",
-              options: ["Esme shoma chiye?", "Chi shoma?", "Shoma chi?", "Man esm?"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Review: How do you respond to 'Chetori?'",
-              options: ["Khoobam, merci", "Salam", "Baleh", "Khoshbakhtam"],
-              correct: 0
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Baleh", slotId: "slot1" },
-                { id: "word2", text: "Na", slotId: "slot2" },
+                { id: "word2", text: "Khodafez", slotId: "slot2" },
                 { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
-                { id: "word4", text: "Khodafez", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Yes" },
-                { id: "slot2", text: "No" },
-                { id: "slot3", text: "Welcome" },
-                { id: "slot4", text: "Goodbye" }
-              ]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Put the conversation in order: 1) Salam 2) ? 3) Khoshbakhtam",
-              options: ["Esme shoma chiye?", "Chetori?", "Merci", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type how you ask 'What is your name?' in Persian",
-              answer: "esme shoma chiye"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Complete: 'Esme man Sara-ye. ___'",
-              options: ["Esme shoma chiye?", "Khoobam", "Baleh", "Na"],
-              correct: 0
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Khoshbakhtam", slotId: "slot1" },
-                { id: "word2", text: "Esme man", slotId: "slot2" },
-                { id: "word3", text: "Chetori", slotId: "slot3" },
                 { id: "word4", text: "Khoobam", slotId: "slot4" }
               ],
               slots: [
-                { id: "slot1", text: "Nice to meet you" },
-                { id: "slot2", text: "My name" },
-                { id: "slot3", text: "How are you?" },
+                { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "Goodbye" },
+                { id: "slot3", text: "Welcome" },
                 { id: "slot4", text: "I'm good" }
               ]
             }
           },
+          // 2) matching game of esm chi baleh nah merci
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Esm", slotId: "slot1" },
+                { id: "word2", text: "Chi", slotId: "slot2" },
+                { id: "word3", text: "Baleh", slotId: "slot3" },
+                { id: "word4", text: "Na", slotId: "slot4" },
+                { id: "word5", text: "Merci", slotId: "slot5" }
+              ],
+              slots: [
+                { id: "slot1", text: "Name" },
+                { id: "slot2", text: "What" },
+                { id: "slot3", text: "Yes" },
+                { id: "slot4", text: "No" },
+                { id: "slot5", text: "Thank you" }
+              ]
+            }
+          },
+          // NEW: khoshbakhtam audio to english game (between items 3 and 4)
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khoshbakhtam",
+              distractors: ["khoobam", "khosh_amadid", "khodafez"]
+            }
+          },
+          // 4) matching game of shoma man chetori khoshbakhtam (now moved to position 5)
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Shoma", slotId: "slot1" },
+                { id: "word2", text: "Man", slotId: "slot2" },
+                { id: "word3", text: "Chetori", slotId: "slot3" },
+                { id: "word4", text: "Khoshbakhtam", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "You" },
+                { id: "slot2", text: "I / Me" },
+                { id: "slot3", text: "How are you?" },
+                { id: "slot4", text: "Nice to meet you" }
+              ]
+            }
+          },
+          // 5) matching game of esme chiye esm chi (now moved to position 6)
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Esme", slotId: "slot1" },
+                { id: "word2", text: "Chiye", slotId: "slot2" },
+                { id: "word3", text: "Esm", slotId: "slot3" },
+                { id: "word4", text: "Chi", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Name of" },
+                { id: "slot2", text: "What is it?" },
+                { id: "slot3", text: "Name" },
+                { id: "slot4", text: "What" }
+              ]
+            }
+          },
+          // 6) audio to sequence of salam, khosh amadid, chetori (now moved to position 7)
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "khosh_amadid", "chetori"]
+            }
+          },
+          // 7) audio to sequence of esme shoma chiye? khoshbakhtam (now moved to position 8)
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["esme", "shoma", "chiye", "khoshbakhtam"],
+              expectedTranslation: "What is your name nice to meet you",
+              targetWordCount: 5,
+              maxWordBankSize: 6
+            }
+          },
+          // 8) audio to sequence of na merci, khoobam
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["na", "merci", "khoobam"]
+            }
+          },
+          // 9) audio to sequence of khosh amadid, khodafez
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["khosh_amadid", "khodafez"]
+            }
+          },
+          // 10) multiple choice of what does esme man mean
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'esme man' mean?",
+              options: ["My name", "Your name", "What name", "Name is"],
+              correct: 0
+            }
+          },
+          // 11) multiple choice of how do you say yes in persian
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'Yes' in Persian?",
+              options: ["Baleh", "Na", "Chi", "Merci"],
+              correct: 0
+            }
+          },
+          // 12) multiple choice of how do you say welcome
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'Welcome' in Persian?",
+              options: ["Khosh Amadid", "Khoshbakhtam", "Khoobam", "Khodafez"],
+              correct: 0
+            }
+          },
+          // 13) multiple choice of how do you say what
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'What' in Persian?",
+              options: ["Chi", "Chiye", "Esm", "Man"],
+              correct: 0
+            }
+          },
+          // 14) audio to english of khosh amadid
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khosh_amadid",
+              distractors: ["salam", "khodafez", "khoshbakhtam"]
+            }
+          },
+          // 15) audio to english of esm
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "esm",
+              distractors: ["esme", "chi", "man"]
+            }
+          },
+          // 16) audio to english of what is it
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "chiye",
+              distractors: ["chi", "esme", "shoma"]
+            }
+          },
+          // 17) audio to english of esme man sequence
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["esme", "man"],
+              expectedTranslation: "My name"
+            }
+          },
+          // 18) audio to english of na
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "na",
+              distractors: ["baleh", "merci", "chi"]
+            }
+          },
+          // 19) audio to english of chetori
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "chetori",
+              distractors: ["salam", "khoobam", "khodafez"]
+            }
+          },
+          // 20) audio to english of shoma
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "shoma",
+              distractors: ["man", "esm", "chi"]
+            }
+          },
+          // 21) final challenge organize the sentence Hello, what is your name? How Are you? Im good, thank you. goodbye
           {
             type: "final",
             points: 4,
@@ -770,14 +957,22 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "esme", text: "Esme", translation: "Name of" },
-                { id: "man", text: "Man", translation: "I / Me" },
+                { id: "shoma", text: "Shoma", translation: "Your" },
                 { id: "chiye", text: "Chiye", translation: "What is it?" },
-                { id: "khoshbakhtam", text: "Khoshbakhtam", translation: "Nice to meet you" }
+                { id: "chetori", text: "Chetori", translation: "How are you?" },
+                { id: "khoobam", text: "Khoobam", translation: "I'm good" },
+                { id: "merci", text: "Merci", translation: "Thank you" },
+                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "esme", "man", "chiye", "khoshbakhtam"],
-              title: "Your Perfect Introduction",
-              successMessage: "Incredible! You can now have complete, polite conversations!",
-              incorrectMessage: "Almost perfect—let's practice that full conversation one more time!"
+              targetWords: ["salam", "esme", "shoma", "chiye", "chetori", "khoobam", "merci", "khodafez"],
+              conversationFlow: {
+                description: "A complete polite conversation",
+                expectedPhrase: "Hello, what is your name? How are you? I'm good, thank you. Goodbye",
+                persianSequence: ["salam", "esme", "shoma", "chiye", "chetori", "khoobam", "merci", "khodafez"]
+              },
+              title: "Your Complete Conversation",
+              successMessage: "Amazing! You can now have full, natural conversations in Persian!",
+              incorrectMessage: "Almost perfect—let's practice that conversation flow one more time!"
             }
           }
         ]
@@ -1121,4 +1316,63 @@ export function getFlashcards(moduleId: string, lessonId: string) {
 export function getLessonVocabulary(moduleId: string, lessonId: string): VocabularyItem[] {
   const lesson = getLesson(moduleId, lessonId);
   return lesson?.vocabulary || [];
+}
+
+/**
+ * Helper function to generate conversation flow for final challenges
+ * Uses ConversationFlowService to create proper Persian conversation patterns
+ */
+function createConversationFlow(
+  englishPhrase: string, 
+  vocabularyIds: string[]
+): { description: string; expectedPhrase: string; persianSequence: string[] } | undefined {
+  const flow = ConversationFlowService.generateConversationFlow(englishPhrase, vocabularyIds);
+  return flow || undefined;
+}
+
+/**
+ * SYSTEMATIC PREVENTION: Helper function to generate complete reviewVocabulary arrays
+ * This ensures all previous lesson vocabulary is available for audio sequences and other components
+ * 
+ * @param moduleId - The module ID (e.g., "module1")
+ * @param currentLessonNumber - The current lesson number (e.g., 4 for lesson4)
+ * @returns Array of all vocabulary IDs from previous lessons in the module
+ */
+function generateCompleteReviewVocabulary(moduleId: string, currentLessonNumber: number): string[] {
+  const module = getModule(moduleId);
+  if (!module) return [];
+  
+  const allPreviousVocab: string[] = [];
+  
+  // Get vocabulary from all previous lessons in the module
+  for (let lessonNum = 1; lessonNum < currentLessonNumber; lessonNum++) {
+    const lessonId = `lesson${lessonNum}`;
+    const lesson = module.lessons.find(l => l.id === lessonId);
+    
+    if (lesson?.vocabulary) {
+      lesson.vocabulary.forEach(vocab => {
+        if (!allPreviousVocab.includes(vocab.id)) {
+          allPreviousVocab.push(vocab.id);
+        }
+      });
+    }
+  }
+  
+  return allPreviousVocab;
+}
+
+/**
+ * Validation function to check if audio sequences have required vocabulary
+ * This helps catch missing vocabulary issues during development
+ */
+function validateAudioSequenceVocabulary(
+  sequenceIds: string[], 
+  availableVocab: string[]
+): { isValid: boolean; missingVocab: string[] } {
+  const missingVocab = sequenceIds.filter(id => !availableVocab.includes(id));
+  
+  return {
+    isValid: missingVocab.length === 0,
+    missingVocab
+  };
 } 
