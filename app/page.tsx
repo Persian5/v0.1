@@ -111,13 +111,23 @@ export default function HomePage() {
             Home
           </Link>
           <div className="flex items-center gap-2">
+            <Link href="/modules">
+              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                Modules
+              </Button>
+            </Link>
+            <Link href="/practice">
+              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                Practice
+              </Button>
+            </Link>
             <Link href="/pricing">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
                 Pricing + FAQ
               </Button>
             </Link>
             <Link href="/account">
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+                  <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
                 Account
               </Button>
             </Link>
@@ -134,25 +144,25 @@ export default function HomePage() {
               {/* Top row: Image and Text aligned */}
               <div className="flex flex-row items-center justify-between gap-6 md:gap-12 w-full">
                 {/* Left Column: Image */}
-                <div className="w-1/3 md:w-2/5 flex justify-center md:justify-end">
-                  <img 
-                    src="/icons/icon1.png" 
-                    alt="Iranopedia Logo" 
-                    className="w-full max-w-[180px] md:max-w-[280px] lg:max-w-[320px] object-contain"
-                  />
-                </div>
-                
+              <div className="w-1/3 md:w-2/5 flex justify-center md:justify-end">
+                <img 
+                  src="/icons/icon1.png" 
+                  alt="Iranopedia Logo" 
+                  className="w-full max-w-[180px] md:max-w-[280px] lg:max-w-[320px] object-contain"
+                />
+              </div>
+              
                 {/* Right Column: Text only */}
-                <div className="w-2/3 md:w-3/5 flex flex-col items-start text-left">
-                  <p className="text-xs text-emerald-700 font-normal mb-3 sm:mb-4 tracking-wide uppercase">
-                    An Iranopedia App
-                  </p>
-                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-2 md:mb-5">
-                Learn Persian. Reconnect with Your Roots.
-              </h1>
+              <div className="w-2/3 md:w-3/5 flex flex-col items-start text-left">
+                <p className="text-xs text-emerald-700 font-normal mb-3 sm:mb-4 tracking-wide uppercase">
+                  An Iranopedia App
+                </p>
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-2 md:mb-5">
+              Learn Persian. Reconnect with Your Roots.
+            </h1>
                   <p className="text-lg md:text-2xl text-muted-foreground mb-0">
-                    Start speaking Persian today — with fun, bite-sized lessons
-                  </p>
+                  Start speaking Persian today — with fun, bite-sized lessons
+                </p>
                 </div>
               </div>
               

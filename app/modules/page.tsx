@@ -44,7 +44,7 @@ export default function ModulesPage() {
               </Button>
             </Link>
             <Link href="/account">
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+                  <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
                 Account
               </Button>
             </Link>
@@ -88,21 +88,21 @@ export default function ModulesPage() {
                     {module.description}
                   </p>
                   <div className="w-full">
-                    {module.available ? (
+                  {module.available ? (
                       <Link href={module.href} className="block">
                         <Button className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors">
-                          Start Module
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Button 
-                        className="w-full bg-gray-100 text-gray-500 cursor-not-allowed font-semibold py-3 rounded-lg"
-                        disabled
-                      >
-                        <Lock className="mr-2 h-4 w-4" />
-                        Coming Soon
+                        Start Module
                       </Button>
-                    )}
+                    </Link>
+                  ) : (
+                    <Button 
+                        className="w-full bg-gray-100 text-gray-500 cursor-not-allowed font-semibold py-3 rounded-lg"
+                      disabled
+                    >
+                      <Lock className="mr-2 h-4 w-4" />
+                      Coming Soon
+                    </Button>
+                  )}
                   </div>
                 </CardContent>
               </Card>
@@ -126,8 +126,8 @@ export default function ModulesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-500 text-center sm:text-left">
-              © 2025 Iranopedia. All rights reserved.
-            </p>
+                © 2025 Iranopedia. All rights reserved.
+              </p>
             <div className="flex gap-4">
               <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
                 Home

@@ -199,11 +199,11 @@ export function FinalChallenge({
     } else {
       // Default behavior: match target words order
       const filledSlotCount = currentOrder.filter(id => id !== null).length;
-      const correctCount = currentOrder.filter((id, index) => 
-        index < targetWords.length && id === targetWords[index]
+    const correctCount = currentOrder.filter((id, index) => 
+      index < targetWords.length && id === targetWords[index]
       ).length;
-      
-      // All filled slots must match expected positions
+    
+    // All filled slots must match expected positions
       isOrderCorrect = filledSlotCount === targetWords.length && correctCount === targetWords.length;
     }
     

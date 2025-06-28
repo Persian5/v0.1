@@ -44,7 +44,7 @@ export default function ModulePage() {
           <Link href="/account">
             <Button size="sm" className="bg-accent hover:bg-accent/90 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">
               Account
-            </Button>
+          </Button>
           </Link>
         </div>
       </header>
@@ -73,18 +73,18 @@ export default function ModulePage() {
                 const isLocked = !isAccessible
                 
                 return (
-                  <Card
-                    key={lesson.id}
+                <Card
+                  key={lesson.id}
                     className={`relative transition-all duration-300 hover:shadow-lg border-2 bg-white ${
                       isLocked ? "opacity-60 border-gray-200" : 
                       isCompleted ? "border-green-300 bg-green-50 hover:border-green-400" : 
                       "border-accent/30 hover:border-accent hover:scale-105"
-                    }`}
-                  >
+                  }`}
+                >
                     <CardHeader className="pb-2 sm:pb-4 pt-3 sm:pt-6 px-3 sm:px-6">
                       <CardTitle className="text-center">
                         <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 leading-tight mb-2 sm:mb-3">
-                          {lesson.title}
+                      {lesson.title}
                         </h3>
                         {/* Single small status indicator */}
                         {isCompleted ? (
@@ -100,34 +100,34 @@ export default function ModulePage() {
                             Available
                           </div>
                         )}
-                      </CardTitle>
-                    </CardHeader>
+                    </CardTitle>
+                  </CardHeader>
                     <CardContent className="pt-0 px-3 sm:px-6">
                       <p className="text-xs sm:text-sm lg:text-base text-gray-600 text-center min-h-[40px] sm:min-h-[60px] lg:min-h-[80px] flex items-center justify-center">
                         {lesson.description}
                       </p>
-                    </CardContent>
+                  </CardContent>
                     <CardFooter className="pt-0 pb-3 sm:pb-6 px-3 sm:px-6">
                       <div className="w-full">
                         <Link href={`/modules/${module.id}/${lesson.id}`} className="block">
-                          <Button
+                      <Button
                             variant={isCompleted ? "outline" : "default"}
                             className={`w-full justify-between group py-2 sm:py-3 font-semibold text-xs sm:text-sm ${
                               isLocked ? "cursor-not-allowed bg-gray-100 text-gray-500" : 
                               isCompleted ? "border-green-300 text-green-700 hover:bg-green-50" :
                               "bg-accent hover:bg-accent/90 text-white"
-                            }`}
+                        }`}
                             disabled={isLocked}
-                          >
+                      >
                             <span className="flex-1 text-center">
                               {isLocked ? "Complete Previous" : isCompleted ? "Practice Again" : "Start Lesson"}
                             </span>
                             {!isLocked && <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />}
-                          </Button>
-                        </Link>
+                      </Button>
+                    </Link>
                       </div>
-                    </CardFooter>
-                  </Card>
+                  </CardFooter>
+                </Card>
                 )
               })}
             </div>

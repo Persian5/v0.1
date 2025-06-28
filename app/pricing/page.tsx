@@ -29,7 +29,7 @@ export default function PricingPage() {
             Home
           </Link>
           <Link href="/account">
-            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
               Account
             </Button>
           </Link>
@@ -138,17 +138,17 @@ export default function PricingPage() {
               <h3 className="text-xl font-semibold text-primary mb-3">Do I need any prior knowledge of Persian?</h3>
               <p className="text-gray-700">Not at all! Our lessons are designed for complete beginners. We start with the basics and gradually build up your skills using practical phrases and cultural context.</p>
             </div>
-
+            
             <div className="border-b border-gray-200 pb-6">
               <h3 className="text-xl font-semibold text-primary mb-3">What makes this different from other language apps?</h3>
               <p className="text-gray-700">We focus specifically on Persian with cultural context from Iran. Our lessons include real-life situations, cultural references, and practical phrases that Persian speakers actually use — not just textbook Persian.</p>
             </div>
-
+            
             <div className="border-b border-gray-200 pb-6">
               <h3 className="text-xl font-semibold text-primary mb-3">How long are the lessons?</h3>
               <p className="text-gray-700">Each lesson is designed to take 5-10 minutes, perfect for busy schedules. You can learn at your own pace and complete lessons whenever it's convenient for you.</p>
             </div>
-
+            
             <div className="border-b border-gray-200 pb-6">
               <h3 className="text-xl font-semibold text-primary mb-3">Will there be paid features in the future?</h3>
               <p className="text-gray-700">We may introduce premium features like AI pronunciation coaching and 1-on-1 tutoring in the future, but all core lessons will remain accessible to everyone.</p>
@@ -192,11 +192,11 @@ export default function PricingPage() {
               target="_blank" 
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
-            >
+                      >
               Iranopedia
             </a>
           </nav>
-        </div>
+                    </div>
       </footer>
     </div>
   );
