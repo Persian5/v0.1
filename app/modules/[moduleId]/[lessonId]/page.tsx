@@ -18,10 +18,13 @@ import { ModuleProgressService } from "@/lib/services/module-progress-service"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
+import { AuthGuard } from "@/components/auth/AuthGuard"
+import { useAuth } from "@/components/auth/AuthProvider"
 
-export default function LessonPage() {
+function LessonPageContent() {
   const params = useParams()
   const router = useRouter()
+  const { user, signOut } = useAuth()
   
   // Validate route parameters
   const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
@@ -126,13 +129,32 @@ export default function LessonPage() {
               <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
               <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
             </div>
-            <Button 
-              size="sm" 
-              className="bg-accent hover:bg-accent/90 text-white"
-              onClick={() => router.push('/account')}
-            >
-              Account
-            </Button>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  className="bg-accent hover:bg-accent/90 text-white"
+                  onClick={() => router.push('/account')}
+                >
+                  Account
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={signOut}
+                >
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                size="sm" 
+                className="bg-accent hover:bg-accent/90 text-white"
+                onClick={() => router.push('/account')}
+              >
+                Account
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -199,5 +221,16 @@ export default function LessonPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function LessonPage() {
+  return (
+    <AuthGuard
+      requireAuth={true}
+      requireEmailVerification={true}
+    >
+      <LessonPageContent />
+    </AuthGuard>
   );
 } 

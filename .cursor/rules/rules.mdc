@@ -10,6 +10,7 @@ alwaysApply: true
 5) All outputs must be modular, scalable, and production-quality. - Avoid any hardcoded logic or one-off solutions.
 6) Highlight anything that will break or slow down future scaling. - If there’s a long-term risk (tech debt, tight coupling, etc.), always say so.
 7) ALWAYS ASK ME CLARIFYING QUESTIONS and SPLIT UP EVERY STEP INTO AS MANY STEPS AS POSSIBLE
+8) WHEN REFFERING TO SUPABASE/DATABASES/TABLES always refer to my md files for rls policies and data schema
 
 **PROJECT-SPECIFIC RULES:**
 7) This is a Persian language learning app (fun way to learn conversational Persian-phonetic) - always consider cultural authenticity and diaspora user experience.

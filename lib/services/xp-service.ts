@@ -1,6 +1,10 @@
 // XP Service - Centralized business logic for XP management
 // This service provides utility functions and configurations for XP
 
+import { SyncService } from './sync-service'
+import { AuthService } from './auth-service'
+import { DatabaseService } from '@/lib/supabase/database'
+
 export interface XpReward {
   amount: number
   source: string
@@ -24,6 +28,8 @@ export const XP_REWARDS = {
 
 // XP utility functions
 export class XpService {
+  // Note: No longer using localStorage for XP - authenticated users get XP from Supabase only
+
   /**
    * Get XP reward for a specific activity
    */
@@ -139,5 +145,91 @@ export class XpService {
     if (totalXp >= 5000) achievements.push('XP Champion')
     
     return achievements
+  }
+
+  // ===== SIMPLIFIED AUTHENTICATION-AWARE METHODS =====
+
+  /**
+   * Get user's total XP - authenticated users from Supabase only
+   */
+  static async getUserXp(): Promise<number> {
+    const currentUser = await AuthService.getCurrentUser()
+    
+    if (currentUser && await AuthService.isEmailVerified(currentUser)) {
+      // Authenticated user - get from Supabase only
+      try {
+        return await DatabaseService.getUserTotalXp(currentUser.id)
+      } catch (error) {
+        console.error('Failed to fetch user XP from database:', error)
+        return 0 // Return 0 on error instead of localStorage fallback
+      }
+    } else {
+      // Unauthenticated user - no XP tracking (they start fresh when they sign up)
+      return 0
+    }
+  }
+
+  /**
+   * Add XP for authenticated users only
+   */
+  static async addUserXp(
+    amount: number, 
+    source: string, 
+    metadata?: {
+      lessonId?: string
+      moduleId?: string
+      activityType?: string
+    }
+  ): Promise<void> {
+    const currentUser = await AuthService.getCurrentUser()
+    
+    if (currentUser && await AuthService.isEmailVerified(currentUser)) {
+      // Authenticated user - queue for Supabase sync
+      SyncService.queueXpTransaction({
+        amount,
+        source,
+        lesson_id: metadata?.lessonId,
+        metadata: {
+          moduleId: metadata?.moduleId,
+          activityType: metadata?.activityType
+        }
+      })
+    }
+    
+    // No localStorage XP updates - purely Supabase dependent
+  }
+
+  /**
+   * Initialize sync service (call this when app starts)
+   */
+  static initializeSyncService(): void {
+    // Load any pending transactions from localStorage
+    SyncService.loadPendingTransactionsFromStorage()
+    
+    // Start the sync service
+    SyncService.startSync()
+  }
+
+  /**
+   * Stop sync service (call this when app unmounts)
+   */
+  static stopSyncService(): void {
+    SyncService.stopSync()
+  }
+
+  // ===== DEBUGGING/ADMIN METHODS =====
+
+  /**
+   * Get sync status (for debugging)
+   */
+  static getSyncStatus() {
+    return SyncService.getQueueStatus()
+  }
+
+  /**
+   * Force sync now (for testing)
+   */
+  static async forceSyncNow(): Promise<boolean> {
+    return await SyncService.forceSyncNow()
   }
 } 

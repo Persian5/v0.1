@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
+import { XpService } from '@/lib/services/xp-service'
+import { useAuth } from '@/components/auth/AuthProvider'
 
-// XP Configuration - easily extensible for different XP types
+// XP Configuration - simplified for authentication-aware system
 export interface XpConfig {
-  storageKey: string
   defaultValue: number
   maxValue?: number
   minValue?: number
@@ -10,13 +11,12 @@ export interface XpConfig {
 
 // Default XP configuration
 const DEFAULT_XP_CONFIG: XpConfig = {
-  storageKey: 'user-xp',
   defaultValue: 0,
   maxValue: 999999,
   minValue: 0,
 }
 
-// XP transaction types for future analytics/history
+// XP transaction types for analytics/history
 export interface XpTransaction {
   amount: number
   source: string
@@ -34,56 +34,76 @@ export interface UseXpReturn {
   resetXp: () => void
   isLoading: boolean
   lastTransaction: XpTransaction | null
+  syncStatus?: {
+    pendingCount: number
+    isSyncing: boolean
+    isOnline: boolean
+  }
 }
 
 /**
- * Custom hook for managing user XP with localStorage persistence
- * Fully modular and scalable for future features
+ * Custom hook for managing user XP with authentication-aware persistence
+ * Authenticated users: Pure Supabase XP (no localStorage)
+ * Unauthenticated users: No XP tracking (start fresh when they sign up)
  */
 export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
   const xpConfig = { ...DEFAULT_XP_CONFIG, ...config }
+  const { user, isEmailVerified } = useAuth()
   
   const [xp, setXpState] = useState<number>(xpConfig.defaultValue)
   const [isLoading, setIsLoading] = useState(true)
   const [lastTransaction, setLastTransaction] = useState<XpTransaction | null>(null)
+  const [syncStatus, setSyncStatus] = useState<{
+    pendingCount: number
+    isSyncing: boolean
+    isOnline: boolean
+  }>({ pendingCount: 0, isSyncing: false, isOnline: true })
 
-  // Load XP from localStorage on mount
+  // Load XP from Supabase for authenticated users
   useEffect(() => {
-    const loadXpFromStorage = () => {
+    const loadXp = async () => {
+      setIsLoading(true)
+      
       try {
-        const storedXp = localStorage.getItem(xpConfig.storageKey)
-        if (storedXp !== null) {
-          const parsedXp = parseInt(storedXp, 10)
-          if (!isNaN(parsedXp)) {
-            setXpState(Math.max(xpConfig.minValue!, Math.min(xpConfig.maxValue!, parsedXp)))
-          }
+        if (user && isEmailVerified) {
+          // Authenticated user - get from Supabase
+          const userXp = await XpService.getUserXp()
+          setXpState(Math.max(xpConfig.minValue!, Math.min(xpConfig.maxValue!, userXp)))
+        } else {
+          // Unauthenticated user - no XP tracking
+          setXpState(0)
         }
       } catch (error) {
-        console.warn('Failed to load XP from localStorage:', error)
+        console.warn('Failed to load XP:', error)
+        setXpState(0)
       } finally {
         setIsLoading(false)
       }
     }
 
-    // Load immediately if we're in the browser
-    if (typeof window !== 'undefined') {
-      loadXpFromStorage()
-    } else {
-      setIsLoading(false)
-    }
-  }, [xpConfig.storageKey, xpConfig.minValue, xpConfig.maxValue])
+    loadXp()
+  }, [user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue])
 
-  // Save XP to localStorage whenever it changes
-  const saveXpToStorage = useCallback((newXp: number) => {
-    try {
-      localStorage.setItem(xpConfig.storageKey, newXp.toString())
-    } catch (error) {
-      console.warn('Failed to save XP to localStorage:', error)
-    }
-  }, [xpConfig.storageKey])
+  // Update sync status periodically for authenticated users
+  useEffect(() => {
+    if (user && isEmailVerified) {
+      const updateSyncStatus = () => {
+        const status = XpService.getSyncStatus()
+        setSyncStatus(status)
+      }
 
-  // Add XP with validation and persistence
-  const addXp = useCallback((
+      // Update immediately
+      updateSyncStatus()
+
+      // Update every 2 seconds
+      const interval = setInterval(updateSyncStatus, 2000)
+
+      return () => clearInterval(interval)
+    }
+  }, [user, isEmailVerified])
+
+  // Add XP with authentication-aware handling
+  const addXp = useCallback(async (
     amount: number, 
     source: string, 
     metadata: Partial<XpTransaction> = {}
@@ -97,35 +117,45 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
       ...metadata,
     }
 
-    setXpState(currentXp => {
-      const newXp = Math.max(
-        xpConfig.minValue!,
-        Math.min(xpConfig.maxValue!, currentXp + amount)
-      )
-      
-      // Save to localStorage
-      saveXpToStorage(newXp)
-      
-      // Store transaction for potential future use
+    // Validate transaction
+    if (!XpService.validateTransaction(transaction)) {
+      console.warn('Invalid XP transaction:', transaction)
+      return
+    }
+
+    // Only update XP for authenticated users
+    if (user && isEmailVerified) {
+      // Update local state immediately for instant UI feedback
+      setXpState(currentXp => {
+        const newXp = Math.max(
+          xpConfig.minValue!,
+          Math.min(xpConfig.maxValue!, currentXp + amount)
+        )
+        return newXp
+      })
+
+      // Store transaction for display
       setLastTransaction(transaction)
-      
-      // Optional: Save transaction history (for future analytics)
+
+      // Add XP via service (will queue for Supabase sync)
       try {
-        const historyKey = `${xpConfig.storageKey}-history`
-        const existingHistory = JSON.parse(localStorage.getItem(historyKey) || '[]')
-        const updatedHistory = [...existingHistory, transaction].slice(-100) // Keep last 100 transactions
-        localStorage.setItem(historyKey, JSON.stringify(updatedHistory))
+        await XpService.addUserXp(amount, source, {
+          lessonId: metadata.lessonId,
+          moduleId: metadata.moduleId,
+          activityType: metadata.activityType
+        })
       } catch (error) {
-        console.warn('Failed to save XP transaction history:', error)
+        console.error('Failed to add XP via service:', error)
+        // XP is already updated in UI, so this is non-critical
       }
+    }
+    // Unauthenticated users: no XP tracking
 
-      return newXp
-    })
-  }, [isLoading, xpConfig.minValue, xpConfig.maxValue, saveXpToStorage])
+  }, [isLoading, user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue])
 
-  // Set XP directly with validation and persistence
+  // Set XP directly (for authenticated users only)
   const setXp = useCallback((value: number) => {
-    if (isLoading) return
+    if (isLoading || !user || !isEmailVerified) return
 
     const newXp = Math.max(
       xpConfig.minValue!,
@@ -133,22 +163,15 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     )
     
     setXpState(newXp)
-    saveXpToStorage(newXp)
-  }, [isLoading, xpConfig.minValue, xpConfig.maxValue, saveXpToStorage])
+  }, [isLoading, user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue])
 
-  // Reset XP to default value
+  // Reset XP (for authenticated users only)
   const resetXp = useCallback(() => {
-    setXpState(xpConfig.defaultValue)
-    saveXpToStorage(xpConfig.defaultValue)
-    setLastTransaction(null)
+    if (!user || !isEmailVerified) return
     
-    // Clear transaction history
-    try {
-      localStorage.removeItem(`${xpConfig.storageKey}-history`)
-    } catch (error) {
-      console.warn('Failed to clear XP transaction history:', error)
-    }
-  }, [xpConfig.defaultValue, saveXpToStorage, xpConfig.storageKey])
+    setXpState(xpConfig.defaultValue)
+    setLastTransaction(null)
+  }, [user, isEmailVerified, xpConfig.defaultValue])
 
   return {
     xp,
@@ -157,5 +180,6 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     resetXp,
     isLoading,
     lastTransaction,
+    syncStatus: user && isEmailVerified ? syncStatus : undefined,
   }
 } 
