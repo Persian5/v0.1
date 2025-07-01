@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { PersianWordRush } from "@/app/components/games/PersianWordRush"
+import { AccountNavButton } from "@/app/components/AccountNavButton"
 
 export default function WordRushPage() {
   const [mounted, setMounted] = useState(false)
@@ -44,11 +45,7 @@ export default function WordRushPage() {
                 Modules
               </Button>
             </Link>
-            <Link href="/account">
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-                Account
-              </Button>
-            </Link>
+            <AccountNavButton />
           </div>
         </div>
       </header>

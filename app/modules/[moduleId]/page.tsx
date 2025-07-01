@@ -10,6 +10,7 @@ import { useParams } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { UserLessonProgress } from "@/lib/supabase/database"
 import { AuthService } from "@/lib/services/auth-service"
+import { AccountNavButton } from "@/app/components/AccountNavButton"
 
 export default function ModulePage() {
   const { moduleId } = useParams()
@@ -160,11 +161,7 @@ export default function ModulePage() {
             <span className="hidden sm:inline">Back to Modules</span>
             <span className="sm:hidden">Back</span>
           </Link>
-          <Link href="/account">
-            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2">
-              Account
-          </Button>
-          </Link>
+          <AccountNavButton />
         </div>
       </header>
 

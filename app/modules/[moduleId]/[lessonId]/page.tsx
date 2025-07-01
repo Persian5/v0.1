@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { useAuth } from "@/components/auth/AuthProvider"
+import { AccountNavButton } from "@/app/components/AccountNavButton"
 
 function LessonPageContent() {
   const params = useParams()
@@ -161,13 +162,7 @@ function LessonPageContent() {
             </div>
             {user ? (
               <div className="flex items-center gap-2">
-                <Button 
-                  size="sm" 
-                  className="bg-accent hover:bg-accent/90 text-white"
-                  onClick={() => router.push('/account')}
-                >
-                  Account
-                </Button>
+                <AccountNavButton />
                 <Button 
                   size="sm" 
                   variant="outline"
@@ -177,13 +172,7 @@ function LessonPageContent() {
                 </Button>
               </div>
             ) : (
-              <Button 
-                size="sm" 
-                className="bg-accent hover:bg-accent/90 text-white"
-                onClick={() => router.push('/account')}
-              >
-                Account
-              </Button>
+              <AccountNavButton />
             )}
           </div>
         </div>

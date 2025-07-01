@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -43,11 +44,7 @@ export default function ModulesPage() {
                 Pricing + FAQ
               </Button>
             </Link>
-            <Link href="/account">
-                  <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-                Account
-              </Button>
-            </Link>
+            <AccountNavButton />
           </div>
         </div>
       </header>

@@ -142,6 +142,45 @@ export class AuthService {
     }
   }
 
+  /**
+   * Change password for a logged-in user.
+   * 1. Optionally verify the current password (recommended when user supplies it).
+   * 2. Call supabase.auth.updateUser({ password: newPassword })
+   */
+  static async changePassword({
+    currentPassword,
+    newPassword,
+    email,
+  }: {
+    email: string // needed for re-auth step
+    currentPassword?: string
+    newPassword: string
+  }): Promise<{ error: AuthError | null }> {
+    try {
+      // If currentPassword provided, attempt re-auth to ensure identity
+      if (currentPassword) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: currentPassword,
+        })
+
+        if (signInError) {
+          return { error: { message: 'Current password is incorrect', code: signInError.message } }
+        }
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+
+      if (error) {
+        return { error: { message: error.message, code: error.code } }
+      }
+
+      return { error: null }
+    } catch (err: any) {
+      return { error: { message: 'Failed to change password' } }
+    }
+  }
+
   // Listen to auth state changes
   static onAuthStateChange(callback: (user: User | null) => void) {
     return supabase.auth.onAuthStateChange(async (event, session) => {

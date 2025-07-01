@@ -7,6 +7,8 @@ import { Star } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { useAuth } from "@/components/auth/AuthProvider"
+import { useState } from "react"
+import { AuthModal } from "@/components/auth/AuthModal"
 
 interface LessonHeaderProps {
   moduleId: string
@@ -14,8 +16,9 @@ interface LessonHeaderProps {
 
 export default function LessonHeader({ moduleId }: LessonHeaderProps) {
   const { xp } = useXp()
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
+  const [isAuthModalOpen, setAuthModalOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -30,33 +33,32 @@ export default function LessonHeader({ moduleId }: LessonHeaderProps) {
             <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
           </div>
           {user ? (
-            <div className="flex items-center gap-2">
-              <Button 
-                size="sm" 
-                className="bg-accent hover:bg-accent/90 text-white"
-                onClick={() => router.push('/account')}
-              >
-                Account
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={signOut}
-              >
-                Sign Out
-              </Button>
-            </div>
-          ) : (
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="bg-accent hover:bg-accent/90 text-white"
               onClick={() => router.push('/account')}
             >
               Account
             </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="bg-accent hover:bg-accent/90 text-white"
+              onClick={() => setAuthModalOpen(true)}
+            >
+              Sign Up / Log In
+            </Button>
           )}
         </div>
       </div>
+
+      {/* Auth modal for unauthenticated users */}
+      {!user && (
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+        />
+      )}
     </header>
   )
 } 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { AccountNavButton } from "@/app/components/AccountNavButton";
 
 export default function PricingPage() {
   const router = useRouter()
@@ -28,11 +29,7 @@ export default function PricingPage() {
           <Link href="/" className="flex items-center gap-2 font-bold text-base sm:text-lg text-primary">
             Home
           </Link>
-          <Link href="/account">
-                <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-              Account
-            </Button>
-          </Link>
+          <AccountNavButton />
         </div>
       </header>
 

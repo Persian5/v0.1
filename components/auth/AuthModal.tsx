@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Mail, Eye, EyeOff, X } from 'lucide-react'
 import { useAuth } from './AuthProvider'
+import { supabase } from '@/lib/supabase/client'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -66,15 +67,19 @@ export function AuthModal({
         if (error) {
           setError(error)
         } else {
-          // Check if email is verified
-          if (user && isEmailVerified) {
+          // Immediately fetch fresh user to check email confirmation
+          const { data: freshUserData } = await supabase.auth.getUser()
+          const freshUser = freshUserData.user
+
+          if (freshUser && freshUser.email_confirmed_at) {
+            // Email already verified – success!
             setMode('success')
             setTimeout(() => {
               onSuccess?.()
               onClose()
             }, 1500)
           } else {
-            // Redirect to verification page for unverified users
+            // Not verified yet – route to verify page
             router.push('/auth/verify')
             onClose()
           }

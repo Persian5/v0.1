@@ -13,6 +13,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   resendVerification: (email: string) => Promise<{ error: string | null }>
+  changePassword: (email: string, currentPassword: string, newPassword: string) => Promise<{ error: string | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -161,6 +162,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  const changePassword = async (email: string, currentPassword: string, newPassword: string): Promise<{ error: string | null }> => {
+    const { error } = await AuthService.changePassword({ email, currentPassword, newPassword });
+    return { error: error ? error.message : null };
+  }
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -168,7 +174,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signIn,
     signUp,
     signOut,
-    resendVerification
+    resendVerification,
+    changePassword
   }
 
   return (

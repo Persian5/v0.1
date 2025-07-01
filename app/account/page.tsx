@@ -9,8 +9,10 @@ import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth/AuthProvider"
+import { AuthGuard } from "@/components/auth/AuthGuard"
 
-export default function AccountPage() {
+function AccountContent() {
   const [mounted, setMounted] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
@@ -18,7 +20,12 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null)
   const [completedLessons, setCompletedLessons] = useState(0)
   const { xp, resetXp } = useXp()
+  const { user, signOut, changePassword } = useAuth()
   const router = useRouter()
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [pwError, setPwError] = useState<string | null>(null)
+  const [pwSuccess, setPwSuccess] = useState(false)
+  const [pwLoading, setPwLoading] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -95,6 +102,21 @@ export default function AccountPage() {
   // Cancel reset
   const cancelReset = () => {
     setShowResetConfirmation(false)
+  }
+
+  const handleChangePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user?.email) return
+    setPwLoading(true)
+    const { error } = await changePassword(user.email, currentPassword, newPassword)
+    setPwLoading(false)
+    if (error) {
+      setPwError(error)
+    } else {
+      setPwError(null)
+      setPwSuccess(true)
+      setShowPasswordForm(false)
+      setTimeout(() => setPwSuccess(false), 3000)
+    }
   }
 
   if (!mounted) {
@@ -356,8 +378,47 @@ export default function AccountPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Security Section */}
+          <Card className="mt-10 hover:shadow-md transition-shadow duration-300">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                Security
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Change Password toggle */}
+              {showPasswordForm ? (
+                <div className="space-y-4 max-w-sm">
+                  <input type="password" placeholder="Current password" id="current-pw" className="w-full border p-2 rounded" />
+                  <input type="password" placeholder="New password" id="new-pw" className="w-full border p-2 rounded" />
+                  {pwError && <p className="text-red-600 text-sm">{pwError}</p>}
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => setShowPasswordForm(false)}>Cancel</Button>
+                    <Button size="sm" className="w-full" onClick={() => handleChangePassword((document.getElementById('current-pw') as HTMLInputElement).value, (document.getElementById('new-pw') as HTMLInputElement).value)} disabled={pwLoading}>{pwLoading ? 'Saving...' : 'Save'}</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setShowPasswordForm(true)}>Change Password</Button>
+              )}
+
+              <div className="mt-6">
+                <Button variant="destructive" size="sm" className="w-full" onClick={async () => { await signOut(); router.push('/') }}>
+                  Sign Out
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AccountPage() {
+  return (
+    <AuthGuard requireAuth={true} requireEmailVerification={true}>
+      <AccountContent />
+    </AuthGuard>
   )
 } 

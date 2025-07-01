@@ -10,6 +10,7 @@ import { ChevronRight, X, Heart, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { AccountNavButton } from "@/app/components/AccountNavButton"
 
 export default function HomePage() {
   const router = useRouter()
@@ -126,11 +127,7 @@ export default function HomePage() {
                 Pricing + FAQ
               </Button>
             </Link>
-            <Link href="/account">
-                  <Button size="sm" className="bg-accent hover:bg-accent/90 text-white">
-                Account
-              </Button>
-            </Link>
+            <AccountNavButton />
           </div>
         </div>
       </header>
