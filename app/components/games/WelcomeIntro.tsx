@@ -66,8 +66,8 @@ export function LessonIntro({
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
         {/* Header Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary">{title}</h1>
-          <p className="text-lg sm:text-xl text-muted-foreground mt-4 max-w-3xl mx-auto">{description}</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary max-w-full mx-auto">{title}</h1>
+          <p className="text-lg sm:text-xl text-muted-foreground mt-4 max-w-full mx-auto">{description}</p>
         </div>
         
         {/* Main Content Card */}
@@ -127,8 +127,8 @@ export function LessonIntro({
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
       {/* Header Section - Title stays outside cards on both layouts */}
       <div className="text-center mb-6">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary">{title}</h1>
-        <p className="text-lg sm:text-xl text-muted-foreground mt-2 max-w-3xl mx-auto">{description}</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary max-w-full mx-auto">{title}</h1>
+        <p className="text-lg sm:text-xl text-muted-foreground mt-2 max-w-full mx-auto">{description}</p>
       </div>
       
       {/* MOBILE LAYOUT - Modified structure */}

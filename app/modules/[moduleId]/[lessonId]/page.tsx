@@ -198,16 +198,16 @@ function LessonPageContent() {
         {/* Main content area with Back button */}
         <div className="w-full max-w-6xl mx-auto flex flex-col flex-1 min-h-0">
           
-          {/* Back Button container - Moved above main content but below progress */}
-          <div className="h-8 flex items-center"> {/* Fixed height container */}
-            {currentView !== 'welcome' && currentView !== 'completion' && currentView !== 'summary' && previousStates.length > 0 && (
-              <Button variant="ghost" onClick={handleBack} className="text-sm flex items-center self-start pl-0 hover:bg-transparent">
+          {/* Back Button – render container only when needed */}
+          {currentView !== 'welcome' && currentView !== 'completion' && currentView !== 'summary' && previousStates.length > 0 && (
+            <div className="h-6 flex items-center">
+              <Button variant="ghost" onClick={handleBack} className="text-sm flex items-center self-start pl-0 hover:bg-transparent hover:text-current">
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Go Back</span>
                 <span className="sm:hidden">Back</span>
               </Button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Content Area - takes remaining space */}
           <div className="flex-1 flex flex-col items-center justify-start min-h-0 w-full">

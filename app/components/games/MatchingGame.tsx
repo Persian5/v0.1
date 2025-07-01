@@ -147,7 +147,7 @@ export function MatchingGame({
   };
 
   return (
-    <div className="w-full px-2 sm:px-4 md:px-6 mx-auto">
+    <div className="w-full px-1 py-2 sm:px-4 sm:py-4 md:px-6 md:pb-6 mx-auto">
       <div className="text-center mb-3 sm:mb-5">
         <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-primary">Match the Words</h2>
         <p className="text-sm xs:text-base text-muted-foreground">
@@ -155,7 +155,7 @@ export function MatchingGame({
         </p>
       </div>
       
-      <div className="relative flex-grow flex flex-col touch-manipulation overflow-visible p-4 sm:p-6">
+      <div className="relative flex-grow flex flex-col touch-manipulation overflow-visible p-3 sm:p-6">
         <XpAnimation 
           amount={points} 
           show={showXp}
@@ -171,14 +171,14 @@ export function MatchingGame({
           <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">Persian Words</h3>
           
           {/* Persian words - side by side */}
-          <div className="flex flex-row justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex flex-row flex-wrap sm:flex-nowrap justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
             {shuffledWords.map(w => {
               const isMatched = isWordMatched(w.id);
               const isSelected = selectedWordId === w.id;
               const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.wordId === w.id;
               
               return (
-                <div key={w.id} className="flex-1">
+                <div key={w.id} className="flex-1 min-w-[45%] sm:min-w-0">
                   <motion.div
                     className={`p-3 sm:p-4 md:p-6 rounded-lg border-2 select-none touch-action-none ${
                       isMatched

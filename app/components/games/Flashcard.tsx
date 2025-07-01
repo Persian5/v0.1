@@ -241,28 +241,22 @@ export function Flashcard({
             </div>
           </div>
           
-          {/* Pronunciation guide - two different states based on flip */}
+          {/* Pronunciation guide */}
           <div className="mt-3 sm:mt-4 mx-auto w-full sm:w-[calc(100%-2px)] max-w-[600px]">
             {isFlipped ? (
-              /* After flip - actual pronunciation */
-              <div className="bg-primary/5 rounded-lg p-2 sm:p-3 text-center shadow-sm">
-                <p className="text-xs text-muted-foreground mb-1">How to say it:</p>
-                <div className="flex items-center justify-center gap-2">
-                  <span role="img" aria-label="pronunciation" className="text-base sm:text-lg">🗣️</span>
-                  <p className="text-sm sm:text-base text-primary/90 font-semibold">
-                    {vocabularyItem?.phonetic || getPronunciation(back || "")}
-                  </p>
-                </div>
+              /* After flip - single-row layout */
+              <div className="bg-primary/5 rounded-lg p-2 sm:p-3 text-center shadow-sm min-h-[48px] flex items-center justify-center gap-2">
+                <span className="text-xs sm:text-sm text-muted-foreground font-medium">How to say it:</span>
+                <span role="img" aria-label="pronunciation" className="text-base sm:text-lg">🗣️</span>
+                <span className="text-sm sm:text-base text-primary/90 font-semibold">
+                  {vocabularyItem?.phonetic || getPronunciation(back || "")}
+                </span>
               </div>
             ) : (
-              /* Before flip - locked pronunciation */
-              <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 shadow-sm">
-                <div className="flex items-center justify-center gap-2">
-                  <span role="img" aria-label="locked" className="text-base sm:text-lg">🔒</span>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    Flip the card to see pronunciation
-                  </p>
-                </div>
+              /* Before flip */
+              <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 shadow-sm min-h-[48px] flex items-center justify-center gap-2">
+                <span role="img" aria-label="locked" className="text-base sm:text-lg">🔒</span>
+                <span className="text-sm sm:text-base text-muted-foreground">Flip the card to see pronunciation</span>
               </div>
             )}
           </div>

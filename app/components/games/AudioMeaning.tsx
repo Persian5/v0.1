@@ -5,6 +5,7 @@ import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
+import { motion } from "framer-motion"
 
 interface AudioMeaningProps {
   vocabularyId: string
@@ -60,35 +61,33 @@ export function AudioMeaning({
   }
 
   const handleAnswerSelect = (answerIndex: number) => {
-    if (showResult) return // Prevent changes after showing result
-    
-    setSelectedAnswer(answerIndex)
-    setShowResult(true)
-    const correct = answerIndex === correctAnswerIndex
-    setIsCorrect(correct)
-    
-    // If correct, play success sound and auto-advance with XP animation
+    // Block re-clicks while feedback animates
+    if (showResult) return;
+
+    setSelectedAnswer(answerIndex);
+    setShowResult(true);
+
+    const correct = answerIndex === correctAnswerIndex;
+    setIsCorrect(correct);
+
     if (correct) {
-      playSuccessSound() // Add success sound effect
-      if (onXpStart) {
-        onXpStart()
-      }
-      // XP animation will show automatically due to showResult && isCorrect condition
+      // ✅ Correct flow – behave like Quick Quiz (green border, brief pause, XP, then auto-continue)
+      playSuccessSound();
+      if (onXpStart) onXpStart();
+
+      setTimeout(() => setShowXp(true), 100); // let border show
+    } else {
+      // ❌ Incorrect flow – flash red, then reset automatically (no Try Again button)
       setTimeout(() => {
-        setShowXp(true)
-      }, 100) // Small delay to let the correct answer styling show first
+        setShowResult(false);
+        setSelectedAnswer(null);
+        setIsCorrect(false);
+      }, 600); // 0.6 s red feedback before reset
     }
   }
 
   const handleXpComplete = () => {
     onContinue()
-  }
-
-  const handleRetry = () => {
-    setSelectedAnswer(null)
-    setShowResult(false)
-    setIsCorrect(false)
-    // Don't auto-play on retry - let them choose
   }
 
   if (!targetVocabulary) {
@@ -149,68 +148,53 @@ export function AudioMeaning({
       {/* Answer Options */}
       <div className="space-y-3 mb-6">
         {answerOptions.map((option, index) => {
-          let buttonStyle = "w-full p-4 text-left border-2 transition-all duration-200 "
-          
+          // Reduce padding (height) by ~40% for more compact answer boxes. Remove transition-all to avoid conflict with framer-motion.
+          let buttonStyle = "w-full px-3 py-2.5 border-2 rounded-lg flex items-center justify-center text-center transition-colors duration-200 ";
+
           if (showResult) {
-            if (index === correctAnswerIndex) {
-              buttonStyle += "border-green-500 bg-green-50 text-green-700 "
-            } else if (index === selectedAnswer && !isCorrect) {
-              buttonStyle += "border-red-500 bg-red-50 text-red-700 "
+            if (isCorrect && index === selectedAnswer) {
+              // Correct selection turns green
+              buttonStyle += "border-green-500 bg-green-50 text-green-700 ";
+            } else if (!isCorrect && index === selectedAnswer) {
+              // Incorrect selection turns light red (same as Quick Quiz)
+              buttonStyle += "border-red-300 bg-red-100 text-red-700 ";
             } else {
-              buttonStyle += "border-gray-200 bg-gray-50 text-gray-500 "
+              // Other options stay neutral
+              buttonStyle += "border-gray-200 bg-gray-50 text-gray-500 ";
             }
           } else {
             if (selectedAnswer === index) {
-              buttonStyle += "border-primary bg-primary/10 text-primary "
+              buttonStyle += "border-primary bg-primary/10 text-primary ";
             } else {
-              buttonStyle += "border-gray-200 hover:border-primary/50 hover:bg-primary/5 "
+              buttonStyle += "border-gray-200 hover:border-primary/50 hover:bg-primary/5 ";
             }
           }
 
+          const shakeKeyframes = { x: [0, -10, 10, -10, 10, 0] };
+          const isShaking = showResult && !isCorrect && index === selectedAnswer;
+
           return (
-            <Button
+            <motion.div
               key={index}
-              onClick={() => handleAnswerSelect(index)}
-              variant="ghost"
-              className={buttonStyle}
-              disabled={showResult}
+              initial={false}
+              animate={isShaking ? shakeKeyframes : {}}
+              transition={isShaking ? { duration: 0.6, ease: "easeInOut" } : {}}
+              className="w-full"
             >
-              <span className="text-lg font-medium">{option}</span>
-            </Button>
-          )
+              <button
+                type="button"
+                onClick={() => handleAnswerSelect(index)}
+                className={buttonStyle}
+                disabled={showResult}
+              >
+                <span className="text-base sm:text-lg font-medium">{option}</span>
+              </button>
+            </motion.div>
+          );
         })}
       </div>
 
-      {/* Result Feedback */}
-      {showResult && (
-        <div className={`text-center p-4 rounded-lg mb-6 ${
-          isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-        }`}>
-          <p className="text-lg font-semibold mb-2">
-            {isCorrect ? '✅ Correct!' : '❌ Not quite right'}
-          </p>
-          <p className="text-sm">
-            {isCorrect 
-              ? `"${targetVocabulary.finglish}" means "${targetVocabulary.en}"`
-              : `The correct answer is "${targetVocabulary.en}" (${targetVocabulary.finglish})`
-            }
-          </p>
-        </div>
-      )}
-
-      {/* Retry Button (only shown for wrong answers) */}
-      {showResult && !isCorrect && (
-        <div className="flex justify-center">
-          <Button
-            onClick={handleRetry}
-            variant="outline"
-            className="gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
-      )}
+      {/* (Popup feedback & retry button removed – buttons themselves convey feedback) */}
     </div>
   )
 } 

@@ -123,7 +123,7 @@ export function Quiz({
       return "bg-primary/20 text-primary border-primary/40";
     } else {
       // Default unselected state
-      return "bg-white border-2 border-primary/20 text-gray-800 hover:bg-primary/10 hover:scale-[1.02]";
+      return "bg-white border-2 border-primary/20 text-gray-800 sm:hover:bg-primary/10 sm:hover:scale-[1.02]";
     }
   };
 
@@ -163,7 +163,9 @@ export function Quiz({
         <p className="text-muted-foreground">Test what you've learned!</p>
       </div>
 
-      <div className="w-full max-w-full sm:max-w-[85vw] mx-auto px-2 py-2 sm:px-4 sm:py-4 flex-grow flex flex-col justify-between relative min-h-0">
+      <div
+        className="w-full max-w-full sm:max-w-[85vw] mx-auto px-2 py-2 sm:px-4 sm:py-4 sm:flex-grow flex flex-col sm:justify-between relative min-h-0 pb-[calc(env(safe-area-inset-bottom,_0px)+8px)]"
+      >
         {/* XP Animation - only show for correct answers */}
         {quizState === 'showing-result' && isCorrectAnswer && (
         <XpAnimation 
@@ -178,7 +180,7 @@ export function Quiz({
           {prompt}
         </h3>
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 min-w-0 flex-grow">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 min-w-0 sm:flex-grow">
           {shuffledOptions.map((option, index) => (
             <motion.div
               key={`option-${index}-${option.text}-${instanceId}`} // Stable key based on content and instance ID
@@ -189,13 +191,12 @@ export function Quiz({
                 scale: { duration: 0.3, ease: "easeInOut" },
                 boxShadow: { duration: 0.2 }
               }}
-              className="relative rounded-lg overflow-hidden h-auto flex min-h-[8rem]"
+              className="relative rounded-lg overflow-hidden h-auto flex min-h-[14rem] sm:min-h-[8rem]"
             >
               <button
                 className={`w-full h-full rounded-lg whitespace-normal break-words text-lg font-semibold px-2 sm:px-3 py-4 
                   ${getButtonStyle(option, index)}
-                  active:scale-95 shadow-sm hover:shadow-md flex items-center justify-center transition-colors duration-200`}
-                style={{height: "100%", minHeight: "8rem"}}
+                  active:scale-95 shadow-sm sm:hover:shadow-md flex items-center justify-center transition-colors duration-200`}
                 onClick={() => handleSelect(index)}
                 disabled={quizState !== 'selecting'}
               >

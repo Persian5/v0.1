@@ -173,6 +173,7 @@ export function LessonRunner({
       return; // Don't advance step, start remediation
     }
     
+    window.scrollTo({ top: 0 });
     setIdx(i => i + 1);
   }
 

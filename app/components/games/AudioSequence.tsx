@@ -6,6 +6,7 @@ import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem } from "@/lib/types"
 import { PersianGrammarService } from "@/lib/services/persian-grammar-service"
 import { playSuccessSound } from "./Flashcard"
+import { motion } from "framer-motion"
 
 interface AudioSequenceProps {
   sequence: string[] // Array of vocabulary IDs in correct order
@@ -35,6 +36,7 @@ export function AudioSequence({
   const [showResult, setShowResult] = useState(false)
   const [showXp, setShowXp] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
+  const [showIncorrect, setShowIncorrect] = useState(false)
 
   // CURATED WORD BANK: Smart selection to prevent overwhelming users
   const [allWordBankOptions] = useState<string[] | { vocabItems: VocabularyItem[]; vocabIds: string[] }>(() => {
@@ -229,6 +231,12 @@ export function AudioSequence({
         onXpStart()
       }
       setShowXp(true)
+    } else {
+      setShowIncorrect(true)
+      setTimeout(() => {
+        setShowIncorrect(false);
+        handleRetry();
+      }, 600);
     }
   }
 
@@ -240,6 +248,7 @@ export function AudioSequence({
     setUserOrder([])
     setShowResult(false)
     setIsCorrect(false)
+    setShowIncorrect(false)
   }
 
   return (
@@ -255,7 +264,7 @@ export function AudioSequence({
       )}
 
       {/* Header */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-4">
         <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-primary">
           SEQUENCE CHALLENGE
         </h2>
@@ -265,8 +274,8 @@ export function AudioSequence({
       </div>
 
       {/* Audio Player Section */}
-      <div className="bg-primary/5 rounded-xl p-6 mb-6 text-center">
-        <div className="flex items-center justify-center gap-4 mb-4">
+      <div className="bg-primary/5 rounded-xl p-3 sm:p-4 mb-3 text-center">
+        <div className="flex items-center justify-center gap-3 mb-3">
           <Volume2 className="h-8 w-8 text-primary" />
           <p className="text-lg font-medium text-primary">
             {hasPlayedAudio ? "Now click the meanings in order:" : "Click to hear the sequence..."}
@@ -286,9 +295,14 @@ export function AudioSequence({
       </div>
 
       {/* User's Sequence - Show this first for clarity */}
-      <div className="mb-6">
+      <div className="mb-3">
         <h3 className="text-lg font-semibold mb-3 text-center">Your Order:</h3>
-        <div className="min-h-[60px] bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 p-4">
+        <motion.div
+          className="min-h-[60px] overflow-y-auto bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 px-2 py-2 flex items-center justify-center"
+          initial={false}
+          animate={showIncorrect ? { x: [0, -6, 6, -6, 6, 0] } : {}}
+          transition={{ duration: 0.6 }}
+        >
           {userOrder.length === 0 ? (
             <p className="text-center text-gray-500 italic">
               Click words from the bank below to build the sequence
@@ -301,7 +315,7 @@ export function AudioSequence({
                 return (
                   <div
                     key={`${id}-${index}`}
-                    className={`px-3 py-2 rounded-lg border-2 relative transition-all flex items-center justify-between ${
+                    className={`px-3 py-1.5 rounded-lg border-2 relative transition-all flex items-center justify-between ${
                       showResult && isCorrect 
                         ? 'border-green-500 bg-green-50 text-green-700'
                         : showResult && !isCorrect
@@ -326,11 +340,11 @@ export function AudioSequence({
               })}
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Word Bank - All learned vocabulary */}
-      <div className="mb-6">
+      <div className="space-y-2 mb-3 w-full max-w-[92vw] mx-auto px-2">
         <h3 className="text-lg font-semibold mb-3 text-center">Word Bank:</h3>
         <div className="flex flex-wrap gap-2 justify-center">
           {(typeof allWordBankOptions === 'object' && 'vocabIds' in allWordBankOptions 
@@ -363,7 +377,7 @@ export function AudioSequence({
 
       {/* Submit Button */}
       {!showResult && (
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <Button
             onClick={handleSubmit}
             disabled={userOrder.length !== (targetWordCount || (expectedTranslation ? PersianGrammarService.getExpectedWordCount(sequence, vocabularyBank, expectedTranslation) : sequence.length))}
@@ -375,38 +389,7 @@ export function AudioSequence({
         </div>
       )}
 
-      {/* Result Feedback */}
-      {showResult && (
-        <div className={`text-center p-4 rounded-lg mb-6 ${
-          isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-        }`}>
-          <p className="text-lg font-semibold mb-2">
-            {isCorrect ? '✅ Perfect sequence!' : '❌ Not quite right'}
-          </p>
-          <p className="text-sm">
-            {isCorrect 
-              ? 'You arranged the words in the correct order!'
-              : expectedTranslation 
-                ? `Correct meaning: "${expectedTranslation}"`
-                : `Correct order: ${sequence.map(id => getVocabularyById(id)?.en).join(' → ')}`
-            }
-          </p>
-        </div>
-      )}
-
-      {/* Retry Button (only shown for wrong answers) */}
-      {showResult && !isCorrect && (
-        <div className="flex justify-center">
-          <Button
-            onClick={handleRetry}
-            variant="outline"
-            className="gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
-      )}
+      {/* Incorrect feedback popup removed */}
     </div>
   )
 } 
