@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Medal, Star, Sparkles, ArrowRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -9,6 +9,7 @@ import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import LessonHeader from "@/app/components/LessonHeader"
+import { CountUpXP } from "@/app/components/CountUpXP"
 
 interface CompletionPageProps {
   xp?: number;
@@ -22,8 +23,12 @@ export default function CompletionPage({
   handleViewSummary
 }: CompletionPageProps) {
   const { moduleId, lessonId } = useParams();
+  const searchParams = useSearchParams();
+  const initialXpParamRaw = searchParams.get('xp');
+  const parsed = initialXpParamRaw ? Number(initialXpParamRaw) : NaN;
+  const initialXp = Number.isFinite(parsed) ? parsed : null;
   const router = useRouter();
-  const { xp: totalXp } = useXp();
+  const { xp: totalXp, isLoading } = useXp();
   
   // Default handlers if not provided via props
   const handleReset = () => {
@@ -84,7 +89,13 @@ export default function CompletionPage({
           {/* XP Badge */}
           <div className="bg-accent/10 rounded-lg p-4 mb-6 flex justify-center items-center gap-3">
             <Star className="h-6 w-6 text-yellow-500" />
-            <span className="text-2xl font-bold">{XpService.formatXp(totalXp)}</span>
+            <span className="text-2xl font-bold">
+              {initialXp !== null && isLoading ? (
+                <CountUpXP target={initialXp} />
+              ) : (
+                XpService.formatXp(totalXp)
+              )}
+            </span>
             <Sparkles className="h-5 w-5 text-yellow-500" />
           </div>
           

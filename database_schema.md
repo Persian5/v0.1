@@ -26,6 +26,8 @@
 | user_profiles        | onboarding_completed   | boolean                  | NO          | false              |
 | user_profiles        | created_at             | timestamp with time zone | NO          | now()              |
 | user_profiles        | updated_at             | timestamp with time zone | NO          | now()              |
+| user_profiles        | first_name             | text                     | YES         | null               |
+| user_profiles        | last_name              | text                     | YES         | null               |
 | user_sessions        | id                     | uuid                     | NO          | gen_random_uuid()  |
 | user_sessions        | user_id                | uuid                     | NO          | null               |
 | user_sessions        | session_start          | timestamp with time zone | NO          | now()              |

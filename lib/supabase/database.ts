@@ -5,6 +5,8 @@ import type { User } from '@supabase/supabase-js'
 // Types for our database tables
 export interface UserProfile {
   id: string
+  first_name: string | null
+  last_name: string | null
   display_name: string | null
   email: string | null
   total_xp: number
@@ -52,7 +54,9 @@ export class DatabaseService {
       const newProfile = {
         id: user.id,
         email: user.email,
-        display_name: user.user_metadata?.full_name || null,
+        first_name: user.user_metadata?.first_name || null,
+        last_name: user.user_metadata?.last_name || null,
+        display_name: user.user_metadata?.display_name || null,
         total_xp: 0,
         onboarding_completed: false
       }
@@ -198,6 +202,8 @@ export class DatabaseService {
         module_id: moduleId,
         lesson_id: lessonId,
         ...updates
+      }, {
+        onConflict: 'user_id,module_id,lesson_id'
       })
       .select()
       .single()

@@ -10,7 +10,7 @@ interface AuthContextType {
   isLoading: boolean
   isEmailVerified: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   resendVerification: (email: string) => Promise<{ error: string | null }>
   changePassword: (email: string, currentPassword: string, newPassword: string) => Promise<{ error: string | null }>
@@ -118,10 +118,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const signUp = async (email: string, password: string, displayName?: string): Promise<{ error: string | null }> => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string): Promise<{ error: string | null }> => {
     setIsLoading(true)
     try {
-      const { user: newUser, error } = await AuthService.signUp({ email, password, displayName })
+      const { user: newUser, error } = await AuthService.signUp({ email, password, firstName, lastName })
       
       if (error) {
         return { error: error.message }

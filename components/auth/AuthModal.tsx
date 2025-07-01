@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -33,19 +33,33 @@ export function AuthModal({
   const [mode, setMode] = useState<AuthMode>('signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [displayName, setDisplayName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
+  const [passwordValid, setPasswordValid] = useState(false)
 
   // Auto-switch to verify mode if user exists but email not verified
-  useState(() => {
+  useEffect(() => {
     if (user && !isEmailVerified) {
       setMode('verify')
       setEmail(user.email || '')
     }
-  })
+  }, [user, isEmailVerified])
+
+  // Freeze background scroll when modal open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,7 +68,7 @@ export function AuthModal({
 
     try {
       if (mode === 'signup') {
-        const { error } = await signUp(email, password, displayName)
+        const { error } = await signUp(email, password, firstName, lastName)
         if (error) {
           setError(error)
         } else {
@@ -65,21 +79,19 @@ export function AuthModal({
       } else if (mode === 'signin') {
         const { error } = await signIn(email, password)
         if (error) {
-          setError(error)
+          setError('Incorrect email or password. Please try again.')
         } else {
-          // Immediately fetch fresh user to check email confirmation
-          const { data: freshUserData } = await supabase.auth.getUser()
-          const freshUser = freshUserData.user
+          // Fetch fresh user to inspect email_confirmed_at once after sign-in
+          const { data: fresh } = await supabase.auth.getUser();
+          const verified = !!fresh.user?.email_confirmed_at;
 
-          if (freshUser && freshUser.email_confirmed_at) {
-            // Email already verified – success!
+          if (verified) {
             setMode('success')
             setTimeout(() => {
               onSuccess?.()
               onClose()
             }, 1500)
           } else {
-            // Not verified yet – route to verify page
             router.push('/auth/verify')
             onClose()
           }
@@ -115,9 +127,11 @@ export function AuthModal({
   const resetForm = () => {
     setEmail('')
     setPassword('')
-    setDisplayName('')
+    setFirstName('')
+    setLastName('')
     setError(null)
     setShowPassword(false)
+    setPasswordValid(false)
   }
 
   const switchMode = (newMode: AuthMode) => {
@@ -128,6 +142,14 @@ export function AuthModal({
   const handleClose = () => {
     // Allow users to close modal and continue browsing freely
     onClose()
+  }
+
+  // Password strength check
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value)
+    setPasswordValid(passwordRegex.test(value))
   }
 
   return (
@@ -212,17 +234,32 @@ export function AuthModal({
         {(mode === 'signup' || mode === 'signin') && (
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Name (optional)</Label>
-                <Input
-                  id="displayName"
-                  type="text"
-                  placeholder="Your name"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </>
             )}
             
             <div className="space-y-2">
@@ -246,7 +283,7 @@ export function AuthModal({
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
                   required
                   disabled={isLoading}
                   minLength={6}
@@ -268,13 +305,20 @@ export function AuthModal({
               </div>
             </div>
 
+            {/* Password strength validation message */}
+            {mode === 'signup' && password.length > 0 && (
+              <p className={`text-xs ${passwordValid ? 'text-green-600' : 'text-red-600'}`}>
+                Password must be at least 6 characters and include a number.
+              </p>
+            )}
+
             {error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
                 {error}
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || (mode === 'signup' && !passwordValid)}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

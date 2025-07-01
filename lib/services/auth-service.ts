@@ -10,7 +10,8 @@ export interface AuthError {
 export interface SignUpData {
   email: string
   password: string
-  displayName?: string
+  firstName: string
+  lastName: string
 }
 
 export interface SignInData {
@@ -21,14 +22,18 @@ export interface SignInData {
 export class AuthService {
   
   // Sign up a new user
-  static async signUp({ email, password, displayName }: SignUpData): Promise<{ user: User | null; error: AuthError | null }> {
+  static async signUp({ email, password, firstName, lastName }: SignUpData): Promise<{ user: User | null; error: AuthError | null }> {
     try {
+      const displayName = `${firstName} ${lastName}`.trim()
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: displayName || null
+            first_name: firstName,
+            last_name: lastName,
+            display_name: displayName
           }
         }
       })

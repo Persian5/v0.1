@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { Flashcard } from '@/app/components/games/Flashcard'
 import { Quiz } from '@/app/components/games/Quiz'
 import { InputExercise } from '@/app/components/games/InputExercise'
@@ -16,6 +16,7 @@ import { VocabularyService } from '@/lib/services/vocabulary-service'
 import { PhraseTrackingService } from '@/lib/services/phrase-tracking-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
+import { SyncService } from '@/lib/services/sync-service'
 import { useRouter } from 'next/navigation'
 
 interface LessonRunnerProps {
@@ -54,6 +55,7 @@ export function LessonRunner({
   const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
   const stateRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   // Get all vocabulary for this lesson (including review vocabulary)
   const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
@@ -114,19 +116,37 @@ export function LessonRunner({
         console.log(`Lesson completed: ${moduleId}/${lessonId}`);
 
         // Mark lesson as completed in the background (fire-and-forget)
-        LessonProgressService.markLessonCompleted(moduleId, lessonId)
-          .catch((error) => console.error('Failed to mark lesson as completed:', error));
+        try {
+          await LessonProgressService.markLessonCompleted(moduleId, lessonId);
+        } catch (error) {
+          console.error('Failed to mark lesson as completed:', error);
+        } finally {
+          // Update progress
+          if (onProgressChange) {
+            onProgressChange(100);
+          }
 
-        // Update progress
-        if (onProgressChange) {
-          onProgressChange(100);
+          // Flush XP; failure here should not block navigation
+          try {
+            await SyncService.forceSyncNow();
+          } catch (err) {
+            console.warn('XP force sync failed (continuing anyway):', err);
+          }
+
+          startTransition(() => {
+            router.push(`/modules/${moduleId}/${lessonId}/completion?xp=${xp}`);
+          });
         }
-
-        // Navigate to dedicated routed pages (summary -> completion flow)
-        router.push(`/modules/${moduleId}/${lessonId}/completion`);
       })();
     }
-  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, onProgressChange, router]);
+  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, onProgressChange, router, xp]);
+
+  // Prefetch completion route when 80% done to avoid blank screen while chunk loads
+  useEffect(() => {
+    if (steps.length > 0 && idx / steps.length >= 0.8) {
+      router.prefetch(`/modules/${moduleId}/${lessonId}/completion?xp=${xp}`);
+    }
+  }, [idx, steps.length, router, moduleId, lessonId, xp]);
 
   // Inline completion UI is no longer used — dedicated routed pages handle completion.
   if (idx >= steps.length && !isInRemediation && !storyCompleted) {
@@ -345,6 +365,8 @@ export function LessonRunner({
       
       // Directly add XP amount instead of doing math with current total
       addXp(xpReward.amount, xpReward.source, {
+        lessonId,
+        moduleId,
         activityType,
         stepIndex: idx,
         isRemediation: isInRemediation

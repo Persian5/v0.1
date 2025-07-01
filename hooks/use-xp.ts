@@ -84,23 +84,23 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     loadXp()
   }, [user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue])
 
-  // Update sync status periodically for authenticated users
+  // Update sync status periodically only in development
+  const SHOW_SYNC_STATUS = process.env.NODE_ENV === 'development'
+
   useEffect(() => {
-    if (user && isEmailVerified) {
+    if (SHOW_SYNC_STATUS && user && isEmailVerified) {
       const updateSyncStatus = () => {
         const status = XpService.getSyncStatus()
         setSyncStatus(status)
       }
 
-      // Update immediately
       updateSyncStatus()
 
-      // Update every 2 seconds
       const interval = setInterval(updateSyncStatus, 2000)
 
       return () => clearInterval(interval)
     }
-  }, [user, isEmailVerified])
+  }, [user, isEmailVerified, SHOW_SYNC_STATUS])
 
   // Add XP with authentication-aware handling
   const addXp = useCallback(async (

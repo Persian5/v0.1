@@ -15,29 +15,28 @@ export class SyncService {
   private static isSyncing = false
   private static isOnline = true
 
-  // Start the sync service
-  static startSync(): void {
-    if (typeof window === 'undefined') return
-    
-    // Set up online/offline detection
-    this.setupNetworkListeners()
-    
-    // Start periodic sync every 5 seconds
-    this.syncInterval = setInterval(() => {
-      this.syncPendingTransactions()
-    }, 5000)
+  // Start the sync interval lazily (only if not already running)
+  private static startSyncInterval(): void {
+    if (this.syncInterval || typeof window === 'undefined') return;
 
-    // Sync immediately on startup if there are pending transactions
-    if (this.pendingXpTransactions.length > 0) {
-      this.syncPendingTransactions()
-    }
+    // Set up network listeners once
+    this.setupNetworkListeners();
+
+    this.syncInterval = setInterval(() => {
+      if (this.pendingXpTransactions.length === 0) {
+        // Nothing left to sync – stop interval to avoid idle calls
+        this.stopSyncInterval();
+        return;
+      }
+      this.syncPendingTransactions();
+    }, 5000);
   }
 
-  // Stop the sync service
-  static stopSync(): void {
+  // Stop interval helper
+  private static stopSyncInterval(): void {
     if (this.syncInterval) {
-      clearInterval(this.syncInterval)
-      this.syncInterval = null
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
     }
   }
 
@@ -50,9 +49,12 @@ export class SyncService {
     
     this.pendingXpTransactions.push(timestampedTransaction)
     
+    // Ensure interval is running
+    this.startSyncInterval();
+
     // Try immediate sync if we're online and not currently syncing
     if (this.isOnline && !this.isSyncing) {
-      this.syncPendingTransactions()
+      this.syncPendingTransactions();
     }
   }
 
@@ -86,12 +88,19 @@ export class SyncService {
       }
 
       // Prepare transactions for database
-      const dbTransactions = transactionsToSync.map(t => ({
-        amount: t.amount,
-        source: t.source,
-        lesson_id: t.lesson_id || null,
-        metadata: t.metadata || null
-      }))
+      const dbTransactions = transactionsToSync.map(t => {
+        // Clean metadata by removing undefined values
+        const cleanMeta: Record<string, any> | null = t.metadata
+          ? Object.fromEntries(Object.entries(t.metadata).filter(([, v]) => v !== undefined))
+          : null
+
+        return {
+          amount: t.amount,
+          source: t.source,
+          lesson_id: t.lesson_id || null,
+          metadata: cleanMeta
+        }
+      })
 
       // Sync to database
       await DatabaseService.batchUpdateUserXp(currentUser.id, dbTransactions)
@@ -103,7 +112,12 @@ export class SyncService {
         )
       )
 
-      console.log(`Synced ${transactionsToSync.length} XP transactions to Supabase`)
+      console.log(`Synced ${transactionsToSync.length} XP transactions to Supabase`);
+
+      // If queue is empty after successful sync, stop interval to reduce idle traffic
+      if (this.pendingXpTransactions.length === 0) {
+        this.stopSyncInterval();
+      }
       
     } catch (error) {
       console.error('Failed to sync XP transactions:', error)
@@ -181,5 +195,21 @@ export class SyncService {
   // Clear all pending transactions (use with caution)
   static clearPendingTransactions(): void {
     this.pendingXpTransactions = []
+  }
+
+  // Public helper to forcefully stop (e.g., on sign-out)
+  static stopSync(): void {
+    this.stopSyncInterval();
+  }
+
+  // Expose a start method (used at login) – will only create interval if needed
+  static startSync(): void {
+    // If running in SSR, noop
+    if (typeof window === 'undefined') return;
+
+    // If there is already work pending start interval, else wait for first transaction
+    if (this.pendingXpTransactions.length > 0) {
+      this.startSyncInterval();
+    }
   }
 } 

@@ -45,6 +45,8 @@ function LessonPageContent() {
   
   // Check lesson accessibility
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const checkAccessibility = async () => {
       try {
         const accessible = await LessonProgressService.isLessonAccessible(moduleId, lessonId);
@@ -59,9 +61,16 @@ function LessonPageContent() {
 
     if (moduleId && lessonId) {
       checkAccessibility();
+
+      // Safety timeout: force stop loading after 3 s
+      timeoutId = setTimeout(() => {
+        setIsLoading(false);
+      }, 3000);
     } else {
       setIsLoading(false);
     }
+
+    return () => clearTimeout(timeoutId);
   }, [moduleId, lessonId]);
   
   // If lesson or module isn't found, handle gracefully

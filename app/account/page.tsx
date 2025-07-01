@@ -11,6 +11,7 @@ import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
+import { CountUpXP } from "@/app/components/CountUpXP"
 
 function AccountContent() {
   const [mounted, setMounted] = useState(false)
@@ -26,6 +27,9 @@ function AccountContent() {
   const [pwError, setPwError] = useState<string | null>(null)
   const [pwSuccess, setPwSuccess] = useState(false)
   const [pwLoading, setPwLoading] = useState(false)
+  const first = user?.user_metadata?.first_name as string | undefined
+  const last = user?.user_metadata?.last_name as string | undefined
+  const displayName = first ? `${first} ${last ? last.charAt(0).toUpperCase() + '.' : ''}` : (user?.user_metadata?.display_name as string | undefined)
 
   useEffect(() => {
     setMounted(true)
@@ -225,7 +229,7 @@ function AccountContent() {
             <div className="flex justify-center items-center gap-3 mb-4">
               <User className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-                Your Account
+                {displayName ? `Welcome Back ${displayName}` : 'Your Account'}
               </h1>
             </div>
             <p className="text-lg sm:text-xl text-muted-foreground">
@@ -244,7 +248,7 @@ function AccountContent() {
             <CardContent>
               <div className="text-center">
                 <div className="text-4xl sm:text-6xl font-bold text-accent mb-4">
-                  {XpService.formatXp(xp)}
+                  <CountUpXP target={xp} />
                 </div>
                 <p className="text-muted-foreground text-base sm:text-lg">
                   Keep learning to earn more XP!
