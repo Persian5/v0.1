@@ -63,13 +63,14 @@ export class ModuleProgressService {
   }
 
   // Check if all lessons in a module are completed (this triggers module completion)
-  static checkModuleCompletion(moduleId: string): boolean {
+  static async checkModuleCompletion(moduleId: string): Promise<boolean> {
     const module = getModule(moduleId);
     if (!module) return false;
 
     // Check if all lessons in the module are completed
     for (const lesson of module.lessons) {
-      if (!LessonProgressService.isLessonCompleted(moduleId, lesson.id)) {
+      const isCompleted = await LessonProgressService.isLessonCompleted(moduleId, lesson.id);
+      if (!isCompleted) {
         return false;
       }
     }

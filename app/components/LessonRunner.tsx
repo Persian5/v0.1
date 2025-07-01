@@ -16,6 +16,7 @@ import { VocabularyService } from '@/lib/services/vocabulary-service'
 import { PhraseTrackingService } from '@/lib/services/phrase-tracking-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
+import { useRouter } from 'next/navigation'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -52,6 +53,7 @@ export function LessonRunner({
   const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
   const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
   const stateRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Get all vocabulary for this lesson (including review vocabulary)
   const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
@@ -100,65 +102,35 @@ export function LessonRunner({
     }
   }, [idx, steps.length, onProgressChange, onViewChange, steps, isInRemediation]);
 
-  // If we've gone through all steps, show completion
-  if (idx >= steps.length && !isInRemediation && !storyCompleted) {
-    // Check if this is a story lesson using the lesson data
-    const isStoryLesson = lessonData?.isStoryLesson || false;
-    
-    if (isStoryLesson) {
-      // Story lessons go directly to module completion, don't mark lesson as completed
-      if (onProgressChange) {
-        onProgressChange(100);
-      }
-      
-      if (onViewChange) {
-        // Calculate total XP for the module
-        const totalModuleXp = ModuleProgressService.calculateModuleXp(moduleId);
+  // Handle lesson completion when reaching end of steps
+  useEffect(() => {
+    if (idx >= steps.length && !isInRemediation && !storyCompleted) {
+      // Lesson is complete – run async logic in an IIFE to avoid lint false-positives
+      ;(async () => {
+        // Check if this is a story lesson using the lesson data
+        const isStoryLesson = lessonData?.isStoryLesson || false;
         
-        // Mark module as completed
-        ModuleProgressService.markModuleCompleted(moduleId, totalModuleXp);
-        
-        onViewChange('module-completion');
-      }
-      
-      return (
-        <div className="p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">Story Complete!</h2>
-          <p>You earned {XpService.formatXp(xp)}</p>
-        </div>
-      );
-    } else {
-      // Regular lesson completion logic
-      LessonProgressService.markLessonCompleted(moduleId, lessonId);
-      
-      // Check if this completes the entire module
-      const isModuleCompleted = ModuleProgressService.checkModuleCompletion(moduleId);
-      
-    if (onProgressChange) {
-      onProgressChange(100);
-    }
-    if (onViewChange) {
-        // If module is completed, trigger module completion
-        if (isModuleCompleted && !ModuleProgressService.isModuleCompleted(moduleId)) {
-          // Calculate total XP for the module
-          const totalModuleXp = ModuleProgressService.calculateModuleXp(moduleId);
-          
-          // Mark module as completed
-          ModuleProgressService.markModuleCompleted(moduleId, totalModuleXp);
-          
-          onViewChange('module-completion');
-        } else {
-      onViewChange('completion');
+        // Track lesson completion for analytics
+        console.log(`Lesson completed: ${moduleId}/${lessonId}`);
+
+        // Mark lesson as completed in the background (fire-and-forget)
+        LessonProgressService.markLessonCompleted(moduleId, lessonId)
+          .catch((error) => console.error('Failed to mark lesson as completed:', error));
+
+        // Update progress
+        if (onProgressChange) {
+          onProgressChange(100);
         }
+
+        // Navigate to dedicated routed pages (summary -> completion flow)
+        router.push(`/modules/${moduleId}/${lessonId}/completion`);
+      })();
     }
-    
-    return (
-      <div className="p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Lesson Complete!</h2>
-          <p>You earned {XpService.formatXp(xp)}</p>
-      </div>
-    );
-    }
+  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, onProgressChange, router]);
+
+  // Inline completion UI is no longer used — dedicated routed pages handle completion.
+  if (idx >= steps.length && !isInRemediation && !storyCompleted) {
+    return null;
   }
 
   const step = steps[idx]
@@ -262,31 +234,20 @@ export function LessonRunner({
 
   // Special handler for story completion - bypasses lesson completion and goes directly to module completion
   const handleStoryComplete = () => {
-    // Set flag to prevent normal lesson completion logic from running
+    // Prevent normal lesson‐completion logic from re-firing
     setStoryCompleted(true);
-    
-    // Check if this completes the entire module
-    const isModuleCompleted = ModuleProgressService.checkModuleCompletion(moduleId);
-    
+
+    // Update progress bar to 100 %
     if (onProgressChange) {
       onProgressChange(100);
     }
-    
-    if (onViewChange) {
-      // Story completion always triggers module completion (don't mark lesson as completed)
-      if (!ModuleProgressService.isModuleCompleted(moduleId)) {
-        // Calculate total XP for the module
-        const totalModuleXp = ModuleProgressService.calculateModuleXp(moduleId);
-        
-        // Mark module as completed
-        ModuleProgressService.markModuleCompleted(moduleId, totalModuleXp);
-        
-        onViewChange('module-completion');
-      } else {
-        // Module already completed, just show story completion
-        onViewChange('completion');
-      }
-    }
+
+    // Persist lesson completion (fire-and-forget)
+    LessonProgressService.markLessonCompleted(moduleId, lessonId)
+      .catch((err) => console.error('Failed to mark lesson completed (story):', err));
+
+    // Navigate to the dedicated completion route so the usual flow (and Next-Lesson logic) picks up
+    router.push(`/modules/${moduleId}/${lessonId}/completion`);
   };
 
   // Find vocabulary item by ID across all available vocabulary

@@ -145,12 +145,15 @@ export class DatabaseService {
     }
   }
 
+  // ===== LESSON PROGRESS OPERATIONS =====
+
   // Get user lesson progress
   static async getUserLessonProgress(userId: string): Promise<UserLessonProgress[]> {
     const { data, error } = await supabase
       .from('user_lesson_progress')
       .select('*')
       .eq('user_id', userId)
+      .order('created_at', { ascending: true })
 
     if (error) {
       throw new Error(`Failed to fetch lesson progress: ${error.message}`)
@@ -159,12 +162,34 @@ export class DatabaseService {
     return data || []
   }
 
-  // Update lesson progress
+  // Get specific lesson progress
+  static async getLessonProgress(userId: string, moduleId: string, lessonId: string): Promise<UserLessonProgress | null> {
+    const { data, error } = await supabase
+      .from('user_lesson_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('module_id', moduleId)
+      .eq('lesson_id', lessonId)
+      .single()
+
+    if (error && error.code === 'PGRST116') {
+      // No record found
+      return null
+    }
+
+    if (error) {
+      throw new Error(`Failed to fetch lesson progress: ${error.message}`)
+    }
+
+    return data
+  }
+
+  // Update or create lesson progress
   static async updateLessonProgress(
     userId: string, 
     moduleId: string, 
     lessonId: string, 
-    updates: Partial<UserLessonProgress>
+    updates: Partial<Omit<UserLessonProgress, 'id' | 'user_id' | 'module_id' | 'lesson_id' | 'created_at'>>
   ): Promise<UserLessonProgress> {
     const { data, error } = await supabase
       .from('user_lesson_progress')
@@ -182,6 +207,63 @@ export class DatabaseService {
     }
 
     return data
+  }
+
+  // Mark lesson as completed
+  static async markLessonCompleted(userId: string, moduleId: string, lessonId: string): Promise<UserLessonProgress> {
+    const now = new Date().toISOString()
+    
+    return await this.updateLessonProgress(userId, moduleId, lessonId, {
+      status: 'completed',
+      progress_percent: 100,
+      completed_at: now
+    })
+  }
+
+  // Mark lesson as started
+  static async markLessonStarted(userId: string, moduleId: string, lessonId: string): Promise<UserLessonProgress> {
+    const now = new Date().toISOString()
+    
+    return await this.updateLessonProgress(userId, moduleId, lessonId, {
+      status: 'in_progress',
+      started_at: now
+    })
+  }
+
+  // Reset all user progress (for reset button)
+  static async resetUserProgress(userId: string): Promise<void> {
+    // Start a transaction-like operation
+    try {
+      // Reset total XP to 0
+      await supabase
+        .from('user_profiles')
+        .update({ 
+          total_xp: 0,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+
+      // Delete all lesson progress
+      await supabase
+        .from('user_lesson_progress')
+        .delete()
+        .eq('user_id', userId)
+
+      // Delete all XP transactions
+      await supabase
+        .from('user_xp_transactions')
+        .delete()
+        .eq('user_id', userId)
+
+      // Note: We could also delete from other progress tables like:
+      // - user_attempts (performance tracking)
+      // - user_sessions (session data)
+      // But keeping user_profiles intact (name, email, etc.)
+
+      console.log(`Reset all progress for user ${userId}`)
+    } catch (error) {
+      throw new Error(`Failed to reset user progress: ${error}`)
+    }
   }
 
   // Check if user's email is verified

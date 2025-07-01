@@ -8,32 +8,51 @@ import { Star, User, Trophy, Target, Loader2, RotateCcw, AlertTriangle, Check } 
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
-import { VocabularyService } from "@/lib/services/vocabulary-service"
-import { PhraseTrackingService } from "@/lib/services/phrase-tracking-service"
+import { useRouter } from "next/navigation"
 
 export default function AccountPage() {
   const [mounted, setMounted] = useState(false)
-  const [isNavigating, setIsNavigating] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
-  const { xp, resetXp } = useXp({
-    storageKey: 'global-user-xp'
-  });
+  const [error, setError] = useState<string | null>(null)
+  const [completedLessons, setCompletedLessons] = useState(0)
+  const { xp, resetXp } = useXp()
+  const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Get the next lesson to continue from
-  const getNextLesson = () => {
-    return LessonProgressService.getFirstAvailableLesson();
+  // Load completed lessons count
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!mounted) return
+      
+      try {
+        const count = await LessonProgressService.getCompletedLessonCount()
+        setCompletedLessons(count)
+      } catch (error) {
+        console.error('Failed to load lesson stats:', error)
+      }
+    }
+
+    loadStats()
+  }, [mounted, resetSuccess]) // Reload after successful reset
+
+  // Get next lesson for continue learning button
+  const getNextLesson = async () => {
+    return await LessonProgressService.getFirstAvailableLesson();
   }
 
-  const handleContinueLearning = () => {
-    setIsNavigating(true)
-    const nextLesson = getNextLesson()
-    window.location.href = `/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`
+  const handleContinueLearning = async () => {
+    try {
+      const nextLesson = await getNextLesson();
+      router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+    } catch (error) {
+      console.error('Failed to get next lesson:', error);
+      router.push('/modules');
+    }
   }
 
   // Handle reset progress confirmation
@@ -42,39 +61,41 @@ export default function AccountPage() {
   }
 
   // Execute reset - clear all progress
-  const executeReset = async () => {
+  const executeReset = () => {
     setIsResetting(true)
     
-    try {
-      // Clear all progress data
-      resetXp()
-      LessonProgressService.saveProgress({})
-      VocabularyService.clearAllProgress()
-      PhraseTrackingService.clearAllProgress()
-      
-      // Show success message
-      setResetSuccess(true)
-      setShowResetConfirmation(false)
-      
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setResetSuccess(false)
-      }, 3000)
-      
-    } catch (error) {
-      console.error('Error resetting progress:', error)
-    } finally {
-      setIsResetting(false)
+    const performReset = async () => {
+      try {
+        // Reset progress using the new Supabase service
+        await LessonProgressService.resetAllProgress()
+        
+        // Reset local XP display to 0 immediately
+        resetXp()
+        
+        // Show success message
+        setResetSuccess(true)
+        setShowResetConfirmation(false)
+        
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          setResetSuccess(false)
+        }, 3000)
+        
+      } catch (error) {
+        console.error('Error resetting progress:', error)
+        setError('Failed to reset progress. Please try again.')
+      } finally {
+        setIsResetting(false)
+      }
     }
+
+    performReset()
   }
 
   // Cancel reset
   const cancelReset = () => {
     setShowResetConfirmation(false)
   }
-
-  const completedLessons = mounted ? LessonProgressService.getCompletedLessonCount() : 0
-  const phrasesLearned = mounted ? PhraseTrackingService.getPhrasesLearnedCount() : 0
 
   if (!mounted) {
     return (
@@ -229,12 +250,6 @@ export default function AccountPage() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-muted-foreground text-sm sm:text-base">Phrases Learned</span>
-                    <span className="font-semibold text-sm sm:text-base">
-                      {phrasesLearned}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-muted-foreground text-sm sm:text-base">Current Streak</span>
                     <span className="font-semibold text-sm sm:text-base">
                       {xp > 20 ? "🔥 Active" : "Start learning!"}
@@ -305,16 +320,8 @@ export default function AccountPage() {
                     onClick={handleContinueLearning}
                     variant="outline" 
                     className="w-full transition-all duration-200 hover:scale-105 py-3 text-base hover:bg-primary/10"
-                    disabled={isNavigating}
                   >
-                    {isNavigating ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      "Continue Learning"
-                    )}
+                    Continue Learning
                   </Button>
                   <Link href="/pricing" className="w-full">
                     <Button variant="outline" className="w-full transition-all duration-200 hover:scale-105 py-3 text-base hover:bg-primary/10">

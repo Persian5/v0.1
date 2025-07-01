@@ -30,20 +30,38 @@ function LessonPageContent() {
   const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
   const lessonId = typeof params.lessonId === 'string' ? params.lessonId : '';
   
-  const { xp, addXp, setXp } = useXp({
-    storageKey: 'global-user-xp'
-  });
+  const { xp, addXp, setXp } = useXp();
   
   const [progress, setProgress] = useState(0);
   const [currentView, setCurrentView] = useState('welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
+  const [isAccessible, setIsAccessible] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Get data from config
   const lesson = getLesson(moduleId, lessonId);
   const module = getModule(moduleId);
   
-  // Check if lesson is accessible
-  const isAccessible = LessonProgressService.isLessonAccessible(moduleId, lessonId);
+  // Check lesson accessibility
+  useEffect(() => {
+    const checkAccessibility = async () => {
+      try {
+        const accessible = await LessonProgressService.isLessonAccessible(moduleId, lessonId);
+        setIsAccessible(accessible);
+      } catch (error) {
+        console.error('Failed to check lesson accessibility:', error);
+        setIsAccessible(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (moduleId && lessonId) {
+      checkAccessibility();
+    } else {
+      setIsLoading(false);
+    }
+  }, [moduleId, lessonId]);
   
   // If lesson or module isn't found, handle gracefully
   if (!lesson || !module) {
@@ -54,8 +72,20 @@ function LessonPageContent() {
     );
   }
   
+  // Show loading while checking accessibility
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading lesson...</p>
+        </div>
+      </div>
+    );
+  }
+  
   // If lesson isn't accessible (previous lesson not completed), redirect to modules
-  if (!isAccessible) {
+  if (isAccessible === false) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
