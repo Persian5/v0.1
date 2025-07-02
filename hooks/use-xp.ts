@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useContext } from 'react'
 import { XpService } from '@/lib/services/xp-service'
 import { useAuth } from '@/components/auth/AuthProvider'
+import { XpContext } from '@/components/auth/XpContext'
 
 // XP Configuration - simplified for authentication-aware system
 export interface XpConfig {
@@ -49,9 +50,15 @@ export interface UseXpReturn {
 export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
   const xpConfig = { ...DEFAULT_XP_CONFIG, ...config }
   const { user, isEmailVerified } = useAuth()
+  const xpCtx = useContext(XpContext)
   
-  const [xp, setXpState] = useState<number>(xpConfig.defaultValue)
-  const [isLoading, setIsLoading] = useState(true)
+  // Use global context if available, else local state
+  const [localXp, setLocalXp] = useState<number>(xpConfig.defaultValue)
+  const xp = xpCtx ? xpCtx.xp : localXp
+  const setXpState = xpCtx ? xpCtx.setXp : setLocalXp
+  
+  // Derive loading state
+  const [isLoading, setIsLoading] = useState(xpCtx ? xpCtx.isXpLoading : true)
   const [lastTransaction, setLastTransaction] = useState<XpTransaction | null>(null)
   const [syncStatus, setSyncStatus] = useState<{
     pendingCount: number
@@ -61,6 +68,12 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
 
   // Load XP from Supabase for authenticated users
   useEffect(() => {
+    if (xpCtx) {
+      // Context handles loading; just mark not loading
+      setIsLoading(xpCtx.isXpLoading)
+      return
+    }
+
     const loadXp = async () => {
       setIsLoading(true)
       
@@ -82,7 +95,7 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     }
 
     loadXp()
-  }, [user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue])
+  }, [user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue, xpCtx])
 
   // Update sync status periodically only in development
   const SHOW_SYNC_STATUS = process.env.NODE_ENV === 'development'
@@ -101,6 +114,13 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
       return () => clearInterval(interval)
     }
   }, [user, isEmailVerified, SHOW_SYNC_STATUS])
+
+  // Keep local loading state in sync with global context
+  useEffect(() => {
+    if (xpCtx) {
+      setIsLoading(xpCtx.isXpLoading)
+    }
+  }, [xpCtx?.isXpLoading])
 
   // Add XP with authentication-aware handling
   const addXp = useCallback(async (
@@ -126,13 +146,23 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     // Only update XP for authenticated users
     if (user && isEmailVerified) {
       // Update local state immediately for instant UI feedback
-      setXpState(currentXp => {
-        const newXp = Math.max(
-          xpConfig.minValue!,
-          Math.min(xpConfig.maxValue!, currentXp + amount)
-        )
-        return newXp
-      })
+      if (xpCtx) {
+        xpCtx.setXp(prev => {
+          const newXp = Math.max(
+            xpConfig.minValue!,
+            Math.min(xpConfig.maxValue!, prev + amount)
+          )
+          return newXp
+        })
+      } else {
+        setXpState((currentXp: number) => {
+          const newXp = Math.max(
+            xpConfig.minValue!,
+            Math.min(xpConfig.maxValue!, currentXp + amount)
+          )
+          return newXp
+        })
+      }
 
       // Store transaction for display
       setLastTransaction(transaction)
@@ -151,7 +181,7 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     }
     // Unauthenticated users: no XP tracking
 
-  }, [isLoading, user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue])
+  }, [isLoading, user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue, xpCtx])
 
   // Set XP directly (for authenticated users only)
   const setXp = useCallback((value: number) => {
@@ -161,24 +191,31 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
       xpConfig.minValue!,
       Math.min(xpConfig.maxValue!, value)
     )
-    
-    setXpState(newXp)
-  }, [isLoading, user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue])
+    if (xpCtx) {
+      xpCtx.setXp(newXp)
+    } else {
+      setXpState(newXp)
+    }
+  }, [isLoading, user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue, xpCtx])
 
   // Reset XP (for authenticated users only)
   const resetXp = useCallback(() => {
     if (!user || !isEmailVerified) return
     
-    setXpState(xpConfig.defaultValue)
+    if (xpCtx) {
+      xpCtx.setXp(xpConfig.defaultValue)
+    } else {
+      setXpState(xpConfig.defaultValue)
+    }
     setLastTransaction(null)
-  }, [user, isEmailVerified, xpConfig.defaultValue])
+  }, [user, isEmailVerified, xpConfig.defaultValue, xpCtx])
 
   return {
     xp,
     addXp,
     setXp,
     resetXp,
-    isLoading,
+    isLoading: xpCtx ? xpCtx.isXpLoading : isLoading,
     lastTransaction,
     syncStatus: user && isEmailVerified ? syncStatus : undefined,
   }

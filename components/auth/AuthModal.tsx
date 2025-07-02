@@ -234,8 +234,8 @@ export function AuthModal({
         {(mode === 'signup' || mode === 'signin') && (
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <>
-                <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input
                     id="firstName"
@@ -247,7 +247,7 @@ export function AuthModal({
                     disabled={isLoading}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="flex-1 space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input
                     id="lastName"
@@ -259,7 +259,7 @@ export function AuthModal({
                     disabled={isLoading}
                   />
                 </div>
-              </>
+              </div>
             )}
             
             <div className="space-y-2">

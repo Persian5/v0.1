@@ -6,16 +6,22 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronRight, ChevronLeft, Star, Loader2 } from "lucide-react"
 import { getModule } from "@/lib/config/curriculum"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { UserLessonProgress } from "@/lib/supabase/database"
 import { AuthService } from "@/lib/services/auth-service"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
+import { AuthModal } from "@/components/auth/AuthModal"
+import { useAuth } from "@/components/auth/AuthProvider"
 
 export default function ModulePage() {
   const { moduleId } = useParams()
+  const router = useRouter()
+  const { user, isEmailVerified } = useAuth()
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [pendingLessonPath, setPendingLessonPath] = useState<string | null>(null)
   const [progress, setProgress] = useState<UserLessonProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -132,6 +138,29 @@ export default function ModulePage() {
 
   const accessibilityCache = computeAccessibility()
 
+  // === HANDLER: lesson click interception ===
+  const handleLessonClick = (
+    e: React.MouseEvent,
+    path: string,
+    isLocked: boolean
+  ) => {
+    if (isLocked) {
+      // Locked for sequencing/paywall – default behaviour (no nav)
+      e.preventDefault()
+      return
+    }
+
+    const authed = user && isEmailVerified
+
+    if (!authed) {
+      // Prevent navigation – open auth modal overlay
+      e.preventDefault()
+      setPendingLessonPath(path)
+      setShowAuthModal(true)
+    }
+    // Authenticated users fall through to normal Link navigation
+  }
+
   if (!module) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -139,6 +168,8 @@ export default function ModulePage() {
       </div>
     )
   }
+
+  const lessons = module.lessons
 
   if (error) {
     return (
@@ -152,8 +183,6 @@ export default function ModulePage() {
       </div>
     )
   }
-
-  const lessons = module.lessons
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -242,7 +271,9 @@ export default function ModulePage() {
                     </CardContent>
                       <CardFooter className="pt-0 pb-3 sm:pb-6 px-3 sm:px-6">
                         <div className="w-full">
-                          <Link href={`/modules/${module.id}/${lesson.id}`} className="block">
+                          <Link href={`/modules/${module.id}/${lesson.id}`} className="block" 
+                            onClick={(e)=>handleLessonClick(e, `/modules/${module.id}/${lesson.id}`, isLocked)}
+                          >
                         <Button
                               variant={isCompleted ? "outline" : "default"}
                               className={`w-full justify-between group py-2 sm:py-3 font-semibold text-xs sm:text-sm ${
@@ -280,6 +311,19 @@ export default function ModulePage() {
           </div>
         </section>
       </main>
+
+      {/* Auth modal overlay */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false)
+        }}
+        onSuccess={() => {
+          if (pendingLessonPath) {
+            router.push(pendingLessonPath)
+          }
+        }}
+      />
     </div>
   )
 } 

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { AuthService } from '@/lib/services/auth-service'
 import { XpService } from '@/lib/services/xp-service'
 import type { User } from '@supabase/supabase-js'
+import { XpContext } from "./XpContext"
 
 interface AuthContextType {
   user: User | null
@@ -27,6 +28,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isEmailVerified, setIsEmailVerified] = useState(false)
   const [hasInitializedSync, setHasInitializedSync] = useState(false)
+  const [xpTotal, setXpTotal] = useState<number>(0)
+  const [isXpLoading, setIsXpLoading] = useState(true)
 
   // Initialize auth state and set up listener
   useEffect(() => {
@@ -99,6 +102,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
   }, [hasInitializedSync])
+
+  // Load total XP when user auth state is established
+  useEffect(() => {
+    const fetchXp = async () => {
+      if (user && isEmailVerified) {
+        try {
+          const total = await XpService.getUserXp()
+          setXpTotal(total)
+        } catch (err) {
+          console.error('Failed to fetch user XP:', err)
+          setXpTotal(0)
+        }
+      } else {
+        setXpTotal(0)
+      }
+      setIsXpLoading(false)
+    }
+
+    fetchXp()
+  }, [user, isEmailVerified])
 
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
     setIsLoading(true)
@@ -180,7 +203,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      <XpContext.Provider value={{ xp: xpTotal, isXpLoading, setXp: setXpTotal }}>
+        {children}
+      </XpContext.Provider>
     </AuthContext.Provider>
   )
 }
