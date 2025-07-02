@@ -29,6 +29,24 @@ export function MatchingGame({
     return [...slots].sort(() => Math.random() - 0.5);
   }, [slots]);
 
+  // Responsive height tweaks based on number of matching pairs
+  const totalPairs = shuffledWords.length;
+  const isLargeSet = totalPairs > 4; // More than 4 pairs requires tighter mobile layout
+
+  // Height classes for word (Persian) cards
+  const wordHeightClasses = `${
+    isLargeSet ? 'min-h-[68px]' : 'min-h-[80px]'
+  } ${
+    isLargeSet ? 'sm:min-h-[100px] md:min-h-[120px]' : 'sm:min-h-[125px] md:min-h-[150px]'
+  }`;
+
+  // Height classes for slot (English) cards
+  const slotHeightClasses = `${
+    isLargeSet ? 'min-h-[60px]' : 'min-h-[70px]'
+  } ${
+    isLargeSet ? 'sm:min-h-[90px] md:min-h-[100px]' : 'sm:min-h-[112px] md:min-h-[125px]'
+  }`;
+
   const [matches, setMatches] = useState<Record<string,string>>({})  // slotId→wordId
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null) // NEW: track selected slot
@@ -188,7 +206,7 @@ export function MatchingGame({
                           : isSelected 
                             ? "border-primary bg-blue-100" // Selected state - blue fill to distinguish from match
                             : "border-primary/20 bg-primary/5" // Default state - very light primary bg
-                    } shadow-md ${isMatched || isIncorrect ? "cursor-default" : "cursor-pointer"} h-full flex items-center justify-center min-h-[80px] sm:min-h-[100px] md:min-h-[120px] transition-all hover:scale-[1.02] active:scale-[0.98]`}
+                    } shadow-md ${isMatched || isIncorrect ? "cursor-default" : "cursor-pointer"} h-full flex items-center justify-center ${wordHeightClasses} transition-all sm:hover:scale-[1.02] active:scale-[0.98]`}
                     onClick={() => {
                       if (!isMatched && !isIncorrect) handleWordClick(w.id);
                     }}
@@ -212,7 +230,7 @@ export function MatchingGame({
           <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">English Meanings</h3>
           
           {/* English word bank - below */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="flex flex-row flex-wrap justify-center gap-3 sm:gap-4">
             {shuffledSlots.map(slot => {
               const matchedWordId = matches[slot.id];
               const matchedWord = matchedWordId ? shuffledWords.find(w => w.id === matchedWordId) : null;
@@ -227,19 +245,17 @@ export function MatchingGame({
                   onClick={() => {
                     if (!isMatched && !showFeedback) handleSlotClick(slot.id);
                   }}
-                  className={`p-3 sm:p-4 rounded-lg border-2 transition-all select-none touch-action-none ${
+                  className={`flex-1 min-w-[45%] sm:min-w-0 p-3 sm:p-4 rounded-lg border-2 transition-all select-none touch-action-none ${
                     isMatched && isCorrect
-                      ? 'border-green-500 bg-green-100' // Matched state - green border with light green fill
+                      ? 'border-green-500 bg-green-100'
                       : isIncorrect
-                        ? 'border-red-500 bg-red-100' // Incorrect state - red border with light red fill
+                        ? 'border-red-500 bg-red-100'
                         : isSelected
-                          ? 'border-primary bg-blue-100' // Selected state - blue fill to distinguish from match
-                          : 'border-gray-200 hover:border-gray-300 bg-gray-50' // Default with light gray bg
-                  } ${!isMatched && !isIncorrect ? 'cursor-pointer' : 'cursor-default'} min-h-[70px] sm:min-h-[90px] md:min-h-[100px] shadow-md flex items-center justify-center hover:scale-[1.02] active:scale-[0.98]`}
+                          ? 'border-primary bg-blue-100'
+                          : 'border-gray-200 hover:border-gray-300 bg-gray-50'
+                  } ${!isMatched && !isIncorrect ? 'cursor-pointer' : 'cursor-default'} ${slotHeightClasses} shadow-md flex items-center justify-center sm:hover:scale-[1.02] active:scale-[0.98]`}
                   animate={
-                    isIncorrect
-                      ? { x: [0, -10, 10, -10, 10, 0] }
-                      : {}
+                    isIncorrect ? { x: [0, -10, 10, -10, 10, 0] } : {}
                   }
                   transition={{ duration: 0.5 }}
                 >

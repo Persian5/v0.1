@@ -7,6 +7,7 @@ import { XpAnimation } from './XpAnimation';
 import { TypingIndicator } from './TypingIndicator';
 import { playSuccessSound } from './Flashcard';
 import { motion } from 'framer-motion';
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface StoryConversationProps {
   step: StoryConversationStep;
@@ -24,7 +25,9 @@ interface ChatMessage {
 
 export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryConversationProps) {
   const [needsName, setNeedsName] = useState(false);
-  const [userName, setUserName] = useState('');
+  const { user } = useAuth();
+  const authFirstName = user?.user_metadata?.first_name || '';
+  const [userName, setUserName] = useState<string>(authFirstName);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [currentExchangeIndex, setCurrentExchangeIndex] = useState(0);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
@@ -36,6 +39,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   const [isUserTyping, setIsUserTyping] = useState(false);
   
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
   const { data: storyData } = step;
   
@@ -45,8 +49,13 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     if (storyData.requiresPersonalization) {
       const existingName = StoryProgressService.getUserName();
       if (existingName === 'Friend') {
-        setNeedsName(true);
-        return;
+        if (authFirstName) {
+          setUserName(authFirstName);
+          StoryProgressService.setUserName(authFirstName);
+        } else {
+          setNeedsName(true);
+          return;
+        }
       } else {
         setUserName(existingName);
       }
@@ -130,7 +139,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
 
   const personalizeText = (text: string): string => {
     return text
-      .replace(/{name}/g, userName || 'User')
+      .replace(/{name}/g, userName || authFirstName || 'Friend')
       .replace(/{characterName}/g, storyData.characterName);
   };
 
@@ -254,15 +263,15 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     } else {
       // Wrong choice - show error animation and reset without adding message
       // DO NOT hide the typing indicator or choices - just wait for the shake animation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 600));
       
       // Reset only the selected choice and result state, keep user typing active
       setSelectedChoiceId(null);
       setShowResult(false);
       setShowXp(false);
       
-      // Keep user typing indicator active for wrong answers so choices stay visible
-      // setIsUserTyping(true); // This should already be true, don't change it
+      // Reactivate user typing indicator so choices remain visible
+      setIsUserTyping(true);
     }
   };
 
@@ -291,6 +300,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
   // Auto-scroll when user typing starts (to show choices)
@@ -300,6 +310,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
         if (chatContainerRef.current) {
           chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
   }, [isUserTyping]);
@@ -319,14 +330,6 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     <div className="h-full flex flex-col lg:flex-row bg-gray-50">
       {/* Main Chat Area - Left Side on Desktop */}
       <div className="flex-1 lg:flex-[2] flex flex-col bg-gray-50">
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 h-2">
-          <div 
-            className="bg-primary h-2 transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
         {/* Story Header */}
         <div className="bg-white border-b px-4 py-3 text-center lg:text-left">
           <h3 className="font-semibold text-primary">{storyData.title}</h3>
@@ -456,7 +459,6 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
                       key={choice.id}
                       onClick={() => {
                         if (!showResult) {
-                          setIsUserTyping(false); // Stop user typing when they select
                           handleChoiceSelect(choice);
                         }
                       }}
@@ -468,12 +470,12 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
                       `}
                       animate={
                         showResult && selectedChoiceId === choice.id && !choice.isCorrect
-                          ? { x: [-5, 5, -5, 5, 0] }
-                          : { x: 0 }
+                          ? { x: [0, -8, 8, -8, 8, 0], boxShadow: "0 0 0 3px rgba(239,68,68,0.3)" }
+                          : { x: 0, boxShadow: "0 0 0 0 rgba(0,0,0,0)" }
                       }
                       transition={{ 
-                        duration: 0.5, 
-                        ease: "easeInOut" 
+                        x: { duration: 0.6, ease: "easeInOut" },
+                        boxShadow: { duration: 0.6 }
                       }}
                     >
                       {personalizedChoice.text}
@@ -580,6 +582,9 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
           onComplete={() => setShowXp(false)}
         />
       )}
+
+      {/* Sentinel for auto page scroll */}
+      <div ref={bottomRef} />
     </div>
   );
 } 

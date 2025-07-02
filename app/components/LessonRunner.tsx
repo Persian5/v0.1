@@ -148,6 +148,21 @@ export function LessonRunner({
     }
   }, [idx, steps.length, router, moduleId, lessonId, xp]);
 
+  // Always scroll to top when moving to a new item (regular or remediation)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const scrollTop = () => {
+        window.scrollTo(0, 0);
+        // Fallback for some mobile browsers
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      };
+      scrollTop();
+      // Some mobile WebKit browsers ignore immediate scrollTo; retry next tick
+      setTimeout(scrollTop, 0);
+    }
+  }, [idx, isInRemediation, remediationStep]);
+
   // Inline completion UI is no longer used — dedicated routed pages handle completion.
   if (idx >= steps.length && !isInRemediation && !storyCompleted) {
     return null;

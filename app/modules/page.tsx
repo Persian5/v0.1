@@ -8,10 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
+import { useXp } from "@/hooks/use-xp"
+import { Star } from "lucide-react"
+import { XpService } from "@/lib/services/xp-service"
+import { useAuth } from "@/components/auth/AuthProvider"
 
 export default function ModulesPage() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
+  const { xp } = useXp()
+  const { user } = useAuth()
 
   useEffect(() => {
     setMounted(true)
@@ -38,12 +44,18 @@ export default function ModulesPage() {
           <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary">
             Home
           </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/pricing">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Pricing + FAQ
-              </Button>
-            </Link>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+              <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
+            </div>
+            {!user && (
+              <Link href="/pricing">
+                <Button variant="ghost" size="sm" className="hover:bg-primary/10 whitespace-nowrap">
+                  Pricing + FAQ
+                </Button>
+              </Link>
+            )}
             <AccountNavButton />
           </div>
         </div>

@@ -10,6 +10,7 @@ import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import LessonHeader from "@/app/components/LessonHeader"
 import { CountUpXP } from "@/app/components/CountUpXP"
+import { getModule } from "@/lib/config/curriculum"
 
 interface CompletionPageProps {
   xp?: number;
@@ -47,16 +48,25 @@ export default function CompletionPage({
     }
   };
 
-  const navigateToNextLesson = async () => {
+  // Determine if current lesson is the last unlocked lesson in its module
+  const moduleData = getModule(moduleId as string);
+  const lessonIndex = moduleData?.lessons.findIndex(l => l.id === lessonId);
+  const isLastLessonInModule = moduleData && lessonIndex === moduleData.lessons.length - 1;
+
+  const navigateForward = async () => {
     try {
-      const nextLesson = await LessonProgressService.getNextSequentialLesson(
-        moduleId as string,
-        lessonId as string
-      );
-      // If next lesson falls in a different module, that means current module is completed
-      router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+      if (isLastLessonInModule) {
+        // Go to module completion view within lesson page
+        router.push(`/modules/${moduleId}/${lessonId}?view=module-completion`);
+      } else {
+        const nextLesson = await LessonProgressService.getNextSequentialLesson(
+          moduleId as string,
+          lessonId as string
+        );
+        router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+      }
     } catch (error) {
-      console.error('Failed to navigate to next lesson:', error);
+      console.error('Failed to navigate:', error);
       router.push(`/modules/${moduleId}`);
     }
   };
@@ -108,9 +118,9 @@ export default function CompletionPage({
           <div className="space-y-4">
             <Button 
               className="w-full text-lg py-6" 
-              onClick={navigateToNextLesson}
+              onClick={navigateForward}
             >
-              Next Lesson
+              {isLastLessonInModule ? 'Next' : 'Next Lesson'}
             </Button>
             
             <Button 

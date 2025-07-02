@@ -166,7 +166,7 @@ export function AudioMeaning({
             if (selectedAnswer === index) {
               buttonStyle += "border-primary bg-primary/10 text-primary ";
             } else {
-              buttonStyle += "border-gray-200 hover:border-primary/50 hover:bg-primary/5 ";
+              buttonStyle += "border-gray-200 sm:hover:border-primary/50 sm:hover:bg-primary/5 ";
             }
           }
 

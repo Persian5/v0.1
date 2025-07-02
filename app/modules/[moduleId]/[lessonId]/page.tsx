@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -26,15 +27,17 @@ function LessonPageContent() {
   const params = useParams()
   const router = useRouter()
   const { user, signOut } = useAuth()
+  const searchParamsNav = useSearchParams()
   
   // Validate route parameters
   const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
   const lessonId = typeof params.lessonId === 'string' ? params.lessonId : '';
   
   const { xp, addXp, setXp } = useXp();
+  const initialViewParam = searchParamsNav.get('view');
   
   const [progress, setProgress] = useState(0);
-  const [currentView, setCurrentView] = useState('welcome');
+  const [currentView, setCurrentView] = useState(initialViewParam === 'module-completion' ? 'module-completion' : 'welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
   const [isAccessible, setIsAccessible] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -169,20 +172,7 @@ function LessonPageContent() {
               <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
               <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
             </div>
-            {user ? (
-              <div className="flex items-center gap-2">
-                <AccountNavButton />
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={signOut}
-                >
-                  Sign Out
-                </Button>
-              </div>
-            ) : (
-              <AccountNavButton />
-            )}
+            <AccountNavButton />
           </div>
         </div>
       </header>

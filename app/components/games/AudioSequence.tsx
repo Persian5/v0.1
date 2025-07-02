@@ -308,14 +308,14 @@ export function AudioSequence({
               Click words from the bank below to build the sequence
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-1 sm:gap-2 justify-center content-center">
               {userOrder.map((id, index) => {
                 const vocab = getVocabularyById(id)
                 
                 return (
                   <div
                     key={`${id}-${index}`}
-                    className={`px-3 py-1.5 rounded-lg border-2 relative transition-all flex items-center justify-between ${
+                    className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border-2 relative transition-all flex items-center justify-between ${
                       showResult && isCorrect 
                         ? 'border-green-500 bg-green-50 text-green-700'
                         : showResult && !isCorrect
@@ -362,7 +362,7 @@ export function AudioSequence({
                 className={`px-3 py-2 rounded-lg border-2 transition-all ${
                   isUsed 
                     ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'border-primary/30 bg-white hover:border-primary hover:bg-primary/5 hover:scale-105 cursor-pointer'
+                    : 'border-primary/30 bg-white sm:hover:border-primary sm:hover:bg-primary/5 sm:hover:scale-105 cursor-pointer'
                 } ${showResult ? 'cursor-not-allowed' : ''}`}
               >
                 <span className="font-medium">{vocab?.en || id}</span>
