@@ -19,35 +19,32 @@ import { useAuth } from "@/components/auth/AuthProvider"
 export default function ModulePage() {
   const { moduleId } = useParams()
   const router = useRouter()
-  const { user, isEmailVerified } = useAuth()
+  const { user, isEmailVerified, isLoading: authLoading } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [pendingLessonPath, setPendingLessonPath] = useState<string | null>(null)
   const [progress, setProgress] = useState<UserLessonProgress[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const { xp } = useXp()
 
   // Get data from config
   const module = getModule(moduleId as string)
 
+  // Determine if user is authenticated (no duplicate auth calls)
+  const isAuthenticated = !!(user && isEmailVerified)
+
   useEffect(() => {
     const loadProgress = async () => {
       if (!module) return;
+      
+      // Wait for auth to complete before loading progress
+      if (authLoading) return;
       
       try {
         setIsLoading(true)
         setError(null)
         
-        // Check if user is authenticated and verified
-        const currentUser = await AuthService.getCurrentUser()
-        const isVerified = currentUser ? await AuthService.isEmailVerified(currentUser) : false
-        const userIsAuthenticated = !!(currentUser && isVerified)
-        
-        setIsAuthenticated(userIsAuthenticated)
-        
-        if (userIsAuthenticated) {
+        if (isAuthenticated) {
           // Load progress for authenticated users
           const userProgress = await LessonProgressService.getUserLessonProgress()
           setProgress(userProgress)
@@ -67,7 +64,7 @@ export default function ModulePage() {
     }
 
     loadProgress()
-  }, [module])
+  }, [module, authLoading, isAuthenticated])
 
   // Helper function to check if a lesson is completed
   const isLessonCompleted = (moduleId: string, lessonId: string): boolean => {
@@ -91,29 +88,7 @@ export default function ModulePage() {
 
     const result: {[key: string]: boolean} = {}
 
-    // Build quick lookup for completed lessons
-    const completedSet = new Set<string>(
-      progress.filter(p => p.status === 'completed').map(p => `${p.module_id}-${p.lesson_id}`)
-    )
-
-    // Helper: is previous lesson completed
-    const prevCompleted = (modId: string, lessonIndex: number): boolean => {
-      if (lessonIndex === 0) {
-        // First lesson of module – depends on previous module
-        if (modId === 'module1') return true // always open
-        // Check if all lessons in previous module are completed
-        const prevModuleNum = parseInt(modId.replace('module', '')) - 1
-        const prevModuleId = `module${prevModuleNum}`
-        const prevMod = getModule(prevModuleId)
-        if (!prevMod) return false
-        return prevMod.lessons.every(l => completedSet.has(`${prevModuleId}-${l.id}`))
-      }
-      // Non-first lesson – check completion of previous lesson within same module
-      const prevLessonId = module!.lessons[lessonIndex - 1].id
-      return completedSet.has(`${modId}-${prevLessonId}`)
-    }
-
-    module.lessons.forEach((lesson, idx) => {
+    module.lessons.forEach((lesson) => {
       if (lesson.locked) {
         result[`${module.id}-${lesson.id}`] = false
         return
@@ -121,16 +96,17 @@ export default function ModulePage() {
 
       if (!isAuthenticated) {
         // Unauthed: only Module1 Lesson1 accessible
-        result[`${module.id}-${lesson.id}`] = getDefaultAccessibility(module.id, lesson.id)
+        result[`${module.id}-${lesson.id}`] = module.id === 'module1' && lesson.id === 'lesson1'
         return
       }
 
-      // Authenticated logic
-      if (idx === 0 && module.id === 'module1') {
-        result[`${module.id}-${lesson.id}`] = true
-      } else {
-        result[`${module.id}-${lesson.id}`] = prevCompleted(module.id, idx)
-      }
+      // Use fast accessibility check with cached progress data
+      result[`${module.id}-${lesson.id}`] = LessonProgressService.isLessonAccessibleFast(
+        module.id, 
+        lesson.id, 
+        progress, 
+        isAuthenticated
+      )
     })
 
     return result
@@ -220,11 +196,13 @@ export default function ModulePage() {
         {/* Lessons Grid - Compact mobile layout */}
         <section className="py-4 sm:py-8 lg:py-12 px-3 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-7xl mx-auto">
-            {isLoading ? (
+            {(authLoading || isLoading) ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                  <p className="text-muted-foreground">Loading lessons...</p>
+                  <p className="text-muted-foreground">
+                    {authLoading ? "Authenticating..." : "Loading lessons..."}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -298,7 +276,7 @@ export default function ModulePage() {
             )}
             
             {/* Progress Summary - More compact on mobile */}
-            {!isLoading && (
+            {!authLoading && (
               <div className="mt-6 sm:mt-8 lg:mt-12 text-center">
                 <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-full shadow-sm border">
                   <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>

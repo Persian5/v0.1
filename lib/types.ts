@@ -36,9 +36,9 @@ export interface Lesson {
 }
 
 // Step types
-export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary' | 'audio-meaning' | 'audio-sequence' | 'story-conversation';
+export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'reverse-quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation';
 
-export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'audio-meaning' | 'audio-sequence' | 'story-conversation';
+export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'reverse-quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation';
 
 // Define base step type
 export interface BaseStep {
@@ -78,6 +78,16 @@ export interface QuizStep extends BaseStep {
     prompt: string;
     options: string[];
     correct: number;
+  };
+}
+
+// Reverse Quiz step (Persian options, English prompt)
+export interface ReverseQuizStep extends BaseStep {
+  type: 'reverse-quiz';
+  data: {
+    prompt: string;       // English prompt: "How do you say 'Hello' in Persian?"
+    options: string[];    // Persian options: ["سلام", "خداحافظ", "مرسی", "بله"]
+    correct: number;      // Index of correct Persian option
   };
 }
 
@@ -153,6 +163,17 @@ export interface AudioSequenceStep extends BaseStep {
   };
 }
 
+// TextSequence step interface - displays Finglish text instead of playing audio
+export interface TextSequenceStep {
+  type: 'text-sequence';
+  points: number;
+  data: {
+    finglishText: string; // Finglish phrase to display (e.g., "Esme pedare shoma chiye")
+    expectedTranslation: string; // English translation to build (e.g., "What is your father's name")
+    maxWordBankSize?: number; // Maximum number of options in word bank (default: 10)
+  };
+}
+
 // Story conversation step (modular for all modules)
 export interface StoryConversationStep extends BaseStep {
   type: 'story-conversation';
@@ -206,12 +227,14 @@ export type LessonStep =
   | WelcomeStep
   | FlashcardStep
   | QuizStep
+  | ReverseQuizStep
   | InputStep
   | MatchingStep
   | FinalStep
   | GrammarConceptStep
   | AudioMeaningStep
   | AudioSequenceStep
+  | TextSequenceStep
   | StoryConversationStep;
 
 // State types

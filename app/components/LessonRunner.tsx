@@ -10,6 +10,7 @@ import { AudioMeaning } from '@/app/components/games/AudioMeaning'
 import { AudioSequence } from '@/app/components/games/AudioSequence'
 import { StoryConversation } from '@/app/components/games/StoryConversation'
 import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, AudioMeaningStep, AudioSequenceStep, StoryConversationStep, VocabularyItem, Lesson } from '@/lib/types'
+import { ReverseQuizStep } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
@@ -18,6 +19,8 @@ import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
 import { SyncService } from '@/lib/services/sync-service'
 import { useRouter } from 'next/navigation'
+import { TextSequenceStep } from '@/lib/types'
+import { TextSequence } from './games/TextSequence'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -298,9 +301,8 @@ export function LessonRunner({
   };
 
   // Helper function to generate stable quiz keys
-  const generateQuizKey = (step: QuizStep, attemptCounter: number) => {
-    const promptHash = (step.data.prompt || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    return `quiz-${idx}-${promptHash}-${attemptCounter}`;
+  const generateQuizKey = (step: QuizStep | ReverseQuizStep, attemptCounter: number) => {
+    return `quiz-${idx}-${step.data.prompt.slice(0, 20)}-${attemptCounter}`;
   };
 
   // ENHANCED: Extract vocabulary ID from failed quiz step intelligently
@@ -366,7 +368,7 @@ export function LessonRunner({
   };
 
   // Create activity-specific XP handlers using the XP service
-  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'audio-meaning' | 'audio-sequence' | 'story-conversation') => {
+  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation') => {
     return () => {
       const xpReward = XpService.getReward(
         activityType === 'flashcard' ? 'FLASHCARD_FLIP' :
@@ -375,6 +377,7 @@ export function LessonRunner({
         activityType === 'matching' ? 'MATCHING_COMPLETE' :
         activityType === 'audio-meaning' ? 'QUIZ_CORRECT' :
         activityType === 'audio-sequence' ? 'MATCHING_COMPLETE' :
+        activityType === 'text-sequence' ? 'TEXT_SEQUENCE_COMPLETE' :
         activityType === 'story-conversation' ? 'QUIZ_CORRECT' :
         'FINAL_CHALLENGE'
       );
@@ -518,6 +521,18 @@ export function LessonRunner({
           vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as QuizStep).data)}
         />
+      ) : step.type === 'reverse-quiz' ? (
+        <Quiz
+          key={generateQuizKey(step as ReverseQuizStep, quizAttemptCounter)}
+          prompt={(step as ReverseQuizStep).data.prompt}
+          options={(step as ReverseQuizStep).data.options}
+          correct={(step as ReverseQuizStep).data.correct}
+          points={step.points}
+          onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
+          onXpStart={createXpHandler('quiz')}
+          vocabularyId={extractVocabularyFromFailedQuiz(step)}
+          onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as ReverseQuizStep).data)}
+        />
       ) : step.type === 'input' ? (
         <InputExercise
           key={`input-${idx}`}
@@ -583,6 +598,17 @@ export function LessonRunner({
           maxWordBankSize={(step as AudioSequenceStep).data.maxWordBankSize}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createXpHandler('audio-sequence')}
+        />
+      ) : step.type === 'text-sequence' ? (
+        <TextSequence
+          key={idx}
+          finglishText={(step as TextSequenceStep).data.finglishText}
+          expectedTranslation={(step as TextSequenceStep).data.expectedTranslation}
+          vocabularyBank={allVocab}
+          points={step.points}
+          onContinue={() => handleItemComplete(true)}
+          onXpStart={createXpHandler('text-sequence')}
+          maxWordBankSize={(step as TextSequenceStep).data.maxWordBankSize}
         />
       ) : step.type === 'story-conversation' ? (
         <StoryConversation

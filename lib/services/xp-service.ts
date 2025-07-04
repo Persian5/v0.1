@@ -20,10 +20,8 @@ export const XP_REWARDS = {
   INPUT_CORRECT: { amount: 2, source: 'input_correct', description: 'Completed input exercise' },
   INPUT_WRONG: { amount: 0, source: 'input_wrong', description: 'Failed input exercise' },
   MATCHING_COMPLETE: { amount: 3, source: 'matching_complete', description: 'Completed matching game' },
+  TEXT_SEQUENCE_COMPLETE: { amount: 3, source: 'text_sequence_complete', description: 'Completed text sequence challenge' },
   FINAL_CHALLENGE: { amount: 4, source: 'final_challenge', description: 'Completed final challenge' },
-  LESSON_COMPLETE: { amount: 20, source: 'lesson_complete', description: 'Completed entire lesson' },
-  STREAK_BONUS: { amount: 5, source: 'streak_bonus', description: 'Daily streak bonus' },
-  PERFECT_LESSON: { amount: 15, source: 'perfect_lesson', description: 'Completed lesson without mistakes' },
 } as const
 
 // XP utility functions

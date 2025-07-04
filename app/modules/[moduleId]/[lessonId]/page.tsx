@@ -22,11 +22,12 @@ import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
+import { AuthService } from "@/lib/services/auth-service"
 
 function LessonPageContent() {
   const params = useParams()
   const router = useRouter()
-  const { user, signOut } = useAuth()
+  const { user, signOut, isLoading: authLoading } = useAuth()
   const searchParamsNav = useSearchParams()
   
   // Validate route parameters
@@ -40,20 +41,37 @@ function LessonPageContent() {
   const [currentView, setCurrentView] = useState(initialViewParam === 'module-completion' ? 'module-completion' : 'welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
   const [isAccessible, setIsAccessible] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Get data from config
   const lesson = getLesson(moduleId, lessonId);
   const module = getModule(moduleId);
   
-  // Check lesson accessibility
+  // Check lesson accessibility using instant computation instead of API call
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
     const checkAccessibility = async () => {
+      // Wait for auth to complete
+      if (authLoading) return;
+      
       try {
-        const accessible = await LessonProgressService.isLessonAccessible(moduleId, lessonId);
-        setIsAccessible(accessible);
+        setIsLoading(true);
+        
+        // Get progress data and use fast accessibility check
+        const isAuthenticated = !!(user && await AuthService.isEmailVerified(user));
+        
+        if (isAuthenticated) {
+          const progressData = await LessonProgressService.getUserLessonProgress();
+          const accessible = LessonProgressService.isLessonAccessibleFast(
+            moduleId, 
+            lessonId, 
+            progressData, 
+            isAuthenticated
+          );
+          setIsAccessible(accessible);
+        } else {
+          // Unauthenticated users can only access Module 1 Lesson 1
+          setIsAccessible(moduleId === 'module1' && lessonId === 'lesson1');
+        }
       } catch (error) {
         console.error('Failed to check lesson accessibility:', error);
         setIsAccessible(false);
@@ -64,17 +82,11 @@ function LessonPageContent() {
 
     if (moduleId && lessonId) {
       checkAccessibility();
-
-      // Safety timeout: force stop loading after 3 s
-      timeoutId = setTimeout(() => {
-        setIsLoading(false);
-      }, 3000);
     } else {
+      setIsAccessible(false);
       setIsLoading(false);
     }
-
-    return () => clearTimeout(timeoutId);
-  }, [moduleId, lessonId]);
+  }, [moduleId, lessonId, authLoading, user]);
   
   // If lesson or module isn't found, handle gracefully
   if (!lesson || !module) {

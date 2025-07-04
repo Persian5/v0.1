@@ -49,7 +49,7 @@ export interface UseXpReturn {
  */
 export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
   const xpConfig = { ...DEFAULT_XP_CONFIG, ...config }
-  const { user, isEmailVerified } = useAuth()
+  const { user, isEmailVerified, isLoading: authLoading } = useAuth()
   const xpCtx = useContext(XpContext)
   
   // Use global context if available, else local state
@@ -57,8 +57,8 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
   const xp = xpCtx ? xpCtx.xp : localXp
   const setXpState = xpCtx ? xpCtx.setXp : setLocalXp
   
-  // Derive loading state
-  const [isLoading, setIsLoading] = useState(xpCtx ? xpCtx.isXpLoading : true)
+  // Derive loading state - if context exists, use its loading state
+  const [isLoading, setIsLoading] = useState(xpCtx ? false : !authLoading)
   const [lastTransaction, setLastTransaction] = useState<XpTransaction | null>(null)
   const [syncStatus, setSyncStatus] = useState<{
     pendingCount: number
@@ -70,7 +70,13 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
   useEffect(() => {
     if (xpCtx) {
       // Context handles loading; just mark not loading
-      setIsLoading(xpCtx.isXpLoading)
+      setIsLoading(false)
+      return
+    }
+
+    // Don't load XP if auth is still loading
+    if (authLoading) {
+      setIsLoading(true)
       return
     }
 
@@ -95,7 +101,7 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     }
 
     loadXp()
-  }, [user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue, xpCtx])
+  }, [user, isEmailVerified, authLoading, xpConfig.minValue, xpConfig.maxValue, xpCtx])
 
   // Update sync status periodically only in development
   const SHOW_SYNC_STATUS = process.env.NODE_ENV === 'development'
@@ -118,7 +124,7 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
   // Keep local loading state in sync with global context
   useEffect(() => {
     if (xpCtx) {
-      setIsLoading(xpCtx.isXpLoading)
+      setIsLoading(false)
     }
   }, [xpCtx?.isXpLoading])
 
@@ -215,7 +221,7 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     addXp,
     setXp,
     resetXp,
-    isLoading: xpCtx ? xpCtx.isXpLoading : isLoading,
+    isLoading,
     lastTransaction,
     syncStatus: user && isEmailVerified ? syncStatus : undefined,
   }

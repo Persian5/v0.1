@@ -663,17 +663,17 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "chiye", text: "Chiye", translation: "What is it?" },
-                { id: "shoma", text: "Shoma", translation: "Your" },
+                { id: "shoma", text: "Shoma", translation: "You" },
                 { id: "esm", text: "Esm", translation: "Name" },
                 { id: "merci", text: "Merci", translation: "Thank you" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" },
                 { id: "esme", text: "Esme", translation: "Name of" }
               ],
-              targetWords: ["salam", "chiye", "shoma", "esm", "merci", "khodafez"],
+              targetWords: ["salam", "esme", "shoma", "chiye", "chetori", "khoobam", "merci", "khodafez"],
               conversationFlow: {
                 description: "A polite introduction conversation",
                 expectedPhrase: "Hello, what is your name, thank you, goodbye",
-                persianSequence: ["salam", "esme", "shoma", "chiye", "merci", "khodafez"]
+                persianSequence: ["salam", "esme", "shoma", "chiye", "chetori", "khoobam", "merci", "khodafez"]
               },
               title: "Your Perfect Introduction",
               successMessage: "Incredible! You can now have complete, polite conversations!",
@@ -957,7 +957,7 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "esme", text: "Esme", translation: "Name of" },
-                { id: "shoma", text: "Shoma", translation: "Your" },
+                { id: "shoma", text: "Shoma", translation: "You" },
                 { id: "chiye", text: "Chiye", translation: "What is it?" },
                 { id: "chetori", text: "Chetori", translation: "How are you?" },
                 { id: "khoobam", text: "Khoobam", translation: "I'm good" },
@@ -970,7 +970,7 @@ export const curriculumData: Module[] = [
                 expectedPhrase: "Hello, what is your name? How are you? I'm good, thank you. Goodbye",
                 persianSequence: ["salam", "esme", "shoma", "chiye", "chetori", "khoobam", "merci", "khodafez"]
               },
-              title: "Your Complete Conversation",
+              title: "Your Perfect Introduction",
               successMessage: "Amazing! You can now have full, natural conversations in Persian!",
               incorrectMessage: "Almost perfect—let's practice that conversation flow one more time!"
             }
@@ -1183,13 +1183,243 @@ export const curriculumData: Module[] = [
   },
   {
     id: "module2",
-    title: "Module 2: Numbers & Age",
-    description: "Count, ask age, and talk prices. Learn numbers from 1 to 100, how to ask about age, and use simple math in daily conversation.",
-    emoji: "🔢",
-    lessonCount: 4,
+    title: "Module 2: Personal Origins & Location",
+    description: "Learn to ask and answer where you're from. Master essential phrases for introductions and location-based conversations.",
+    emoji: "🌍",
+    lessonCount: 1,
     estimatedTime: "30 minutes",
-    available: false,
-    lessons: []
+    available: true,
+    lessons: [
+      {
+        id: "lesson1",
+        title: "Where Are You From?",
+        description: "Learn to ask about origins and introduce yourself with location",
+        emoji: "🗺️",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "esme", "man", "shoma", "chi", "chiye", "chetori", "khoshbakhtam", "merci", "khoobam", "baleh", "na", "khodafez", "khosh_amadid", "esm"],
+        vocabulary: [
+          {
+            id: "koja",
+            en: "Where",
+            fa: "کجا",
+            finglish: "Koja",
+            phonetic: "ko-JAH",
+            lessonId: "module2-lesson1"
+          },
+          {
+            id: "az",
+            en: "From",
+            fa: "از",
+            finglish: "Az",
+            phonetic: "az",
+            lessonId: "module2-lesson1"
+          },
+          {
+            id: "hastid",
+            en: "You Are",
+            fa: "هستید",
+            finglish: "Hastid",
+            phonetic: "has-TEED",
+            lessonId: "module2-lesson1"
+          },
+          {
+            id: "hastam",
+            en: "I Am",
+            fa: "هستم",
+            finglish: "Hastam",
+            phonetic: "has-TAM",
+            lessonId: "module2-lesson1"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Where Are You From?",
+            description: "Learn essential phrases for talking about your origins and asking others where they're from.",
+            points: 0,
+            data: {
+              objectives: [
+                "Ask where someone is from",
+                "Say where you are from", 
+                "Use location words in conversation",
+                "Combine greetings with origin questions"
+              ],
+              lessonType: "origins"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "koja"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'chi' mean?",
+              options: ["What", "Where", "Hello", "From"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "koja",
+              distractors: ["chi", "chiye", "esm"]
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "az"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "hastid"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "hastam"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Az", slotId: "slot1" },
+                { id: "word2", text: "Hastid", slotId: "slot2" },
+                { id: "word3", text: "Hastam", slotId: "slot3" },
+                { id: "word4", text: "Koja", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "From" },
+                { id: "slot2", text: "You Are" },
+                { id: "slot3", text: "I Am" },
+                { id: "slot4", text: "Where" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Shoma az koja hastid",
+              expectedTranslation: "Where are you from"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'esm' mean?",
+              options: ["Name", "Where", "From", "Hello"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Man az Iran hastam",
+              expectedTranslation: "I am from Iran"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Shoma koja hastid",
+              expectedTranslation: "Where are you"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'az' mean?",
+              options: ["From", "Where", "You are", "What"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "chetori",
+              distractors: ["koja", "hastam", "az"]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khoshbakhtam",
+              distractors: ["hastid", "koja", "esm"]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Salam", slotId: "slot1" },
+                { id: "word2", text: "Khodafez", slotId: "slot2" },
+                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
+                { id: "word4", text: "Hastid", slotId: "slot4" },
+                { id: "word5", text: "Hastam", slotId: "slot5" }
+              ],
+              slots: [
+                { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "Bye" },
+                { id: "slot3", text: "Welcome" },
+                { id: "slot4", text: "You Are" },
+                { id: "slot5", text: "I Am" }
+              ]
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "esme", text: "Esme", translation: "Name of" },
+                { id: "man", text: "Man", translation: "I" },
+                { id: "az", text: "Az", translation: "From" },
+                { id: "iran", text: "Iran", translation: "Iran" },
+                { id: "hastam", text: "Hastam", translation: "I am" },
+                { id: "shoma", text: "Shoma", translation: "You" },
+                { id: "koja", text: "Koja", translation: "Where" },
+                { id: "hastid", text: "Hastid", translation: "You are" },
+                { id: "man2", text: "Man", translation: "I" },
+                { id: "az2", text: "Az", translation: "From" }
+              ],
+              targetWords: ["salam", "esme", "man", "user-name", "man2", "az", "iran", "hastam", "shoma", "az2", "koja", "hastid"],
+              title: "Your Origin Introduction",
+              successMessage: "Perfect! You can now introduce yourself and ask about origins!",
+              incorrectMessage: "Almost there—let's practice that conversation flow again!",
+              conversationFlow: {
+                description: "A complete introduction with origin",
+                expectedPhrase: "Hello, my name is {name}. I am from Iran. Where are you from?",
+                persianSequence: ["salam", "esme", "man", "user-name", "man2", "az", "iran", "hastam", "shoma", "az2", "koja", "hastid"]
+              }
+            }
+          }
+        ]
+      }
+    ]
   },
   {
     id: "module3",

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { X } from "lucide-react"
 import { playSuccessSound } from "./Flashcard"
+import { useAuth } from "@/components/auth/AuthProvider"
+import { StoryProgressService } from "@/lib/services/story-progress-service"
 
 interface WordItem {
   id: string;
@@ -48,6 +50,17 @@ export function FinalChallenge({
   onComplete,
   onXpStart
 }: FinalChallengeProps) {
+  // Get user name for personalization
+  const { user } = useAuth()
+  const authFirstName = user?.user_metadata?.first_name || ''
+  const userName = StoryProgressService.getUserName()
+  const displayName = userName !== 'Friend' ? userName : authFirstName || 'Friend'
+  
+  // Function to personalize text with user's name
+  const personalizeText = (text: string): string => {
+    return text.replace(/{name}/g, displayName)
+  }
+
   // ENHANCED WORD BANK: Handle conversation flow patterns
   const enhancedWords = useMemo(() => {
     if (!conversationFlow) {
@@ -67,6 +80,18 @@ export function FinalChallenge({
       }
     });
     
+    // Add user's name as a word option for personalized final challenges
+    // This allows users to practice saying "My name is {Name}"
+    if (displayName && displayName !== 'Friend') {
+      const nameWord: WordItem = {
+        id: "user-name",
+        text: `${displayName}-e`,
+        translation: displayName
+      };
+      conversationWords.push(nameWord);
+      usedWordIds.add("user-name");
+    }
+    
     // Add remaining words as distractors (avoiding duplicates)
     words.forEach(word => {
       if (!usedWordIds.has(word.id)) {
@@ -76,7 +101,7 @@ export function FinalChallenge({
     });
     
     return conversationWords;
-  }, [words, conversationFlow]);
+  }, [words, conversationFlow, displayName]);
 
   // SYSTEMATIC RANDOMIZATION: Randomize word bank display order once on mount
   // Following same pattern as Quiz component for consistency
@@ -86,10 +111,10 @@ export function FinalChallenge({
 
   // Generate dynamic description if none provided
   const getDynamicDescription = () => {
-    if (description) return description;
+    if (description) return personalizeText(description);
     
     if (conversationFlow) {
-      return `${conversationFlow.description}: "${conversationFlow.expectedPhrase}"`;
+      return `${conversationFlow.description}: "${personalizeText(conversationFlow.expectedPhrase)}"`;
     }
     
     // Show the English translations in the correct order so students know the target conversation flow
@@ -190,18 +215,34 @@ export function FinalChallenge({
       const filledSlotCount = currentOrder.filter(id => id !== null).length;
       const expectedSequence = conversationFlow.persianSequence;
       
-      // Check if sequence matches conversation flow
-      const correctCount = currentOrder.filter((id, index) => 
-        index < expectedSequence.length && id === expectedSequence[index]
-      ).length;
+      // Check if sequence matches conversation flow (allowing duplicates to be interchangeable)
+      const correctCount = currentOrder.filter((id, index) => {
+        if (index >= expectedSequence.length || id === null) return false;
+        
+        const expectedId = expectedSequence[index];
+        const currentItem = items.find(item => item.id === id);
+        const expectedItem = words.find(word => word.id === expectedId);
+        
+        // Allow exact ID match OR same text content (for duplicates like man/man2, az/az2)
+        return id === expectedId || 
+               (currentItem && expectedItem && currentItem.text === expectedItem.text);
+      }).length;
       
       isOrderCorrect = filledSlotCount === expectedSequence.length && correctCount === expectedSequence.length;
     } else {
       // Default behavior: match target words order
       const filledSlotCount = currentOrder.filter(id => id !== null).length;
-    const correctCount = currentOrder.filter((id, index) => 
-      index < targetWords.length && id === targetWords[index]
-      ).length;
+      const correctCount = currentOrder.filter((id, index) => {
+        if (index >= targetWords.length || id === null) return false;
+        
+        const expectedId = targetWords[index];
+        const currentItem = items.find(item => item.id === id);
+        const expectedItem = words.find(word => word.id === expectedId);
+        
+        // Allow exact ID match OR same text content (for duplicates like man/man2, az/az2)
+        return id === expectedId || 
+               (currentItem && expectedItem && currentItem.text === expectedItem.text);
+      }).length;
     
     // All filled slots must match expected positions
       isOrderCorrect = filledSlotCount === targetWords.length && correctCount === targetWords.length;

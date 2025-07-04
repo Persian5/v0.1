@@ -146,6 +146,53 @@ export class LessonProgressService {
   }
 
   /**
+   * FAST accessibility check using cached progress data - no API calls
+   * Use this when you already have progress data to avoid loading states
+   */
+  static isLessonAccessibleFast(
+    moduleId: string, 
+    lessonId: string, 
+    progressData: UserLessonProgress[],
+    isAuthenticated: boolean
+  ): boolean {
+    if (!isAuthenticated) {
+      return false;
+    }
+
+    // Special rule: Module 1 Lesson 1 is always accessible for authenticated users
+    if (moduleId === 'module1' && lessonId === 'lesson1') {
+      return true;
+    }
+
+    const modules = getModules();
+    
+    // Find the target lesson
+    const targetModule = modules.find(m => m.id === moduleId);
+    if (!targetModule || !targetModule.available) return false;
+    
+    const targetLesson = targetModule.lessons.find(l => l.id === lessonId);
+    if (!targetLesson) return false;
+    
+    // If lesson is manually locked in curriculum, it's not accessible
+    if (targetLesson.locked) return false;
+    
+    // Find previous lesson in the complete sequence
+    const previousLesson = this.getPreviousLessonInSequenceFast(moduleId, lessonId);
+    
+    if (!previousLesson) {
+      // This shouldn't happen since Module 1 Lesson 1 is handled above
+      return false;
+    }
+    
+    // Check if the previous lesson is completed using cached data
+    return progressData.some(p => 
+      p.module_id === previousLesson.moduleId && 
+      p.lesson_id === previousLesson.lessonId && 
+      p.status === 'completed'
+    );
+  }
+
+  /**
    * Get the first available (incomplete) lesson that user can access
    */
   static async getFirstAvailableLesson(): Promise<AvailableLesson> {
@@ -221,6 +268,36 @@ export class LessonProgressService {
    * Get the previous lesson in the complete sequence
    */
   private static async getPreviousLessonInSequence(moduleId: string, lessonId: string): Promise<AvailableLesson | null> {
+    const modules = getModules();
+    let previousLesson: AvailableLesson | null = null;
+
+    // Loop through all modules in order
+    for (const module of modules) {
+      if (!module.available) continue;
+
+      for (const lesson of module.lessons) {
+        if (lesson.locked) continue;
+
+        // If we found our target lesson, return the previous one
+        if (module.id === moduleId && lesson.id === lessonId) {
+          return previousLesson;
+        }
+
+        // Update previous lesson for next iteration
+        previousLesson = {
+          moduleId: module.id,
+          lessonId: lesson.id
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * FAST version: Get the previous lesson in the complete sequence (no async calls)
+   */
+  private static getPreviousLessonInSequenceFast(moduleId: string, lessonId: string): AvailableLesson | null {
     const modules = getModules();
     let previousLesson: AvailableLesson | null = null;
 
