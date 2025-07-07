@@ -72,9 +72,9 @@ export function AuthModal({
         if (error) {
           setError(error)
         } else {
-          // Redirect to verification page immediately after successful signup
-          router.push('/auth/verify')
-          onClose() // Close modal since we're navigating away
+          // Keep user in modal and switch to verify mode instead of redirecting
+          setMode('verify')
+          // Don't close modal - keep them in the verification flow
         }
       } else if (mode === 'signin') {
         const { error } = await signIn(email, password)
@@ -92,8 +92,9 @@ export function AuthModal({
               onClose()
             }, 1500)
           } else {
-            router.push('/auth/verify')
-            onClose()
+            // Keep user in modal and switch to verify mode
+            setMode('verify')
+            // Don't close modal - let them handle verification within modal
           }
         }
       }

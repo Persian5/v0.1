@@ -5,16 +5,51 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, Trophy, Target } from "lucide-react"
+import { Zap, Trophy, Target, BookOpen } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { VocabularyProgressService } from "@/lib/services/vocabulary-progress-service"
+import { useAuth } from "@/components/auth/AuthProvider"
 
 export default function PracticePage() {
   const [mounted, setMounted] = useState(false)
+  const [vocabularyCount, setVocabularyCount] = useState<number>(0)
+  const [hasVocabulary, setHasVocabulary] = useState<boolean>(false)
+  const [isLoadingVocabulary, setIsLoadingVocabulary] = useState<boolean>(true)
   const router = useRouter()
+  const { user, isEmailVerified } = useAuth()
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Load vocabulary count when user is authenticated
+  useEffect(() => {
+    const loadVocabulary = async () => {
+      if (!mounted || !user || !isEmailVerified) {
+        setIsLoadingVocabulary(false)
+        return
+      }
+
+      try {
+        setIsLoadingVocabulary(true)
+        const [count, hasVocab] = await Promise.all([
+          VocabularyProgressService.getUserVocabularyCount(),
+          VocabularyProgressService.hasVocabularyForPractice()
+        ])
+        
+        setVocabularyCount(count)
+        setHasVocabulary(hasVocab)
+      } catch (error) {
+        console.error('Failed to load vocabulary information:', error)
+        setVocabularyCount(0)
+        setHasVocabulary(false)
+      } finally {
+        setIsLoadingVocabulary(false)
+      }
+    }
+
+    loadVocabulary()
+  }, [mounted, user, isEmailVerified])
 
   // Game modes available in Practice section
   const gameModes = [
@@ -24,9 +59,9 @@ export default function PracticePage() {
       description: "Fast-paced vocabulary matching with increasing speed",
       icon: <Zap className="h-6 w-6" />,
       href: "/practice/word-rush",
-      available: true,
+      available: hasVocabulary,
       difficulty: "Easy → Hard",
-      features: ["Sliding words", "4 lives system", "XP combos", "Module 1 vocab"]
+      features: ["Sliding words", "4 lives system", "XP combos", `${vocabularyCount} words available`]
     },
     {
       id: "story-mode",
@@ -88,7 +123,43 @@ export default function PracticePage() {
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
               Master your Persian skills with endless, engaging practice games
             </p>
+            
+            {/* Vocabulary Status */}
+            {user && isEmailVerified && (
+              <div className="mt-6 flex justify-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <span className="text-sm text-gray-600">
+                    {isLoadingVocabulary ? (
+                      "Loading vocabulary..."
+                    ) : hasVocabulary ? (
+                      `${vocabularyCount} words ready for practice`
+                    ) : (
+                      "Complete lessons to unlock practice games"
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* No Vocabulary Message */}
+          {user && isEmailVerified && !isLoadingVocabulary && !hasVocabulary && (
+            <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+              <div className="flex justify-center mb-3">
+                <BookOpen className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">No Vocabulary Available</h3>
+              <p className="text-blue-700 mb-4">
+                Complete some lessons first to unlock practice games with your learned vocabulary!
+              </p>
+              <Link href="/modules">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Start Learning
+                </Button>
+              </Link>
+            </div>
+          )}
 
           {/* Games Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
@@ -146,7 +217,7 @@ export default function PracticePage() {
                         className="w-full bg-gray-100 text-gray-500 cursor-not-allowed font-semibold py-3 rounded-lg"
                         disabled
                       >
-                        Coming Soon
+                        {game.id === "word-rush" && user && isEmailVerified && !hasVocabulary ? "Complete Lessons First" : "Coming Soon"}
                       </Button>
                     )}
                   </div>

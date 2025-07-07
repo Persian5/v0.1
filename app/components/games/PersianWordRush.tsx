@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Heart, X, Trophy, Zap, ArrowRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { XpService } from "@/lib/services/xp-service"
 import { VocabularyItem } from "@/lib/types"
+import { VocabularyProgressService } from "@/lib/services/vocabulary-progress-service"
+import { useAuth } from "@/components/auth/AuthProvider"
 
 // Game states
-type GameState = 'menu' | 'playing' | 'game-over' | 'paused'
+type GameState = 'menu' | 'playing' | 'game-over' | 'paused' | 'loading'
 
 // Game configuration
 const GAME_CONFIG = {
@@ -20,7 +22,11 @@ const GAME_CONFIG = {
   LIVES: 3,
   CHOICES_COUNT: 4,
   COMBO_THRESHOLD: 4, // Every 4 correct answers increases XP
-  INITIAL_XP: 1
+  INITIAL_XP: 10,
+  XP_CORRECT: 15,
+  XP_BONUS_COMBO_2: 5,
+  XP_BONUS_COMBO_3: 10,
+  XP_BONUS_COMBO_5: 20
 }
 
 interface GameStats {
@@ -45,6 +51,7 @@ interface SlidingWord {
 export function PersianWordRush() {
   const [gameState, setGameState] = useState<GameState>('menu')
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([])
+  const [vocabularyError, setVocabularyError] = useState<string | null>(null)
   const [currentWord, setCurrentWord] = useState<SlidingWord | null>(null)
   const [choices, setChoices] = useState<string[]>([])
   const [correctChoice, setCorrectChoice] = useState<number>(0)
@@ -74,15 +81,41 @@ export function PersianWordRush() {
   const [wordAnimationState, setWordAnimationState] = useState<'sliding' | 'shaking-green' | 'shaking-red' | 'exploding' | null>('sliding')
   const [wordPosition, setWordPosition] = useState<{ x: number, y: number } | null>(null)
 
-  // Load Module 1 vocabulary on component mount
+  const { user, isEmailVerified } = useAuth()
+
+  // Load user's vocabulary on component mount
   useEffect(() => {
-    const module1Vocab = VocabularyService.getModuleVocabulary('module1')
-    if (module1Vocab.length > 0) {
-      setVocabulary(module1Vocab)
-    } else {
-      console.warn('No Module 1 vocabulary found')
+    const loadVocabulary = async () => {
+      if (!user || !isEmailVerified) {
+        setVocabularyError('Please sign in to play')
+        return
+      }
+
+      try {
+        setGameState('loading')
+        const userVocabulary = await VocabularyProgressService.getUserPracticeVocabulary({
+          maxWords: 100 // Get up to 100 words for variety
+        })
+        
+        if (userVocabulary.length === 0) {
+          setVocabularyError('Complete some lessons first to unlock this game!')
+          setGameState('menu')
+          return
+        }
+        
+        setVocabulary(userVocabulary)
+        setVocabularyError(null)
+        setGameState('menu')
+        console.log(`Loaded ${userVocabulary.length} vocabulary words for practice`)
+      } catch (error) {
+        console.error('Failed to load vocabulary:', error)
+        setVocabularyError('Failed to load vocabulary. Please try again.')
+        setGameState('menu')
+      }
     }
-  }, [])
+
+    loadVocabulary()
+  }, [user, isEmailVerified])
 
   // Calculate current word speed based on progress
   const getCurrentSpeed = useCallback(() => {
@@ -382,63 +415,91 @@ export function PersianWordRush() {
     }
   }, [])
 
+  // Loading state
+  if (gameState === 'loading') {
+    return (
+      <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">Loading Vocabulary...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   // Render menu screen
   if (gameState === 'menu') {
     return (
-      <Card className="w-full max-w-2xl mx-auto bg-white shadow-xl">
-        <CardContent className="p-8 text-center">
-          <div className="mb-6">
-            <div className="text-6xl mb-4">⚡</div>
-            <h1 className="text-3xl font-bold text-primary mb-2">Persian Word Rush</h1>
-            <p className="text-lg text-muted-foreground">
-              Fast-paced vocabulary matching with increasing speed
-            </p>
-          </div>
-          
-          <div className="bg-primary/5 rounded-lg p-6 mb-6">
-            <h3 className="font-semibold text-lg mb-4">How to Play</h3>
-            <div className="text-left space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
-                <span>Persian words slide right-to-left across the screen</span>
+      <div className="flex h-full items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold mb-4">Persian Word Rush</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {vocabularyError ? (
+              <div className="text-center space-y-4">
+                <div className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="font-medium">{vocabularyError}</p>
+                </div>
+                <Button onClick={() => window.history.back()} variant="outline" className="w-full">
+                  Go Back
+                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
-                <span>Choose the correct English translation from 4 options</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
-                <span>You have 3 lives - game ends when all lives are lost</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
-                <span>Build combos to increase XP rewards</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
-                <span>Speed increases as you progress</span>
-              </div>
-            </div>
-          </div>
+            ) : (
+              <>
+                <div className="bg-primary/5 rounded-lg p-6 mb-6">
+                  <h3 className="font-semibold text-lg mb-4">How to Play</h3>
+                  <div className="text-left space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                      <span>Persian words slide right-to-left across the screen</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                      <span>Choose the correct English translation from 4 options</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                      <span>You have 3 lives - game ends when all lives are lost</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                      <span>Build combos to increase XP rewards</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ArrowRight className="h-4 w-4 text-primary" />
+                      <span>Speed increases as you progress</span>
+                    </div>
+                  </div>
+                </div>
 
-          <div className="space-y-4">
-            <Button 
-              size="lg" 
-              className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-4 text-lg"
-              onClick={startGame}
-              disabled={vocabulary.length === 0}
-            >
-              {vocabulary.length === 0 ? 'Loading Vocabulary...' : 'Start Game'}
-            </Button>
-            
-            {vocabulary.length > 0 && (
-              <p className="text-sm text-muted-foreground">
-                Ready with {vocabulary.length} words from Module 1
-              </p>
+                <div className="space-y-4">
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-4 text-lg"
+                    onClick={startGame}
+                    disabled={vocabulary.length === 0}
+                  >
+                    {vocabulary.length === 0 ? 'No Vocabulary Available' : 'Start Game'}
+                  </Button>
+                  
+                  {vocabulary.length > 0 && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Ready with {vocabulary.length} words from your completed lessons
+                    </p>
+                  )}
+                </div>
+              </>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 

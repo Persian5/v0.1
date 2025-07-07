@@ -1,6 +1,7 @@
 import { getModules } from '../config/curriculum';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
+import { VocabularyProgressService } from './vocabulary-progress-service';
 
 // Return type for first available lesson
 export interface AvailableLesson {
@@ -61,6 +62,11 @@ export class LessonProgressService {
 
     try {
       await DatabaseService.markLessonCompleted(currentUser.id, moduleId, lessonId);
+      
+      // CRITICAL: Clear vocabulary cache so practice games get updated vocabulary
+      VocabularyProgressService.clearCache();
+      
+      console.log(`Lesson ${moduleId}/${lessonId} completed - vocabulary cache cleared`);
     } catch (error) {
       console.error('Failed to mark lesson completed in database:', error);
       throw error;
