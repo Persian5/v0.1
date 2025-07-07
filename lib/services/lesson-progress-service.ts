@@ -1,4 +1,4 @@
-import { getModules } from '../config/curriculum';
+import { getModules, getModule } from '../config/curriculum';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
 import { VocabularyProgressService } from './vocabulary-progress-service';
@@ -10,6 +10,33 @@ export interface AvailableLesson {
 }
 
 export class LessonProgressService {
+
+  // ===== CACHE MANAGEMENT =====
+  
+  private static progressCacheUpdater: ((progressData: UserLessonProgress[]) => void) | null = null;
+  
+  /**
+   * Set the progress cache updater callback (used by AuthProvider)
+   */
+  static setProgressCacheUpdater(updater: (progressData: UserLessonProgress[]) => void): void {
+    this.progressCacheUpdater = updater;
+  }
+
+  /**
+   * Clear the progress cache updater callback
+   */
+  static clearProgressCacheUpdater(): void {
+    this.progressCacheUpdater = null;
+  }
+
+  /**
+   * Update progress cache with new data
+   */
+  private static updateProgressCache(progressData: UserLessonProgress[]): void {
+    if (this.progressCacheUpdater) {
+      this.progressCacheUpdater(progressData);
+    }
+  }
 
   // ===== AUTHENTICATION-AWARE METHODS =====
 
@@ -66,7 +93,16 @@ export class LessonProgressService {
       // CRITICAL: Clear vocabulary cache so practice games get updated vocabulary
       VocabularyProgressService.clearCache();
       
-      console.log(`Lesson ${moduleId}/${lessonId} completed - vocabulary cache cleared`);
+      // Update progress cache with fresh data
+      try {
+        const updatedProgress = await DatabaseService.getUserLessonProgress(currentUser.id);
+        this.updateProgressCache(updatedProgress);
+      } catch (cacheError) {
+        console.warn('Failed to update progress cache:', cacheError);
+        // Non-critical error - lesson completion still succeeded
+      }
+      
+      console.log(`Lesson ${moduleId}/${lessonId} completed - vocabulary cache cleared, progress cache updated`);
     } catch (error) {
       console.error('Failed to mark lesson completed in database:', error);
       throw error;
@@ -342,6 +378,182 @@ export class LessonProgressService {
     } catch (error) {
       console.error('Failed to get completed lesson count:', error);
       return 0;
+    }
+  }
+
+  // ===== MODULE COMPLETION TRACKING =====
+
+  /**
+   * FAST: Check if a module is completed using cached progress data - no API calls
+   * Use this when you already have progress data to avoid loading states
+   */
+  static isModuleCompletedFast(
+    moduleId: string, 
+    progressData: UserLessonProgress[]
+  ): boolean {
+    const modules = getModules();
+    const module = modules.find(m => m.id === moduleId);
+    if (!module) return false;
+    
+    const completedLessonsInModule = progressData.filter(p => 
+      p.module_id === moduleId && p.status === 'completed'
+    ).length;
+    
+    return completedLessonsInModule === module.lessonCount;
+  }
+
+  /**
+   * Check if a module is completed (all lessons in module are completed)
+   */
+  static async isModuleCompleted(moduleId: string): Promise<boolean> {
+    try {
+      const progressData = await this.getUserLessonProgress();
+      return this.isModuleCompletedFast(moduleId, progressData);
+    } catch (error) {
+      console.error('Failed to check module completion:', error);
+      return false;
+    }
+  }
+
+  /**
+   * FAST: Get module completion percentage using cached progress data - no API calls
+   */
+  static getModuleCompletionPercentageFast(
+    moduleId: string, 
+    progressData: UserLessonProgress[]
+  ): number {
+    const modules = getModules();
+    const module = modules.find(m => m.id === moduleId);
+    if (!module) return 0;
+    
+    const completedLessonsInModule = progressData.filter(p => 
+      p.module_id === moduleId && p.status === 'completed'
+    ).length;
+    
+    return Math.round((completedLessonsInModule / module.lessonCount) * 100);
+  }
+
+  /**
+   * Get module completion percentage
+   */
+  static async getModuleCompletionPercentage(moduleId: string): Promise<number> {
+    try {
+      const progressData = await this.getUserLessonProgress();
+      return this.getModuleCompletionPercentageFast(moduleId, progressData);
+    } catch (error) {
+      console.error('Failed to get module completion percentage:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * FAST: Calculate module completion duration using cached progress data - no API calls
+   * Returns duration in milliseconds, or null if module not completed or no start time
+   */
+  static getModuleCompletionDurationFast(
+    moduleId: string, 
+    progressData: UserLessonProgress[]
+  ): number | null {
+    // Check if module is completed first
+    if (!this.isModuleCompletedFast(moduleId, progressData)) {
+      return null;
+    }
+
+    const moduleProgress = progressData.filter(p => p.module_id === moduleId);
+    
+    // Find the earliest started_at time (module start)
+    const moduleStartTimes = moduleProgress
+      .filter(p => p.started_at)
+      .map(p => new Date(p.started_at!).getTime())
+      .sort((a, b) => a - b);
+    
+    // Find the latest completed_at time (module completion)
+    const moduleCompletionTimes = moduleProgress
+      .filter(p => p.completed_at && p.status === 'completed')
+      .map(p => new Date(p.completed_at!).getTime())
+      .sort((a, b) => b - a);
+    
+    if (moduleStartTimes.length === 0 || moduleCompletionTimes.length === 0) {
+      return null;
+    }
+    
+    const startTime = moduleStartTimes[0];
+    const completionTime = moduleCompletionTimes[0];
+    
+    return completionTime - startTime;
+  }
+
+  /**
+   * Calculate module completion duration (from first lesson start to last lesson completion)
+   * Returns duration in milliseconds, or null if module not completed
+   */
+  static async getModuleCompletionDuration(moduleId: string): Promise<number | null> {
+    try {
+      const progressData = await this.getUserLessonProgress();
+      return this.getModuleCompletionDurationFast(moduleId, progressData);
+    } catch (error) {
+      console.error('Failed to calculate module completion duration:', error);
+      return null;
+    }
+  }
+
+  /**
+   * FAST: Get module completion info using cached progress data - no API calls
+   * Returns comprehensive module completion status and timing info
+   */
+  static getModuleCompletionInfoFast(
+    moduleId: string, 
+    progressData: UserLessonProgress[]
+  ): {
+    isCompleted: boolean;
+    completionPercentage: number;
+    durationMs: number | null;
+    durationFormatted: string | null;
+  } {
+    const isCompleted = this.isModuleCompletedFast(moduleId, progressData);
+    const completionPercentage = this.getModuleCompletionPercentageFast(moduleId, progressData);
+    const durationMs = this.getModuleCompletionDurationFast(moduleId, progressData);
+    
+    let durationFormatted: string | null = null;
+    if (durationMs !== null) {
+      const hours = Math.floor(durationMs / (1000 * 60 * 60));
+      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (hours > 0) {
+        durationFormatted = `${hours}h ${minutes}m`;
+      } else {
+        durationFormatted = `${minutes}m`;
+      }
+    }
+    
+    return {
+      isCompleted,
+      completionPercentage,
+      durationMs,
+      durationFormatted
+    };
+  }
+
+  /**
+   * Get comprehensive module completion info
+   */
+  static async getModuleCompletionInfo(moduleId: string): Promise<{
+    isCompleted: boolean;
+    completionPercentage: number;
+    durationMs: number | null;
+    durationFormatted: string | null;
+  }> {
+    try {
+      const progressData = await this.getUserLessonProgress();
+      return this.getModuleCompletionInfoFast(moduleId, progressData);
+    } catch (error) {
+      console.error('Failed to get module completion info:', error);
+      return {
+        isCompleted: false,
+        completionPercentage: 0,
+        durationMs: null,
+        durationFormatted: null
+      };
     }
   }
 } 

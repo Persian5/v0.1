@@ -3,8 +3,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { AuthService } from '@/lib/services/auth-service'
 import { XpService } from '@/lib/services/xp-service'
+import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import type { User } from '@supabase/supabase-js'
-import { XpContext } from "./XpContext"
+import { XpContext, ProgressContext } from "./XpContext"
+import { UserLessonProgress } from '@/lib/supabase/database'
 
 interface AuthContextType {
   user: User | null
@@ -30,6 +32,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [hasInitializedSync, setHasInitializedSync] = useState(false)
   const [xpTotal, setXpTotal] = useState<number>(0)
   const [isXpLoading, setIsXpLoading] = useState(true)
+  const [progressData, setProgressData] = useState<UserLessonProgress[]>([])
+  const [isProgressLoading, setIsProgressLoading] = useState(true)
 
   // Initialize auth state and set up listener
   useEffect(() => {
@@ -123,6 +127,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     fetchXp()
   }, [user, isEmailVerified])
 
+  // Load lesson progress when user auth state is established
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (user && isEmailVerified) {
+        try {
+          const progress = await LessonProgressService.getUserLessonProgress()
+          setProgressData(progress)
+          
+          // Set up progress cache updater
+          LessonProgressService.setProgressCacheUpdater(setProgressData)
+        } catch (err) {
+          console.error('Failed to fetch user progress:', err)
+          setProgressData([])
+        }
+      } else {
+        setProgressData([])
+        // Clear progress cache updater when not authenticated
+        LessonProgressService.clearProgressCacheUpdater()
+      }
+      setIsProgressLoading(false)
+    }
+
+    fetchProgress()
+  }, [user, isEmailVerified])
+
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
     setIsLoading(true)
     try {
@@ -204,7 +233,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return (
     <AuthContext.Provider value={value}>
       <XpContext.Provider value={{ xp: xpTotal, isXpLoading, setXp: setXpTotal }}>
-        {children}
+        <ProgressContext.Provider value={{ progressData, isProgressLoading, setProgressData }}>
+          {children}
+        </ProgressContext.Provider>
       </XpContext.Provider>
     </AuthContext.Provider>
   )

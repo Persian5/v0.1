@@ -1,4 +1,5 @@
 import { createContext } from 'react'
+import { UserLessonProgress } from '@/lib/supabase/database'
 
 interface XpContextType {
   xp: number
@@ -6,4 +7,11 @@ interface XpContextType {
   setXp: React.Dispatch<React.SetStateAction<number>>
 }
 
-export const XpContext = createContext<XpContextType | undefined>(undefined) 
+interface ProgressContextType {
+  progressData: UserLessonProgress[]
+  isProgressLoading: boolean
+  setProgressData: React.Dispatch<React.SetStateAction<UserLessonProgress[]>>
+}
+
+export const XpContext = createContext<XpContextType | undefined>(undefined)
+export const ProgressContext = createContext<ProgressContextType | undefined>(undefined) 
