@@ -633,8 +633,8 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "How do you say 'I am good, thank you' in Persian?",
-              options: ["Man khoobam, merci", "Shoma khoobam, merci", "Shoma chetori, merci", "Man khoobam, khodafez"],
+              prompt: "How do you say 'my name is Sara, thank you' in Persian?",
+              options: ["Esme man Sara-e, merci", "Esme shoma Sara-e, merci", "Man esm Sara-e, merci", "Shoma esm Sara-e, merci"],
               correct: 0
             }
           },
