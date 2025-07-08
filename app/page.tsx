@@ -142,11 +142,11 @@ export default function HomePage() {
               </Button>
             </Link>
             {!user && (
-              <Link href="/pricing">
+            <Link href="/pricing">
                 <Button variant="ghost" size="sm" className="hover:bg-primary/10 whitespace-nowrap">
-                  Pricing + FAQ
-                </Button>
-              </Link>
+                Pricing + FAQ
+              </Button>
+            </Link>
             )}
             <AccountNavButton />
           </div>

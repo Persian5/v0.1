@@ -163,7 +163,7 @@ export function GrammarConcept({
   }
 
   const handleComplete = () => {
-    onComplete(true)
+      onComplete(true)
   }
 
   const handleXpComplete = () => {
@@ -210,7 +210,7 @@ export function GrammarConcept({
           onStart={undefined}
           onComplete={handleXpComplete}
         />
-
+        
         <AnimatePresence mode="wait">
           {/* Tab 1: Problem */}
           {activeTab === 0 && (
@@ -221,14 +221,14 @@ export function GrammarConcept({
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <div className="text-center">
+          <div className="text-center">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
                   {problemContent?.title}
-                </h3>
+              </h3>
                 <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
                   {problemContent?.explanation}
-                </p>
-              </div>
+            </p>
+          </div>
 
               <div className="flex justify-center gap-8 py-6">
                 {/* Wrong way */}
@@ -250,7 +250,7 @@ export function GrammarConcept({
                     <div className="text-xs text-green-500 mt-2">{problemContent?.rightExample.note}</div>
                   </div>
                 </div>
-              </div>
+                </div>
 
               <div className="text-center">
                 <Button
@@ -302,8 +302,8 @@ export function GrammarConcept({
                     </div>
                     <Button
                       onClick={() => playExampleAudio(example.persian)}
-                      variant="outline"
-                      size="sm"
+                  variant="outline"
+                  size="sm"
                       className="gap-1 border-blue-300 text-blue-700 hover:bg-blue-100"
                     >
                       <Volume2 className="h-3 w-3" />
@@ -351,84 +351,84 @@ export function GrammarConcept({
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center">
-                  {!showTransformation ? (
-                    <Button
-                      onClick={handleTransform}
-                      className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-full font-semibold transition-all hover:scale-105"
-                    >
+            <div className="flex flex-col items-center">
+              {!showTransformation ? (
+                <Button
+                  onClick={handleTransform}
+                  className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-full font-semibold transition-all hover:scale-105"
+                >
                       {practiceContent?.buttonText}
-                    </Button>
-                  ) : (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="text-green-500"
-                    >
+                </Button>
+              ) : (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="text-green-500"
+                >
                       <CheckCircle className="h-8 w-8" />
-                    </motion.div>
-                  )}
-                </div>
+                </motion.div>
+              )}
+            </div>
 
-                <div className="text-center">
-                  <AnimatePresence>
-                    {showTransformation ? (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
+            <div className="text-center">
+              <AnimatePresence>
+                {showTransformation ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
                         className="bg-green-50 border-2 border-green-200 rounded-lg p-6"
                       >
                         <div className="text-3xl font-bold text-green-700 mb-2">{practiceContent?.transformedWord.text}</div>
                         <div className="text-sm text-green-600">{practiceContent?.transformedWord.translation}</div>
-                      </motion.div>
-                    ) : (
+                  </motion.div>
+                ) : (
                       <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 w-[120px] h-[120px] flex items-center justify-center">
                         <div className="text-gray-400 text-sm text-center">
                           Click {practiceContent?.buttonText}
-                        </div>
-                      </div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
+                    </div>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
 
               {/* Success message and completion */}
-              <AnimatePresence>
-                {showTransformation && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+          <AnimatePresence>
+            {showTransformation && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                     className="text-center space-y-4"
-                  >
+              >
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <p className="text-green-800 font-medium">
                         {practiceContent?.successTitle}
-                      </p>
+                </p>
                       <p className="text-green-600 text-sm mt-1">
                         {practiceContent?.successDescription}
-                      </p>
+                </p>
                     </div>
 
                     {practiceComplete && (
-                      <motion.div
+              <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                      >
-                        <Button
+              >
+                <Button
                           onClick={handleComplete}
                           className="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-full font-semibold"
-                        >
+                >
                           Complete Grammar Lesson
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
                       </motion.div>
                     )}
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
       </div>
     </div>
   )

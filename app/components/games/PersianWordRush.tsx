@@ -111,7 +111,7 @@ export function PersianWordRush() {
         console.error('Failed to load vocabulary:', error)
         setVocabularyError('Failed to load vocabulary. Please try again.')
         setGameState('menu')
-      }
+    }
     }
 
     loadVocabulary()
@@ -450,55 +450,55 @@ export function PersianWordRush() {
                 <Button onClick={() => window.history.back()} variant="outline" className="w-full">
                   Go Back
                 </Button>
-              </div>
+          </div>
             ) : (
               <>
-                <div className="bg-primary/5 rounded-lg p-6 mb-6">
-                  <h3 className="font-semibold text-lg mb-4">How to Play</h3>
-                  <div className="text-left space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="h-4 w-4 text-primary" />
-                      <span>Persian words slide right-to-left across the screen</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="h-4 w-4 text-primary" />
-                      <span>Choose the correct English translation from 4 options</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="h-4 w-4 text-primary" />
-                      <span>You have 3 lives - game ends when all lives are lost</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="h-4 w-4 text-primary" />
-                      <span>Build combos to increase XP rewards</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArrowRight className="h-4 w-4 text-primary" />
-                      <span>Speed increases as you progress</span>
-                    </div>
-                  </div>
-                </div>
+          <div className="bg-primary/5 rounded-lg p-6 mb-6">
+            <h3 className="font-semibold text-lg mb-4">How to Play</h3>
+            <div className="text-left space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4 text-primary" />
+                <span>Persian words slide right-to-left across the screen</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4 text-primary" />
+                <span>Choose the correct English translation from 4 options</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4 text-primary" />
+                <span>You have 3 lives - game ends when all lives are lost</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4 text-primary" />
+                <span>Build combos to increase XP rewards</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4 text-primary" />
+                <span>Speed increases as you progress</span>
+              </div>
+            </div>
+          </div>
 
-                <div className="space-y-4">
-                  <Button 
-                    size="lg" 
-                    className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-4 text-lg"
-                    onClick={startGame}
-                    disabled={vocabulary.length === 0}
-                  >
+          <div className="space-y-4">
+            <Button 
+              size="lg" 
+              className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-4 text-lg"
+              onClick={startGame}
+              disabled={vocabulary.length === 0}
+            >
                     {vocabulary.length === 0 ? 'No Vocabulary Available' : 'Start Game'}
-                  </Button>
-                  
-                  {vocabulary.length > 0 && (
+            </Button>
+            
+            {vocabulary.length > 0 && (
                     <p className="text-sm text-muted-foreground text-center">
                       Ready with {vocabulary.length} words from your completed lessons
-                    </p>
-                  )}
-                </div>
+              </p>
+            )}
+          </div>
               </>
             )}
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       </div>
     )
   }

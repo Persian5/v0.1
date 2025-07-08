@@ -314,10 +314,10 @@ export function FinalChallenge({
   }
 
   return (
-    <div className="w-full py-2">
+    <div className="w-full pt-1 pb-0 -mt-4 sm:-mt-6">
       <div ref={confettiCanvasRef} className="fixed inset-0 pointer-events-none z-50"></div>
       
-      <div className="text-center mb-4">
+      <div className="text-center mb-3 sm:mb-4">
         <h2 className="text-2xl sm:text-3xl font-bold mb-1 text-primary">{title}</h2>
         <p className="text-muted-foreground text-sm sm:text-base mb-2">
           {getDynamicDescription()}
@@ -342,34 +342,41 @@ export function FinalChallenge({
               onComplete(true)
             }}
           />
-          {/* Slots for ordering */}
-          <div 
-            className={`grid grid-cols-1 gap-3 mb-4 ${
+          {/* 2-column grid left→right; last odd slot spans both columns */}
+          <div
+            className={`grid grid-cols-2 gap-3 mb-4 grid-flow-row dense ${
               showFeedback && !isCorrect ? 'animate-shake' : ''
             }`}
           >
-            {slots.map((slot) => {
+            {slots.map((slot, idx) => {
               const item = getItemForSlot(slot.id)
               
               return (
                 <div 
                   key={slot.id}
                   className={`
-                    flex items-center p-3 rounded-lg border-2 border-dashed transition-all 
-                    ${item ? 'border-primary bg-primary/5' : 'border-gray-300'}
-                    ${showFeedback && isCorrect ? 'border-green-500 bg-green-50' : ''}
-                    ${showFeedback && !isCorrect ? 'border-red-500 bg-red-50' : ''}
-                  `}
-                >
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2">
-                    <span className="text-primary font-semibold text-sm">{slot.id}</span>
-                  </div>
+                      relative flex items-center justify-center h-10 sm:h-11 rounded-lg border-2 border-dashed transition-all
+                      ${item ? 'border-primary bg-primary/5' : 'border-gray-300'}
+                      ${showFeedback && isCorrect ? 'border-green-500 bg-green-50' : ''}
+                      ${showFeedback && !isCorrect ? 'border-red-500 bg-red-50' : ''}
+                      ${idx === slots.length - 1 && slots.length % 2 === 1 ? 'col-span-2' : ''}
+                      p-2 md:p-2.5
+                    `}
+                 >
+                   {/* Badge on left edge */}
+                   <div className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-semibold text-sm">{slot.id}</span>
+                   </div>
                   
                   {item ? (
-                    <div className="flex justify-between items-center flex-1">
-                      <span className="text-base">{item.text}</span>
-                      <button 
-                        className="text-gray-400 hover:text-red-500 flex items-center ml-2"
+                    <div className="flex-1 min-w-0 text-center">
+                      {/* Ensure long words wrap inside the slot without overflow */}
+                      <span className="text-sm sm:text-base truncate">
+                        {item.text}
+                      </span>
+                      {/* Remove button on right edge */}
+                      <button
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
                         onClick={() => removeFromSlot(slot.id)}
                         disabled={showFeedback && isCorrect}
                       >
@@ -377,7 +384,7 @@ export function FinalChallenge({
                       </button>
                     </div>
                   ) : (
-                    <div className="text-gray-400 italic text-sm">Click a phrase below</div>
+                    <div className="w-full text-center text-gray-400 italic text-xs sm:text-sm truncate pl-8 pr-8 sm:pl-0 sm:pr-0">Click a phrase below</div>
                   )}
                 </div>
               )
@@ -429,37 +436,7 @@ export function FinalChallenge({
         </CardContent>
       </Card>
       
-      {/* Feedback */}
-      <AnimatePresence>
-        {showFeedback && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className={`text-center p-3 rounded-lg text-sm ${
-              isCorrect 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {isCorrect ? (
-              <div>
-                <div className="font-bold text-base sm:text-lg mb-1">
-                  {successMessage}
-                </div>
-                <div className="text-base">
-                  +{points} XP!
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div className="font-bold">{incorrectMessage}</div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Feedback popup removed – XP animation handles success; shake effect shows incorrect */}
     </div>
   )
 } 

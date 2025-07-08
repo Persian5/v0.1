@@ -1185,8 +1185,8 @@ export const curriculumData: Module[] = [
     title: "Module 2: Responses & Feelings",
     description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
     emoji: "😊",
-    lessonCount: 1,
-    estimatedTime: "30 minutes",
+    lessonCount: 2,
+    estimatedTime: "60 minutes",
     available: true,
     lessons: [
       {
@@ -1396,23 +1396,271 @@ export const curriculumData: Module[] = [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "esme", text: "Esme", translation: "Name of" },
                 { id: "man", text: "Man", translation: "I" },
+                { id: "man2", text: "Man", translation: "I" },
                 { id: "kheily", text: "Kheily", translation: "Very" },
                 { id: "khoob", text: "Khoob", translation: "Good" },
                 { id: "hastam", text: "Hastam", translation: "I am" },
-                { id: "shoma", text: "Shoma", translation: "You" },
                 { id: "chetori", text: "Chetori", translation: "How are you?" },
                 { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "man2", text: "Man", translation: "I" },
-                { id: "khoob2", text: "Khoob", translation: "Good" }
+                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "esme", "man", "user-name", "man2", "kheily", "khoob", "hastam", "shoma", "chetori", "merci", "khodafez"],
+              targetWords: ["salam", "esme", "man", "user-name", "man2", "kheily", "khoob", "hastam", "chetori", "merci", "khodafez"],
               title: "Your Feeling Response",
               successMessage: "Perfect! You can now express how you feel and respond naturally!",
               incorrectMessage: "Almost there—let's practice that response conversation again!",
               conversationFlow: {
                 description: "A complete introduction with feeling response",
                 expectedPhrase: "Hello, my name is {name}. I am very good. How are you? Thank you, goodbye",
-                persianSequence: ["salam", "esme", "man", "user-name", "man2", "kheily", "khoob", "hastam", "shoma", "chetori", "merci", "khodafez"]
+                persianSequence: ["salam", "esme", "man", "user-name", "man2", "kheily", "khoob", "hastam", "chetori", "merci", "khodafez"]
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson2",
+        title: "Origins & States",
+        description: "Learn to ask where someone is from and describe origins and states",
+        emoji: "🌍",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "esme", "man", "shoma", "chetori", "merci", "khodafez", "khoob", "neestam", "hastam", "kheily"],
+        vocabulary: [
+          {
+            id: "hasti",
+            en: "You Are",
+            fa: "هستی",
+            finglish: "Hasti",
+            phonetic: "has-TEE",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "koja",
+            en: "Where",
+            fa: "کجا",
+            finglish: "Koja",
+            phonetic: "ko-JAH",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "ahle",
+            en: "From",
+            fa: "اهل",
+            finglish: "Ahle",
+            phonetic: "ah-LEH",
+            lessonId: "module2-lesson2"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Origins & States",
+            description: "Learn to ask where someone is from and describe origins and personal states.",
+            points: 0,
+            data: {
+              objectives: [
+                "Ask where someone is from",
+                "State where you are from", 
+                "Describe others' states and origins",
+                "Combine origins with feelings"
+              ],
+              lessonType: "origins"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Khoob", slotId: "slot1" },
+                { id: "word2", text: "Hastam", slotId: "slot2" },
+                { id: "word3", text: "Neestam", slotId: "slot3" },
+                { id: "word4", text: "Kheily", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Good" },
+                { id: "slot2", text: "I Am" },
+                { id: "slot3", text: "I Am Not" },
+                { id: "slot4", text: "Very" }
+              ]
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "hasti"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "koja"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "ahle"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'hasti' mean?",
+              options: ["You are", "I am", "I am not", "You are not"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Ahle", slotId: "slot1" },
+                { id: "word2", text: "Hasti", slotId: "slot2" },
+                { id: "word3", text: "Koja", slotId: "slot3" },
+                { id: "word4", text: "Hastam", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "From" },
+                { id: "slot2", text: "You are" },
+                { id: "slot3", text: "Where" },
+                { id: "slot4", text: "I am" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Shoma ahle koja hasti",
+              expectedTranslation: "Where are you from"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'where' in Persian?",
+              answer: "koja"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Man ahle Iran hastam",
+              expectedTranslation: "I am from Iran"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["shoma", "ahle", "koja", "hasti"],
+              expectedTranslation: "Where are you from"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'you' in Persian?",
+              answer: "shoma"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Salam", slotId: "slot1" },
+                { id: "word2", text: "Khodafez", slotId: "slot2" },
+                { id: "word3", text: "Koja", slotId: "slot3" },
+                { id: "word4", text: "Hasti", slotId: "slot4" },
+                { id: "word5", text: "Hastam", slotId: "slot5" }
+              ],
+              slots: [
+                { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "Goodbye" },
+                { id: "slot3", text: "Where" },
+                { id: "slot4", text: "You are" },
+                { id: "slot5", text: "I am" }
+              ]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Neestam", slotId: "slot1" },
+                { id: "word2", text: "Hasti", slotId: "slot2" },
+                { id: "word3", text: "Hastam", slotId: "slot3" },
+                { id: "word4", text: "Kheily", slotId: "slot4" },
+                { id: "word5", text: "Khoob", slotId: "slot5" }
+              ],
+              slots: [
+                { id: "slot1", text: "I am not" },
+                { id: "slot2", text: "You are" },
+                { id: "slot3", text: "I am" },
+                { id: "slot4", text: "Very" },
+                { id: "slot5", text: "Good" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Man kheily khoob hastam",
+              expectedTranslation: "I am very good"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Esme shoma chiye",
+              expectedTranslation: "What is your name"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'Shoma ahle koja hasti' mean?",
+              options: ["Where are you from?", "What is your name?", "How are you?", "You are very good"],
+              correct: 0
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "shoma", text: "Shoma", translation: "You" },
+                { id: "ahle", text: "Ahle", translation: "From" },
+                { id: "ahle2", text: "Ahle", translation: "From" },
+                { id: "koja", text: "Koja", translation: "Where" },
+                { id: "hasti", text: "Hasti", translation: "You are" },
+                { id: "man", text: "Man", translation: "I" },
+                { id: "iran", text: "Iran", translation: "Iran" },
+                { id: "hastam", text: "Hastam", translation: "I am" }
+              ],
+              targetWords: ["salam", "shoma", "ahle", "koja", "hasti", "man", "ahle", "iran", "hastam"],
+              title: "Your Origin Conversation",
+              successMessage: "Excellent! You can now ask and answer about origins!",
+              incorrectMessage: "Almost there—let's practice that origin conversation again!",
+              conversationFlow: {
+                description: "A conversation about origins",
+                expectedPhrase: "Hello, where are you from? I am from Iran",
+                persianSequence: ["salam", "shoma", "ahle", "koja", "hasti", "man", "ahle", "iran", "hastam"]
               }
             }
           }
