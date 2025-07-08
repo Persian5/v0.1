@@ -346,10 +346,10 @@ export class LessonProgressService {
     // Loop through all modules in order
     for (const module of modules) {
       if (!module.available) continue;
-
+      
       for (const lesson of module.lessons) {
         if (lesson.locked) continue;
-
+        
         // If we found our target lesson, return the previous one
         if (module.id === moduleId && lesson.id === lessonId) {
           return previousLesson;

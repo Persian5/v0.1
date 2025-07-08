@@ -80,9 +80,9 @@ export function FinalChallenge({
       }
     });
     
-    // Add user's name as a word option for personalized final challenges
-    // This allows users to practice saying "My name is {Name}"
-    if (displayName && displayName !== 'Friend') {
+    // Only add user's name if it's actually needed in the target sequence
+    // This prevents unwanted personalization in lessons that don't require it
+    if (displayName && displayName !== 'Friend' && targetWords.includes("user-name")) {
       const nameWord: WordItem = {
         id: "user-name",
         text: `${displayName}-e`,
@@ -101,7 +101,7 @@ export function FinalChallenge({
     });
     
     return conversationWords;
-  }, [words, conversationFlow, displayName]);
+  }, [words, conversationFlow, displayName, targetWords]);
 
   // SYSTEMATIC RANDOMIZATION: Randomize word bank display order once on mount
   // Following same pattern as Quiz component for consistency

@@ -25,9 +25,9 @@ export interface GrammarConcept {
 export const grammarConcepts: GrammarConcept[] = [
   {
     conceptId: "ezafe-connector",
-    title: "Ezafe Connector: Connecting Words",
-    description: "Learn how -e connects words to show possession or relationship",
-    rule: "Add -e to connect words together (like 'of' in English)",
+    title: "Why do we say \"esme\", not \"esm\"?",
+    description: "In Persian, we say \"esme man\" — not \"esm man\" — to mean \"my name.\"\nThe little \"-e\" connects words like \"name of me\" or \"Sara's name.\"\nThis sound is called ezāfe, and it's one of the most common features in Persian.",
+    rule: "Connect words with -e to show possession or relationship (like 'of' in English)",
     phases: [
       {
         id: "esm-to-esme",
@@ -35,9 +35,9 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "esme",
         baseDefinition: "name", 
         transformedDefinition: "name of",
-        explanation: "Add -e to connect 'name' to something else, like 'name of me'",
-        exampleBefore: "Esm Sara (Name Sara)", // Just stating a name
-        exampleAfter: "Esme man (My name / Name of me)", // Connecting "name of me"
+        explanation: "In Persian, this is called ezāfe — and you'll use it all the time.",
+        exampleBefore: "esm man ❌ (unnatural)", // Showing what NOT to say
+        exampleAfter: "esme man ✅ (\"my name\" / \"name of me\")", // Showing correct way
         points: 1
       }
     ]
