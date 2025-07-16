@@ -132,10 +132,35 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Salam khosh amadid",
+              expectedTranslation: "Hello Welcome",
+              maxWordBankSize: 10
+            }
+          },
+          {
             type: "flashcard",
             points: 1,
             data: {
               vocabularyId: "khodafez"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["khosh_amadid", "chetori"],
+              expectedTranslation: "Welcome How are you"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khodafez",
+              distractors: ["salam", "khosh_amadid", "khoobam"]
             }
           },
           {
@@ -1191,11 +1216,12 @@ export const curriculumData: Module[] = [
     lessons: [
       {
         id: "lesson1",
-        title: "Responses & Feelings",
-        description: "Learn to express how you feel and respond to questions about your state",
-        emoji: "😊",
+        title: "Adjective Suffixes \"–am\" & \"–i\"",
+        description: "Learn how to form 'I am...' and 'you are...' with adjectives using suffixes",
+        emoji: "📚",
         progress: 0,
         locked: false,
+        grammarLesson: true,
         reviewVocabulary: ["salam", "esme", "man", "shoma", "chi", "chiye", "chetori", "khoshbakhtam", "merci", "khoobam", "baleh", "na", "khodafez", "khosh_amadid", "esm"],
         vocabulary: [
           {
@@ -1207,44 +1233,27 @@ export const curriculumData: Module[] = [
             lessonId: "module2-lesson1"
           },
           {
-            id: "neestam",
-            en: "I Am Not",
-            fa: "نیستم",
-            finglish: "Neestam",
-            phonetic: "nees-TAM",
-            lessonId: "module2-lesson1"
-          },
-          {
-            id: "hastam",
-            en: "I Am",
-            fa: "هستم",
-            finglish: "Hastam",
-            phonetic: "has-TAM",
-            lessonId: "module2-lesson1"
-          },
-          {
-            id: "kheily",
-            en: "Very",
-            fa: "خیلی",
-            finglish: "Kheily",
-            phonetic: "khay-LEE",
+            id: "khoobi",
+            en: "You Are Good",
+            fa: "خوبی",
+            finglish: "Khoob-i",
+            phonetic: "khoob-ee",
             lessonId: "module2-lesson1"
           }
         ],
         steps: [
           {
             type: "welcome",
-            title: "Responses & Feelings",
-            description: "Learn essential phrases for expressing how you feel and responding to questions about your state.",
+            title: "Adjective Suffixes \"–am\" & \"–i\"",
+            description: "This rule applies only to adjectives, not nouns (we'll do noun possession later). We take the adjective khoob (\"good\") and attach: –am (\"I am …\") → khoob‑am, –i (\"you are …\") → khoob‑i",
             points: 0,
             data: {
               objectives: [
-                "Say how you feel or your state",
-                "Express positive and negative responses", 
-                "Use intensifiers like 'very' in conversation",
-                "Combine feelings with greetings"
+                "Recognize the base adjective khoob",
+                "Form khoob‑am and khoob‑i correctly", 
+                "Distinguish between \"I am good\" and \"you are good\""
               ],
-              lessonType: "responses"
+              lessonType: "grammar"
             }
           },
           {
@@ -1255,34 +1264,272 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "grammar-concept",
+            points: 2,
+            data: {
+              conceptId: "adjective-suffixes"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khoobam"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khoobi"
+            }
+          },
+          {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "What does 'khoobam' mean?",
-              options: ["I'm good", "Good", "Very", "I am not"],
-              correct: 0
+              prompt: "Which form means \"I am good\"?",
+              options: ["khoob‑i", "khoob‑am", "khoob", "khodafez"],
+              correct: 1
             }
           },
           {
-            type: "audio-meaning",
+            type: "quiz",
             points: 2,
             data: {
-              vocabularyId: "khoob",
-              distractors: ["khoobam", "kheily", "hastam"]
+              prompt: "Which form means \"you are good\"?",
+              options: ["khoob‑am", "khoob", "khoob‑i", "merci"],
+              correct: 2
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "khoob", slotId: "slot1" },
+                { id: "word2", text: "khoob-am", slotId: "slot2" },
+                { id: "word3", text: "khoob-i", slotId: "slot3" }
+              ],
+              slots: [
+                { id: "slot1", text: "good" },
+                { id: "slot2", text: "I am good" },
+                { id: "slot3", text: "You are good" },
+                { id: "slot4", text: "Very good" }
+              ]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "-am", slotId: "slot1" },
+                { id: "word2", text: "-i", slotId: "slot2" }
+              ],
+              slots: [
+                { id: "slot1", text: "I am" },
+                { id: "slot2", text: "You are" },
+                { id: "slot3", text: "Good" },
+                { id: "slot4", text: "Hello" }
+              ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the Persian (phonetic) for 'I am good.'",
+              answer: "khoob-am"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the Persian (phonetic) for 'you are good.'",
+              answer: "khoob-i"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man khoob-am shoma khoob-i",
+              expectedTranslation: "I am good you are good"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "khoobi?",
+              expectedTranslation: "are you good?"
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "chetori", text: "Chetori", translation: "How are you" },
+                { id: "khoobam", text: "khoob-am", translation: "I am good" },
+                { id: "khoobi", text: "khoob-i", translation: "Are you good" }
+              ],
+              targetWords: ["salam", "chetori", "khoobam", "khoobi"],
+              title: "Grammar Practice",
+              successMessage: "Excellent! You understand adjective suffixes!",
+              incorrectMessage: "Almost there—let's practice that suffix pattern again!"
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson2",
+        title: "Basic Responses Continued",
+        description: "Learn to use 'is' and 'is not' with Persian verb roots and build complex responses",
+        emoji: "🌍",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "esme", "man", "shoma", "chetori", "merci", "khodafez", "khoob", "khoobam", "khoobi"],
+        vocabulary: [
+          {
+            id: "hast",
+            en: "Is",
+            fa: "هست",
+            finglish: "Hast",
+            phonetic: "hast",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "neest",
+            en: "Is Not",
+            fa: "نیست",
+            finglish: "Neest",
+            phonetic: "neest",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "hastam",
+            en: "I Am",
+            fa: "هستم",
+            finglish: "Hastam",
+            phonetic: "has-TAM",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "neestam",
+            en: "I Am Not",
+            fa: "نیستم",
+            finglish: "Neestam",
+            phonetic: "nees-TAM",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "neesti",
+            en: "You Are Not",
+            fa: "نیستی",
+            finglish: "Neesti",
+            phonetic: "nees-TEE",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "hasti",
+            en: "You Are",
+            fa: "هستی",
+            finglish: "Hasti",
+            phonetic: "has-TEE",
+            lessonId: "module2-lesson2"
+          },
+          {
+            id: "kheily",
+            en: "Very",
+            fa: "خیلی",
+            finglish: "Kheily",
+            phonetic: "khay-LEE",
+            lessonId: "module2-lesson2"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Basic Responses Continued",
+            description: "Learn to use Persian verb roots 'hast' (is) and 'neest' (is not) with the suffix patterns you already know.",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn the verb roots 'hast' and 'neest'",
+                "Apply suffix patterns to create 'I am', 'you are not', etc.",
+                "Build complex responses using these new forms",
+                "Practice natural Persian conversation patterns"
+              ],
+              lessonType: "responses"
             }
           },
           {
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "neestam"
+              vocabularyId: "hast"
             }
           },
           {
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "hastam"
+              vocabularyId: "neest"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which root means 'is not'?",
+              options: ["hast", "neest", "khoob", "esm"],
+              correct: 1
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'you are not' using the neest root?",
+              answer: "neesti"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'I am' using the hast root?",
+              answer: "hastam"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "hastam", slotId: "slot1" },
+                { id: "word2", text: "neestam", slotId: "slot2" },
+                { id: "word3", text: "neesti", slotId: "slot3" },
+                { id: "word4", text: "hasti", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "I am" },
+                { id: "slot2", text: "I am not" },
+                { id: "slot3", text: "You are not" },
+                { id: "slot4", text: "You are" }
+              ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'I am not'?",
+              answer: "neestam"
             }
           },
           {
@@ -1293,79 +1540,35 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Khoob", slotId: "slot1" },
-                { id: "word2", text: "Neestam", slotId: "slot2" },
-                { id: "word3", text: "Hastam", slotId: "slot3" },
-                { id: "word4", text: "Kheily", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Good" },
-                { id: "slot2", text: "I Am Not" },
-                { id: "slot3", text: "I Am" },
-                { id: "slot4", text: "Very" }
-              ]
-            }
-          },
-          {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "Man kheily khoob hastam",
+              finglishText: "man kheily khoob hastam",
               expectedTranslation: "I am very good"
             }
           },
           {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'neestam' mean?",
-              options: ["I am not", "I am", "Very", "Good"],
-              correct: 0
-            }
-          },
-          {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "Man khoob neestam",
+              finglishText: "khoob neestam",
               expectedTranslation: "I am not good"
             }
           },
           {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "kheily",
+              distractors: ["khoob", "hast", "neest"]
+            }
+          },
+          {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "Kheily khoob hastam",
-              expectedTranslation: "I am very good"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'kheily' mean?",
-              options: ["Very", "Good", "I am", "I am not"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chetori",
-              distractors: ["khoob", "hastam", "kheily"]
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khoshbakhtam",
-              distractors: ["neestam", "khoob", "esm"]
+              finglishText: "esme man James neest",
+              expectedTranslation: "My name is not James"
             }
           },
           {
@@ -1373,19 +1576,25 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Khodafez", slotId: "slot2" },
-                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
-                { id: "word4", text: "Neestam", slotId: "slot4" },
-                { id: "word5", text: "Hastam", slotId: "slot5" }
+                { id: "word1", text: "baleh", slotId: "slot1" },
+                { id: "word2", text: "man", slotId: "slot2" },
+                { id: "word3", text: "khodafez", slotId: "slot3" },
+                { id: "word4", text: "khoshbakhtam", slotId: "slot4" }
               ],
               slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "Bye" },
-                { id: "slot3", text: "Welcome" },
-                { id: "slot4", text: "I Am Not" },
-                { id: "slot5", text: "I Am" }
+                { id: "slot1", text: "Yes" },
+                { id: "slot2", text: "I / Me" },
+                { id: "slot3", text: "Goodbye" },
+                { id: "slot4", text: "Nice to meet you" }
               ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man James hastam",
+              expectedTranslation: "I am James"
             }
           },
           {
@@ -1394,273 +1603,22 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "esme", text: "Esme", translation: "Name of" },
+                { id: "chetori", text: "Chetori", translation: "How are you?" },
                 { id: "man", text: "Man", translation: "I" },
-                { id: "man2", text: "Man", translation: "I" },
                 { id: "kheily", text: "Kheily", translation: "Very" },
                 { id: "khoob", text: "Khoob", translation: "Good" },
                 { id: "hastam", text: "Hastam", translation: "I am" },
-                { id: "chetori", text: "Chetori", translation: "How are you?" },
                 { id: "merci", text: "Merci", translation: "Thank you" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "esme", "man", "user-name", "man2", "kheily", "khoob", "hastam", "chetori", "merci", "khodafez"],
-              title: "Your Feeling Response",
-              successMessage: "Perfect! You can now express how you feel and respond naturally!",
-              incorrectMessage: "Almost there—let's practice that response conversation again!",
+              targetWords: ["salam", "chetori", "man", "kheily", "khoob", "hastam", "merci", "khodafez"],
+              title: "Complete Conversation Practice",
+              successMessage: "Excellent! You can now express complex states and responses!",
+              incorrectMessage: "Almost there—let's practice that conversation flow again!",
               conversationFlow: {
-                description: "A complete introduction with feeling response",
-                expectedPhrase: "Hello, my name is {name}. I am very good. How are you? Thank you, goodbye",
-                persianSequence: ["salam", "esme", "man", "user-name", "man2", "kheily", "khoob", "hastam", "chetori", "merci", "khodafez"]
-              }
-            }
-          }
-        ]
-      },
-      {
-        id: "lesson2",
-        title: "Origins & States",
-        description: "Learn to ask where someone is from and describe origins and states",
-        emoji: "🌍",
-        progress: 0,
-        locked: false,
-        reviewVocabulary: ["salam", "esme", "man", "shoma", "chetori", "merci", "khodafez", "khoob", "neestam", "hastam", "kheily"],
-        vocabulary: [
-          {
-            id: "hasti",
-            en: "You Are",
-            fa: "هستی",
-            finglish: "Hasti",
-            phonetic: "has-TEE",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "koja",
-            en: "Where",
-            fa: "کجا",
-            finglish: "Koja",
-            phonetic: "ko-JAH",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "ahle",
-            en: "From",
-            fa: "اهل",
-            finglish: "Ahle",
-            phonetic: "ah-LEH",
-            lessonId: "module2-lesson2"
-          }
-        ],
-        steps: [
-          {
-            type: "welcome",
-            title: "Origins & States",
-            description: "Learn to ask where someone is from and describe origins and personal states.",
-            points: 0,
-            data: {
-              objectives: [
-                "Ask where someone is from",
-                "State where you are from", 
-                "Describe others' states and origins",
-                "Combine origins with feelings"
-              ],
-              lessonType: "origins"
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Khoob", slotId: "slot1" },
-                { id: "word2", text: "Hastam", slotId: "slot2" },
-                { id: "word3", text: "Neestam", slotId: "slot3" },
-                { id: "word4", text: "Kheily", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Good" },
-                { id: "slot2", text: "I Am" },
-                { id: "slot3", text: "I Am Not" },
-                { id: "slot4", text: "Very" }
-              ]
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "hasti"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "koja"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "ahle"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'hasti' mean?",
-              options: ["You are", "I am", "I am not", "You are not"],
-              correct: 0
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Ahle", slotId: "slot1" },
-                { id: "word2", text: "Hasti", slotId: "slot2" },
-                { id: "word3", text: "Koja", slotId: "slot3" },
-                { id: "word4", text: "Hastam", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "From" },
-                { id: "slot2", text: "You are" },
-                { id: "slot3", text: "Where" },
-                { id: "slot4", text: "I am" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Shoma ahle koja hasti",
-              expectedTranslation: "Where are you from"
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'where' in Persian?",
-              answer: "koja"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man ahle Iran hastam",
-              expectedTranslation: "I am from Iran"
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["shoma", "ahle", "koja", "hasti"],
-              expectedTranslation: "Where are you from"
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'you' in Persian?",
-              answer: "shoma"
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Khodafez", slotId: "slot2" },
-                { id: "word3", text: "Koja", slotId: "slot3" },
-                { id: "word4", text: "Hasti", slotId: "slot4" },
-                { id: "word5", text: "Hastam", slotId: "slot5" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "Goodbye" },
-                { id: "slot3", text: "Where" },
-                { id: "slot4", text: "You are" },
-                { id: "slot5", text: "I am" }
-              ]
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Neestam", slotId: "slot1" },
-                { id: "word2", text: "Hasti", slotId: "slot2" },
-                { id: "word3", text: "Hastam", slotId: "slot3" },
-                { id: "word4", text: "Kheily", slotId: "slot4" },
-                { id: "word5", text: "Khoob", slotId: "slot5" }
-              ],
-              slots: [
-                { id: "slot1", text: "I am not" },
-                { id: "slot2", text: "You are" },
-                { id: "slot3", text: "I am" },
-                { id: "slot4", text: "Very" },
-                { id: "slot5", text: "Good" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man kheily khoob hastam",
-              expectedTranslation: "I am very good"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Esme shoma chiye",
-              expectedTranslation: "What is your name"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'Shoma ahle koja hasti' mean?",
-              options: ["Where are you from?", "What is your name?", "How are you?", "You are very good"],
-              correct: 0
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "ahle", text: "Ahle", translation: "From" },
-                { id: "ahle2", text: "Ahle", translation: "From" },
-                { id: "koja", text: "Koja", translation: "Where" },
-                { id: "hasti", text: "Hasti", translation: "You are" },
-                { id: "man", text: "Man", translation: "I" },
-                { id: "iran", text: "Iran", translation: "Iran" },
-                { id: "hastam", text: "Hastam", translation: "I am" }
-              ],
-              targetWords: ["salam", "shoma", "ahle", "koja", "hasti", "man", "ahle", "iran", "hastam"],
-              title: "Your Origin Conversation",
-              successMessage: "Excellent! You can now ask and answer about origins!",
-              incorrectMessage: "Almost there—let's practice that origin conversation again!",
-              conversationFlow: {
-                description: "A conversation about origins",
-                expectedPhrase: "Hello, where are you from? I am from Iran",
-                persianSequence: ["salam", "shoma", "ahle", "koja", "hasti", "man", "ahle", "iran", "hastam"]
+                description: "A complete conversation with complex responses",
+                expectedPhrase: "Hello, how are you? I am very good, thank you, goodbye",
+                persianSequence: ["salam", "chetori", "man", "kheily", "khoob", "hastam", "merci", "khodafez"]
               }
             }
           }
