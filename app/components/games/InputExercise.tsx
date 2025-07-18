@@ -17,7 +17,137 @@ export interface InputExerciseProps {
   onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
 }
 
-// Letter validation component for real-time feedback
+// Enhanced input component for grammar lessons with hyphen support
+function GrammarHyphenInput({ 
+  value, 
+  targetAnswer, 
+  onChange, 
+  onSubmit,
+  placeholder,
+  disabled,
+  className 
+}: {
+  value: string;
+  targetAnswer: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  placeholder: string;
+  disabled: boolean;
+  className?: string;
+}) {
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const secondInputRef = useRef<HTMLInputElement>(null);
+  
+  // Split the target answer by hyphen
+  const [beforeHyphen, afterHyphen] = targetAnswer.split('-');
+  const [firstPart, setFirstPart] = useState('');
+  const [secondPart, setSecondPart] = useState('');
+  
+  // Update parent component with combined value
+  useEffect(() => {
+    const combinedValue = `${firstPart}${secondPart ? '-' + secondPart : ''}`;
+    onChange(combinedValue);
+  }, [firstPart, secondPart, onChange]);
+  
+  // Parse incoming value for controlled behavior
+  useEffect(() => {
+    if (value.includes('-')) {
+      const [first, second] = value.split('-');
+      setFirstPart(first || '');
+      setSecondPart(second || '');
+    } else {
+      setFirstPart(value);
+      setSecondPart('');
+    }
+  }, [value]);
+
+  const handleFirstPartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFirstPart(e.target.value);
+  };
+
+  const handleSecondPartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSecondPart(e.target.value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, isSecondInput: boolean = false) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSubmit();
+    } else if (e.key === 'Tab' && !isSecondInput) {
+      e.preventDefault();
+      secondInputRef.current?.focus();
+    }
+  };
+
+  const normalizeForComparison = (text: string): string => {
+    return text.toLowerCase().trim();
+  };
+
+  const getValidationStatus = (inputValue: string, targetValue: string): 'correct' | 'incorrect' | 'pending' => {
+    if (!inputValue) return 'pending';
+    const normalized = normalizeForComparison(inputValue);
+    const normalizedTarget = normalizeForComparison(targetValue);
+    return normalized === normalizedTarget ? 'correct' : 'incorrect';
+  };
+
+  const firstStatus = getValidationStatus(firstPart, beforeHyphen);
+  const secondStatus = getValidationStatus(secondPart, afterHyphen);
+
+  return (
+    <div className={`flex items-center justify-center gap-2 ${className}`}>
+      <div className="relative flex-1 max-w-[120px]">
+        <Input
+          ref={firstInputRef}
+          type="text"
+          value={firstPart}
+          onChange={handleFirstPartChange}
+          onKeyDown={(e) => handleKeyDown(e, false)}
+          className={`text-center text-lg border-2 transition-all ${
+            firstStatus === 'correct' 
+              ? 'border-green-500 bg-green-50' 
+              : firstStatus === 'incorrect'
+              ? 'border-red-500 bg-red-50'
+              : 'border-gray-300'
+          }`}
+          disabled={disabled}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          placeholder={disabled ? beforeHyphen : ''}
+        />
+      </div>
+      
+      {/* Fixed hyphen */}
+      <div className="text-2xl font-bold text-primary px-1">-</div>
+      
+      <div className="relative flex-1 max-w-[120px]">
+        <Input
+          ref={secondInputRef}
+          type="text"
+          value={secondPart}
+          onChange={handleSecondPartChange}
+          onKeyDown={(e) => handleKeyDown(e, true)}
+          className={`text-center text-lg border-2 transition-all ${
+            secondStatus === 'correct' 
+              ? 'border-green-500 bg-green-50' 
+              : secondStatus === 'incorrect'
+              ? 'border-red-500 bg-red-50'
+              : 'border-gray-300'
+          }`}
+          disabled={disabled}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          placeholder={disabled ? afterHyphen : ''}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Letter validation component for regular input (non-hyphen)
 function ValidatedLetterInput({ 
   value, 
   targetAnswer, 
@@ -179,6 +309,9 @@ export function InputExercise({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showHint, setShowHint] = useState(false)
 
+  // Check if this is a grammar lesson (contains hyphen)
+  const hasHyphen = answer.includes('-');
+
   const handleInputChange = (value: string) => {
     setInput(value)
     if (showFeedback && !isCorrect) {
@@ -252,7 +385,9 @@ export function InputExercise({
     <div className="w-full max-w-[90vw] sm:max-w-[80vw] mx-auto py-4">
       <div className="text-center mb-4">
         <h2 className="text-2xl sm:text-3xl font-bold mb-1 text-primary">Practice</h2>
-        <p className="text-muted-foreground">Type the correct word - watch the letters turn green!</p>
+        <p className="text-muted-foreground">
+          {hasHyphen ? "Fill in both parts with the hyphen connecting them!" : "Type the correct word - watch the letters turn green!"}
+        </p>
       </div>
 
       <div className="bg-white rounded-xl shadow-lg p-4 relative">
@@ -280,15 +415,27 @@ export function InputExercise({
               transition={{ duration: 0.5 }}
               className="relative"
             >
-              <ValidatedLetterInput
-                value={input}
-                targetAnswer={answer}
-                onChange={handleInputChange}
-                onSubmit={handleSubmit}
-                placeholder="Start typing..."
-                disabled={showFeedback && isCorrect}
-                className="w-full"
-              />
+              {hasHyphen ? (
+                <GrammarHyphenInput
+                  value={input}
+                  targetAnswer={answer}
+                  onChange={handleInputChange}
+                  onSubmit={handleSubmit}
+                  placeholder="Start typing..."
+                  disabled={showFeedback && isCorrect}
+                  className="w-full"
+                />
+              ) : (
+                <ValidatedLetterInput
+                  value={input}
+                  targetAnswer={answer}
+                  onChange={handleInputChange}
+                  onSubmit={handleSubmit}
+                  placeholder="Start typing..."
+                  disabled={showFeedback && isCorrect}
+                  className="w-full"
+                />
+              )}
             </motion.div>
 
             {/* Hint Toggle (Collapsible Pill) */}
@@ -337,7 +484,7 @@ export function InputExercise({
       <div className="mt-5 mb-4 sm:mt-6 sm:mb-5">
         <div className="bg-primary/5 p-3 rounded-xl text-center">
           <p className="text-sm text-gray-600 font-normal">
-            💡 Green letters are correct, red letters need fixing!
+            {hasHyphen ? "💡 Each part turns green when correct!" : "💡 Green letters are correct, red letters need fixing!"}
           </p>
         </div>
       </div>

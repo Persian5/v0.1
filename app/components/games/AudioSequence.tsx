@@ -159,7 +159,7 @@ export function AudioSequence({
     try {
       for (let i = 0; i < sequence.length; i++) {
         const vocabularyId = sequence[i]
-        await AudioService.playVocabularyAudio(vocabularyId, 'persian')
+        await AudioService.playVocabularyAudio(vocabularyId)
         
         // Medium pause between words
         if (i < sequence.length - 1) {
@@ -212,11 +212,14 @@ export function AudioSequence({
         return vocab?.en || ''
       }).join(' ')
       
-      // Normalize for comparison
-      const normalizedUser = userTranslation.toLowerCase().trim().replace(/\s+/g, ' ')
-      const normalizedExpected = expectedTranslation.toLowerCase().trim().replace(/\s+/g, ' ')
+      // Normalize: lowercase, trim, collapse spaces, strip punctuation
+      const normalize = (str: string) => str
+        .toLowerCase()
+        .trim()
+        .replace(/[?!.,]/g, '')
+        .replace(/\s+/g, ' ')
       
-      correct = normalizedUser === normalizedExpected
+      correct = normalize(userTranslation) === normalize(expectedTranslation)
     } else {
       // Default behavior: match vocabulary ID order
       correct = JSON.stringify(userOrder) === JSON.stringify(sequence)

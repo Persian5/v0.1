@@ -580,7 +580,7 @@ export function LessonRunner({
           key={`audio-meaning-${idx}`}
           vocabularyId={(step as AudioMeaningStep).data.vocabularyId}
           distractors={(step as AudioMeaningStep).data.distractors}
-          vocabularyBank={allVocab}
+          vocabularyBank={allCurriculumVocab}
           points={step.points}
           autoPlay={(step as AudioMeaningStep).data.autoPlay}
           onContinue={() => handleItemComplete(true)}

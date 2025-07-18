@@ -54,6 +54,12 @@ export function GrammarConcept({
         { persian: "chiye", english: "what is it?" },
         { persian: "chiye in", english: "what is this?" }
       ]
+    } else if (conceptId === "adjective-suffixes") {
+      return [
+        { persian: "khoob", english: "good" },
+        { persian: "khoob-am", english: "I am good" },
+        { persian: "khoob-i", english: "you are good" }
+      ]
     }
     return []
   }
@@ -75,6 +81,13 @@ export function GrammarConcept({
         wrongExample: { text: "chi", translation: "\"what\"", note: "❌ Too general" },
         rightExample: { text: "chiye", translation: "\"what is it?\"", note: "✅ Specific" },
         explanation: "In Persian, we add \"-ye\" (shortened form of 'is') to ask about specific things. So instead of saying chi (\"what\"), we say chiye (\"what is it?\")."
+      }
+    } else if (conceptId === "adjective-suffixes") {
+      return {
+        title: "The Problem with \"khoob\"",
+        wrongExample: { text: "khoob", translation: "\"good\"", note: "❌ Incomplete" },
+        rightExample: { text: "khoob-am", translation: "\"I am good\"", note: "✅ Complete" },
+        explanation: "In Persian, we add suffixes to adjectives to say who is that way. Add –am to say \"I am ...\" and –i to say \"you are ...\"."
       }
     }
     return null
@@ -104,6 +117,16 @@ export function GrammarConcept({
         successTitle: "Perfect! You added the verb ending!",
         successDescription: "Now you can ask \"chiye?\" (what is it?) about specific things"
       }
+    } else if (conceptId === "adjective-suffixes") {
+      return {
+        title: "Practice: Add the \"-am\"",
+        description: "Transform \"khoob\" into \"khoob-am\" by adding the suffix",
+        baseWord: { text: "khoob", translation: "\"good\"" },
+        transformedWord: { text: "khoob-am", translation: "\"I am good\"" },
+        buttonText: "+ am",
+        successTitle: "Perfect! You added the adjective suffix!",
+        successDescription: "Now you can say \"khoob-am\" (I am good) properly"
+      }
     }
     return null
   }
@@ -122,6 +145,11 @@ export function GrammarConcept({
         title: "Why do we say \"chiye\", not \"chi\"?", 
         subtitle: "Learn about Persian's verb contractions: adding \"-ye\""
       }
+    } else if (conceptId === "adjective-suffixes") {
+      return {
+        title: "How do we say \"I am good\" vs \"you are good\"?",
+        subtitle: "Learn about Persian adjective suffixes: –am and –i"
+      }
     }
     return {
       title: concept.title,
@@ -135,7 +163,7 @@ export function GrammarConcept({
     if (showTransformation) return
     
     try {
-      await AudioService.playVocabularyAudio(currentPhase.transformedWord, 'persian')
+      await AudioService.playVocabularyAudio(currentPhase.transformedWord)
     } catch (error) {
       console.log('Audio playback error:', error)
     }
@@ -156,7 +184,7 @@ export function GrammarConcept({
 
   const playExampleAudio = async (text: string) => {
     try {
-      await AudioService.playVocabularyAudio(text, 'persian')
+      await AudioService.playVocabularyAudio(text)
     } catch (error) {
       console.log('Audio playback error:', error)
     }

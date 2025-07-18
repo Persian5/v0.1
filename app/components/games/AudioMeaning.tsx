@@ -53,7 +53,7 @@ export function AudioMeaning({
 
   const playTargetAudio = async () => {
     if (targetVocabulary) {
-      const success = await AudioService.playVocabularyAudio(targetVocabulary.id, 'persian')
+      const success = await AudioService.playVocabularyAudio(targetVocabulary.id)
       if (success) {
         setHasPlayedAudio(true)
       }

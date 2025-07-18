@@ -1,26 +1,12 @@
-// Audio service for handling vocabulary pronunciation across all lessons
+// Audio service for handling Persian vocabulary pronunciation across all lessons
 // Follows convention-based approach: vocabulary ID maps to audio filename
 
 export class AudioService {
   
-  // Get audio path for vocabulary item
-  static getVocabularyAudioPath(vocabularyId: string, type: 'persian' | 'english' = 'persian'): string {
-    // Convention-based mapping for scalability
-    if (type === 'persian') {
-      // Convention: Use vocabulary ID directly (e.g., "salam" -> "/audio/salam.mp3")
-      return `/audio/${vocabularyId}.mp3`;
-    } else {
-      // English audio: Use common English words (e.g., "hello" -> "/audio/hello.mp3")
-      const englishAudioMap: Record<string, string> = {
-        'salam': 'hello.mp3',
-        'chetori': 'howareyou.mp3',
-        'khodafez': 'goodbye.mp3',
-        'khosh_amadid': 'welcome.mp3'
-      };
-      
-      const englishFile = englishAudioMap[vocabularyId];
-      return englishFile ? `/audio/${englishFile}` : '';
-    }
+  // Get audio path for vocabulary item (Persian only)
+  static getVocabularyAudioPath(vocabularyId: string): string {
+    // Convention: Use vocabulary ID directly (e.g., "salam" -> "/audio/salam.mp3")
+    return `/audio/${vocabularyId}.mp3`;
   }
 
   // Check if audio file exists (for graceful fallbacks)
@@ -47,9 +33,9 @@ export class AudioService {
     }
   }
 
-  // Play vocabulary audio (with fallback logic)
-  static async playVocabularyAudio(vocabularyId: string, type: 'persian' | 'english' = 'persian'): Promise<boolean> {
-    const audioPath = this.getVocabularyAudioPath(vocabularyId, type);
+  // Play vocabulary audio (Persian only)
+  static async playVocabularyAudio(vocabularyId: string): Promise<boolean> {
+    const audioPath = this.getVocabularyAudioPath(vocabularyId);
     return await this.playAudio(audioPath);
   }
 

@@ -111,15 +111,16 @@ export function TextSequence({
     return allOptions.sort(() => Math.random() - 0.5)
   })
 
-  const handleItemClick = (word: string) => {
-    // Click to add words to sequence in order
-    if (!userOrder.includes(word)) {
-      setUserOrder(prev => [...prev, word])
+  const handleItemClick = (word: string, wordIndex: number) => {
+    // Click to add words to sequence in order - use unique key for duplicates
+    const wordKey = `${word}-${wordIndex}`;
+    if (!userOrder.includes(wordKey)) {
+      setUserOrder(prev => [...prev, wordKey])
     }
   }
 
-  const handleRemoveItem = (word: string) => {
-    setUserOrder(prev => prev.filter(w => w !== word))
+  const handleRemoveItem = (wordKey: string) => {
+    setUserOrder(prev => prev.filter(w => w !== wordKey))
   }
 
   const handleSubmit = () => {
@@ -127,8 +128,9 @@ export function TextSequence({
     
     if (userOrder.length !== expectedWords.length) return
 
-    // Check if user's sequence matches expected translation
-    const userTranslation = userOrder.join(' ')
+    // Extract actual words from wordKeys (remove the index suffix)
+    const userWords = userOrder.map(wordKey => wordKey.split('-').slice(0, -1).join('-'))
+    const userTranslation = userWords.join(' ')
     const normalizedUser = userTranslation.toLowerCase().trim()
     const normalizedExpected = expectedTranslation.toLowerCase().trim()
     
@@ -221,31 +223,35 @@ export function TextSequence({
             </p>
           ) : (
             <div className="flex flex-wrap gap-1 sm:gap-2 justify-center content-center">
-              {userOrder.map((word, index) => (
-                <div
-                  key={`${word}-${index}`}
-                  className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border-2 relative transition-all flex items-center justify-between ${
-                    showResult && isCorrect 
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : showResult && !isCorrect
-                      ? 'border-red-500 bg-red-50 text-red-700'
-                      : 'border-primary bg-primary/10 text-primary'
-                  }`}
-                >
-                  <span className="font-medium">{word}</span>
-                  {!showResult ? (
-                    <button
-                      onClick={() => handleRemoveItem(word)}
-                      className="text-gray-400 hover:text-red-500 flex items-center ml-2"
-                      title="Remove this word"
-                    >
-                      <span className="text-sm">×</span>
-                    </button>
-                  ) : (
-                    <span className="text-xs text-gray-500 ml-2">#{index + 1}</span>
-                  )}
-                </div>
-              ))}
+              {userOrder.map((wordKey, index) => {
+                const word = wordKey.split('-').slice(0, -1).join('-');
+                const wordIndex = parseInt(wordKey.split('-').slice(-1)[0]);
+                return (
+                  <div
+                    key={wordKey}
+                    className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border-2 relative transition-all flex items-center justify-between ${
+                      showResult && isCorrect 
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : showResult && !isCorrect
+                        ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-primary bg-primary/10 text-primary'
+                    }`}
+                  >
+                    <span className="font-medium">{word}</span>
+                    {!showResult ? (
+                      <button
+                        onClick={() => handleRemoveItem(wordKey)}
+                        className="text-gray-400 hover:text-red-500 flex items-center ml-2"
+                        title="Remove this word"
+                      >
+                        <span className="text-sm">×</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-500 ml-2">#{index + 1}</span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </motion.div>
@@ -256,12 +262,14 @@ export function TextSequence({
         <h3 className="text-lg font-semibold mb-3 text-center">Word Bank:</h3>
         <div className="flex flex-wrap gap-2 justify-center">
           {wordBankOptions.map((word, index) => {
-            const isUsed = userOrder.includes(word)
+            // Simple check: is THIS specific word bank item used?
+            const wordKey = `${word}-${index}`;
+            const isUsed = userOrder.includes(wordKey);
             
             return (
               <button
                 key={`${word}-${index}`}
-                onClick={() => !isUsed && !showResult && handleItemClick(word)}
+                onClick={() => !isUsed && !showResult && handleItemClick(word, index)}
                 disabled={isUsed || showResult}
                 className={`px-3 py-2 rounded-lg border-2 transition-all ${
                   isUsed 

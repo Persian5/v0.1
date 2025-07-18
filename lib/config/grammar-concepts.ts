@@ -24,6 +24,36 @@ export interface GrammarConcept {
 // All grammar concepts for the Persian learning app
 export const grammarConcepts: GrammarConcept[] = [
   {
+    conceptId: "adjective-suffixes",
+    title: "Adjective Suffixes: –am vs –i",
+    description: "Attach –am to an adjective to say \"I am ...\" and –i to say \"you are ....\" Applies only to adjectives.",
+    rule: "Add –am/–i to the adjective stem (here: khoob).",
+    phases: [
+      {
+        id: "khoob-to-khoob-am",
+        baseWord: "khoob",
+        transformedWord: "khoob-am",
+        baseDefinition: "good",
+        transformedDefinition: "I am good",
+        explanation: "Add –am to the adjective stem to express \"I am ….\"",
+        exampleBefore: "khoob ❌",
+        exampleAfter: "khoob-am ✅ (\"I am good\")",
+        points: 1
+      },
+      {
+        id: "khoob-to-khoob-i",
+        baseWord: "khoob",
+        transformedWord: "khoob-i",
+        baseDefinition: "good",
+        transformedDefinition: "you are good",
+        explanation: "Add –i to the adjective stem to express \"you are ….\"",
+        exampleBefore: "khoob ❌",
+        exampleAfter: "khoob-i ✅ (\"you are good\")",
+        points: 1
+      }
+    ]
+  },
+  {
     conceptId: "ezafe-connector",
     title: "Why do we say \"esme\", not \"esm\"?",
     description: "In Persian, we say \"esme man\" — not \"esm man\" — to mean \"my name.\"\nThe little \"-e\" connects words like \"name of me\" or \"Sara's name.\"\nThis sound is called ezāfe, and it's one of the most common features in Persian.",

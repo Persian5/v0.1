@@ -30,6 +30,7 @@ export interface Lesson {
   progress?: number;
   locked: boolean;
   isStoryLesson?: boolean; // Flag to indicate this lesson should go directly to module completion
+  grammarLesson?: boolean; // Flag to indicate this is a grammar-focused lesson
   steps: LessonStep[];
   vocabulary?: VocabularyItem[];  // Optional vocabulary bank for this lesson
   reviewVocabulary?: string[];    // Vocabulary IDs from previous lessons to review
