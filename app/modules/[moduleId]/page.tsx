@@ -9,51 +9,61 @@ import { getModule } from "@/lib/config/curriculum"
 import { useParams, useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { UserLessonProgress } from "@/lib/supabase/database"
-import { AuthService } from "@/lib/services/auth-service"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
-import { useAuth } from "@/components/auth/AuthProvider"
+import { SmartAuthService } from "@/lib/services/smart-auth-service"
 
 export default function ModulePage() {
   const { moduleId } = useParams()
   const router = useRouter()
-  const { user, isEmailVerified, isLoading: authLoading } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [pendingLessonPath, setPendingLessonPath] = useState<string | null>(null)
   const [allProgress, setAllProgress] = useState<UserLessonProgress[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { xp } = useXp()
 
   // Get data from config
   const module = getModule(moduleId as string)
-
-  // Determine if user is authenticated (no duplicate auth calls)
-  const isAuthenticated = !!(user && isEmailVerified)
   
   useEffect(() => {
-    const loadProgress = async () => {
+    const loadAuthAndProgress = async () => {
       if (!module) return;
-      
-      // Wait for auth to complete before loading progress
-      if (authLoading) return;
       
       try {
         setIsLoading(true)
         setError(null)
         
-        if (isAuthenticated) {
-          // Load ALL lesson progress for the user for accurate accessibility checks
-          const userProgress = await LessonProgressService.getUserLessonProgress()
-          setAllProgress(userProgress)
+        // Use SmartAuthService for instant auth state (cached)
+        const { user, isEmailVerified, isReady } = await SmartAuthService.initializeSession()
+        
+        if (!isReady) {
+          // Still initializing
+          return
+        }
+        
+        const authenticated = !!(user && isEmailVerified)
+        setIsAuthenticated(authenticated)
+        
+        if (authenticated) {
+          // Use cached progress data if available, otherwise load
+          if (SmartAuthService.hasCachedProgress()) {
+            const cachedProgress = SmartAuthService.getCachedProgress()
+            setAllProgress(cachedProgress)
+          } else {
+            // Fallback to API call if cache not available
+            const userProgress = await LessonProgressService.getUserLessonProgress()
+            setAllProgress(userProgress)
+          }
         } else {
           // For unauthenticated users, just set empty progress
           setAllProgress([])
         }
       } catch (error) {
-        console.error('Failed to load lesson progress:', error)
+        console.error('Failed to load auth and progress:', error)
         // Don't set error for unauthenticated users
         if (isAuthenticated) {
           setError('Failed to load progress. Please try again.')
@@ -63,8 +73,8 @@ export default function ModulePage() {
       }
     }
 
-    loadProgress()
-  }, [module, authLoading, isAuthenticated, moduleId])
+    loadAuthAndProgress()
+  }, [module, moduleId])
 
   // Helper function to check if a lesson is completed
   const isLessonCompleted = (moduleId: string, lessonId: string): boolean => {
@@ -126,7 +136,7 @@ export default function ModulePage() {
       return
     }
 
-    const authed = user && isEmailVerified
+    const authed = isAuthenticated
 
     if (!authed) {
       // Prevent navigation – open auth modal overlay
@@ -196,12 +206,12 @@ export default function ModulePage() {
         {/* Lessons Grid - Compact mobile layout */}
         <section className="py-4 sm:py-8 lg:py-12 px-3 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-7xl mx-auto">
-            {(authLoading || isLoading) ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
                   <p className="text-muted-foreground">
-                    {authLoading ? "Authenticating..." : "Loading lessons..."}
+                    Loading lessons...
                   </p>
                 </div>
               </div>
@@ -276,7 +286,7 @@ export default function ModulePage() {
             )}
             
             {/* Progress Summary - More compact on mobile */}
-            {!authLoading && (
+            {!isLoading && (
             <div className="mt-6 sm:mt-8 lg:mt-12 text-center">
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-full shadow-sm border">
                 <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>

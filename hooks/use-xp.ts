@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useContext } from 'react'
 import { XpService } from '@/lib/services/xp-service'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { XpContext } from '@/components/auth/XpContext'
+import { SmartAuthService } from '@/lib/services/smart-auth-service'
 
 // XP Configuration - simplified for authentication-aware system
 export interface XpConfig {
@@ -151,16 +152,19 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
 
     // Only update XP for authenticated users
     if (user && isEmailVerified) {
-      // Update local state immediately for instant UI feedback
+      // Store transaction for display
+      setLastTransaction(transaction)
+
       if (xpCtx) {
-        xpCtx.setXp(prev => {
-          const newXp = Math.max(
-            xpConfig.minValue!,
-            Math.min(xpConfig.maxValue!, prev + amount)
-          )
-          return newXp
+        // Use SmartAuthService for optimistic updates + reactive events
+        // This handles both the optimistic update and the background sync
+        await SmartAuthService.addUserXp(amount, source, {
+          lessonId: metadata.lessonId,
+          moduleId: metadata.moduleId,
+          activityType: metadata.activityType
         })
       } else {
+        // Fallback to local state + XpService for non-context usage
         setXpState((currentXp: number) => {
           const newXp = Math.max(
             xpConfig.minValue!,
@@ -168,21 +172,18 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
           )
           return newXp
         })
-      }
 
-      // Store transaction for display
-      setLastTransaction(transaction)
-
-      // Add XP via service (will queue for Supabase sync)
-      try {
-        await XpService.addUserXp(amount, source, {
-          lessonId: metadata.lessonId,
-          moduleId: metadata.moduleId,
-          activityType: metadata.activityType
-        })
-      } catch (error) {
-        console.error('Failed to add XP via service:', error)
-        // XP is already updated in UI, so this is non-critical
+        // Add XP via service (will queue for Supabase sync)
+        try {
+          await XpService.addUserXp(amount, source, {
+            lessonId: metadata.lessonId,
+            moduleId: metadata.moduleId,
+            activityType: metadata.activityType
+          })
+        } catch (error) {
+          console.error('Failed to add XP via service:', error)
+          // XP is already updated in UI, so this is non-critical
+        }
       }
     }
     // Unauthenticated users: no XP tracking

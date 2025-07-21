@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Star, ChevronLeft } from "lucide-react"
+import { Star, ChevronLeft, Loader2 } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
@@ -19,15 +19,14 @@ import { ModuleProgressService } from "@/lib/services/module-progress-service"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
-import { AuthGuard } from "@/components/auth/AuthGuard"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
-import { AuthService } from "@/lib/services/auth-service"
+import { SmartAuthService } from "@/lib/services/smart-auth-service"
+import { AuthModal } from "@/components/auth/AuthModal"
 
 function LessonPageContent() {
   const params = useParams()
   const router = useRouter()
-  const { user, signOut, isLoading: authLoading } = useAuth()
   const searchParamsNav = useSearchParams()
   
   // Validate route parameters
@@ -40,81 +39,228 @@ function LessonPageContent() {
   const [progress, setProgress] = useState(0);
   const [currentView, setCurrentView] = useState(initialViewParam === 'module-completion' ? 'module-completion' : 'welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
-  const [isAccessible, setIsAccessible] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  // Unified state for auth + accessibility
+  const [appState, setAppState] = useState<{
+    isLoading: boolean
+    isAuthenticated: boolean
+    isAccessible: boolean | null
+    showAuthModal: boolean
+    error: string | null
+  }>({
+    isLoading: true,
+    isAuthenticated: false, 
+    isAccessible: null,
+    showAuthModal: false,
+    error: null
+  })
   
   // Get data from config
-  const lesson = getLesson(moduleId, lessonId);
+  const lesson = getLesson(moduleId, lessonId)
   const module = getModule(moduleId);
   
-  // Check lesson accessibility using instant computation instead of API call
+  // UNIFIED AUTH + ACCESSIBILITY CHECK using SmartAuthService cached data
   useEffect(() => {
-    const checkAccessibility = async () => {
-      // Wait for auth to complete
-      if (authLoading) return;
-      
+    const checkAuthAndAccessibility = async () => {
       try {
-        setIsLoading(true);
+        setAppState(prev => ({ ...prev, isLoading: true, error: null }))
         
-        // Get progress data and use fast accessibility check
-        const isAuthenticated = !!(user && await AuthService.isEmailVerified(user));
+        // Wait for SmartAuthService to initialize (uses cached session)
+        const { user, isEmailVerified, isReady } = await SmartAuthService.initializeSession()
         
-        if (isAuthenticated) {
-          const progressData = await LessonProgressService.getUserLessonProgress();
-          const accessible = LessonProgressService.isLessonAccessibleFast(
+        if (!isReady) {
+          // Still initializing
+          return
+        }
+        
+        const isAuthenticated = !!(user && isEmailVerified)
+        
+        if (!isAuthenticated) {
+          // Show auth modal for unauthenticated users (except Module 1 Lesson 1)
+          const shouldShowModal = !(moduleId === 'module1' && lessonId === 'lesson1')
+          setAppState({
+            isLoading: false,
+            isAuthenticated: false,
+            isAccessible: moduleId === 'module1' && lessonId === 'lesson1',
+            showAuthModal: shouldShowModal,
+            error: null
+          })
+          return
+        }
+        
+        // For authenticated users, check accessibility using cached progress data
+        const sessionState = SmartAuthService.getSessionState()
+        if (sessionState.user && SmartAuthService.hasCachedProgress()) {
+          const progressData = SmartAuthService.getCachedProgress()
+          const isAccessible = LessonProgressService.isLessonAccessibleFast(
             moduleId, 
             lessonId, 
-            progressData, 
+            progressData,
             isAuthenticated
-          );
-          setIsAccessible(accessible);
+          )
+          
+          setAppState({
+            isLoading: false,
+            isAuthenticated: true,
+            isAccessible,
+            showAuthModal: false,
+            error: null
+          })
         } else {
-          // Unauthenticated users can only access Module 1 Lesson 1
-          setIsAccessible(moduleId === 'module1' && lessonId === 'lesson1');
+          // Fallback to regular accessibility check if cache not available
+          const isAccessible = await LessonProgressService.isLessonAccessible(moduleId, lessonId)
+          setAppState({
+            isLoading: false,
+            isAuthenticated: true,
+            isAccessible,
+            showAuthModal: false,
+            error: null
+          })
         }
+        
       } catch (error) {
-        console.error('Failed to check lesson accessibility:', error);
-        setIsAccessible(false);
-      } finally {
-        setIsLoading(false);
+        console.error('Failed to check auth and accessibility:', error)
+        setAppState({
+          isLoading: false,
+          isAuthenticated: false,
+          isAccessible: false,
+          showAuthModal: false,
+          error: 'Failed to load lesson. Please try again.'
+        })
       }
-    };
+    }
 
     if (moduleId && lessonId) {
-      checkAccessibility();
+      checkAuthAndAccessibility()
     } else {
-      setIsAccessible(false);
-      setIsLoading(false);
+      setAppState({
+        isLoading: false,
+        isAuthenticated: false,
+        isAccessible: false,
+        showAuthModal: false,
+        error: 'Invalid lesson URL'
+      })
     }
-  }, [moduleId, lessonId, authLoading, user]);
+  }, [moduleId, lessonId])
+  
+  // Handle auth success
+  const handleAuthSuccess = () => {
+    setAppState(prev => ({ ...prev, showAuthModal: false }))
+    // Re-run auth check
+    const checkAuthAndAccessibility = async () => {
+      const { user, isEmailVerified } = SmartAuthService.getSessionState()
+      const isAuthenticated = !!(user && isEmailVerified)
+      
+      if (isAuthenticated) {
+        const progressData = SmartAuthService.getCachedProgress()
+        const isAccessible = LessonProgressService.isLessonAccessibleFast(
+          moduleId, 
+          lessonId, 
+          progressData,
+          isAuthenticated
+        )
+        
+        setAppState(prev => ({
+          ...prev,
+          isAuthenticated: true,
+          isAccessible,
+          showAuthModal: false
+        }))
+      }
+    }
+    checkAuthAndAccessibility()
+  }
   
   // If lesson or module isn't found, handle gracefully
   if (!lesson || !module) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-lg text-muted-foreground">Lesson not found</p>
-      </div>
-    );
-  }
-  
-  // Show loading while checking accessibility
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading lesson...</p>
+          <h2 className="text-2xl font-bold">Lesson Not Found</h2>
+          <p className="text-muted-foreground">The requested lesson could not be found.</p>
+          <Button onClick={() => router.push('/modules')}>
+            Back to Modules
+          </Button>
         </div>
       </div>
     );
   }
   
-  // If lesson isn't accessible (previous lesson not completed), redirect to modules
-  if (isAccessible === false) {
+  // Show single loading state for everything
+  if (appState.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg text-muted-foreground mb-4">You need to complete the previous lesson first!</p>
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Loading lesson...</p>
+        </div>
+      </div>
+    )
+  }
+  
+  // Show error state
+  if (appState.error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold">Error</h2>
+          <p className="text-muted-foreground">{appState.error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  
+  // Show auth modal if needed
+  if (appState.showAuthModal) {
+    return (
+      <>
+        {/* Show lesson content behind modal with reduced opacity */}
+        <div className="opacity-30 pointer-events-none">
+          {/* Basic lesson header to show context */}
+          <div className="min-h-screen bg-background flex flex-col">
+            <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="container flex h-14 items-center justify-between px-4">
+                <div className="flex items-center gap-4">
+                  <Link 
+                    href={`/modules/${moduleId}`}
+                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back to Module
+                  </Link>
+                </div>
+                <div className="flex items-center gap-4">
+                  <AccountNavButton />
+                </div>
+              </div>
+            </header>
+            <main className="flex-1 flex flex-col items-center justify-center p-8">
+              <h1 className="text-3xl font-bold mb-4">{lesson.title}</h1>
+              <p className="text-muted-foreground">{lesson.description}</p>
+            </main>
+          </div>
+        </div>
+        <AuthModal
+          isOpen={true}
+          onClose={() => setAppState(prev => ({ ...prev, showAuthModal: false }))}
+          onSuccess={handleAuthSuccess}
+          title="Sign up to continue learning Persian"
+          description="Join thousands learning to reconnect with their roots"
+        />
+      </>
+    )
+  }
+  
+  // If lesson isn't accessible, redirect to modules
+  if (appState.isAccessible === false) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold">Lesson Locked</h2>
+          <p className="text-muted-foreground">You need to complete the previous lesson first!</p>
           <Button onClick={() => router.push(`/modules/${moduleId}`)}>
             Back to Module
           </Button>
@@ -139,49 +285,38 @@ function LessonPageContent() {
     }
   };
 
-  // Reset lesson to start over
   const resetLesson = () => {
     setProgress(0);
     setCurrentView('welcome');
     setPreviousStates([]);
-    setXp(0);
-    // Reset to first step
-    const lessonRunnerState = document.getElementById('lesson-runner-state');
-    if (lessonRunnerState) {
-      lessonRunnerState.dispatchEvent(new CustomEvent('go-back', { 
-        detail: { stepIndex: 0 } 
-      }));
-    }
   };
 
-  // Handle viewing summary
   const handleViewSummary = () => {
     setCurrentView('summary');
   };
 
-  // Navigate to modules page
-  const navigateToModules = () => {
-    router.push('/modules');
-  };
-
-  // Get the list of words learned in this lesson
   const getLearnedWords = () => {
-    // Use vocabulary service to get words from this specific lesson
-    return VocabularyService.getLearnedWordsFromLesson(moduleId, lessonId);
-  };
+    // SummaryPage doesn't use this prop - it gets vocabulary directly from lesson config
+    // Return empty array to satisfy the interface
+    return []
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <Link href={`/modules/${moduleId}`} className="font-bold text-lg text-primary">
-            <span className="hidden sm:inline">{module.title}</span>
-            <span className="sm:hidden">{module.title}</span>
+        <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <Link 
+            href={`/modules/${moduleId}`} 
+            className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary"
+          >
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Back to Module</span>
+            <span className="sm:hidden">Back</span>
           </Link>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 text-yellow-500" />
               <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
             </div>
             <AccountNavButton />
@@ -189,28 +324,13 @@ function LessonPageContent() {
         </div>
       </header>
 
-      {/* Progress Bar */}
-      {currentView !== 'welcome' && currentView !== 'completion' && currentView !== 'summary' && (
-        <div className="w-full bg-primary/10">
-          <Progress value={progress} className="h-2" />
-        </div>
-      )}
-
-      <main className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 pt-4 pb-4 w-full overflow-hidden">
-        {/* Main content area with Back button */}
-        <div className="w-full max-w-6xl mx-auto flex flex-col flex-1 min-h-0">
-          
-          {/* Back Button – render container only when needed */}
-          {currentView !== 'welcome' && currentView !== 'completion' && currentView !== 'summary' && previousStates.length > 0 && (
-            <div className="h-6 flex items-center">
-              <Button variant="ghost" onClick={handleBack} className="text-sm flex items-center self-start pl-0 hover:bg-transparent hover:text-current">
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Go Back</span>
-                <span className="sm:hidden">Back</span>
-              </Button>
-            </div>
-          )}
-
+      {/* Main content area */}
+      <main className="flex-1 flex flex-col">
+        {/* Progress bar - only show if not on completion view */}
+        {currentView !== 'completion' && currentView !== 'module-completion' && currentView !== 'summary' && (
+          <Progress value={progress} className="w-full h-2 mb-4" />
+        )}
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
           {/* Content Area - takes remaining space */}
           <div className="flex-1 flex flex-col items-center justify-start min-h-0 w-full">
             {/* Render the appropriate content based on currentView */}
@@ -254,13 +374,5 @@ function LessonPageContent() {
   );
 }
 
-export default function LessonPage() {
-  return (
-    <AuthGuard
-      requireAuth={true}
-      requireEmailVerification={true}
-    >
-      <LessonPageContent />
-    </AuthGuard>
-  );
-} 
+// NO MORE AUTHGUARD WRAPPER - Direct export
+export default LessonPageContent 

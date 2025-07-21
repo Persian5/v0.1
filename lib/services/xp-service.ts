@@ -189,12 +189,10 @@ export class XpService {
   }
 
   /**
-   * Get formatted XP display string
+   * Get formatted XP display string (always full number with thousands separator)
    */
   static formatXp(xp: number): string {
-    if (xp >= 1000000) return `${(xp / 1000000).toFixed(1)}M XP`
-    if (xp >= 1000) return `${(xp / 1000).toFixed(1)}K XP`
-    return `${xp} XP`
+    return `${xp.toLocaleString()} XP`
   }
 
   /**
