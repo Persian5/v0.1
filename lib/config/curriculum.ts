@@ -430,7 +430,7 @@ export const curriculumData: Module[] = [
         emoji: "🧑‍💼",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci"],
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi", "khosh_amadid", "khodafez", "baleh", "na", "esme", "chiye"],
         vocabulary: [
           {
             id: "man",
@@ -1210,7 +1210,7 @@ export const curriculumData: Module[] = [
     title: "Module 2: Responses & Feelings",
     description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
     emoji: "😊",
-    lessonCount: 2,
+    lessonCount: 3,
     estimatedTime: "60 minutes",
     available: true,
     lessons: [
@@ -1619,6 +1619,189 @@ export const curriculumData: Module[] = [
                 description: "A complete conversation with complex responses",
                 expectedPhrase: "Hello, how are you? I am very good, thank you, goodbye",
                 persianSequence: ["salam", "chetori", "man", "kheily", "khoob", "hastam", "merci", "khodafez"]
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson3",
+        title: "Saying Where You Are From",
+        description: "Learn how to ask and tell where you are from using 'koja' (where) and 'ahle' (from/belonging to)",
+        emoji: "🌍",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "baleh", "hasti"],
+        vocabulary: [
+          {
+            id: "koja",
+            en: "Where",
+            fa: "کجا",
+            finglish: "Koja",
+            phonetic: "ko-JAH",
+            lessonId: "module2-lesson3"
+          },
+          {
+            id: "ahle_from",
+            en: "From",
+            fa: "اهل",
+            finglish: "Ahle",
+            phonetic: "ah-LEH",
+            lessonId: "module2-lesson3"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Saying Where You Are From",
+            description: "Learn how to ask and tell where you are from using essential location vocabulary.",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn 'koja' (where) to ask about location",
+                "Learn 'ahle' (from/belonging to) for origin",
+                "Ask 'where are you from?' in Persian",
+                "Say 'I am from Iran' confidently"
+              ],
+              lessonType: "location"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "koja"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'where'?",
+              options: ["Koja", "Ahle", "Iran", "Hasti"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "koja hasti?",
+              expectedTranslation: "where are you"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "ahle_from"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the Persian word for 'where'",
+              answer: "koja"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "ahle_from",
+              distractors: ["koja", "hasti", "iran"]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Koja", slotId: "slot1" },
+                { id: "word2", text: "Merci", slotId: "slot2" },
+                { id: "word3", text: "Chetori", slotId: "slot3" },
+                { id: "word4", text: "Baleh", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Where" },
+                { id: "slot2", text: "Thank you" },
+                { id: "slot3", text: "How are you" },
+                { id: "slot4", text: "Yes" }
+              ]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Ahle", slotId: "slot1" },
+                { id: "word2", text: "Koja", slotId: "slot2" },
+                { id: "word3", text: "Hasti", slotId: "slot3" },
+                { id: "word4", text: "Shoma", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "From" },
+                { id: "slot2", text: "Where" },
+                { id: "slot3", text: "You are" },
+                { id: "slot4", text: "You" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man khoobam, shoma chi",
+              expectedTranslation: "I am good, how about you"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "shoma ahle koja hasti",
+              expectedTranslation: "where are you from"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man ahle Iran hastam",
+              expectedTranslation: "I am from Iran"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["shoma", "ahle_from", "koja", "hasti"],
+              expectedTranslation: "where are you from"
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "shoma", text: "Shoma", translation: "You" },
+                { id: "ahle_from", text: "Ahle", translation: "From" },
+                { id: "koja", text: "Koja", translation: "Where" },
+                { id: "hasti", text: "Hasti", translation: "You are" },
+                { id: "man", text: "Man", translation: "I" },
+                { id: "iran", text: "Iran", translation: "Iran" },
+                { id: "hastam", text: "Hastam", translation: "I am" }
+              ],
+              targetWords: ["shoma", "ahle_from", "koja", "hasti", "man", "ahle_from", "iran", "hastam"],
+              title: "Where Are You From?",
+              successMessage: "Excellent! You can now ask and answer where someone is from!",
+              incorrectMessage: "Almost there—let's practice that location conversation again!",
+              conversationFlow: {
+                description: "A complete conversation about origins",
+                expectedPhrase: "where are you from? I am from Iran",
+                persianSequence: ["shoma", "ahle_from", "koja", "hasti", "man", "ahle_from", "iran", "hastam"]
               }
             }
           }

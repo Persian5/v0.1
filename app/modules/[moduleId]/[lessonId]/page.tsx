@@ -176,8 +176,8 @@ function LessonPageContent() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <Link href={`/modules/${moduleId}`} className="font-bold text-lg text-primary">
-            <span className="hidden sm:inline">Module 1</span>
-            <span className="sm:hidden">Module 1</span>
+            <span className="hidden sm:inline">{module.title}</span>
+            <span className="sm:hidden">{module.title}</span>
           </Link>
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">

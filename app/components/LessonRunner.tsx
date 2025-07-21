@@ -9,8 +9,8 @@ import { GrammarConcept } from '@/app/components/games/GrammarConcept'
 import { AudioMeaning } from '@/app/components/games/AudioMeaning'
 import { AudioSequence } from '@/app/components/games/AudioSequence'
 import { StoryConversation } from '@/app/components/games/StoryConversation'
-import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, AudioMeaningStep, AudioSequenceStep, StoryConversationStep, VocabularyItem, Lesson } from '@/lib/types'
-import { ReverseQuizStep } from '@/lib/types'
+import { TextSequence } from './games/TextSequence'
+import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, ReverseQuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, AudioMeaningStep, AudioSequenceStep, TextSequenceStep, StoryConversationStep, VocabularyItem, Lesson } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
@@ -19,8 +19,6 @@ import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
 import { SyncService } from '@/lib/services/sync-service'
 import { useRouter } from 'next/navigation'
-import { TextSequenceStep } from '@/lib/types'
-import { TextSequence } from './games/TextSequence'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -392,6 +390,29 @@ export function LessonRunner({
       });
     };
   };
+
+  // UNIFIED XP HANDLER: Create step-based XP handler using curriculum data
+  const createStepXpHandler = () => {
+    return () => {
+      const currentStep = steps[idx];
+      if (!currentStep) {
+        console.warn('No current step available for XP calculation', { idx, stepsLength: steps.length });
+        return;
+      }
+
+      // Use new unified XP calculation from curriculum step
+      const xpReward = XpService.getStepXp(currentStep);
+      
+      // Add XP with same metadata structure
+      addXp(xpReward.amount, xpReward.source, {
+        lessonId,
+        moduleId,
+        activityType: currentStep.type,
+        stepIndex: idx,
+        isRemediation: isInRemediation
+      });
+    };
+  };
   
   // Generic handler for all components except Flashcard
   const handleItemComplete = (wasCorrect: boolean = true) => {
@@ -433,7 +454,7 @@ export function LessonRunner({
             vocabularyItem={vocabItem}
             points={1}
             onContinue={() => completeRemediation()}
-            onXpStart={createXpHandler('flashcard')}
+            onXpStart={createStepXpHandler()}
           />
         </>
       );
@@ -460,7 +481,7 @@ export function LessonRunner({
             correct={0} // This will be ignored since we're passing QuizOption objects
             points={2}
             onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
-            onXpStart={createXpHandler('quiz')}
+            onXpStart={createStepXpHandler()}
             vocabularyId={currentWord}
             onRemediationNeeded={handleRemediationNeeded}
           />
@@ -507,7 +528,7 @@ export function LessonRunner({
           }
           points={step.points}
           onContinue={() => handleItemComplete(true)}
-          onXpStart={createXpHandler('flashcard')}
+          onXpStart={createStepXpHandler()}
         />
       ) : step.type === 'quiz' ? (
         <Quiz
@@ -517,7 +538,7 @@ export function LessonRunner({
           correct={(step as QuizStep).data.correct}
           points={step.points}
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
-          onXpStart={createXpHandler('quiz')}
+          onXpStart={createStepXpHandler()}
           vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as QuizStep).data)}
         />
@@ -529,7 +550,7 @@ export function LessonRunner({
           correct={(step as ReverseQuizStep).data.correct}
           points={step.points}
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
-          onXpStart={createXpHandler('quiz')}
+          onXpStart={createStepXpHandler()}
           vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as ReverseQuizStep).data)}
         />
@@ -540,7 +561,7 @@ export function LessonRunner({
           answer={(step as InputStep).data.answer}
           points={step.points}
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
-          onXpStart={createXpHandler('input')}
+          onXpStart={createStepXpHandler()}
           vocabularyId={getStepVocabularyId(step)}
           onRemediationNeeded={handleRemediationNeeded}
         />
@@ -551,7 +572,7 @@ export function LessonRunner({
           slots={(step as MatchingStep).data.slots}
           points={step.points}
           onComplete={handleItemComplete}
-          onXpStart={createXpHandler('matching')}
+          onXpStart={createStepXpHandler()}
         />
       ) : step.type === 'final' ? (
         <FinalChallenge
@@ -565,7 +586,7 @@ export function LessonRunner({
           conversationFlow={(step as FinalStep).data.conversationFlow}
           points={step.points}
           onComplete={handleItemComplete}
-          onXpStart={createXpHandler('final')}
+          onXpStart={createStepXpHandler()}
         />
       ) : step.type === 'grammar-concept' ? (
         <GrammarConcept
@@ -573,7 +594,7 @@ export function LessonRunner({
           conceptId={(step as GrammarConceptStep).data.conceptId}
           points={step.points}
           onComplete={handleItemComplete}
-          onXpStart={createXpHandler('quiz')}
+          onXpStart={createStepXpHandler()}
         />
       ) : step.type === 'audio-meaning' ? (
         <AudioMeaning
@@ -584,7 +605,7 @@ export function LessonRunner({
           points={step.points}
           autoPlay={(step as AudioMeaningStep).data.autoPlay}
           onContinue={() => handleItemComplete(true)}
-          onXpStart={createXpHandler('audio-meaning')}
+          onXpStart={createStepXpHandler()}
         />
       ) : step.type === 'audio-sequence' ? (
         <AudioSequence
@@ -597,7 +618,7 @@ export function LessonRunner({
           targetWordCount={(step as AudioSequenceStep).data.targetWordCount}
           maxWordBankSize={(step as AudioSequenceStep).data.maxWordBankSize}
           onContinue={() => handleItemComplete(true)}
-          onXpStart={createXpHandler('audio-sequence')}
+          onXpStart={createStepXpHandler()}
         />
       ) : step.type === 'text-sequence' ? (
         <TextSequence
@@ -607,7 +628,7 @@ export function LessonRunner({
           vocabularyBank={allVocab}
           points={step.points}
           onContinue={() => handleItemComplete(true)}
-          onXpStart={createXpHandler('text-sequence')}
+          onXpStart={createStepXpHandler()}
           maxWordBankSize={(step as TextSequenceStep).data.maxWordBankSize}
         />
       ) : step.type === 'story-conversation' ? (
@@ -615,7 +636,7 @@ export function LessonRunner({
           key={`story-conversation-${idx}-${(step as StoryConversationStep).data.storyId}`}
           step={step as StoryConversationStep}
           onComplete={handleStoryComplete}
-          onXpStart={createXpHandler('story-conversation')}
+          onXpStart={createStepXpHandler()}
           addXp={addXp}
         />
       ) : null}

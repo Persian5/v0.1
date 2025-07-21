@@ -152,12 +152,18 @@ export class DatabaseService {
   // ===== LESSON PROGRESS OPERATIONS =====
 
   // Get user lesson progress
-  static async getUserLessonProgress(userId: string): Promise<UserLessonProgress[]> {
-    const { data, error } = await supabase
+  static async getUserLessonProgress(userId: string, moduleId?: string): Promise<UserLessonProgress[]> {
+    let query = supabase
       .from('user_lesson_progress')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: true })
+
+    // If moduleId is provided, add it to the query filter
+    if (moduleId) {
+      query = query.eq('module_id', moduleId)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: true })
 
     if (error) {
       throw new Error(`Failed to fetch lesson progress: ${error.message}`)

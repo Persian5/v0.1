@@ -4,6 +4,7 @@
 import { SyncService } from './sync-service'
 import { AuthService } from './auth-service'
 import { DatabaseService } from '@/lib/supabase/database'
+import { LessonStep } from '../types'
 
 export interface XpReward {
   amount: number
@@ -22,6 +23,10 @@ export const XP_REWARDS = {
   MATCHING_COMPLETE: { amount: 3, source: 'matching_complete', description: 'Completed matching game' },
   TEXT_SEQUENCE_COMPLETE: { amount: 3, source: 'text_sequence_complete', description: 'Completed text sequence challenge' },
   FINAL_CHALLENGE: { amount: 4, source: 'final_challenge', description: 'Completed final challenge' },
+  AUDIO_MEANING_CORRECT: { amount: 2, source: 'audio_meaning_correct', description: 'Correctly identified audio meaning' },
+  AUDIO_SEQUENCE_COMPLETE: { amount: 3, source: 'audio_sequence_complete', description: 'Completed audio sequence challenge' },
+  GRAMMAR_CONCEPT: { amount: 2, source: 'grammar_concept', description: 'Completed grammar concept' },
+  STORY_CONVERSATION: { amount: 1, source: 'story_conversation', description: 'Story conversation choice' },
 } as const
 
 // XP utility functions
@@ -29,7 +34,70 @@ export class XpService {
   // Note: No longer using localStorage for XP - authenticated users get XP from Supabase only
 
   /**
-   * Get XP reward for a specific activity
+   * UNIFIED XP CALCULATION: Get XP reward for a lesson step
+   * Uses curriculum step.points as primary source, with intelligent fallbacks
+   * 
+   * @param step - The lesson step from curriculum.ts
+   * @returns XpReward with amount, source, and description
+   */
+  static getStepXp(step: LessonStep): XpReward {
+    // Use curriculum points as primary source
+    const curriculumPoints = step.points
+    
+    // Get activity type reward for source and fallback
+    const activityReward = this.getActivityTypeReward(step.type)
+    
+    // Validation: warn if curriculum points don't match expected activity XP
+    if (process.env.NODE_ENV === 'development' && curriculumPoints !== activityReward.amount) {
+      console.warn(
+        `XP Mismatch: ${step.type} curriculum=${curriculumPoints}, expected=${activityReward.amount}`,
+        { step }
+      )
+    }
+    
+    return {
+      amount: curriculumPoints ?? activityReward.amount, // Use curriculum first, fallback to activity type
+      source: activityReward.source,
+      description: `Completed ${step.type} (${curriculumPoints ?? activityReward.amount} XP)`
+    }
+  }
+
+  /**
+   * ACTIVITY TYPE MAPPING: Map step types to XP_REWARDS
+   * Provides fallback values and source mapping for step types
+   */
+  private static getActivityTypeReward(stepType: LessonStep['type']): XpReward {
+    switch (stepType) {
+      case 'flashcard':
+        return XP_REWARDS.FLASHCARD_FLIP
+      case 'quiz':
+      case 'reverse-quiz':
+        return XP_REWARDS.QUIZ_CORRECT
+      case 'input':
+        return XP_REWARDS.INPUT_CORRECT
+      case 'matching':
+        return XP_REWARDS.MATCHING_COMPLETE
+      case 'audio-meaning':
+        return XP_REWARDS.AUDIO_MEANING_CORRECT
+      case 'audio-sequence':
+        return XP_REWARDS.AUDIO_SEQUENCE_COMPLETE
+      case 'text-sequence':
+        return XP_REWARDS.TEXT_SEQUENCE_COMPLETE
+      case 'grammar-concept':
+        return XP_REWARDS.GRAMMAR_CONCEPT
+      case 'final':
+        return XP_REWARDS.FINAL_CHALLENGE
+      case 'story-conversation':
+        return XP_REWARDS.STORY_CONVERSATION
+      case 'welcome':
+      default:
+        // Welcome steps and unknown types get 0 XP
+        return { amount: 0, source: 'welcome', description: 'Welcome step' }
+    }
+  }
+
+  /**
+   * Get XP reward for a specific activity (LEGACY - maintained for backward compatibility)
    */
   static getReward(activityType: keyof typeof XP_REWARDS): XpReward {
     return XP_REWARDS[activityType]

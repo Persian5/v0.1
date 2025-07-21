@@ -83,12 +83,15 @@ export class ModuleProgressService {
     const module = getModule(moduleId);
     if (!module) return 0;
 
+    // The logic here is now functionally correct after the system-wide XP refactor.
+    // It accurately calculates the total potential XP from a module by summing
+    // the `points` from each step, which is the same value now used for awarding XP.
+    // The `require` call is removed from the loop for better performance and code style.
+    const { getLessonSteps } = require('../config/curriculum');
     let totalXp = 0;
     
     // Sum up XP from all lessons in the module
     for (const lesson of module.lessons) {
-      // Get lesson steps and sum their points
-      const { getLessonSteps } = require('../config/curriculum');
       const steps = getLessonSteps(moduleId, lesson.id);
       
       for (const step of steps) {

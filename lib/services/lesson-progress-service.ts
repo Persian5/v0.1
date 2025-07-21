@@ -42,8 +42,9 @@ export class LessonProgressService {
 
   /**
    * Get lesson progress for authenticated users from Supabase
+   * Can be filtered by module ID.
    */
-  static async getUserLessonProgress(): Promise<UserLessonProgress[]> {
+  static async getUserLessonProgress(moduleId?: string): Promise<UserLessonProgress[]> {
     const currentUser = await AuthService.getCurrentUser();
     
     if (!currentUser || !(await AuthService.isEmailVerified(currentUser))) {
@@ -51,7 +52,8 @@ export class LessonProgressService {
     }
 
     try {
-      return await DatabaseService.getUserLessonProgress(currentUser.id);
+      // Pass the optional moduleId to the database service
+      return await DatabaseService.getUserLessonProgress(currentUser.id, moduleId);
     } catch (error) {
       console.error('Failed to fetch lesson progress from database:', error);
       return [];

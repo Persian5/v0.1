@@ -22,7 +22,7 @@ export default function ModulePage() {
   const { user, isEmailVerified, isLoading: authLoading } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [pendingLessonPath, setPendingLessonPath] = useState<string | null>(null)
-  const [progress, setProgress] = useState<UserLessonProgress[]>([])
+  const [allProgress, setAllProgress] = useState<UserLessonProgress[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { xp } = useXp()
@@ -45,12 +45,12 @@ export default function ModulePage() {
         setError(null)
         
         if (isAuthenticated) {
-          // Load progress for authenticated users
+          // Load ALL lesson progress for the user for accurate accessibility checks
           const userProgress = await LessonProgressService.getUserLessonProgress()
-          setProgress(userProgress)
+          setAllProgress(userProgress)
         } else {
           // For unauthenticated users, just set empty progress
-          setProgress([])
+          setAllProgress([])
         }
       } catch (error) {
         console.error('Failed to load lesson progress:', error)
@@ -64,12 +64,12 @@ export default function ModulePage() {
     }
 
     loadProgress()
-  }, [module, authLoading, isAuthenticated])
+  }, [module, authLoading, isAuthenticated, moduleId])
 
   // Helper function to check if a lesson is completed
   const isLessonCompleted = (moduleId: string, lessonId: string): boolean => {
     if (!isAuthenticated) return false
-    return progress.some(p => 
+    return allProgress.some(p => 
       p.module_id === moduleId && 
       p.lesson_id === lessonId && 
       p.status === 'completed'
@@ -100,11 +100,11 @@ export default function ModulePage() {
         return
       }
 
-      // Use fast accessibility check with cached progress data
+      // Use fast accessibility check with the complete, unfiltered progress data
       result[`${module.id}-${lesson.id}`] = LessonProgressService.isLessonAccessibleFast(
         module.id, 
         lesson.id, 
-        progress, 
+        allProgress, 
         isAuthenticated
       )
     })
@@ -281,7 +281,7 @@ export default function ModulePage() {
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-full shadow-sm border">
                 <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>
                 <span className="text-xs sm:text-sm text-gray-600">
-                    {progress.filter(p => p.status === 'completed').length} of {lessons.length} lessons completed
+                    {allProgress.filter(p => p.module_id === moduleId && p.status === 'completed').length} of {lessons.length} lessons completed
                 </span>
               </div>
             </div>
