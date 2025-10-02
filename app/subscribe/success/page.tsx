@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +10,7 @@ import { Check, Loader2 } from "lucide-react"
 import Link from "next/link"
 import confetti from "canvas-confetti"
 
-export default function SubscribeSuccessPage() {
+function SuccessPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
@@ -130,3 +130,18 @@ export default function SubscribeSuccessPage() {
   )
 }
 
+export default function SubscribeSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-background to-primary/5 flex items-center justify-center py-12 px-4">
+        <Card className="max-w-2xl w-full border-2 shadow-2xl">
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <SuccessPageContent />
+    </Suspense>
+  )
+}

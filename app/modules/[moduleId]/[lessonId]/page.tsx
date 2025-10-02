@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useParams } from "next/navigation"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -376,5 +376,18 @@ function LessonPageContent() {
   );
 }
 
-// NO MORE AUTHGUARD WRAPPER - Direct export
-export default LessonPageContent 
+// Wrap in Suspense to handle useSearchParams
+export default function LessonPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading lesson...</p>
+        </div>
+      </div>
+    }>
+      <LessonPageContent />
+    </Suspense>
+  )
+} 
