@@ -13,10 +13,8 @@ if (!process.env.STRIPE_PRICE_ID) {
   throw new Error('Missing STRIPE_PRICE_ID environment variable')
 }
 
-// Initialize Stripe with valid API version (matches webhook)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-09-30.clover',
-})
+// Initialize Stripe - SDK will use its default API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function POST(request: Request) {
   try {

@@ -19,11 +19,8 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable')
 }
 
-// Initialize Stripe with stable API version (latest for Stripe SDK v19)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  // Using latest stable version - Stripe SDK will use its default if omitted
-  apiVersion: '2025-09-30.clover',
-})
+// Initialize Stripe - SDK will use its default API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
