@@ -14,9 +14,12 @@ import { Star } from "lucide-react"
 import { XpService } from "@/lib/services/xp-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
+import { SubscriptionService } from "@/lib/services/subscription-service"
 
 export default function ModulesPage() {
   const [mounted, setMounted] = useState(false)
+  const [hasSubscription, setHasSubscription] = useState(false)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true)
   const router = useRouter()
   const { xp } = useXp()
   const { user, isEmailVerified } = useAuth()
@@ -25,6 +28,23 @@ export default function ModulesPage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Check subscription status when user changes
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (user && isEmailVerified) {
+        setSubscriptionLoading(true)
+        const hasActive = await SubscriptionService.hasActiveSubscription(user.id)
+        setHasSubscription(hasActive)
+        setSubscriptionLoading(false)
+      } else {
+        setHasSubscription(false)
+        setSubscriptionLoading(false)
+      }
+    }
+    
+    checkSubscription()
+  }, [user, isEmailVerified])
 
   // Calculate authentication status
   const isAuthenticated = user && isEmailVerified
@@ -35,12 +55,20 @@ export default function ModulesPage() {
       LessonProgressService.getModuleCompletionInfoFast(module.id, progressData) :
       { isCompleted: false, completionPercentage: 0, durationMs: null, durationFormatted: null }
 
+    // Check if module requires subscription (Module 2+)
+    const requiresSubscription = module.id !== 'module1'
+    const isLocked = requiresSubscription && !hasSubscription && isAuthenticated
+
     // Determine button text and style based on completion status
     let buttonText = "Start Module"
     let buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
     let buttonClass = "w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors"
 
-    if (moduleCompletionInfo.isCompleted) {
+    if (isLocked) {
+      buttonText = "Subscribe to Unlock"
+      buttonIcon = <Lock className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-lg transition-colors"
+    } else if (moduleCompletionInfo.isCompleted) {
       buttonText = "Module Complete"
       buttonIcon = <CheckCircle className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors"
@@ -56,8 +84,10 @@ export default function ModulesPage() {
       title: module.title,
       description: module.description,
       emoji: module.emoji,
-      href: module.available ? `/modules/${module.id}` : "#",
+      href: module.available ? (isLocked ? '/subscribe' : `/modules/${module.id}`) : "#",
       available: module.available,
+      isLocked,
+      requiresSubscription,
       completionInfo: moduleCompletionInfo,
       buttonText,
       buttonIcon,
@@ -117,6 +147,14 @@ export default function ModulesPage() {
                     : 'opacity-60 border-gray-200'
                 }`}
               >
+                {/* Premium Badge for Locked Modules */}
+                {module.isLocked && (
+                  <div className="absolute top-2 right-2 bg-primary text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    Premium
+                  </div>
+                )}
+                
                 <CardHeader className="pb-4">
                   <CardTitle className="text-center">
                     <div className="text-4xl sm:text-5xl mb-3">{module.emoji}</div>
