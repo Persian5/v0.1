@@ -38,20 +38,6 @@ export interface UserXpTransaction {
   created_at: string
 }
 
-export interface UserSubscription {
-  id: string
-  user_id: string
-  stripe_customer_id: string | null
-  stripe_subscription_id: string | null
-  plan_type: string
-  status: string
-  current_period_end: string | null
-  cancel_at_period_end: boolean
-  cancellation_reason: string | null
-  created_at: string
-  updated_at: string
-}
-
 // User Profile Operations
 export class DatabaseService {
   
@@ -295,80 +281,5 @@ export class DatabaseService {
   // Check if user's email is verified
   static async isEmailVerified(user: User): Promise<boolean> {
     return user.email_confirmed_at !== null
-  }
-
-  // ===== SUBSCRIPTION OPERATIONS =====
-
-  // Get user subscription (returns null if no subscription row exists)
-  static async getUserSubscription(userId: string): Promise<UserSubscription | null> {
-    const { data, error } = await supabase
-      .from('user_subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-
-    if (error && error.code === 'PGRST116') {
-      // No subscription found - user is free tier
-      return null
-    }
-
-    if (error) {
-      throw new Error(`Failed to fetch user subscription: ${error.message}`)
-    }
-
-    return data
-  }
-
-  // Create or update subscription
-  static async upsertSubscription(
-    userId: string,
-    subscriptionData: Partial<Omit<UserSubscription, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
-  ): Promise<UserSubscription> {
-    const { data, error } = await supabase
-      .from('user_subscriptions')
-      .upsert({
-        user_id: userId,
-        ...subscriptionData,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      })
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Failed to upsert subscription: ${error.message}`)
-    }
-
-    return data
-  }
-
-  // Check if user has active subscription
-  static async hasActiveSubscription(userId: string): Promise<boolean> {
-    try {
-      const subscription = await this.getUserSubscription(userId)
-      
-      // No row = free user = no active subscription
-      if (!subscription) {
-        return false
-      }
-
-      // Check if status is 'active' or 'trialing'
-      if (subscription.status === 'active' || subscription.status === 'trialing') {
-        // Also verify period hasn't ended
-        if (subscription.current_period_end) {
-          const periodEnd = new Date(subscription.current_period_end)
-          const now = new Date()
-          return periodEnd > now
-        }
-        return true
-      }
-
-      return false
-    } catch (error) {
-      // Fail closed: if there's an error checking subscription, deny access
-      console.error('Error checking subscription:', error)
-      return false
-    }
   }
 } 

@@ -1,8 +1,6 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Medal, Star, Sparkles, ArrowRight } from "lucide-react"
@@ -20,7 +18,7 @@ interface CompletionPageProps {
   handleViewSummary?: () => void;
 }
 
-function CompletionPageContent({ 
+export default function CompletionPage({ 
   xp = 0, 
   resetLesson,
   handleViewSummary
@@ -136,20 +134,5 @@ function CompletionPageContent({
         </div>
       </main>
     </div>
-  )
-}
-
-export default function CompletionPage(props: CompletionPageProps) {
-  return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    }>
-      <CompletionPageContent {...props} />
-    </Suspense>
   )
 } 

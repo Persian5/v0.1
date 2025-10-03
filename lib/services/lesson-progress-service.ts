@@ -2,7 +2,6 @@ import { getModules, getModule } from '../config/curriculum';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
 import { VocabularyProgressService } from './vocabulary-progress-service';
-import { SubscriptionService } from './subscription-service';
 
 // Return type for first available lesson
 export interface AvailableLesson {
@@ -151,21 +150,14 @@ export class LessonProgressService {
   // ===== LESSON ACCESSIBILITY & NAVIGATION =====
 
   /**
-   * Check if a lesson should be accessible based on sequential completion AND subscription
-   * Special rule: Module 1 is always accessible for authenticated users
-   * Paywall: Module 2+ requires active subscription
+   * Check if a lesson should be accessible based on sequential completion
+   * Special rule: Module 1 Lesson 1 is always accessible for authenticated users
    */
   static async isLessonAccessible(moduleId: string, lessonId: string): Promise<boolean> {
     const currentUser = await AuthService.getCurrentUser();
     
     if (!currentUser || !(await AuthService.isEmailVerified(currentUser))) {
       return false;
-    }
-
-    // PAYWALL CHECK: Module 2+ requires subscription
-    const hasModuleAccess = await SubscriptionService.hasModuleAccess(currentUser.id, moduleId);
-    if (!hasModuleAccess) {
-      return false; // User doesn't have subscription for this module
     }
 
     // Special rule: Module 1 Lesson 1 is always accessible for authenticated users
@@ -200,30 +192,15 @@ export class LessonProgressService {
   /**
    * FAST accessibility check using cached progress data - no API calls
    * Use this when you already have progress data to avoid loading states
-   * NOTE: This version cannot check subscriptions without API call - use with caution
-   * For subscription-aware checks, use isLessonAccessible() instead
    */
   static isLessonAccessibleFast(
     moduleId: string, 
     lessonId: string, 
     progressData: UserLessonProgress[],
-    isAuthenticated: boolean,
-    hasActiveSubscription?: boolean // Optional: pass if you already know subscription status
+    isAuthenticated: boolean
   ): boolean {
     if (!isAuthenticated) {
       return false;
-    }
-
-    // PAYWALL CHECK: Module 2+ requires subscription
-    // If subscription status is provided, use it; otherwise assume Module 1 only
-    if (moduleId !== 'module1') {
-      if (hasActiveSubscription === undefined) {
-        // Unknown subscription status - fail safe by denying access to paid modules
-        return false;
-      }
-      if (!hasActiveSubscription) {
-        return false;
-      }
     }
 
     // Special rule: Module 1 Lesson 1 is always accessible for authenticated users
