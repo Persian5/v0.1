@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
         const customerId = (session.customer as string) ?? null;
 
-        // 1) Seed a minimal row so later events can find it.
+        // 1) Always seed a minimal row
         await upsertSubscription({
           user_id: supabaseUserId,
           stripe_customer_id: customerId,
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
           status: "active",
         });
 
-        // 2) Best-effort enrich with subscription details (but never crash).
+        // 2) Best-effort enrichment (don't crash if Stripe not ready yet)
         const subId = session.subscription as string | null;
         if (subId) {
           try {
@@ -111,11 +111,13 @@ export async function POST(req: Request) {
               stripe_subscription_id: sub.id,
               status: sub.status,
               plan_type: "premium",
-              current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
+              current_period_end: (sub as any).current_period_end
+                ? new Date((sub as any).current_period_end * 1000).toISOString()
+                : null,
               cancel_at_period_end: (sub as any).cancel_at_period_end ?? false,
             });
           } catch (e) {
-            console.warn("Subscription not retrievable yet, will rely on later events.", subId, e);
+            console.warn("Subscription not retrievable yet; will rely on later events.", subId);
           }
         }
 
@@ -128,7 +130,7 @@ export async function POST(req: Request) {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = String(sub.customer);
 
-        // Find the owning user by customer id
+        // Find which Supabase user this customer belongs to
         const { data: row, error } = await supabaseAdmin
           .from("user_subscriptions")
           .select("user_id")
@@ -138,28 +140,29 @@ export async function POST(req: Request) {
         if (error) throw error;
         if (!row) {
           console.warn("No user_subscriptions row for customer", customerId);
-          break;
+          return NextResponse.json({ received: true }, { status: 200 });
         }
 
+        // Enrich / update with full subscription info
         await upsertSubscription({
           user_id: row.user_id,
           stripe_customer_id: customerId,
           stripe_subscription_id: sub.id,
           status: sub.status,
           plan_type: sub.status === "active" ? "premium" : "free",
-          current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
+          current_period_end: (sub as any).current_period_end
+            ? new Date((sub as any).current_period_end * 1000).toISOString()
+            : null,
           cancel_at_period_end: (sub as any).cancel_at_period_end ?? false,
         });
 
-        break;
+        return NextResponse.json({ received: true }, { status: 200 });
       }
 
       default:
-        // It's fine to ignore other events
-        break;
+        // Ignore other events
+        return NextResponse.json({ received: true }, { status: 200 });
     }
-
-    return NextResponse.json({ received: true }, { status: 200 });
   } catch (err: any) {
     console.error(`Webhook handler error for ${event.type}:`, err);
     return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
