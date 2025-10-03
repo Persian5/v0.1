@@ -81,38 +81,43 @@ export async function POST(req: Request) {
 
         const supabaseUserId = session.metadata?.supabase_user_id;
         if (!supabaseUserId) {
-          // As a fallback, you *could* map by email here — but to keep to
-          // your "don't assume" rule, we only act when metadata is present.
           console.warn("No supabase_user_id on session.metadata; skipping");
-          break;
+          return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        // Pull subscription details for period end and status
-        const subId = session.subscription as string | null;
-        let current_period_end: string | null = null;
-        let status: string | undefined = "active";
-        let cancel_at_period_end = false;
+        const customerId = (session.customer as string) ?? null;
 
-        if (subId) {
-          const sub = await stripe.subscriptions.retrieve(subId);
-          current_period_end = new Date((sub as any).current_period_end * 1000).toISOString();
-          status = sub.status; // 'active', 'trialing', 'past_due', 'canceled', etc.
-          cancel_at_period_end = (sub as any).cancel_at_period_end ?? false;
-        }
-
+        // 1) Seed a minimal row so later events can find it.
         await upsertSubscription({
           user_id: supabaseUserId,
-          stripe_customer_id: (session.customer as string) ?? null,
-          stripe_subscription_id: subId ?? null,
-          status,
+          stripe_customer_id: customerId,
           plan_type: "premium",
-          current_period_end,
-          cancel_at_period_end,
+          status: "active",
         });
 
-        break;
+        // 2) Best-effort enrich with subscription details (but never crash).
+        const subId = session.subscription as string | null;
+        if (subId) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subId);
+            await upsertSubscription({
+              user_id: supabaseUserId,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: sub.id,
+              status: sub.status,
+              plan_type: "premium",
+              current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
+              cancel_at_period_end: (sub as any).cancel_at_period_end ?? false,
+            });
+          } catch (e) {
+            console.warn("Subscription not retrievable yet, will rely on later events.", subId, e);
+          }
+        }
+
+        return NextResponse.json({ received: true }, { status: 200 });
       }
 
+      case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
