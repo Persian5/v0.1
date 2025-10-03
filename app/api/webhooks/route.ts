@@ -143,10 +143,21 @@ export async function POST(req: Request) {
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
-        // Enrich / update with full subscription info
-        const periodEnd =
+        // 1) try root field
+        let periodEnd =
           (sub as any).current_period_end ??
           (sub as any).items?.data?.[0]?.current_period_end;
+
+        // 2) if still missing, try latest invoice -> first line period.end
+        if (!periodEnd && sub.latest_invoice) {
+          try {
+            const inv = await stripe.invoices.retrieve(sub.latest_invoice as string);
+            const lineEnd = (inv.lines?.data?.[0] as any)?.period?.end;
+            if (lineEnd) periodEnd = lineEnd;
+          } catch (e) {
+            console.warn("Could not retrieve invoice for period end", sub.latest_invoice, e);
+          }
+        }
 
         await upsertSubscription({
           user_id: row.user_id,
@@ -154,7 +165,7 @@ export async function POST(req: Request) {
           stripe_subscription_id: sub.id,
           status: sub.status,
           plan_type: sub.status === "active" ? "premium" : "free",
-          current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+          current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : undefined,
           cancel_at_period_end: (sub as any).cancel_at_period_end ?? false,
         });
 
