@@ -53,7 +53,12 @@ async function upsertSubscription(params: {
       { onConflict: "user_id" }
     );
 
-  if (error) throw error;
+  if (error) {
+    console.error("❌ Supabase upsert error:", error);
+    throw error;
+  } else {
+    console.log("✅ Supabase upsert success for user", params.user_id);
+  }
 }
 
 export async function POST(req: Request) {
