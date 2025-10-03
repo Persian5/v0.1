@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { AccountNavButton } from "@/app/components/AccountNavButton";
+import { SubscribeButton } from "@/components/SubscribeButton";
 
 export default function PricingPage() {
   const router = useRouter()
@@ -62,6 +63,20 @@ export default function PricingPage() {
                 <p className="text-sm text-white italic opacity-90">✨ Available immediately – No signup required</p>
               </div>
               <p className="text-sm text-primary-foreground/80 mt-2">Try all lessons and features for free</p>
+            </div>
+
+            {/* Premium Subscription Block */}
+            <div className="rounded-xl border-2 shadow-md p-6 bg-accent text-white flex flex-col justify-between text-center">
+              <div>
+                <p className="font-semibold text-2xl">Premium Access</p>
+                <p className="text-lg font-semibold text-white mt-1">$4.99/month - All modules unlocked</p>
+                <p className="text-sm text-white italic opacity-90">🎯 Full access to all content</p>
+              </div>
+              <div className="mt-4">
+                <SubscribeButton className="w-full bg-white text-accent hover:bg-gray-100">
+                  Subscribe Now - $4.99/month
+                </SubscribeButton>
+              </div>
             </div>
           </div>
           

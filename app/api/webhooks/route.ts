@@ -1,315 +1,157 @@
-import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+// app/api/webhooks/route.ts
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import Stripe from "stripe";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
-// CRITICAL: Force Node.js runtime (Edge runtime doesn't support Stripe webhooks)
-export const runtime = 'nodejs'
+export const runtime = "nodejs";        // webhooks must not run on Edge
+export const dynamic = "force-dynamic"; // never cache
 
-// Validate environment variables at build time
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing STRIPE_SECRET_KEY environment variable')
+const must = [
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+] as const;
+
+for (const k of must) {
+  if (!process.env[k]) throw new Error(`Missing env var: ${k}`);
 }
-if (!process.env.STRIPE_WEBHOOK_SECRET) {
-  throw new Error('Missing STRIPE_WEBHOOK_SECRET environment variable')
-}
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
-}
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable')
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// See note in checkout: we don't pin apiVersion to avoid mismatches.
+
+const supabaseAdmin = createSupabaseAdmin(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // server-only
+  { auth: { persistSession: false } }
+);
+
+// Utility: upsert user_subscriptions row by user_id
+async function upsertSubscription(params: {
+  user_id: string;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  status?: string;
+  plan_type?: string;
+  current_period_end?: string | null;
+  cancel_at_period_end?: boolean;
+}) {
+  const { error } = await supabaseAdmin
+    .from("user_subscriptions")
+    .upsert(
+      {
+        user_id: params.user_id,
+        stripe_customer_id: params.stripe_customer_id ?? undefined,
+        stripe_subscription_id: params.stripe_subscription_id ?? undefined,
+        status: params.status ?? undefined,
+        plan_type: params.plan_type ?? undefined,
+        current_period_end: params.current_period_end ?? undefined,
+        cancel_at_period_end: params.cancel_at_period_end ?? undefined,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (error) throw error;
 }
 
-// Initialize Stripe - SDK will use its default API version
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+export async function POST(req: Request) {
+  const sig = headers().get("stripe-signature");
+  if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  const body = await req.text();
 
-// Initialize Supabase with service role key to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
-)
-
-export async function POST(request: Request) {
-  const body = await request.text()
-  const signature = request.headers.get('stripe-signature')
-
-  if (!signature) {
-    console.error('❌ [WEBHOOK] No Stripe signature found')
-    return NextResponse.json({ error: 'No signature' }, { status: 400 })
-  }
-
-  let event: Stripe.Event
 
   try {
-    // Verify webhook signature
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-    console.log(`✅ [WEBHOOK] Signature verified for event: ${event.type} (${event.id})`)
-  } catch (err) {
-    console.error('❌ [WEBHOOK] Signature verification failed:', err)
-    return NextResponse.json(
-      { error: `Webhook Error: ${err instanceof Error ? err.message : 'Unknown error'}` },
-      { status: 400 }
-    )
-  }
-
-  try {
-    // Handle different event types
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        console.log(`🎉 [WEBHOOK] Checkout session completed: ${session.id}`)
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
 
-        // Get customer email from session
-        const customerEmail = session.customer_email || session.customer_details?.email
-        if (!customerEmail) {
-          console.error('❌ [WEBHOOK] No customer email in session')
-          return NextResponse.json({ error: 'No customer email' }, { status: 400 })
-        }
-        console.log(`📧 [WEBHOOK] Customer email: ${customerEmail}`)
-
-        // Look up user_id from user_profiles by email
-        const { data: profile, error: profileError } = await supabaseAdmin
-          .from('user_profiles')
-          .select('id')
-          .eq('email', customerEmail)
-          .single()
-
-        if (profileError || !profile) {
-          console.error('❌ [WEBHOOK] Could not find user profile for email:', customerEmail, {
-            message: profileError?.message,
-            code: profileError?.code,
-            details: profileError?.details
-          })
-          return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-        console.log(`👤 [WEBHOOK] Found user_id: ${profile.id}`)
-
-        // Get subscription details
-        const subscriptionId = session.subscription as string
-        const customerId = session.customer as string
-
-        if (!subscriptionId) {
-          console.error('❌ [WEBHOOK] No subscription ID in session')
-          return NextResponse.json({ error: 'No subscription ID' }, { status: 400 })
+        const supabaseUserId = session.metadata?.supabase_user_id;
+        if (!supabaseUserId) {
+          // As a fallback, you *could* map by email here — but to keep to
+          // your "don't assume" rule, we only act when metadata is present.
+          console.warn("No supabase_user_id on session.metadata; skipping");
+          break;
         }
 
-        // Retrieve the subscription to get period end
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-        console.log(`📋 [WEBHOOK] Retrieved subscription: ${subscriptionId}, status: ${subscription.status}`)
+        // Pull subscription details for period end and status
+        const subId = session.subscription as string | null;
+        let current_period_end: string | null = null;
+        let status: string | undefined = "active";
+        let cancel_at_period_end = false;
 
-        // Type assertion for subscription properties
-        const subStatus = subscription.status as string
-        const subPeriodEnd = (subscription as any).current_period_end as number
-        const subCancelAtEnd = (subscription as any).cancel_at_period_end as boolean
-
-        // Create or update subscription in database
-        const { data: subData, error: subError } = await supabaseAdmin
-          .from('user_subscriptions')
-          .upsert({
-            user_id: profile.id,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            plan_type: 'premium',
-            status: subStatus,
-            current_period_end: new Date(subPeriodEnd * 1000).toISOString(),
-            cancel_at_period_end: subCancelAtEnd,
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id'
-          })
-          .select()
-
-        if (subError) {
-          console.error('❌ [WEBHOOK] Failed to upsert subscription:', {
-            message: subError.message,
-            code: subError.code,
-            details: subError.details,
-            hint: subError.hint
-          })
-          return NextResponse.json({ error: 'Database error' }, { status: 500 })
+        if (subId) {
+          const sub = await stripe.subscriptions.retrieve(subId);
+          current_period_end = new Date((sub as any).current_period_end * 1000).toISOString();
+          status = sub.status; // 'active', 'trialing', 'past_due', 'canceled', etc.
+          cancel_at_period_end = (sub as any).cancel_at_period_end ?? false;
         }
-        
-        console.log(`✅ [WEBHOOK] Subscription saved for user ${profile.id}:`, subData)
-        break
+
+        await upsertSubscription({
+          user_id: supabaseUserId,
+          stripe_customer_id: (session.customer as string) ?? null,
+          stripe_subscription_id: subId ?? null,
+          status,
+          plan_type: "premium",
+          current_period_end,
+          cancel_at_period_end,
+        });
+
+        break;
       }
 
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription
-        console.log(`🔄 [WEBHOOK] Subscription updated: ${subscription.id}`)
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const customerId = String(sub.customer);
 
-        // Get customer from Stripe
-        const customerData = await stripe.customers.retrieve(subscription.customer as string)
-        
-        // Type guard for deleted customer
-        if ('deleted' in customerData && customerData.deleted) {
-          console.error('❌ [WEBHOOK] Customer was deleted')
-          return NextResponse.json({ error: 'Customer deleted' }, { status: 400 })
+        // Find the owning user by customer id
+        const { data: row, error } = await supabaseAdmin
+          .from("user_subscriptions")
+          .select("user_id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!row) {
+          console.warn("No user_subscriptions row for customer", customerId);
+          break;
         }
 
-        const customerEmail = customerData.email
-        if (!customerEmail) {
-          console.error('❌ [WEBHOOK] No email for customer:', subscription.customer)
-          return NextResponse.json({ error: 'No customer email' }, { status: 400 })
-        }
-        console.log(`📧 [WEBHOOK] Customer email: ${customerEmail}`)
+        await upsertSubscription({
+          user_id: row.user_id,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: sub.id,
+          status: sub.status,
+          plan_type: sub.status === "active" ? "premium" : "free",
+          current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
+          cancel_at_period_end: (sub as any).cancel_at_period_end ?? false,
+        });
 
-        // Look up user_id from user_profiles by email
-        const { data: profile, error: profileError } = await supabaseAdmin
-          .from('user_profiles')
-          .select('id')
-          .eq('email', customerEmail)
-          .single()
-
-        if (profileError || !profile) {
-          console.error('❌ [WEBHOOK] Could not find user profile for email:', customerEmail, {
-            message: profileError?.message,
-            code: profileError?.code
-          })
-          return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-
-        // Type assertions for subscription update
-        const updateStatus = subscription.status as string
-        const updatePeriodEnd = (subscription as any).current_period_end as number
-        const updateCancelAtEnd = (subscription as any).cancel_at_period_end as boolean
-
-        // Update subscription status
-        const { error: updateError } = await supabaseAdmin
-          .from('user_subscriptions')
-          .update({
-            status: updateStatus,
-            current_period_end: new Date(updatePeriodEnd * 1000).toISOString(),
-            cancel_at_period_end: updateCancelAtEnd,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('stripe_subscription_id', subscription.id)
-
-        if (updateError) {
-          console.error('❌ [WEBHOOK] Failed to update subscription:', {
-            message: updateError.message,
-            code: updateError.code,
-            details: updateError.details
-          })
-          return NextResponse.json({ error: 'Database error' }, { status: 500 })
-        }
-        
-        console.log(`✅ [WEBHOOK] Subscription updated for user ${profile.id}: ${subscription.status}`)
-        break
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription
-        console.log(`🗑️ [WEBHOOK] Subscription deleted: ${subscription.id}`)
-
-        // Update subscription status to canceled
-        const { error: deleteError } = await supabaseAdmin
-          .from('user_subscriptions')
-          .update({
-            status: 'canceled',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('stripe_subscription_id', subscription.id)
-
-        if (deleteError) {
-          console.error('❌ [WEBHOOK] Failed to mark subscription as canceled:', {
-            message: deleteError.message,
-            code: deleteError.code
-          })
-          return NextResponse.json({ error: 'Database error' }, { status: 500 })
-        }
-        
-        console.log(`✅ [WEBHOOK] Subscription marked as canceled: ${subscription.id}`)
-        break
-      }
-
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice
-        console.log(`💳❌ [WEBHOOK] Payment failed for invoice: ${invoice.id}`)
-
-        // Type assertion for invoice subscription
-        const invoiceSubId = (invoice as any).subscription as string | null
-
-        // Update subscription status to past_due
-        if (invoiceSubId) {
-          const { error: failError } = await supabaseAdmin
-            .from('user_subscriptions')
-            .update({
-              status: 'past_due',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('stripe_subscription_id', invoiceSubId)
-
-          if (failError) {
-            console.error('❌ [WEBHOOK] Failed to mark subscription as past_due:', {
-              message: failError.message,
-              code: failError.code
-            })
-            return NextResponse.json({ error: 'Database error' }, { status: 500 })
-          }
-          
-          console.log(`⚠️ [WEBHOOK] Subscription marked as past_due: ${invoiceSubId}`)
-        } else {
-          console.log('ℹ️ [WEBHOOK] No subscription linked to failed invoice')
-        }
-        break
-      }
-
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice
-        console.log(`💳✅ [WEBHOOK] Payment succeeded for invoice: ${invoice.id}`)
-
-        // Type assertion for invoice subscription
-        const successSubId = (invoice as any).subscription as string | null
-
-        // Update subscription status back to active if it was past_due
-        if (successSubId) {
-          const subscription = await stripe.subscriptions.retrieve(successSubId)
-          
-          // Type assertions for subscription properties
-          const successStatus = subscription.status as string
-          const successPeriodEnd = (subscription as any).current_period_end as number
-
-          const { error: successError } = await supabaseAdmin
-            .from('user_subscriptions')
-            .update({
-              status: successStatus,
-              current_period_end: new Date(successPeriodEnd * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('stripe_subscription_id', successSubId)
-
-          if (successError) {
-            console.error('❌ [WEBHOOK] Failed to update subscription after payment:', {
-              message: successError.message,
-              code: successError.code
-            })
-            return NextResponse.json({ error: 'Database error' }, { status: 500 })
-          }
-          
-          console.log(`✅ [WEBHOOK] Payment succeeded, subscription updated: ${successSubId}, status: ${successStatus}`)
-        } else {
-          console.log('ℹ️ [WEBHOOK] No subscription linked to successful invoice')
-        }
-        break
+        break;
       }
 
       default:
-        console.log(`ℹ️ [WEBHOOK] Unhandled event type: ${event.type}`)
+        // It's fine to ignore other events
+        break;
     }
 
-    return NextResponse.json({ received: true })
-  } catch (error) {
-    console.error('❌ [WEBHOOK] Error processing webhook:', error)
-    return NextResponse.json(
-      { error: 'Webhook handler failed', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ received: true }, { status: 200 });
+  } catch (err: any) {
+    console.error(`Webhook handler error for ${event.type}:`, err);
+    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
 }
