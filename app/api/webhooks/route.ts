@@ -144,15 +144,17 @@ export async function POST(req: Request) {
         }
 
         // Enrich / update with full subscription info
+        const periodEnd =
+          (sub as any).current_period_end ??
+          (sub as any).items?.data?.[0]?.current_period_end;
+
         await upsertSubscription({
           user_id: row.user_id,
           stripe_customer_id: customerId,
           stripe_subscription_id: sub.id,
           status: sub.status,
           plan_type: sub.status === "active" ? "premium" : "free",
-          current_period_end: (sub as any).current_period_end
-            ? new Date((sub as any).current_period_end * 1000).toISOString()
-            : null,
+          current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
           cancel_at_period_end: (sub as any).cancel_at_period_end ?? false,
         });
 
