@@ -130,12 +130,16 @@ export async function POST(req: Request) {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = String(sub.customer);
 
+        console.log("↪ subscription event for customer", customerId, "sub", sub.id);
+
         // Find which Supabase user this customer belongs to
         const { data: row, error } = await supabaseAdmin
           .from("user_subscriptions")
           .select("user_id")
           .eq("stripe_customer_id", customerId)
           .maybeSingle();
+
+        console.log("↪ found row for customer?", !!row, "row_user_id", row?.user_id);
 
         if (error) throw error;
         if (!row) {
@@ -158,6 +162,8 @@ export async function POST(req: Request) {
             console.warn("Could not retrieve invoice for period end", sub.latest_invoice, e);
           }
         }
+
+        console.log("↪ computed periodEnd (unix)", periodEnd);
 
         await upsertSubscription({
           user_id: row.user_id,
