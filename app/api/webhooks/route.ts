@@ -50,7 +50,7 @@ async function upsertSubscription(params: {
         cancel_at_period_end: params.cancel_at_period_end ?? undefined,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "user_id" }
+      { onConflict: "user_id,stripe_customer_id" }
     );
 
   if (error) {
@@ -164,6 +164,7 @@ export async function POST(req: Request) {
         }
 
         console.log("↪ computed periodEnd (unix)", periodEnd);
+        console.log("➡️ Updating subscription for", customerId, "period_end:", (sub as any).current_period_end);
 
         await upsertSubscription({
           user_id: row.user_id,
