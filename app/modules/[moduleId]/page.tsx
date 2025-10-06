@@ -14,6 +14,7 @@ import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
+import { ModuleAccessService } from "@/lib/services/module-access-service"
 
 export default function ModulePage() {
   const { moduleId } = useParams()
@@ -36,6 +37,16 @@ export default function ModulePage() {
       try {
         setIsLoading(true)
         setError(null)
+        
+        // Check module access FIRST (security guard)
+        const accessStatus = await ModuleAccessService.canAccessModule(moduleId as string)
+        
+        // If user cannot access this module, redirect to /modules
+        if (!accessStatus.canAccess) {
+          console.warn(`Access denied to module ${moduleId}:`, accessStatus.reason)
+          router.push('/modules')
+          return
+        }
         
         // Use SmartAuthService for instant auth state (cached)
         const { user, isEmailVerified, isReady } = await SmartAuthService.initializeSession()
@@ -74,7 +85,7 @@ export default function ModulePage() {
     }
 
     loadAuthAndProgress()
-  }, [module, moduleId])
+  }, [module, moduleId, router])
 
   // Helper function to check if a lesson is completed
   const isLessonCompleted = (moduleId: string, lessonId: string): boolean => {
