@@ -7,6 +7,7 @@ export interface Module {
   lessonCount: number;
   estimatedTime: string;
   available: boolean;
+  requiresPremium?: boolean; // True for modules that require paid subscription (Module 2+)
   lessons: Lesson[];
 }
 
