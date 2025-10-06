@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Lock, CheckCircle, PlayCircle, Clock } from "lucide-react"
+import { Lock, CheckCircle, PlayCircle, Clock, Crown, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
 import { useXp } from "@/hooks/use-xp"
@@ -14,9 +14,14 @@ import { Star } from "lucide-react"
 import { XpService } from "@/lib/services/xp-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
+import { ModuleAccessService, type ModuleWithAccessStatus } from "@/lib/services/module-access-service"
+import { PremiumLockModal } from "@/components/PremiumLockModal"
 
 export default function ModulesPage() {
   const [mounted, setMounted] = useState(false)
+  const [modulesWithAccess, setModulesWithAccess] = useState<ModuleWithAccessStatus[]>([])
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
+  const [selectedModuleTitle, setSelectedModuleTitle] = useState<string>("")
   const router = useRouter()
   const { xp } = useXp()
   const { user, isEmailVerified } = useAuth()
@@ -26,21 +31,70 @@ export default function ModulesPage() {
     setMounted(true)
   }, [])
 
+  // Load modules with access status
+  useEffect(() => {
+    const loadModulesWithAccess = async () => {
+      const modulesData = await ModuleAccessService.getModulesWithAccessStatus()
+      setModulesWithAccess(modulesData)
+    }
+
+    if (mounted) {
+      loadModulesWithAccess()
+    }
+  }, [mounted, progressData])
+
   // Calculate authentication status
   const isAuthenticated = user && isEmailVerified
 
-  const modules = getModules().map((module, index) => {
+  // Handler for premium module click
+  const handlePremiumClick = (moduleTitle: string) => {
+    setSelectedModuleTitle(moduleTitle)
+    setShowPremiumModal(true)
+  }
+
+  // Handler for module navigation
+  const handleModuleClick = (moduleWithAccess: ModuleWithAccessStatus, e: React.MouseEvent) => {
+    // If module shows premium badge, open modal instead of navigating
+    if (moduleWithAccess.accessStatus.showPremiumBadge) {
+      e.preventDefault()
+      handlePremiumClick(moduleWithAccess.title)
+      return
+    }
+
+    // If module shows completion lock, prevent navigation
+    if (moduleWithAccess.accessStatus.showCompletionLock) {
+      e.preventDefault()
+      return
+    }
+
+    // Otherwise, allow normal navigation (will be handled by Link component)
+  }
+
+  const modules = modulesWithAccess.map((module, index) => {
     // Get module completion info using fast methods (no API calls)
     const moduleCompletionInfo = isAuthenticated ? 
       LessonProgressService.getModuleCompletionInfoFast(module.id, progressData) :
       { isCompleted: false, completionPercentage: 0, durationMs: null, durationFormatted: null }
 
-    // Determine button text and style based on completion status
+    // Determine button text and style based on access and completion status
     let buttonText = "Start Module"
     let buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
     let buttonClass = "w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors"
 
-    if (moduleCompletionInfo.isCompleted) {
+    // Premium badge state (free user, requires premium)
+    if (module.accessStatus.showPremiumBadge) {
+      buttonText = "Unlock Premium"
+      buttonIcon = <Crown className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
+    }
+    // Completion lock state (paid user, prerequisites incomplete)
+    else if (module.accessStatus.showCompletionLock) {
+      buttonText = "Complete Previous Modules"
+      buttonIcon = <AlertCircle className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-gray-300 text-gray-600 cursor-not-allowed font-semibold py-3 rounded-lg"
+    }
+    // Normal access states
+    else if (moduleCompletionInfo.isCompleted) {
       buttonText = "Module Complete"
       buttonIcon = <CheckCircle className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors"
@@ -59,9 +113,11 @@ export default function ModulesPage() {
       href: module.available ? `/modules/${module.id}` : "#",
       available: module.available,
       completionInfo: moduleCompletionInfo,
+      accessStatus: module.accessStatus,
       buttonText,
       buttonIcon,
-      buttonClass
+      buttonClass,
+      moduleWithAccess: module
     }
   })
 
@@ -158,12 +214,23 @@ export default function ModulesPage() {
 
                   <div className="w-full">
                     {module.available ? (
-                      <Link href={module.href} className="block">
-                        <Button className={module.buttonClass}>
+                      module.accessStatus?.showPremiumBadge || module.accessStatus?.showCompletionLock ? (
+                        <Button 
+                          className={module.buttonClass}
+                          onClick={(e) => handleModuleClick(module.moduleWithAccess, e)}
+                          disabled={module.accessStatus?.showCompletionLock}
+                        >
                           {module.buttonIcon}
                           {module.buttonText}
                         </Button>
-                      </Link>
+                      ) : (
+                        <Link href={module.href} className="block">
+                          <Button className={module.buttonClass}>
+                            {module.buttonIcon}
+                            {module.buttonText}
+                          </Button>
+                        </Link>
+                      )
                     ) : (
                       <Button 
                         className="w-full bg-gray-100 text-gray-500 cursor-not-allowed font-semibold py-3 rounded-lg"
@@ -209,6 +276,13 @@ export default function ModulesPage() {
           </div>
         </div>
       </footer>
+
+      {/* Premium Lock Modal */}
+      <PremiumLockModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        moduleTitle={selectedModuleTitle}
+      />
     </div>
   )
 } 
