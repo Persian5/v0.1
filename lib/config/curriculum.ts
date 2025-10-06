@@ -1213,6 +1213,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "60 minutes",
     available: true,
+    requiresPremium: true,
     lessons: [
       {
         id: "lesson1",
@@ -1817,6 +1818,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "25 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1827,6 +1829,7 @@ export const curriculumData: Module[] = [
     lessonCount: 5,
     estimatedTime: "40 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1837,6 +1840,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1847,6 +1851,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1857,6 +1862,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "25 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1867,6 +1873,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1877,6 +1884,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "25 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1887,6 +1895,7 @@ export const curriculumData: Module[] = [
     lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   },
   {
@@ -1897,6 +1906,7 @@ export const curriculumData: Module[] = [
     lessonCount: 4,
     estimatedTime: "45 minutes",
     available: false,
+    requiresPremium: true,
     lessons: []
   }
 ];
