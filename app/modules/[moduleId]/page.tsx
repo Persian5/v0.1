@@ -14,7 +14,6 @@ import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
-import { ModuleAccessService } from "@/lib/services/module-access-service"
 
 export default function ModulePage() {
   const { moduleId } = useParams()
@@ -38,12 +37,20 @@ export default function ModulePage() {
         setIsLoading(true)
         setError(null)
         
-        // Check module access FIRST (security guard)
-        const accessStatus = await ModuleAccessService.canAccessModule(moduleId as string)
-        
-        // If user cannot access this module, redirect to /modules
-        if (!accessStatus.canAccess) {
-          console.warn(`Access denied to module ${moduleId}:`, accessStatus.reason)
+        // Check module access FIRST (security guard) - client-side check via API
+        try {
+          const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+          const accessData = await accessResponse.json()
+          
+          // If user cannot access this module, redirect to /modules
+          if (!accessData.canAccess) {
+            console.warn(`Access denied to module ${moduleId}:`, accessData.reason)
+            router.push('/modules')
+            return
+          }
+        } catch (accessError) {
+          console.error('Failed to check module access:', accessError)
+          // On error, redirect to modules page for safety
           router.push('/modules')
           return
         }

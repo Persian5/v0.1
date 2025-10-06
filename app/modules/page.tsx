@@ -14,12 +14,25 @@ import { Star } from "lucide-react"
 import { XpService } from "@/lib/services/xp-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
-import { ModuleAccessService, type ModuleWithAccessStatus } from "@/lib/services/module-access-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
+import type { Module } from "@/lib/types"
+
+interface ModuleAccessStatus {
+  canAccess: boolean
+  requiresPremium: boolean
+  hasPremium: boolean
+  prerequisitesComplete: boolean
+  showPremiumBadge: boolean
+  showCompletionLock: boolean
+}
+
+interface ModuleWithAccessStatus extends Module {
+  accessStatus: ModuleAccessStatus
+}
 
 export default function ModulesPage() {
   const [mounted, setMounted] = useState(false)
-  const [modulesWithAccess, setModulesWithAccess] = useState<ModuleWithAccessStatus[]>([])
+  const [hasPremium, setHasPremium] = useState(false)
   const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [selectedModuleTitle, setSelectedModuleTitle] = useState<string>("")
   const router = useRouter()
@@ -31,17 +44,28 @@ export default function ModulesPage() {
     setMounted(true)
   }, [])
 
-  // Load modules with access status
+  // Check premium status client-side via API
   useEffect(() => {
-    const loadModulesWithAccess = async () => {
-      const modulesData = await ModuleAccessService.getModulesWithAccessStatus()
-      setModulesWithAccess(modulesData)
+    const checkPremiumStatus = async () => {
+      if (!user) {
+        setHasPremium(false)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/check-premium')
+        const data = await response.json()
+        setHasPremium(data.hasPremium || false)
+      } catch (error) {
+        console.error('Failed to check premium status:', error)
+        setHasPremium(false)
+      }
     }
 
-    if (mounted) {
-      loadModulesWithAccess()
+    if (mounted && user) {
+      checkPremiumStatus()
     }
-  }, [mounted, progressData])
+  }, [mounted, user])
 
   // Calculate authentication status
   const isAuthenticated = user && isEmailVerified
@@ -53,16 +77,16 @@ export default function ModulesPage() {
   }
 
   // Handler for module navigation
-  const handleModuleClick = (moduleWithAccess: ModuleWithAccessStatus, e: React.MouseEvent) => {
+  const handleModuleClick = (moduleData: any, e: React.MouseEvent) => {
     // If module shows premium badge, open modal instead of navigating
-    if (moduleWithAccess.accessStatus.showPremiumBadge) {
+    if (moduleData.accessStatus.showPremiumBadge) {
       e.preventDefault()
-      handlePremiumClick(moduleWithAccess.title)
+      handlePremiumClick(moduleData.title)
       return
     }
 
     // If module shows completion lock, prevent navigation
-    if (moduleWithAccess.accessStatus.showCompletionLock) {
+    if (moduleData.accessStatus.showCompletionLock) {
       e.preventDefault()
       return
     }
@@ -70,7 +94,26 @@ export default function ModulesPage() {
     // Otherwise, allow normal navigation (will be handled by Link component)
   }
 
-  const modules = modulesWithAccess.map((module, index) => {
+  const modules = getModules().map((module, index) => {
+    // Compute access status client-side
+    const requiresPremium = module.requiresPremium ?? false
+    const prerequisitesComplete = isAuthenticated ? 
+      LessonProgressService.isModuleCompletedFast(index > 0 ? getModules()[index - 1].id : 'module1', progressData) :
+      true // Non-authenticated users see everything as "accessible" (will be gated on click)
+    
+    const showPremiumBadge = requiresPremium && !hasPremium
+    const showCompletionLock = !showPremiumBadge && !prerequisitesComplete && index > 0
+    const canAccess = (!requiresPremium || hasPremium) && prerequisitesComplete
+
+    const accessStatus: ModuleAccessStatus = {
+      canAccess,
+      requiresPremium,
+      hasPremium,
+      prerequisitesComplete,
+      showPremiumBadge,
+      showCompletionLock
+    }
+    
     // Get module completion info using fast methods (no API calls)
     const moduleCompletionInfo = isAuthenticated ? 
       LessonProgressService.getModuleCompletionInfoFast(module.id, progressData) :
@@ -82,13 +125,13 @@ export default function ModulesPage() {
     let buttonClass = "w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors"
 
     // Premium badge state (free user, requires premium)
-    if (module.accessStatus.showPremiumBadge) {
+    if (showPremiumBadge) {
       buttonText = "Unlock Premium"
       buttonIcon = <Crown className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
     }
     // Completion lock state (paid user, prerequisites incomplete)
-    else if (module.accessStatus.showCompletionLock) {
+    else if (showCompletionLock) {
       buttonText = "Complete Previous Modules"
       buttonIcon = <AlertCircle className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-gray-300 text-gray-600 cursor-not-allowed font-semibold py-3 rounded-lg"
@@ -113,11 +156,10 @@ export default function ModulesPage() {
       href: module.available ? `/modules/${module.id}` : "#",
       available: module.available,
       completionInfo: moduleCompletionInfo,
-      accessStatus: module.accessStatus,
+      accessStatus,
       buttonText,
       buttonIcon,
-      buttonClass,
-      moduleWithAccess: module
+      buttonClass
     }
   })
 
@@ -217,7 +259,7 @@ export default function ModulesPage() {
                       module.accessStatus?.showPremiumBadge || module.accessStatus?.showCompletionLock ? (
                         <Button 
                           className={module.buttonClass}
-                          onClick={(e) => handleModuleClick(module.moduleWithAccess, e)}
+                          onClick={(e) => handleModuleClick(module, e)}
                           disabled={module.accessStatus?.showCompletionLock}
                         >
                           {module.buttonIcon}
