@@ -2,6 +2,8 @@ import { getModule, getModules } from '../config/curriculum'
 import { hasPremiumAccess } from '../utils/subscription'
 import { Module } from '../types'
 import { LessonProgressService } from './lesson-progress-service'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 /**
  * Module Access Service
@@ -66,17 +68,15 @@ export class ModuleAccessService {
     const { prerequisitesComplete, missingPrerequisites } = await this.checkPrerequisites(moduleId)
     
     // Determine access
-    // NEW LOGIC: Premium users skip prerequisite checks (can access all modules immediately)
-    // Free users must pass both payment check AND prerequisite check
     const passesPaymentCheck = !requiresPremium || hasPremium
-    const canAccess = hasPremium ? passesPaymentCheck : (passesPaymentCheck && prerequisitesComplete)
+    const canAccess = passesPaymentCheck && prerequisitesComplete
     
     // Determine reason if no access
     let reason: 'no_premium' | 'incomplete_prerequisites' | undefined
     if (!canAccess) {
       if (!passesPaymentCheck) {
         reason = 'no_premium'
-      } else if (!prerequisitesComplete && !hasPremium) {
+      } else if (!prerequisitesComplete) {
         reason = 'incomplete_prerequisites'
       }
     }
@@ -120,12 +120,15 @@ export class ModuleAccessService {
       }
     }
     
+    // Fetch progress data server-side
+    const progressData = await this.getUserProgressServerSide()
+    
     // Check all previous modules
     const missingPrerequisites: string[] = []
     
     for (let i = 0; i < currentModuleIndex; i++) {
       const prerequisiteModule = allModules[i]
-      const isComplete = await LessonProgressService.isModuleCompleted(prerequisiteModule.id)
+      const isComplete = LessonProgressService.isModuleCompletedFast(prerequisiteModule.id, progressData)
       
       if (!isComplete) {
         missingPrerequisites.push(prerequisiteModule.id)
@@ -135,6 +138,47 @@ export class ModuleAccessService {
     return {
       prerequisitesComplete: missingPrerequisites.length === 0,
       missingPrerequisites
+    }
+  }
+
+  /**
+   * Fetch user progress data server-side (for API routes)
+   * Returns empty array if user not authenticated
+   */
+  private static async getUserProgressServerSide() {
+    try {
+      const store = cookies()
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return store.get(name)?.value
+            },
+            set() {},
+            remove() {},
+          },
+        }
+      )
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return []
+
+      const { data, error } = await supabase
+        .from('user_lesson_progress')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Error fetching user progress:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Failed to fetch user progress server-side:', error)
+      return []
     }
   }
 
@@ -155,11 +199,8 @@ export class ModuleAccessService {
         
         // Determine what to show
         const showPremiumBadge = requiresPremium && !hasPremium
-        // Free users: blocked by either premium badge OR prerequisite completion
-        // Premium users: NEVER see completion locks (they skip prerequisites)
-        const showCompletionLock = !hasPremium && !prerequisitesComplete && !showPremiumBadge
-        // Premium users can access all modules immediately (skip prerequisite checks)
-        const canAccess = hasPremium ? (!requiresPremium || hasPremium) : ((!requiresPremium || hasPremium) && prerequisitesComplete)
+        const showCompletionLock = !prerequisitesComplete && hasPremium
+        const canAccess = (!requiresPremium || hasPremium) && prerequisitesComplete
         
         return {
           ...module,
