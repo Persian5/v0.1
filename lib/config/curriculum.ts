@@ -1290,7 +1290,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "Which form means \"I am good\"?",
-              options: ["khoob‑i", "khoob‑am", "khoob", "khodafez"],
+              options: ["khoobi", "khoobam", "khoob", "khodafez"],
               correct: 1
             }
           },
@@ -1299,7 +1299,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "Which form means \"you are good\"?",
-              options: ["khoob‑am", "khoob", "khoob‑i", "merci"],
+              options: ["khoobam", "khoob", "khoobi", "merci"],
               correct: 2
             }
           },
@@ -1309,8 +1309,8 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "word1", text: "khoob", slotId: "slot1" },
-                { id: "word2", text: "khoob-am", slotId: "slot2" },
-                { id: "word3", text: "khoob-i", slotId: "slot3" }
+                { id: "word2", text: "khoobam", slotId: "slot2" },
+                { id: "word3", text: "khoobi", slotId: "slot3" }
               ],
               slots: [
                 { id: "slot1", text: "good" },
@@ -1356,8 +1356,8 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man khoob-am shoma khoob-i",
-              expectedTranslation: "I am good you are good"
+              finglishText: "man khoob-am",
+              expectedTranslation: "I am good"
             }
           },
           {
@@ -1375,8 +1375,8 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "chetori", text: "Chetori", translation: "How are you" },
-                { id: "khoobam", text: "khoob-am", translation: "I am good" },
-                { id: "khoobi", text: "khoob-i", translation: "Are you good" }
+                { id: "khoobam", text: "khoobam", translation: "I am good" },
+                { id: "khoobi", text: "khoobi", translation: "Are you good" }
               ],
               targetWords: ["salam", "chetori", "khoobam", "khoobi"],
               title: "Grammar Practice",
@@ -1496,7 +1496,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               question: "How do you say 'you are not' using the neest root?",
-              answer: "neesti"
+              answer: "neest-i"
             }
           },
           {
@@ -1504,7 +1504,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               question: "How do you say 'I am' using the hast root?",
-              answer: "hastam"
+              answer: "hast-am"
             }
           },
           {
@@ -1679,7 +1679,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "Which word means 'where'?",
-              options: ["Koja", "Ahle", "Iran", "Hasti"],
+              options: ["Koja", "Merci", "Khoobam", "Hasti"],
               correct: 0
             }
           },
@@ -1754,8 +1754,8 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man khoobam, shoma chi",
-              expectedTranslation: "I am good, how about you"
+              finglishText: "man khoobam shoma chi",
+              expectedTranslation: "I am good what about you"
             }
           },
           {
@@ -1788,21 +1788,22 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "ahle_from", text: "Ahle", translation: "From" },
+                { id: "ahle_from_1", text: "Ahle", translation: "From" },
                 { id: "koja", text: "Koja", translation: "Where" },
                 { id: "hasti", text: "Hasti", translation: "You are" },
                 { id: "man", text: "Man", translation: "I" },
+                { id: "ahle_from_2", text: "Ahle", translation: "From" },
                 { id: "iran", text: "Iran", translation: "Iran" },
                 { id: "hastam", text: "Hastam", translation: "I am" }
               ],
-              targetWords: ["shoma", "ahle_from", "koja", "hasti", "man", "ahle_from", "iran", "hastam"],
+              targetWords: ["shoma", "ahle_from_1", "koja", "hasti", "man", "ahle_from_2", "iran", "hastam"],
               title: "Where Are You From?",
               successMessage: "Excellent! You can now ask and answer where someone is from!",
               incorrectMessage: "Almost there—let's practice that location conversation again!",
               conversationFlow: {
                 description: "A complete conversation about origins",
                 expectedPhrase: "where are you from? I am from Iran",
-                persianSequence: ["shoma", "ahle_from", "koja", "hasti", "man", "ahle_from", "iran", "hastam"]
+                persianSequence: ["shoma", "ahle_from_1", "koja", "hasti", "man", "ahle_from_2", "iran", "hastam"]
               }
             }
           }
