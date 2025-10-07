@@ -66,15 +66,17 @@ export class ModuleAccessService {
     const { prerequisitesComplete, missingPrerequisites } = await this.checkPrerequisites(moduleId)
     
     // Determine access
+    // NEW LOGIC: Premium users skip prerequisite checks (can access all modules immediately)
+    // Free users must pass both payment check AND prerequisite check
     const passesPaymentCheck = !requiresPremium || hasPremium
-    const canAccess = passesPaymentCheck && prerequisitesComplete
+    const canAccess = hasPremium ? passesPaymentCheck : (passesPaymentCheck && prerequisitesComplete)
     
     // Determine reason if no access
     let reason: 'no_premium' | 'incomplete_prerequisites' | undefined
     if (!canAccess) {
       if (!passesPaymentCheck) {
         reason = 'no_premium'
-      } else if (!prerequisitesComplete) {
+      } else if (!prerequisitesComplete && !hasPremium) {
         reason = 'incomplete_prerequisites'
       }
     }
@@ -153,8 +155,11 @@ export class ModuleAccessService {
         
         // Determine what to show
         const showPremiumBadge = requiresPremium && !hasPremium
-        const showCompletionLock = !prerequisitesComplete && hasPremium
-        const canAccess = (!requiresPremium || hasPremium) && prerequisitesComplete
+        // Free users: blocked by either premium badge OR prerequisite completion
+        // Premium users: NEVER see completion locks (they skip prerequisites)
+        const showCompletionLock = !hasPremium && !prerequisitesComplete && !showPremiumBadge
+        // Premium users can access all modules immediately (skip prerequisite checks)
+        const canAccess = hasPremium ? (!requiresPremium || hasPremium) : ((!requiresPremium || hasPremium) && prerequisitesComplete)
         
         return {
           ...module,
