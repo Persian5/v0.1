@@ -2189,10 +2189,10 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-sequence",
+            type: "text-sequence",
             points: 3,
             data: {
-              sequence: ["man", "dar", "amrika", "zendegi", "mikonam"],
+              finglishText: "man dar amrika zendegi mikonam",
               expectedTranslation: "I live in America"
             }
           },
