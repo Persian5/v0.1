@@ -2133,7 +2133,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "man khoobam vali khoob neestam",
-              expectedTranslation: "I am good but I am not good"
+              expectedTranslation: "I am good but not good"
             }
           },
           {
