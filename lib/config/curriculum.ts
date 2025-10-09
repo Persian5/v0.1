@@ -1915,15 +1915,6 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which word connects location phrases (like 'in America')?",
-              options: ["Dar", "Koja", "Ahle", "Zendegi"],
-              correct: 0
-            }
-          },
-          {
             type: "flashcard",
             points: 1,
             data: {
@@ -1935,6 +1926,15 @@ export const curriculumData: Module[] = [
             points: 1,
             data: {
               vocabularyId: "dar"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word connects location phrases (like 'in America')?",
+              options: ["Dar", "Koja", "Ahle", "Zendegi"],
+              correct: 0
             }
           },
           {
@@ -2018,7 +2018,7 @@ export const curriculumData: Module[] = [
               incorrectMessage: "Almost there—let's practice that residence phrase again!",
               conversationFlow: {
                 description: "A complete phrase about where you live",
-                expectedPhrase: "hello where do you live I live in America",
+                expectedPhrase: "Hello, where do you live? I live in America.",
                 persianSequence: ["salam", "shoma", "koja", "zendegi_1", "mikoni", "man", "dar", "amrika", "zendegi_2", "mikonam"]
               }
             }
