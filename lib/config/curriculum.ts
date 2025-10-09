@@ -1210,8 +1210,8 @@ export const curriculumData: Module[] = [
     title: "Module 2: Responses & Feelings",
     description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
     emoji: "😊",
-    lessonCount: 3,
-    estimatedTime: "60 minutes",
+    lessonCount: 4,
+    estimatedTime: "80 minutes",
     available: true,
     requiresPremium: true,
     lessons: [
@@ -1530,7 +1530,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               question: "How do you say 'I am not'?",
-              answer: "neestam"
+              answer: "neest-am"
             }
           },
           {
@@ -1804,6 +1804,222 @@ export const curriculumData: Module[] = [
                 description: "A complete conversation about origins",
                 expectedPhrase: "where are you from? I am from Iran",
                 persianSequence: ["shoma", "ahle_from_1", "koja", "hasti", "man", "ahle_from_2", "iran", "hastam"]
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson4",
+        title: "Where I Live",
+        description: "Learn to ask and say where you live, combining location words with action verbs",
+        emoji: "🏠",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "koja", "ahle_from", "man", "shoma", "khoobam"],
+        vocabulary: [
+          {
+            id: "zendegi",
+            en: "Life",
+            fa: "",
+            finglish: "Zendegi",
+            phonetic: "zen-deh-GEE",
+            lessonId: "module2-lesson4"
+          },
+          {
+            id: "mikonam",
+            en: "I do",
+            fa: "",
+            finglish: "Mikonam",
+            phonetic: "MEE-ko-nam",
+            lessonId: "module2-lesson4"
+          },
+          {
+            id: "mikoni",
+            en: "You do",
+            fa: "",
+            finglish: "Mikoni",
+            phonetic: "MEE-kon-ee",
+            lessonId: "module2-lesson4"
+          },
+          {
+            id: "dar",
+            en: "In",
+            fa: "",
+            finglish: "Dar",
+            phonetic: "dahr",
+            lessonId: "module2-lesson4"
+          },
+          {
+            id: "amrika",
+            en: "America",
+            fa: "",
+            finglish: "Amrika",
+            phonetic: "uhm-ree-ka",
+            lessonId: "module2-lesson4"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Where I Live",
+            description: "Learn to ask and say where you live, building on location vocabulary with action verbs.",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn 'zendegi' (life) for living and residence",
+                "Learn 'mikonam' (I do) and 'mikoni' (you do)",
+                "Ask 'where do you live?' vs 'where are you from?'",
+                "Say 'I live in America' confidently"
+              ],
+              lessonType: "location"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "zendegi"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "mikonam"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "amrika"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'life'?",
+              options: ["Zendegi", "Koja", "Ahle", "Mikonam"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'I do'?",
+              options: ["Mikonam", "Hastam", "Neestam", "Zendegi"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word connects location phrases (like 'in America')?",
+              options: ["Dar", "Koja", "Ahle", "Zendegi"],
+              correct: 0
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "mikoni"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "dar"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What suffix makes 'you do' from the root 'mikon'?",
+              options: ["-i", "-am", "-ast", "-im"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'I do' using the mikon root?",
+              answer: "mikon-am"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'you do' using the mikon root?",
+              answer: "mikon-i"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Zendegi", slotId: "slot1" },
+                { id: "word2", text: "Mikonam", slotId: "slot2" },
+                { id: "word3", text: "Mikoni", slotId: "slot3" },
+                { id: "word4", text: "Dar", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Life" },
+                { id: "slot2", text: "I do" },
+                { id: "slot3", text: "You do" },
+                { id: "slot4", text: "In" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "shoma koja zendegi mikoni",
+              expectedTranslation: "where do you live"
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "shoma", text: "Shoma", translation: "You" },
+                { id: "koja", text: "Koja", translation: "Where" },
+                { id: "zendegi_1", text: "Zendegi", translation: "Life/Live" },
+                { id: "mikoni", text: "Mikoni", translation: "You do" },
+                { id: "man", text: "Man", translation: "I" },
+                { id: "dar", text: "Dar", translation: "In" },
+                { id: "amrika", text: "Amrika", translation: "America" },
+                { id: "zendegi_2", text: "Zendegi", translation: "Life/Live" },
+                { id: "mikonam", text: "Mikonam", translation: "I do" }
+              ],
+              targetWords: ["salam", "shoma", "koja", "zendegi_1", "mikoni", "man", "dar", "amrika", "zendegi_2", "mikonam"],
+              title: "Where Do You Live?",
+              successMessage: "Perfect! You can now ask and say where you live!",
+              incorrectMessage: "Almost there—let's practice that residence phrase again!",
+              conversationFlow: {
+                description: "A complete phrase about where you live",
+                expectedPhrase: "hello where do you live I live in America",
+                persianSequence: ["salam", "shoma", "koja", "zendegi_1", "mikoni", "man", "dar", "amrika", "zendegi_2", "mikonam"]
               }
             }
           }

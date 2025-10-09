@@ -388,9 +388,6 @@ export class LessonProgressService {
   /**
    * FAST: Check if a module is completed using cached progress data - no API calls
    * Use this when you already have progress data to avoid loading states
-   * 
-   * NOTE: Story lessons (isStoryLesson: true) are OPTIONAL for module completion.
-   * Users only need to complete non-story lessons to unlock the next module.
    */
   static isModuleCompletedFast(
     moduleId: string, 
@@ -400,22 +397,11 @@ export class LessonProgressService {
     const module = modules.find(m => m.id === moduleId);
     if (!module) return false;
     
-    // Count how many NON-STORY lessons exist in this module
-    const requiredLessons = module.lessons.filter(l => !l.isStoryLesson).length;
+    const completedLessonsInModule = progressData.filter(p => 
+      p.module_id === moduleId && p.status === 'completed'
+    ).length;
     
-    // Count how many NON-STORY lessons the user has completed
-    const completedRequiredLessons = progressData.filter(p => {
-      if (p.module_id !== moduleId || p.status !== 'completed') return false;
-      
-      // Find the lesson in the module
-      const lesson = module.lessons.find(l => l.id === p.lesson_id);
-      
-      // Only count if it's NOT a story lesson
-      return lesson && !lesson.isStoryLesson;
-    }).length;
-    
-    // Module is complete when all required (non-story) lessons are done
-    return completedRequiredLessons >= requiredLessons;
+    return completedLessonsInModule === module.lessonCount;
   }
 
   /**
