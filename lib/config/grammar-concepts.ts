@@ -90,6 +90,47 @@ export const grammarConcepts: GrammarConcept[] = [
         points: 1
       }
     ]
+  },
+  {
+    conceptId: "connectors-placement",
+    title: "How to Use Connectors",
+    description: "Learn where va, ham, and vali go in Persian sentences",
+    rule: "ham follows what it emphasizes, vali contrasts ideas, va joins equal things",
+    phases: [
+      {
+        id: "ham-placement",
+        baseWord: "man khoobam",
+        transformedWord: "man ham khoobam",
+        baseDefinition: "I am good",
+        transformedDefinition: "I am also good",
+        explanation: "ham goes after the word it emphasizes",
+        exampleBefore: "man khoobam (I am good)",
+        exampleAfter: "man ham khoobam (I am also good)",
+        points: 1
+      },
+      {
+        id: "vali-contrast",
+        baseWord: "man khoobam",
+        transformedWord: "man khoobam vali khoob neestam",
+        baseDefinition: "I am good",
+        transformedDefinition: "I am good but I am not good",
+        explanation: "vali connects contrasting ideas",
+        exampleBefore: "man khoobam (I am good)",
+        exampleAfter: "man khoobam vali khoob neestam (I am good but I am not good)",
+        points: 1
+      },
+      {
+        id: "va-joining",
+        baseWord: "man, shoma",
+        transformedWord: "man va shoma",
+        baseDefinition: "I, you",
+        transformedDefinition: "I and you",
+        explanation: "va joins equal things like nouns or phrases",
+        exampleBefore: "man, shoma (I, you)",
+        exampleAfter: "man va shoma (I and you)",
+        points: 1
+      }
+    ]
   }
 ];
 

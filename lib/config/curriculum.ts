@@ -1210,7 +1210,7 @@ export const curriculumData: Module[] = [
     title: "Module 2: Responses & Feelings",
     description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
     emoji: "😊",
-    lessonCount: 4,
+    lessonCount: 5,
     estimatedTime: "80 minutes",
     available: true,
     requiresPremium: true,
@@ -2020,6 +2020,240 @@ export const curriculumData: Module[] = [
                 description: "A complete phrase about where you live",
                 expectedPhrase: "Hello, where do you live? I live in America.",
                 persianSequence: ["salam", "shoma", "koja", "zendegi_1", "mikoni", "man", "dar", "amrika", "zendegi_2", "mikonam"]
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson5",
+        title: "Connect Ideas Naturally",
+        description: "Learn to connect ideas with 'and', 'also', and 'but' to sound natural and fluent",
+        emoji: "🔗",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle_from", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"],
+        vocabulary: [
+          {
+            id: "va",
+            en: "And",
+            fa: "و",
+            finglish: "Va",
+            phonetic: "vah",
+            lessonId: "module2-lesson5"
+          },
+          {
+            id: "ham",
+            en: "Also",
+            fa: "هم",
+            finglish: "Ham",
+            phonetic: "hahm",
+            lessonId: "module2-lesson5"
+          },
+          {
+            id: "vali",
+            en: "But",
+            fa: "ولی",
+            finglish: "Vali",
+            phonetic: "vah-LEE",
+            lessonId: "module2-lesson5"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Connectors: va, ham, vali",
+            description: "Learn to connect ideas and sound more natural in conversation.",
+            points: 0,
+            data: {
+              objectives: [
+                "Join words with va (and)",
+                "Say 'also' with ham",
+                "Contrast ideas with vali (but)",
+                "Build longer, natural sentences"
+              ],
+              lessonType: "vocabulary"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "va"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "ham"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "vali"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Va", slotId: "slot1" },
+                { id: "word2", text: "Ham", slotId: "slot2" },
+                { id: "word3", text: "Vali", slotId: "slot3" }
+              ],
+              slots: [
+                { id: "slot1", text: "And" },
+                { id: "slot2", text: "Also" },
+                { id: "slot3", text: "But" }
+              ]
+            }
+          },
+          {
+            type: "grammar-concept",
+            points: 0,
+            data: {
+              conceptId: "connectors-placement"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which connector belongs here: Iran ___ Amrika?",
+              options: ["va", "ham", "vali", "dar"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man khoobam vali khoob neestam",
+              expectedTranslation: "I am good but I am not good"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "If someone says 'man khoobam' and you want to say 'me too', which word goes here: man ___ khoobam?",
+              options: ["ham", "va", "vali", "kheily"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "koja",
+              distractors: ["va", "ham", "dar"]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Shoma", slotId: "slot1" },
+                { id: "word2", text: "Koja", slotId: "slot2" },
+                { id: "word3", text: "Dar", slotId: "slot3" },
+                { id: "word4", text: "Hastam", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "You" },
+                { id: "slot2", text: "Where" },
+                { id: "slot3", text: "In" },
+                { id: "slot4", text: "I am" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'in'?",
+              options: ["Dar", "Koja", "Ahle", "Ham"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man ham khoobam",
+              expectedTranslation: "I am good too"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["man", "dar", "amrika", "zendegi", "mikonam"],
+              expectedTranslation: "I live in America"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'how are you'?",
+              options: ["Chetori", "Khoobam", "Khoshbakhtam", "Chiye"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Va", slotId: "slot1" },
+                { id: "word2", text: "Vali", slotId: "slot2" },
+                { id: "word3", text: "Zendegi", slotId: "slot3" },
+                { id: "word4", text: "Ham", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "And" },
+                { id: "slot2", text: "But" },
+                { id: "slot3", text: "Life" },
+                { id: "slot4", text: "Also" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man ahle iran hastam vali dar amrika zendegi mikonam",
+              expectedTranslation: "I am from Iran but I live in America"
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "man", text: "Man", translation: "I" },
+                { id: "ahle_from", text: "Ahle", translation: "From" },
+                { id: "iran", text: "Iran", translation: "Iran" },
+                { id: "hastam", text: "Hastam", translation: "I am" },
+                { id: "vali", text: "Vali", translation: "But" },
+                { id: "dar", text: "Dar", translation: "In" },
+                { id: "amrika", text: "Amrika", translation: "America" },
+                { id: "zendegi", text: "Zendegi", translation: "Live" },
+                { id: "mikonam", text: "Mikonam", translation: "I do" }
+              ],
+              targetWords: ["man", "ahle_from", "iran", "hastam", "vali", "dar", "amrika", "zendegi", "mikonam"],
+              title: "Say It Naturally",
+              successMessage: "Perfect! You connected ideas naturally!",
+              incorrectMessage: "Almost—watch where vali goes for contrast!",
+              conversationFlow: {
+                description: "Express origin and residence with contrast",
+                expectedPhrase: "I am from Iran but I live in America",
+                persianSequence: ["man", "ahle_from", "iran", "hastam", "vali", "dar", "amrika", "zendegi", "mikonam"]
               }
             }
           }
