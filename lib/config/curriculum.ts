@@ -1210,8 +1210,8 @@ export const curriculumData: Module[] = [
     title: "Module 2: Responses & Feelings",
     description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
     emoji: "😊",
-    lessonCount: 5,
-    estimatedTime: "80 minutes",
+    lessonCount: 6,
+    estimatedTime: "100 minutes",
     available: true,
     requiresPremium: true,
     lessons: [
@@ -2254,6 +2254,271 @@ export const curriculumData: Module[] = [
                 description: "Express origin and residence with contrast",
                 expectedPhrase: "I am from Iran but I live in America",
                 persianSequence: ["man", "ahle_from", "iran", "hastam", "vali", "dar", "amrika", "zendegi", "mikonam"]
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson6",
+        title: "Module 2 Review: Put It All Together",
+        description: "Practice everything you've learned with mixed exercises reviewing all Module 2 vocabulary and phrases",
+        emoji: "🔄",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "khodafez", "baleh", "na", "man", "shoma", "khoob", "hastam", "hasti", "neestam", "neesti", "kheily", "va", "ham", "vali", "ahle_from", "koja", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "esme", "chiye", "khoshbakhtam"],
+        vocabulary: [],
+        steps: [
+          {
+            type: "welcome",
+            title: "Module 2 Review: Put It All Together",
+            description: "Time to practice everything you've learned! This lesson reviews all vocabulary and phrases from Module 2.",
+            points: 0,
+            data: {
+              objectives: [
+                "Review all Module 2 vocabulary",
+                "Practice connectors (va, ham, vali)",
+                "Build complete conversations",
+                "Master greetings through goodbyes"
+              ],
+              lessonType: "review"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Baleh", slotId: "slot1" },
+                { id: "word2", text: "Na", slotId: "slot2" },
+                { id: "word3", text: "Merci", slotId: "slot3" },
+                { id: "word4", text: "Kheily", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Yes" },
+                { id: "slot2", text: "No" },
+                { id: "slot3", text: "Thank you" },
+                { id: "slot4", text: "Very" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'and'?",
+              options: ["Va", "Vali", "Ham", "Dar"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'but'?",
+              options: ["Vali", "Va", "Ham", "Koja"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'also'?",
+              options: ["Ham", "Va", "Vali", "Kheily"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["PLACEHOLDER_greeting_conversation"],
+              expectedTranslation: "hello how are you I am good thank you goodbye"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Your friend says 'man khoobam', you feel the same. What do you reply?",
+              options: ["man ham khoobam", "vali man neestam", "man ham khoob neestam", "man va khoobam"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man kheily khoob hastam shoma chi",
+              expectedTranslation: "I am very good what about you"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "shoma koja zendegi mikoni",
+              expectedTranslation: "where do you live"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Hastam", slotId: "slot1" },
+                { id: "word2", text: "Hasti", slotId: "slot2" },
+                { id: "word3", text: "Neestam", slotId: "slot3" },
+                { id: "word4", text: "Neesti", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "I am" },
+                { id: "slot2", text: "You are" },
+                { id: "slot3", text: "I am not" },
+                { id: "slot4", text: "You are not" }
+              ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the Persian (phonetic) for 'you'",
+              answer: "shoma"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "shoma ahle koja hasti",
+              expectedTranslation: "where are you from"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["PLACEHOLDER_live_in_america"],
+              expectedTranslation: "I live in America"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Ahle", slotId: "slot1" },
+                { id: "word2", text: "Koja", slotId: "slot2" },
+                { id: "word3", text: "Zendegi", slotId: "slot3" },
+                { id: "word4", text: "Dar", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "From" },
+                { id: "slot2", text: "Where" },
+                { id: "slot3", text: "Life" },
+                { id: "slot4", text: "In" }
+              ]
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["PLACEHOLDER_whats_your_name"],
+              expectedTranslation: "what is your name"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esme man Bob-e khoshbakhtam",
+              expectedTranslation: "my name is Bob nice to meet you"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Khoob", slotId: "slot1" },
+                { id: "word2", text: "Khoobam", slotId: "slot2" },
+                { id: "word3", text: "Khoobi", slotId: "slot3" }
+              ],
+              slots: [
+                { id: "slot1", text: "Good" },
+                { id: "slot2", text: "I am good" },
+                { id: "slot3", text: "You are good" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'welcome'?",
+              options: ["Khosh amadid", "Khoshbakhtam", "Khodafez", "Chetori"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Hastam", slotId: "slot1" },
+                { id: "word2", text: "Mikonam", slotId: "slot2" },
+                { id: "word3", text: "Neestam", slotId: "slot3" }
+              ],
+              slots: [
+                { id: "slot1", text: "I am" },
+                { id: "slot2", text: "I do" },
+                { id: "slot3", text: "I am not" }
+              ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the Persian (phonetic) for 'also'",
+              answer: "ham"
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "salam", text: "Salam", translation: "Hello" },
+                { id: "chetori", text: "Chetori", translation: "How are you" },
+                { id: "man", text: "Man", translation: "I" },
+                { id: "kheily", text: "Kheily", translation: "Very" },
+                { id: "khoobam", text: "Khoobam", translation: "I am good" },
+                { id: "merci", text: "Merci", translation: "Thank you" },
+                { id: "shoma", text: "Shoma", translation: "You" },
+                { id: "ahle_from", text: "Ahle", translation: "From" },
+                { id: "koja", text: "Koja", translation: "Where" },
+                { id: "hasti", text: "Hasti", translation: "You are" },
+                { id: "dar", text: "Dar", translation: "In" },
+                { id: "amrika", text: "Amrika", translation: "America" },
+                { id: "zendegi", text: "Zendegi", translation: "Live" },
+                { id: "mikonam", text: "Mikonam", translation: "I do" },
+                { id: "vali", text: "Vali", translation: "But" },
+                { id: "iran", text: "Iran", translation: "Iran" },
+                { id: "hastam", text: "Hastam", translation: "I am" },
+                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
+              ],
+              targetWords: ["salam", "chetori", "man", "kheily", "khoobam", "merci", "shoma", "ahle_from", "koja", "hasti", "man", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from", "iran", "hastam", "khodafez"],
+              title: "Complete Conversation",
+              successMessage: "Amazing! You've mastered all of Module 2!",
+              incorrectMessage: "Almost there—review the order and try again!",
+              conversationFlow: {
+                description: "A complete conversation using everything from Module 2",
+                expectedPhrase: "Hello, how are you? I am very good, thank you. Where are you from? I live in America, but I am from Iran. Goodbye.",
+                persianSequence: ["salam", "chetori", "man", "kheily", "khoobam", "merci", "shoma", "ahle_from", "koja", "hasti", "man", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from", "iran", "hastam", "khodafez"]
               }
             }
           }
