@@ -2330,10 +2330,10 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-sequence",
+            type: "text-sequence",
             points: 3,
             data: {
-              sequence: ["salam", "chetori", "man", "khoobam", "merci", "khodafez"],
+              finglishText: "salam chetori man khoobam merci khodafez",
               expectedTranslation: "hello how are you I am good thank you goodbye"
             }
           },
@@ -2397,10 +2397,10 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-sequence",
+            type: "text-sequence",
             points: 3,
             data: {
-              sequence: ["man", "dar", "amrika", "zendegi", "mikonam"],
+              finglishText: "man dar amrika zendegi mikonam",
               expectedTranslation: "I live in America"
             }
           },
@@ -2423,10 +2423,10 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-sequence",
+            type: "text-sequence",
             points: 3,
             data: {
-              sequence: ["esme", "shoma", "chiye"],
+              finglishText: "esme shoma chiye",
               expectedTranslation: "what is your name"
             }
           },
