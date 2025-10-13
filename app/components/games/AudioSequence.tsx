@@ -4,7 +4,6 @@ import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem } from "@/lib/types"
-import { PersianGrammarService } from "@/lib/services/persian-grammar-service"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 
@@ -38,8 +37,8 @@ export function AudioSequence({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
 
-  // CURATED WORD BANK: Smart selection to prevent overwhelming users
-  const [allWordBankOptions] = useState<string[] | { vocabItems: VocabularyItem[]; vocabIds: string[] }>(() => {
+  // WORD BANK: Parse expectedTranslation into individual words (same logic as TextSequence)
+  const [allWordBankOptions] = useState<{ vocabItems: VocabularyItem[]; vocabIds: string[] }>(() => {
     if (!expectedTranslation) {
       // Default behavior: curated selection from available vocabulary
       const correctWords = vocabularyBank.filter(v => sequence.includes(v.id));
@@ -52,91 +51,44 @@ export function AudioSequence({
         .slice(0, maxDistractors);
       
       const curatedVocab = [...correctWords, ...distractors];
-      return curatedVocab.map(v => v.id).sort(() => Math.random() - 0.5);
+      const vocabIds = curatedVocab.map(v => v.id).sort(() => Math.random() - 0.5);
+      
+      return {
+        vocabItems: curatedVocab,
+        vocabIds
+      };
     }
 
-    // SMART PERSIAN GRAMMAR: Use grammar service for transformations
-    const transformedWords = PersianGrammarService.transformSequence(
-      sequence, 
-      vocabularyBank, 
-      expectedTranslation
-    );
+    // Parse expectedTranslation into individual words (same as TextSequence)
+    const words = expectedTranslation.split(' ').filter(w => w.length > 0);
     
-    // Convert to VocabularyItem format
-    const contextualVocab: VocabularyItem[] = transformedWords.map(transformed => ({
-      id: transformed.id,
-      en: transformed.en,
-      fa: transformed.fa,
-      finglish: transformed.finglish,
-      phonetic: transformed.phonetic,
-      lessonId: transformed.lessonId
-    }));
+    // Handle duplicates by creating unique IDs (e.g., "you" appears twice → "you_1", "you_2")
+    const wordCounts = new Map<string, number>();
+    const contextualVocab: VocabularyItem[] = [];
     
-    // Track used meanings to avoid duplicates
-    const usedEnglishMeanings = new Set(contextualVocab.map(v => v.en.toLowerCase()));
-    
-    // Add strategic distractors (avoid semantic conflicts)
-    const maxDistractors = Math.max(4, maxWordBankSize - contextualVocab.length);
-    const potentialDistractors = vocabularyBank.filter(vocab => {
-      // Skip if meaning already used
-      if (usedEnglishMeanings.has(vocab.en.toLowerCase())) return false;
+    words.forEach((word) => {
+      const normalizedWord = word.toLowerCase();
+      const currentCount = wordCounts.get(normalizedWord) || 0;
+      wordCounts.set(normalizedWord, currentCount + 1);
       
-      // Skip if this vocab is already in our contextual vocab
-      if (contextualVocab.some(cv => cv.id === vocab.id)) return false;
+      const uniqueId = currentCount > 0 ? `${normalizedWord}_${currentCount + 1}` : normalizedWord;
       
-      // ENHANCED: Check for semantic similarity with existing contextual vocab
-      const vocabNormalized = vocab.en.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
-      const hasSemanticConflict = contextualVocab.some(existingVocab => {
-        const existingNormalized = existingVocab.en.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
-        
-        // Check for exact match after normalization
-        if (vocabNormalized === existingNormalized) return true;
-        
-        // Check for substantial word overlap (e.g., "nice to meet you" vs "nice meet you")
-        const vocabWords = vocabNormalized.split(' ');
-        const existingWords = existingNormalized.split(' ');
-        const commonWords = vocabWords.filter(word => existingWords.includes(word));
-        
-        // If more than 50% of words overlap, it's too similar
-        const overlapPercentage = commonWords.length / Math.max(vocabWords.length, existingWords.length);
-        return overlapPercentage > 0.5;
-      });
-      
-      if (hasSemanticConflict) return false;
-      
-      // AVOID words that overlap with expected translation
-      const expectedWords = expectedTranslation.toLowerCase().split(' ');
-      const vocabWords = vocab.en.toLowerCase().split(' ');
-      const hasConfusingOverlap = vocabWords.some(word => 
-        expectedWords.some(expectedWord => {
-          return word === expectedWord || 
-                 (word.includes(expectedWord) && word.length <= expectedWord.length + 2) ||
-                 (expectedWord.includes(word) && expectedWord.length <= word.length + 2);
-        })
-      );
-      
-      return !hasConfusingOverlap;
-    });
-    
-    // Select good distractors
-    const selectedDistractors = potentialDistractors
-      .sort(() => Math.random() - 0.5)
-      .slice(0, maxDistractors);
-    
-    selectedDistractors.forEach(vocab => {
       contextualVocab.push({
-        id: vocab.id,
-        en: vocab.en,
-        fa: vocab.fa,
-        finglish: vocab.finglish,
-        phonetic: vocab.phonetic,
-        lessonId: vocab.lessonId
+        id: uniqueId,
+        en: word, // Keep original capitalization
+        fa: '',
+        finglish: word,
+        phonetic: '',
+        lessonId: 'generated'
       });
     });
+    
+    // Shuffle for word bank display
+    const shuffledIds = contextualVocab.map(v => v.id).sort(() => Math.random() - 0.5);
     
     return {
       vocabItems: contextualVocab,
-      vocabIds: contextualVocab.map(v => v.id).sort(() => Math.random() - 0.5)
+      vocabIds: shuffledIds
     };
   })
 
@@ -147,10 +99,8 @@ export function AudioSequence({
     if (vocab) return vocab
     
     // Check the contextual vocabulary items we created
-    if (typeof allWordBankOptions === 'object' && 'vocabItems' in allWordBankOptions) {
-      const contextualVocab = allWordBankOptions.vocabItems.find((v: VocabularyItem) => v.id === id)
-      if (contextualVocab) return contextualVocab
-    }
+    const contextualVocab = allWordBankOptions.vocabItems.find((v: VocabularyItem) => v.id === id)
+    if (contextualVocab) return contextualVocab
     
     return undefined
   }
@@ -185,18 +135,14 @@ export function AudioSequence({
   }
 
   const handleSubmit = () => {
-    // Use targetWordCount if provided, otherwise calculate based on grammar rules
+    // Calculate expected word count
     let expectedWordCount: number;
     
     if (targetWordCount) {
       expectedWordCount = targetWordCount;
     } else if (expectedTranslation) {
-      // Use grammar service to determine correct word count
-      expectedWordCount = PersianGrammarService.getExpectedWordCount(
-        sequence, 
-        vocabularyBank, 
-        expectedTranslation
-      );
+      // Count words in expectedTranslation
+      expectedWordCount = expectedTranslation.split(' ').filter(w => w.length > 0).length;
     } else {
       expectedWordCount = sequence.length;
     }
@@ -206,20 +152,22 @@ export function AudioSequence({
     let correct = false
     
     if (expectedTranslation) {
-      // For custom phrases, match against expected translation
-      const userTranslation = userOrder.map(id => {
-        const vocab = getVocabularyById(id)
-        return vocab?.en || ''
-      }).join(' ')
+      // For expectedTranslation, build the expected ID sequence
+      const words = expectedTranslation.split(' ').filter(w => w.length > 0);
+      const wordCounts = new Map<string, number>();
+      const expectedIds: string[] = [];
       
-      // Normalize: lowercase, trim, collapse spaces, strip punctuation
-      const normalize = (str: string) => str
-        .toLowerCase()
-        .trim()
-        .replace(/[?!.,]/g, '')
-        .replace(/\s+/g, ' ')
+      words.forEach((word) => {
+        const normalizedWord = word.toLowerCase();
+        const currentCount = wordCounts.get(normalizedWord) || 0;
+        wordCounts.set(normalizedWord, currentCount + 1);
+        
+        const uniqueId = currentCount > 0 ? `${normalizedWord}_${currentCount + 1}` : normalizedWord;
+        expectedIds.push(uniqueId);
+      });
       
-      correct = normalize(userTranslation) === normalize(expectedTranslation)
+      // Match user order against expected IDs
+      correct = JSON.stringify(userOrder) === JSON.stringify(expectedIds);
     } else {
       // Default behavior: match vocabulary ID order
       correct = JSON.stringify(userOrder) === JSON.stringify(sequence)
@@ -350,10 +298,7 @@ export function AudioSequence({
       <div className="space-y-2 mb-3 w-full max-w-[92vw] mx-auto px-2">
         <h3 className="text-lg font-semibold mb-3 text-center">Word Bank:</h3>
         <div className="flex flex-wrap gap-2 justify-center">
-          {(typeof allWordBankOptions === 'object' && 'vocabIds' in allWordBankOptions 
-            ? allWordBankOptions.vocabIds 
-            : allWordBankOptions
-          ).map((id: string) => {
+          {allWordBankOptions.vocabIds.map((id: string) => {
             const vocab = getVocabularyById(id)
             const isUsed = userOrder.includes(id)
             
@@ -383,11 +328,11 @@ export function AudioSequence({
         <div className="text-center mb-4">
           <Button
             onClick={handleSubmit}
-            disabled={userOrder.length !== (targetWordCount || (expectedTranslation ? PersianGrammarService.getExpectedWordCount(sequence, vocabularyBank, expectedTranslation) : sequence.length))}
+            disabled={userOrder.length !== (targetWordCount || (expectedTranslation ? expectedTranslation.split(' ').filter(w => w.length > 0).length : sequence.length))}
             className="gap-2"
             size="lg"
           >
-            Check My Answer ({userOrder.length}/{targetWordCount || (expectedTranslation ? PersianGrammarService.getExpectedWordCount(sequence, vocabularyBank, expectedTranslation) : sequence.length)})
+            Check My Answer ({userOrder.length}/{targetWordCount || (expectedTranslation ? expectedTranslation.split(' ').filter(w => w.length > 0).length : sequence.length)})
           </Button>
         </div>
       )}
