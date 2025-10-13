@@ -2333,7 +2333,7 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["PLACEHOLDER_greeting_conversation"],
+              sequence: ["salam", "chetori", "man", "khoobam", "merci", "khodafez"],
               expectedTranslation: "hello how are you I am good thank you goodbye"
             }
           },
@@ -2400,7 +2400,7 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["PLACEHOLDER_live_in_america"],
+              sequence: ["man", "dar", "amrika", "zendegi", "mikonam"],
               expectedTranslation: "I live in America"
             }
           },
@@ -2426,7 +2426,7 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["PLACEHOLDER_whats_your_name"],
+              sequence: ["esme", "shoma", "chiye"],
               expectedTranslation: "what is your name"
             }
           },
