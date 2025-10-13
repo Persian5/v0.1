@@ -2330,10 +2330,10 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "text-sequence",
+            type: "audio-sequence",
             points: 3,
             data: {
-              finglishText: "salam chetori man khoobam merci khodafez",
+              sequence: ["salam", "chetori", "man", "khoobam", "merci", "khodafez"],
               expectedTranslation: "hello how are you I am good thank you goodbye"
             }
           },
@@ -2397,10 +2397,10 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "text-sequence",
+            type: "audio-sequence",
             points: 3,
             data: {
-              finglishText: "man dar amrika zendegi mikonam",
+              sequence: ["man", "dar", "amrika", "zendegi", "mikonam"],
               expectedTranslation: "I live in America"
             }
           },
@@ -2423,10 +2423,10 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "text-sequence",
+            type: "audio-sequence",
             points: 3,
             data: {
-              finglishText: "esme shoma chiye",
+              sequence: ["esme", "shoma", "chiye"],
               expectedTranslation: "what is your name"
             }
           },
@@ -2494,31 +2494,33 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "chetori", text: "Chetori", translation: "How are you" },
-                { id: "man", text: "Man", translation: "I" },
+                { id: "man_1", text: "Man", translation: "I" },
                 { id: "kheily", text: "Kheily", translation: "Very" },
                 { id: "khoobam", text: "Khoobam", translation: "I am good" },
                 { id: "merci", text: "Merci", translation: "Thank you" },
                 { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "ahle_from", text: "Ahle", translation: "From" },
+                { id: "ahle_from_1", text: "Ahle", translation: "From" },
                 { id: "koja", text: "Koja", translation: "Where" },
                 { id: "hasti", text: "Hasti", translation: "You are" },
+                { id: "man_2", text: "Man", translation: "I" },
                 { id: "dar", text: "Dar", translation: "In" },
                 { id: "amrika", text: "Amrika", translation: "America" },
                 { id: "zendegi", text: "Zendegi", translation: "Live" },
                 { id: "mikonam", text: "Mikonam", translation: "I do" },
                 { id: "vali", text: "Vali", translation: "But" },
+                { id: "ahle_from_2", text: "Ahle", translation: "From" },
                 { id: "iran", text: "Iran", translation: "Iran" },
                 { id: "hastam", text: "Hastam", translation: "I am" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "chetori", "man", "kheily", "khoobam", "merci", "shoma", "ahle_from", "koja", "hasti", "man", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from", "iran", "hastam", "khodafez"],
+              targetWords: ["salam", "chetori", "man_1", "kheily", "khoobam", "merci", "shoma", "ahle_from_1", "koja", "hasti", "man_2", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from_2", "iran", "hastam", "khodafez"],
               title: "Complete Conversation",
               successMessage: "Amazing! You've mastered all of Module 2!",
               incorrectMessage: "Almost there—review the order and try again!",
               conversationFlow: {
                 description: "A complete conversation using everything from Module 2",
                 expectedPhrase: "Hello, how are you? I am very good, thank you. Where are you from? I live in America, but I am from Iran. Goodbye.",
-                persianSequence: ["salam", "chetori", "man", "kheily", "khoobam", "merci", "shoma", "ahle_from", "koja", "hasti", "man", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from", "iran", "hastam", "khodafez"]
+                persianSequence: ["salam", "chetori", "man_1", "kheily", "khoobam", "merci", "shoma", "ahle_from_1", "koja", "hasti", "man_2", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from_2", "iran", "hastam", "khodafez"]
               }
             }
           }
