@@ -35,9 +35,9 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "khoob-am",
         baseDefinition: "good",
         transformedDefinition: "I am good",
-        explanation: "Add –am to the adjective stem to express \"I am ….\"",
-        exampleBefore: "khoob ❌",
-        exampleAfter: "khoob-am ✅ (\"I am good\")",
+        explanation: "Add –am to say 'I am...'",
+        exampleBefore: "khoob (just 'good')",
+        exampleAfter: "khoobam (I am good)",
         points: 1
       },
       {
@@ -46,9 +46,9 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "khoob-i",
         baseDefinition: "good",
         transformedDefinition: "you are good",
-        explanation: "Add –i to the adjective stem to express \"you are ….\"",
-        exampleBefore: "khoob ❌",
-        exampleAfter: "khoob-i ✅ (\"you are good\")",
+        explanation: "Add –i to say 'you are...'",
+        exampleBefore: "khoob (just 'good')",
+        exampleAfter: "khoobi (you are good)",
         points: 1
       }
     ]
@@ -65,9 +65,9 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "esme",
         baseDefinition: "name", 
         transformedDefinition: "name of",
-        explanation: "In Persian, this is called ezāfe — and you'll use it all the time.",
-        exampleBefore: "esm man ❌ (unnatural)", // Showing what NOT to say
-        exampleAfter: "esme man ✅ (\"my name\" / \"name of me\")", // Showing correct way
+        explanation: "Add -e to connect words (called ezāfe)",
+        exampleBefore: "esm (name)",
+        exampleAfter: "esme man (my name)",
         points: 1
       }
     ]
@@ -84,9 +84,9 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "chiye", 
         baseDefinition: "what",
         transformedDefinition: "what is it?",
-        explanation: "Add -ye (shortened 'is') to ask 'what is it?' about something specific",
-        exampleBefore: "Chi? (What?)", // General question
-        exampleAfter: "Chiye? (What is it?)", // Asking about a specific thing
+        explanation: "Add -ye (shortened 'is') to ask about something specific",
+        exampleBefore: "chi (what)",
+        exampleAfter: "chiye (what is it?)",
         points: 1
       }
     ]
@@ -111,12 +111,12 @@ export const grammarConcepts: GrammarConcept[] = [
       {
         id: "vali-contrast",
         baseWord: "man khoobam",
-        transformedWord: "man khoobam vali khoob neestam",
+        transformedWord: "man khoobam vali",
         baseDefinition: "I am good",
-        transformedDefinition: "I am good but I am not good",
-        explanation: "vali connects contrasting ideas",
+        transformedDefinition: "I am good but",
+        explanation: "vali means 'but' and connects contrasting ideas",
         exampleBefore: "man khoobam (I am good)",
-        exampleAfter: "man khoobam vali khoob neestam (I am good but I am not good)",
+        exampleAfter: "man khoobam vali... (I am good but...)",
         points: 1
       },
       {
@@ -157,17 +157,6 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedDefinition: "your name",
         explanation: "Add -et to a noun to say 'your'",
         exampleBefore: "esm (name)",
-        exampleAfter: "esmet (your name)",
-        points: 1
-      },
-      {
-        id: "esmam-vs-esmet",
-        baseWord: "esmam",
-        transformedWord: "esmet",
-        baseDefinition: "my name",
-        transformedDefinition: "your name",
-        explanation: "Compare: -am (my) vs -et (your)",
-        exampleBefore: "esmam (my name)",
         exampleAfter: "esmet (your name)",
         points: 1
       }
