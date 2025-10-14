@@ -131,6 +131,47 @@ export const grammarConcepts: GrammarConcept[] = [
         points: 1
       }
     ]
+  },
+  {
+    conceptId: "possession-suffixes",
+    title: "My & Your: Possession Suffixes",
+    description: "Add -am to a noun to say 'my' and -et to say 'your'",
+    rule: "Add -am for 'my' and -et for 'your' to any noun",
+    phases: [
+      {
+        id: "esm-to-esmam",
+        baseWord: "esm",
+        transformedWord: "esm-am",
+        baseDefinition: "name",
+        transformedDefinition: "my name",
+        explanation: "Add -am to a noun to say 'my'",
+        exampleBefore: "esm (name)",
+        exampleAfter: "esmam (my name)",
+        points: 1
+      },
+      {
+        id: "esm-to-esmet",
+        baseWord: "esm",
+        transformedWord: "esm-et",
+        baseDefinition: "name",
+        transformedDefinition: "your name",
+        explanation: "Add -et to a noun to say 'your'",
+        exampleBefore: "esm (name)",
+        exampleAfter: "esmet (your name)",
+        points: 1
+      },
+      {
+        id: "esmam-vs-esmet",
+        baseWord: "esmam",
+        transformedWord: "esmet",
+        baseDefinition: "my name",
+        transformedDefinition: "your name",
+        explanation: "Compare: -am (my) vs -et (your)",
+        exampleBefore: "esmam (my name)",
+        exampleAfter: "esmet (your name)",
+        points: 1
+      }
+    ]
   }
 ];
 

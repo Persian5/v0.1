@@ -24,6 +24,7 @@ export function GrammarConcept({
   const [showTransformation, setShowTransformation] = useState(false)
   const [showXp, setShowXp] = useState(false)
   const [practiceComplete, setPracticeComplete] = useState(false)
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0)
 
   const concept = getGrammarConcept(conceptId)
   
@@ -32,7 +33,8 @@ export function GrammarConcept({
     return null
   }
 
-  const currentPhase = concept.phases[0] // Using first phase for simplicity
+  const currentPhase = concept.phases[currentPhaseIndex]
+  const isLastPhase = currentPhaseIndex === concept.phases.length - 1
   
   const tabs = [
     { id: 0, label: "Problem", icon: "🤔" },
@@ -40,130 +42,64 @@ export function GrammarConcept({
     { id: 2, label: "Practice", icon: "🎯" }
   ]
 
-  // Dynamic examples based on concept
-  const getExamples = () => {
-    if (conceptId === "ezafe-connector") {
-      return [
-        { persian: "esme man", english: "my name" },
-        { persian: "esme shoma", english: "your name" },
-        { persian: "esme Sara", english: "Sara's name" }
-      ]
-    } else if (conceptId === "verb-contraction") {
-      return [
-        { persian: "chi", english: "what" },
-        { persian: "chiye", english: "what is it?" },
-        { persian: "chiye in", english: "what is this?" }
-      ]
-    } else if (conceptId === "adjective-suffixes") {
-      return [
-        { persian: "khoob", english: "good" },
-        { persian: "khoob-am", english: "I am good" },
-        { persian: "khoob-i", english: "you are good" }
-      ]
-    }
-    return []
+  // Dynamic examples from all phases
+  const examples = concept.phases.map(phase => ({
+    persian: phase.transformedWord.replace(/-/g, ''), // Remove hyphens for display
+    english: phase.transformedDefinition
+  }))
+
+  // Dynamic problem content from current phase
+  const problemContent = {
+    title: concept.title,
+    wrongExample: { 
+      text: currentPhase.baseWord, 
+      translation: currentPhase.baseDefinition, 
+      note: "❌ Before" 
+    },
+    rightExample: { 
+      text: currentPhase.transformedWord.replace(/-/g, ''), 
+      translation: currentPhase.transformedDefinition, 
+      note: "✅ After" 
+    },
+    explanation: currentPhase.explanation
   }
 
-  const examples = getExamples()
-
-  // Dynamic problem content based on concept
-  const getProblemContent = () => {
-    if (conceptId === "ezafe-connector") {
-      return {
-        title: "The Problem with \"esm\"",
-        wrongExample: { text: "esm man", translation: "\"name me\"", note: "❌ Unnatural" },
-        rightExample: { text: "esme man", translation: "\"my name\"", note: "✅ Natural" },
-        explanation: "In Persian, we connect words with a little sound called \"-e\". So instead of saying esm man (\"name me\"), we say esme man (\"my name\")."
-      }
-    } else if (conceptId === "verb-contraction") {
-      return {
-        title: "The Problem with \"chi\"", 
-        wrongExample: { text: "chi", translation: "\"what\"", note: "❌ Too general" },
-        rightExample: { text: "chiye", translation: "\"what is it?\"", note: "✅ Specific" },
-        explanation: "In Persian, we add \"-ye\" (shortened form of 'is') to ask about specific things. So instead of saying chi (\"what\"), we say chiye (\"what is it?\")."
-      }
-    } else if (conceptId === "adjective-suffixes") {
-      return {
-        title: "The Problem with \"khoob\"",
-        wrongExample: { text: "khoob", translation: "\"good\"", note: "❌ Incomplete" },
-        rightExample: { text: "khoob-am", translation: "\"I am good\"", note: "✅ Complete" },
-        explanation: "In Persian, we add suffixes to adjectives to say who is that way. Add –am to say \"I am ...\" and –i to say \"you are ...\"."
-      }
-    }
-    return null
+  // Extract button text from transformation (e.g., "esm" → "esm-am" = "+ am")
+  const getButtonText = (base: string, transformed: string) => {
+    const suffix = transformed.replace(base, '').replace(/-/g, '').trim()
+    return `+ ${suffix}`
   }
 
-  const problemContent = getProblemContent()
-
-  // Dynamic practice content based on concept  
-  const getPracticeContent = () => {
-    if (conceptId === "ezafe-connector") {
-      return {
-        title: "Practice: Add the \"-e\"",
-        description: "Transform \"esm\" into \"esme\" by adding the connecting sound",
-        baseWord: { text: "esm", translation: "\"name\"" },
-        transformedWord: { text: "esme", translation: "\"name of\"" },
-        buttonText: "+ e",
-        successTitle: "Perfect! You added the ezāfe sound!",
-        successDescription: "Now you can say \"esme man\" (my name) naturally"
-      }
-    } else if (conceptId === "verb-contraction") {
-      return {
-        title: "Practice: Add the \"-ye\"",
-        description: "Transform \"chi\" into \"chiye\" by adding the verb ending",
-        baseWord: { text: "chi", translation: "\"what\"" },
-        transformedWord: { text: "chiye", translation: "\"what is it?\"" },
-        buttonText: "+ ye", 
-        successTitle: "Perfect! You added the verb ending!",
-        successDescription: "Now you can ask \"chiye?\" (what is it?) about specific things"
-      }
-    } else if (conceptId === "adjective-suffixes") {
-      return {
-        title: "Practice: Add the \"-am\"",
-        description: "Transform \"khoob\" into \"khoob-am\" by adding the suffix",
-        baseWord: { text: "khoob", translation: "\"good\"" },
-        transformedWord: { text: "khoob-am", translation: "\"I am good\"" },
-        buttonText: "+ am",
-        successTitle: "Perfect! You added the adjective suffix!",
-        successDescription: "Now you can say \"khoob-am\" (I am good) properly"
-      }
-    }
-    return null
+  // Dynamic practice content from current phase
+  const practiceContent = {
+    title: `Practice: ${currentPhase.explanation}`,
+    description: `Transform "${currentPhase.baseWord}" into "${currentPhase.transformedWord.replace(/-/g, '')}"`,
+    baseWord: { 
+      text: currentPhase.baseWord, 
+      translation: currentPhase.baseDefinition 
+    },
+    transformedWord: { 
+      text: currentPhase.transformedWord.replace(/-/g, ''), 
+      translation: currentPhase.transformedDefinition 
+    },
+    buttonText: getButtonText(currentPhase.baseWord, currentPhase.transformedWord),
+    successTitle: "Perfect! You transformed it correctly!",
+    successDescription: `${currentPhase.exampleBefore} → ${currentPhase.exampleAfter}`
   }
 
-  const practiceContent = getPracticeContent()
-
-  // Dynamic header content based on concept
-  const getHeaderContent = () => {
-    if (conceptId === "ezafe-connector") {
-      return {
-        title: "Why do we say \"esme\", not \"esm\"?",
-        subtitle: "Learn about Persian's connecting sound: ezāfe"
-      }
-    } else if (conceptId === "verb-contraction") {
-      return {
-        title: "Why do we say \"chiye\", not \"chi\"?", 
-        subtitle: "Learn about Persian's verb contractions: adding \"-ye\""
-      }
-    } else if (conceptId === "adjective-suffixes") {
-      return {
-        title: "How do we say \"I am good\" vs \"you are good\"?",
-        subtitle: "Learn about Persian adjective suffixes: –am and –i"
-      }
-    }
-    return {
-      title: concept.title,
-      subtitle: "Learn about Persian grammar"
-    }
+  // Dynamic header content from concept data
+  const headerContent = {
+    title: concept.title,
+    subtitle: concept.description
   }
-
-  const headerContent = getHeaderContent()
 
   const handleTransform = async () => {
     if (showTransformation) return
     
     try {
-      await AudioService.playVocabularyAudio(currentPhase.transformedWord)
+      // Remove hyphens for audio playback (e.g., "esm-am" → "esmam")
+      const audioId = currentPhase.transformedWord.replace(/-/g, '')
+      await AudioService.playVocabularyAudio(audioId)
     } catch (error) {
       console.log('Audio playback error:', error)
     }
@@ -190,8 +126,16 @@ export function GrammarConcept({
     }
   }
 
+  const handleNextPhase = () => {
+    // Move to next phase
+    setCurrentPhaseIndex(prev => prev + 1)
+    setShowTransformation(false)
+    setPracticeComplete(false)
+    setActiveTab(0) // Reset to Problem tab for next phase
+  }
+
   const handleComplete = () => {
-      onComplete(true)
+    onComplete(true)
   }
 
   const handleXpComplete = () => {
@@ -303,10 +247,10 @@ export function GrammarConcept({
             >
               <div className="text-center">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                  Real Examples of Ezāfe
+                  Real Examples of {concept.title}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  See how the "-e" sound connects words in everyday Persian
+                  {concept.description}
                 </p>
               </div>
 
@@ -441,14 +385,25 @@ export function GrammarConcept({
               <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        className="flex gap-4 justify-center"
               >
-                <Button
-                          onClick={handleComplete}
-                          className="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-full font-semibold"
-                >
-                          Complete Grammar Lesson
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                        {!isLastPhase ? (
+                          <Button
+                            onClick={handleNextPhase}
+                            className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-full font-semibold"
+                          >
+                            Next Phase ({currentPhaseIndex + 1}/{concept.phases.length})
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleComplete}
+                            className="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-full font-semibold"
+                          >
+                            Complete Grammar Lesson
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        )}
                       </motion.div>
                     )}
                   </motion.div>

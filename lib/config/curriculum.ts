@@ -2786,11 +2786,489 @@ export const curriculumData: Module[] = [
     title: "Module 3: Family & Relationships",
     description: "Describe your family or ask about someone else's. Includes parents, siblings, friends, and possessive structures.",
     emoji: "👪",
-    lessonCount: 3,
-    estimatedTime: "25 minutes",
-    available: false,
+    lessonCount: 6,
+    estimatedTime: "90 minutes",
+    available: true,
     requiresPremium: true,
-    lessons: []
+    lessons: [
+      {
+        id: "lesson1",
+        title: "Review & Refresh",
+        description: "Let's review everything you've learned before we talk about family!",
+        emoji: "🔄",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "chetori", "man", "shoma", "merci", "esm", "esmam", "chi", "chiye", "ahle_from", "koja", "dar", "iran", "amrika", "mikonam", "mikoni", "zendegi", "hast", "neest", "hastam", "hasti", "neestam", "neesti", "khoob", "kheily", "va", "ham", "vali", "khodafez"],
+        vocabulary: [],
+        steps: [
+          {
+            type: "welcome",
+            title: "Review & Refresh",
+            description: "Let's review everything you've learned before we talk about family!",
+            points: 0,
+            data: {
+              objectives: [
+                "Review greetings and basic phrases",
+                "Practice name and origin questions",
+                "Reinforce possession and connector usage",
+                "Prepare for family vocabulary"
+              ],
+              lessonType: "review"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "salam", text: "salam", slotId: "hello" },
+                { id: "chetori", text: "chetori", slotId: "how_are_you" },
+                { id: "man", text: "man", slotId: "i_me" },
+                { id: "shoma", text: "shoma", slotId: "you" }
+              ],
+              slots: [
+                { id: "hello", text: "hello" },
+                { id: "how_are_you", text: "how are you" },
+                { id: "i_me", text: "I / me" },
+                { id: "you", text: "you" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'name'?",
+              options: ["esm", "koja", "man", "chi"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 2,
+            data: {
+              sequence: ["salam", "chetori"],
+              expectedTranslation: "hello how are you",
+              targetWordCount: 4
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "chetori", "man", "khoobam", "merci"],
+              expectedTranslation: "hello how are you I am good thank you",
+              targetWordCount: 9
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "esm", text: "esm", slotId: "name" },
+                { id: "esmam", text: "esmam", slotId: "my_name" },
+                { id: "chi", text: "chi", slotId: "what" },
+                { id: "chiye", text: "chiye", slotId: "what_is_it" }
+              ],
+              slots: [
+                { id: "name", text: "name" },
+                { id: "my_name", text: "my name" },
+                { id: "what", text: "what" },
+                { id: "what_is_it", text: "what is it" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "The suffix -e is used at the end of a noun to mark what?",
+              options: ["belonging / possession", "action / doing", "question / asking", "plural / many"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esmam Bob-e, esmet chiye",
+              expectedTranslation: "my name is Bob what is your name"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "ahle_from", text: "ahle", slotId: "from" },
+                { id: "koja", text: "koja", slotId: "where" },
+                { id: "dar", text: "dar", slotId: "in" },
+                { id: "iran", text: "iran", slotId: "iran" }
+              ],
+              slots: [
+                { id: "from", text: "from" },
+                { id: "where", text: "where" },
+                { id: "in", text: "in" },
+                { id: "iran", text: "Iran" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which word means 'where'?",
+              options: ["koja", "ahle", "dar", "chi"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "mikonam", text: "mikonam", slotId: "i_do_will" },
+                { id: "mikoni", text: "mikoni", slotId: "you_do_will" },
+                { id: "zendegi", text: "zendegi", slotId: "life" },
+                { id: "amrika", text: "amrika", slotId: "america" }
+              ],
+              slots: [
+                { id: "i_do_will", text: "I do / will" },
+                { id: "you_do_will", text: "you do / will" },
+                { id: "life", text: "life" },
+                { id: "america", text: "America" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "shoma koja zendegi mikoni? man dar amrika zendegi mikonam",
+              expectedTranslation: "where do you live I live in America"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "hast", text: "hast", slotId: "is" },
+                { id: "neest", text: "neest", slotId: "is_not" },
+                { id: "khoob", text: "khoob", slotId: "good" },
+                { id: "kheily", text: "kheily", slotId: "very" }
+              ],
+              slots: [
+                { id: "is", text: "is" },
+                { id: "is_not", text: "is not" },
+                { id: "good", text: "good" },
+                { id: "very", text: "very" }
+              ]
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "hastam", text: "hastam", slotId: "i_am" },
+                { id: "hasti", text: "hasti", slotId: "you_are" },
+                { id: "neestam", text: "neestam", slotId: "i_am_not" },
+                { id: "neesti", text: "neesti", slotId: "you_are_not" }
+              ],
+              slots: [
+                { id: "i_am", text: "I am" },
+                { id: "you_are", text: "you are" },
+                { id: "i_am_not", text: "I am not" },
+                { id: "you_are_not", text: "you are not" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -am mean when attached to a root word?",
+              options: ["I / my", "you / your", "is / are", "not / no"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type 'I am' using its root and suffix",
+              answer: "hast-am"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "va", text: "va", slotId: "and" },
+                { id: "ham", text: "ham", slotId: "also" },
+                { id: "vali", text: "vali", slotId: "but" },
+                { id: "chi_2", text: "chi", slotId: "what" }
+              ],
+              slots: [
+                { id: "and", text: "and" },
+                { id: "also", text: "also" },
+                { id: "but", text: "but" },
+                { id: "what", text: "what" }
+              ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Which word means 'but'?",
+              answer: "vali"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man ahle iran hastam vali dar amrika zendegi mikonam",
+              expectedTranslation: "I am from Iran but I live in America"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "man", "khoob", "neestam", "shoma", "khodafez"],
+              expectedTranslation: "hello I am not good what about you goodbye",
+              targetWordCount: 9
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson2",
+        title: "My & Your",
+        description: "Learn to say 'my' and 'your' with the -am and -et suffixes",
+        emoji: "👤",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["esm", "va", "vali", "ham"],
+        vocabulary: [
+          {
+            id: "esmam",
+            en: "my name",
+            fa: "اسمم",
+            finglish: "esmam",
+            phonetic: "es-MAM",
+            lessonId: "lesson2"
+          },
+          {
+            id: "esmet",
+            en: "your name",
+            fa: "اسمت",
+            finglish: "esmet",
+            phonetic: "es-MET",
+            lessonId: "lesson2"
+          },
+          {
+            id: "hast",
+            en: "is",
+            fa: "هست",
+            finglish: "hast",
+            phonetic: "hast",
+            lessonId: "lesson2"
+          },
+          {
+            id: "in",
+            en: "this",
+            fa: "این",
+            finglish: "in",
+            phonetic: "een",
+            lessonId: "lesson2"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "My & Your",
+            description: "Learn to say 'my name' and 'your name' using possession suffixes!",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn -am suffix (my)",
+                "Learn -et suffix (your)",
+                "Understand hast (is) as base form",
+                "Practice with 'in' (this)"
+              ],
+              lessonType: "grammar"
+            }
+          },
+          {
+            type: "grammar-concept",
+            points: 3,
+            data: {
+              conceptId: "possession-suffixes"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -am mean when attached to a noun?",
+              options: ["my", "your", "is", "this"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -et mean when attached to a noun?",
+              options: ["your", "my", "is", "name"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "esmam", text: "esmam", slotId: "my_name" },
+                { id: "esmet", text: "esmet", slotId: "your_name" },
+                { id: "esm", text: "esm", slotId: "name" }
+              ],
+              slots: [
+                { id: "my_name", text: "my name" },
+                { id: "your_name", text: "your name" },
+                { id: "name", text: "name" }
+              ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type 'my name' (use hyphen between root and suffix)",
+              answer: "esm-am"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type 'your name' (use hyphen between root and suffix)",
+              answer: "esm-et"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esmam Bob-e, esme shoma chiye",
+              expectedTranslation: "my name is Bob what is your name"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              front: "hast",
+              back: "is",
+              vocabularyId: "hast"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which is the base form of 'is'?",
+              options: ["hast", "hastam", "hasti", "neestam"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esme man Bob hast",
+              expectedTranslation: "my name is Bob"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "esmet",
+              distractors: ["my name", "is", "this"]
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              front: "in",
+              back: "this",
+              vocabularyId: "in"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "in", text: "in", slotId: "this" },
+                { id: "va", text: "va", slotId: "and" },
+                { id: "vali", text: "vali", slotId: "but" },
+                { id: "ham", text: "ham", slotId: "also" }
+              ],
+              slots: [
+                { id: "this", text: "this" },
+                { id: "and", text: "and" },
+                { id: "but", text: "but" },
+                { id: "also", text: "also" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esmet Bob-e",
+              expectedTranslation: "your name is Bob"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 2,
+            data: {
+              sequence: ["esmam"],
+              expectedTranslation: "my name",
+              targetWordCount: 2
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 2,
+            data: {
+              sequence: ["esmet"],
+              expectedTranslation: "your name",
+              targetWordCount: 2
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "esme", "shoma", "chiye", "khoshbakhtam"],
+              expectedTranslation: "hello what is your name nice to meet you",
+              targetWordCount: 9
+            }
+          }
+        ]
+      }
+    ]
   },
   {
     id: "module4",
