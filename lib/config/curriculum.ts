@@ -1012,7 +1012,7 @@ export const curriculumData: Module[] = [
         steps: [
           {
             type: "story-conversation",
-            points: 7, // Total XP for completing the story
+            points: 0, // XP awarded per-choice, not at completion
             data: {
               storyId: "module1-story",
               title: "Meeting Someone New",
@@ -1210,8 +1210,8 @@ export const curriculumData: Module[] = [
     title: "Module 2: Responses & Feelings",
     description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
     emoji: "😊",
-    lessonCount: 6,
-    estimatedTime: "100 minutes",
+    lessonCount: 7,
+    estimatedTime: "120 minutes",
     available: true,
     requiresPremium: true,
     lessons: [
@@ -2522,6 +2522,259 @@ export const curriculumData: Module[] = [
                 expectedPhrase: "Hello, how are you? I am very good, thank you. Where are you from? I live in America, but I am from Iran. Goodbye.",
                 persianSequence: ["salam", "chetori", "man_1", "kheily", "khoobam", "merci", "shoma", "ahle_from_1", "koja", "hasti", "man_2", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from_2", "iran", "hastam", "khodafez"]
               }
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson7",
+        title: "Story Mode Review",
+        description: "Practice a real conversation with Leyla using everything you've learned in Module 2",
+        emoji: "💬",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "kheily", "esme", "chiye", "ahle_from", "koja", "hasti", "iran", "vali", "dar", "amrika", "zendegi", "mikonam", "ham", "khoshbakhtam", "khodafez"],
+        vocabulary: [],
+        steps: [
+          {
+            type: "welcome",
+            title: "Story Mode Review",
+            description: "Have a real conversation with Leyla! Use everything you've learned to chat naturally.",
+            points: 0,
+            data: {
+              objectives: [
+                "Practice natural conversation flow",
+                "Use greetings, introductions, and location phrases",
+                "Apply connectors (va, ham, vali) in context",
+                "Review all Module 2 vocabulary"
+              ],
+              lessonType: "story"
+            }
+          },
+          {
+            type: "story-conversation",
+            points: 0, // XP awarded per-choice, not at completion
+            data: {
+              storyId: "module2-review-leyla",
+              title: "Chat with Leyla",
+              description: "Have a natural conversation using everything you've learned",
+              setting: "You're meeting Leyla for the first time. Introduce yourself and get to know her!",
+              characterName: "Leyla",
+              characterEmoji: "👩",
+              requiresPersonalization: true,
+              successMessage: "Amazing! You had a perfect conversation with Leyla!",
+              exchanges: [
+                {
+                  id: "exchange1",
+                  initiator: "character",
+                  characterMessage: "Salam! Chetori!",
+                  choices: [
+                    {
+                      id: "choice1a",
+                      text: "Salam! Khoobam, merci.",
+                      vocabularyUsed: ["salam", "khoobam", "merci"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Perfect! A natural greeting response."
+                    },
+                    {
+                      id: "choice1b",
+                      text: "Salam! Khoob, merci.",
+                      vocabularyUsed: ["salam", "khoob", "merci"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Close, but you need to say 'khoobam' (I am good), not just 'khoob' (good)."
+                    },
+                    {
+                      id: "choice1c",
+                      text: "Salam! Man ham khoobam, merci.",
+                      vocabularyUsed: ["salam", "man", "ham", "khoobam", "merci"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Using 'ham' (also) doesn't make sense here since Leyla didn't say she was good yet."
+                    }
+                  ]
+                },
+                {
+                  id: "exchange2",
+                  initiator: "character",
+                  characterMessage: "Kheily khoob! Man ham khoobam. Esme shoma chiye?",
+                  choices: [
+                    {
+                      id: "choice2a",
+                      text: "Esme man {{userName}}-e. Esme shoma chiye?",
+                      vocabularyUsed: ["esme", "man", "shoma", "chiye"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Excellent! You introduced yourself and asked her name back."
+                    },
+                    {
+                      id: "choice2b",
+                      text: "Esme man {{userName}}.",
+                      vocabularyUsed: ["esme", "man"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "You introduced yourself, but it's polite to ask her name too!"
+                    },
+                    {
+                      id: "choice2c",
+                      text: "Esme shoma {{userName}}-e.",
+                      vocabularyUsed: ["esme", "shoma"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Watch out! 'Shoma' means 'you', but you're talking about yourself. Use 'man' (I)."
+                    },
+                    {
+                      id: "choice2d",
+                      text: "Esme shoma {{userName}}.",
+                      vocabularyUsed: ["esme", "shoma"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "You mixed up 'man' (I) and 'shoma' (you). This says 'your name is [name]'."
+                    }
+                  ]
+                },
+                {
+                  id: "exchange3",
+                  initiator: "character",
+                  characterMessage: "Esme man Leyla-e. Shoma ahle koja hasti?",
+                  choices: [
+                    {
+                      id: "choice3a",
+                      text: "Man ahle Iran hastam, shoma chi?",
+                      vocabularyUsed: ["man", "ahle_from", "iran", "hastam", "shoma"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Perfect! You answered and asked back using 'chi' (what about you)."
+                    },
+                    {
+                      id: "choice3b",
+                      text: "Man ahle Iran neestam.",
+                      vocabularyUsed: ["man", "ahle_from", "iran", "neestam"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "You said you're NOT from Iran. If that's true, say where you ARE from!"
+                    },
+                    {
+                      id: "choice3c",
+                      text: "Shoma ahle Iran hastam, shoma chi?",
+                      vocabularyUsed: ["shoma", "ahle_from", "iran", "hastam"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Watch out! You said 'you are from Iran' instead of 'I am from Iran'. Use 'man' and 'hastam'."
+                    },
+                    {
+                      id: "choice3d",
+                      text: "Man koja Iran hastam, shoma chi?",
+                      vocabularyUsed: ["man", "koja", "iran", "hastam", "shoma"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "The word order is wrong. Say 'man ahle Iran hastam' (I am from Iran)."
+                    }
+                  ]
+                },
+                {
+                  id: "exchange4",
+                  initiator: "character",
+                  characterMessage: "Man ahle Iran hastam vali dar amrika zendegi mikonam. What does 'vali' mean in that sentence?",
+                  choices: [
+                    {
+                      id: "choice4a",
+                      text: "But",
+                      vocabularyUsed: ["vali"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Correct! 'Vali' means 'but' - showing contrast between being from Iran and living in America."
+                    },
+                    {
+                      id: "choice4b",
+                      text: "And",
+                      vocabularyUsed: ["va"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Not quite. 'And' would be 'va'. 'Vali' shows contrast."
+                    },
+                    {
+                      id: "choice4c",
+                      text: "Also",
+                      vocabularyUsed: ["ham"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Not quite. 'Also' would be 'ham'. 'Vali' shows contrast."
+                    },
+                    {
+                      id: "choice4d",
+                      text: "In",
+                      vocabularyUsed: ["dar"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Not quite. 'In' is 'dar'. 'Vali' is a connector meaning 'but'."
+                    }
+                  ]
+                },
+                {
+                  id: "exchange5",
+                  initiator: "character",
+                  characterMessage: "Shoma chi?",
+                  choices: [
+                    {
+                      id: "choice5a",
+                      text: "Man ham dar amrika zendegi mikonam.",
+                      vocabularyUsed: ["man", "ham", "dar", "amrika", "zendegi", "mikonam"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Perfect! You used 'ham' (also) to show you both live in America."
+                    },
+                    {
+                      id: "choice5b",
+                      text: "Man vali dar amrika zendegi mikonam.",
+                      vocabularyUsed: ["man", "vali", "dar", "amrika", "zendegi", "mikonam"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "Using 'vali' (but) doesn't make sense here. Use 'ham' (also) to agree with Leyla."
+                    },
+                    {
+                      id: "choice5c",
+                      text: "Man va dar amrika zendegi mikonam.",
+                      vocabularyUsed: ["man", "va", "dar", "amrika", "zendegi", "mikonam"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "You can't use 'va' (and) like this. Use 'ham' (also) to say 'me too'."
+                    }
+                  ]
+                },
+                {
+                  id: "exchange6",
+                  initiator: "character",
+                  characterMessage: "Khoshbakhtam {{userName}}-e!",
+                  choices: [
+                    {
+                      id: "choice6a",
+                      text: "Khoshbakhtam Leyla, khodafez!",
+                      vocabularyUsed: ["khoshbakhtam", "khodafez"],
+                      isCorrect: true,
+                      points: 1,
+                      responseMessage: "Perfect ending! You said 'nice to meet you' and 'goodbye' naturally."
+                    },
+                    {
+                      id: "choice6b",
+                      text: "Khoshbakhtam, Leyla salam!",
+                      vocabularyUsed: ["khoshbakhtam", "salam"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "You're saying goodbye, so use 'khodafez' not 'salam' (hello)."
+                    },
+                    {
+                      id: "choice6c",
+                      text: "Merci Leyla!",
+                      vocabularyUsed: ["merci"],
+                      isCorrect: false,
+                      points: 0,
+                      responseMessage: "You should say 'khoshbakhtam' (nice to meet you) back before saying goodbye!"
+                    }
+                  ]
+                }
+              ]
             }
           }
         ]

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { StoryConversationStep, StoryChoice as StoryChoiceType, StoryExchange } from '@/lib/types';
 import { StoryProgressService } from '@/lib/services/story-progress-service';
 import { ChatBubble } from './ChatBubble';
@@ -12,7 +12,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 interface StoryConversationProps {
   step: StoryConversationStep;
   onComplete: () => void;
-  onXpStart?: () => void;
+  onXpStart?: () => void; // Not used - XP awarded per-choice via addXp instead
   addXp?: (amount: number, source: string, metadata?: any) => void;
 }
 
@@ -41,6 +41,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
+  const prevIsUserTyping = useRef(false);
   const { data: storyData } = step;
   
   // Initialize story
@@ -168,7 +169,6 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
           storyId: storyData.storyId,
           exchangeIndex: currentExchangeIndex
         });
-        onXpStart?.();
         setShowXp(true);
         playSuccessSound();
       }
@@ -285,6 +285,9 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     StoryProgressService.markStoryCompleted(storyData.storyId);
     setIsCompleted(true);
     
+    // Note: XP is awarded per-choice via addXp(choice.points)
+    // No additional completion bonus needed - step.points should be 0
+    
     // Call onComplete immediately to trigger module completion logic
     onComplete();
   };
@@ -295,24 +298,25 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     setChatHistory([]);
   };
 
-  // Auto-scroll to bottom when new messages are added
+  // Auto-scroll to bottom when new messages are added (iMessage-style)
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use requestAnimationFrame for smoother, non-conflicting scroll
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    });
   }, [chatHistory]);
 
-  // Auto-scroll when user typing starts (to show choices)
+  // Auto-scroll when user typing STARTS (only on state change false -> true)
   useEffect(() => {
-    if (isUserTyping && chatContainerRef.current) {
-      setTimeout(() => {
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+    // Only scroll if isUserTyping changed from false to true
+    if (isUserTyping && !prevIsUserTyping.current) {
+      // Delay slightly to ensure choices are rendered before scrolling
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      });
     }
+    // Update the ref to track current state for next render
+    prevIsUserTyping.current = isUserTyping;
   }, [isUserTyping]);
 
   // Show name input if needed
@@ -325,6 +329,13 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   }
 
   const currentExchange = getCurrentExchange();
+
+  // Shuffle choices for current exchange (like Quiz component)
+  const shuffledChoices = useMemo(() => {
+    if (!currentExchange?.choices) return [];
+    // Shuffle choices once per exchange to randomize answer position
+    return [...currentExchange.choices].sort(() => Math.random() - 0.5);
+  }, [currentExchange?.id, currentExchange?.choices]);
 
   return (
     <div className="h-full flex flex-col lg:flex-row bg-gray-50">
@@ -432,7 +443,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
               
               {/* Story Choices - Responsive grid on desktop */}
               <div className="flex flex-col gap-2 max-w-md lg:max-w-2xl mx-auto w-full lg:grid lg:grid-cols-2 lg:gap-3">
-                {currentExchange.choices.map(choice => {
+                {shuffledChoices.map(choice => {
                   // Create a personalized version of the choice for display
                   const personalizedChoice = {
                     ...choice,
