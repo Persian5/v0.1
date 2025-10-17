@@ -2786,8 +2786,8 @@ export const curriculumData: Module[] = [
     title: "Module 3: Family & Relationships",
     description: "Describe your family or ask about someone else's. Includes parents, siblings, friends, and possessive structures.",
     emoji: "👪",
-    lessonCount: 6,
-    estimatedTime: "90 minutes",
+    lessonCount: 3,
+    estimatedTime: "60 minutes",
     available: true,
     requiresPremium: true,
     lessons: [
@@ -3264,6 +3264,210 @@ export const curriculumData: Module[] = [
               sequence: ["salam", "esme", "shoma", "chiye", "khoshbakhtam"],
               expectedTranslation: "hello what is your name nice to meet you",
               targetWordCount: 9
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson3",
+        title: "Parents",
+        description: "Learn to talk about your mother and father using family words",
+        emoji: "👨‍👩‍👦",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["in", "hast", "va", "ahle_from", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "mikoni", "esm", "esmam", "esmet"],
+        vocabulary: [
+          {
+            id: "madar",
+            en: "mother",
+            fa: "مادر",
+            finglish: "madar",
+            phonetic: "MAH-dar",
+            lessonId: "lesson3"
+          },
+          {
+            id: "pedar",
+            en: "father",
+            fa: "پدر",
+            finglish: "pedar",
+            phonetic: "peh-DAR",
+            lessonId: "lesson3"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Parents",
+            description: "Learn to talk about your mother and father!",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn the words for mother and father",
+                "Apply -am and -et suffixes to family words",
+                "Practice asking about family names",
+                "Use 'in' to ask about family members"
+              ],
+              lessonType: "vocabulary"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "madar"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'my mother'?",
+              answer: "madar-am"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "pedar"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'your father'?",
+              answer: "pedar-et"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "madaret", text: "madaret", slotId: "your_mother" },
+                { id: "madaram", text: "madaram", slotId: "my_mother" },
+                { id: "pedaret", text: "pedaret", slotId: "your_father" },
+                { id: "pedaram", text: "pedaram", slotId: "my_father" }
+              ],
+              slots: [
+                { id: "your_mother", text: "your mother" },
+                { id: "my_mother", text: "my mother" },
+                { id: "your_father", text: "your father" },
+                { id: "my_father", text: "my father" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -e do when you say 'esme pedare man'?",
+              options: ["shows belonging/of", "means 'and'", "makes it plural", "means 'very'"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "in pedare shoma hast?",
+              expectedTranslation: "is this your father"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "pedare_shoma", text: "pedare shoma", slotId: "your_father_slot" },
+                { id: "pedare_man", text: "pedare man", slotId: "my_father_slot" },
+                { id: "madare_shoma", text: "madare shoma", slotId: "your_mother_slot" },
+                { id: "madare_man", text: "madare man", slotId: "my_mother_slot" }
+              ],
+              slots: [
+                { id: "your_father_slot", text: "your father" },
+                { id: "my_father_slot", text: "my father" },
+                { id: "your_mother_slot", text: "your mother" },
+                { id: "my_mother_slot", text: "my mother" }
+              ]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "madar",
+              distractors: ["pedar", "esm", "shoma"]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "madaret va pedaret",
+              expectedTranslation: "your mother and your father"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'dar' mean?",
+              options: ["in / at", "from", "where", "with"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'koja' mean?",
+              options: ["where", "from", "in", "what"],
+              correct: 0
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "shoma koja zendegi mikoni",
+              expectedTranslation: "where do you live"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "pedaram ahle iran hast vali madaram ahle amrika hast",
+              expectedTranslation: "my father is from Iran but my mother is from America"
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "esme_1", text: "esme", translation: "name of" },
+                { id: "pedare", text: "pedare", translation: "father" },
+                { id: "shoma", text: "shoma", translation: "you" },
+                { id: "chiye", text: "chiye", translation: "what is it" },
+                { id: "esme_2", text: "esme", translation: "name of" },
+                { id: "pedaram", text: "pedaram", translation: "my father" },
+                { id: "Bob-e", text: "Bob-e", translation: "is Bob" }
+              ],
+              targetWords: ["esme_1", "pedare", "shoma", "chiye", "esme_2", "pedaram", "Bob-e"],
+              title: "Ask About Family",
+              successMessage: "Amazing! You can now talk about your parents!",
+              incorrectMessage: "Try again - remember the question comes first!"
             }
           }
         ]
