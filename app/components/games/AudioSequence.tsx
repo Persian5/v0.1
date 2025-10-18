@@ -152,22 +152,19 @@ export function AudioSequence({
     let correct = false
     
     if (expectedTranslation) {
-      // For expectedTranslation, build the expected ID sequence
+      // For expectedTranslation, build the expected base word sequence
       const words = expectedTranslation.split(' ').filter(w => w.length > 0);
-      const wordCounts = new Map<string, number>();
-      const expectedIds: string[] = [];
+      const expectedBaseWords = words.map(w => w.toLowerCase());
       
-      words.forEach((word) => {
-        const normalizedWord = word.toLowerCase();
-        const currentCount = wordCounts.get(normalizedWord) || 0;
-        wordCounts.set(normalizedWord, currentCount + 1);
-        
-        const uniqueId = currentCount > 0 ? `${normalizedWord}_${currentCount + 1}` : normalizedWord;
-        expectedIds.push(uniqueId);
+      // Extract user's base words by stripping _1, _2, _3, etc. suffixes
+      // This allows duplicates like "khoob_1", "khoob_2" to be interchangeable
+      const userBaseWords = userOrder.map(id => {
+        const match = id.match(/^(.+?)_\d+$/);
+        return match ? match[1] : id;
       });
       
-      // Match user order against expected IDs
-      correct = JSON.stringify(userOrder) === JSON.stringify(expectedIds);
+      // Compare base words, allowing duplicates to be interchangeable
+      correct = JSON.stringify(userBaseWords) === JSON.stringify(expectedBaseWords);
     } else {
       // Default behavior: match vocabulary ID order
       correct = JSON.stringify(userOrder) === JSON.stringify(sequence)
