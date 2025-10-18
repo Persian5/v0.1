@@ -124,10 +124,10 @@ export function FinalChallenge({
     }).filter(Boolean);
     
     if (orderedTranslations.length === 0) {
-      return "Arrange these words to create a conversation.";
+      return "Arrange these words to create a sentence.";
     }
     
-    return `Build this conversation: ${orderedTranslations.join(' → ')}`;
+    return `Build this sentence: ${orderedTranslations.join(' ')}`;
   };
 
   // Initialize items from props instead of hardcoding

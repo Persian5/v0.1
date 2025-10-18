@@ -2786,8 +2786,8 @@ export const curriculumData: Module[] = [
     title: "Module 3: Family & Relationships",
     description: "Describe your family or ask about someone else's. Includes parents, siblings, friends, and possessive structures.",
     emoji: "👪",
-    lessonCount: 3,
-    estimatedTime: "60 minutes",
+    lessonCount: 5,
+    estimatedTime: "100 minutes",
     available: true,
     requiresPremium: true,
     lessons: [
@@ -3468,6 +3468,398 @@ export const curriculumData: Module[] = [
               title: "Ask About Family",
               successMessage: "Amazing! You can now talk about your parents!",
               incorrectMessage: "Try again - remember the question comes first!"
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson4",
+        title: "Parents Practice",
+        description: "Practice everything you learned about talking about your parents!",
+        emoji: "👨‍👩‍👦‍👦",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["madar", "pedar", "salam", "khodafez", "chetori", "merci", "baleh", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "hastam", "va", "ahle_from", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "khoob"],
+        vocabulary: [],
+        steps: [
+          {
+            type: "welcome",
+            title: "Parents Practice",
+            description: "Let's practice talking about your parents in different ways!",
+            points: 0,
+            data: {
+              objectives: [
+                "Practice asking and answering about parents",
+                "Review forgotten Module 1 & 2 words",
+                "Master using 'in' with family members",
+                "Build complex family sentences"
+              ],
+              lessonType: "review"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "madar",
+              distractors: ["pedar", "esm", "man"]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "pedar",
+              distractors: ["madar", "shoma", "esm"]
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["madar", "va", "pedar"],
+              expectedTranslation: "mother and father",
+              targetWordCount: 3
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "salam", text: "salam", slotId: "hello" },
+                { id: "khodafez", text: "khodafez", slotId: "goodbye" },
+                { id: "chetori", text: "chetori", slotId: "how_are_you" },
+                { id: "merci", text: "merci", slotId: "thank_you" }
+              ],
+              slots: [
+                { id: "hello", text: "hello" },
+                { id: "goodbye", text: "goodbye" },
+                { id: "how_are_you", text: "how are you" },
+                { id: "thank_you", text: "thank you" }
+              ]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khoshbakhtam",
+              distractors: ["khodafez", "merci", "salam"]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esme madare shoma chiye?",
+              expectedTranslation: "what is your mother's name"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esme madaram Sara-e",
+              expectedTranslation: "my mother's name is Sara"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "pedare shoma ahle koja hast?",
+              expectedTranslation: "where is your father from"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "in madare shoma hast?",
+              expectedTranslation: "is this your mother"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["madar", "ahle_from", "iran", "hast"],
+              expectedTranslation: "mother is from Iran",
+              targetWordCount: 4
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "madaret khoob hast?",
+              expectedTranslation: "is your mother good"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'yes thank you'?",
+              options: ["baleh merci", "na merci", "merci baleh", "khoobam merci"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -e mean in 'pedare man'?",
+              options: ["of / belonging to", "and", "also", "very"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["pedar", "ahle_from", "amrika", "hast"],
+              expectedTranslation: "father is from America",
+              targetWordCount: 4
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["madar", "ahle_from", "amrika", "hast", "vali", "pedar", "ahle_from", "iran", "hast"],
+              expectedTranslation: "mother is from America but father is from Iran",
+              targetWordCount: 9
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "esme_1", text: "esme", translation: "name of" },
+                { id: "pedaram", text: "pedaram", translation: "my father" },
+                { id: "Bob-e", text: "Bob-e", translation: "is Bob" },
+                { id: "vali", text: "vali", translation: "but" },
+                { id: "esme_2", text: "esme", translation: "name of" },
+                { id: "madaram", text: "madaram", translation: "my mother" },
+                { id: "Sara-e", text: "Sara-e", translation: "is Sara" }
+              ],
+              targetWords: ["esme_1", "pedaram", "Bob-e", "vali", "esme_2", "madaram", "Sara-e"],
+              title: "Introduce Your Parents",
+              successMessage: "Amazing! You can confidently talk about your parents!",
+              incorrectMessage: "Try again - start with father's name, then mother's!"
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson5",
+        title: "Siblings",
+        description: "Learn to talk about your brother and sister using the same suffix patterns!",
+        emoji: "👫",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["madar", "pedar", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ham", "ahle_from", "koja", "zendegi"],
+        vocabulary: [
+          {
+            id: "baradar",
+            en: "brother",
+            fa: "برادر",
+            finglish: "baradar",
+            phonetic: "bah-rah-DAR",
+            lessonId: "lesson5"
+          },
+          {
+            id: "khahar",
+            en: "sister",
+            fa: "خواهر",
+            finglish: "khahar",
+            phonetic: "khah-HAR",
+            lessonId: "lesson5"
+          }
+        ],
+        steps: [
+          {
+            type: "welcome",
+            title: "Siblings",
+            description: "Learn to talk about your brother and sister!",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn the words for brother and sister",
+                "Apply -am and -et suffixes to siblings",
+                "Practice asking about family members",
+                "Compare all family members together"
+              ],
+              lessonType: "vocabulary"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "baradar"
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'your brother'?",
+              answer: "baradar-et"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "khahar", text: "khahar", slotId: "sister" },
+                { id: "khaharam", text: "khaharam", slotId: "my_sister" },
+                { id: "khaharet", text: "khaharet", slotId: "your_sister" }
+              ],
+              slots: [
+                { id: "sister", text: "sister" },
+                { id: "my_sister", text: "my sister" },
+                { id: "your_sister", text: "your sister" }
+              ]
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khahar"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "madar",
+              distractors: ["pedar", "baradar", "khahar"]
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["pedar", "va", "baradar"],
+              expectedTranslation: "father and brother",
+              targetWordCount: 3
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "madar", text: "madar", slotId: "mother" },
+                { id: "pedar", text: "pedar", slotId: "father" },
+                { id: "baradar", text: "baradar", slotId: "brother" },
+                { id: "khahar", text: "khahar", slotId: "sister" }
+              ],
+              slots: [
+                { id: "mother", text: "mother" },
+                { id: "father", text: "father" },
+                { id: "brother", text: "brother" },
+                { id: "sister", text: "sister" }
+              ]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khahar",
+              distractors: ["baradar", "madar", "pedar"]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esme baradare shoma chiye?",
+              expectedTranslation: "what is your brother's name"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["esme", "baradar", "Amir-e"],
+              expectedTranslation: "my brother's name is Amir",
+              targetWordCount: 5
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esme baradaram Amir neest",
+              expectedTranslation: "my brother's name is not Amir"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["khahar", "khoob", "hast"],
+              expectedTranslation: "sister is good",
+              targetWordCount: 3
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "baradaram khoob hast vali khaharam khoob neest",
+              expectedTranslation: "my brother is good but my sister is not good"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'zendegi' mean?",
+              options: ["life", "live", "brother", "sister"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which connector means 'also'?",
+              options: ["ham", "va", "vali", "dar"],
+              correct: 0
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "baradaret", text: "baradaret", translation: "your brother" },
+                { id: "khoob_1", text: "khoob", translation: "good" },
+                { id: "hast_1", text: "hast", translation: "is" },
+                { id: "khaharet", text: "khaharet", translation: "your sister" },
+                { id: "khoob_2", text: "khoob", translation: "good" },
+                { id: "hast_2", text: "hast", translation: "is" },
+                { id: "baradaram", text: "baradaram", translation: "my brother" },
+                { id: "khoob_3", text: "khoob", translation: "good" },
+                { id: "neest", text: "neest", translation: "not" },
+                { id: "vali", text: "vali", translation: "but" },
+                { id: "khaharam", text: "khaharam", translation: "my sister" },
+                { id: "khoob_4", text: "khoob", translation: "good" },
+                { id: "hast_3", text: "hast", translation: "is" }
+              ],
+              targetWords: ["baradaret", "khoob_1", "hast_1", "khaharet", "khoob_2", "hast_2", "baradaram", "khoob_3", "neest", "vali", "khaharam", "khoob_4", "hast_3"],
+              title: "Talk About Siblings",
+              successMessage: "Amazing! You can now talk about your entire family!",
+              incorrectMessage: "Try again - ask about their brother and sister first!"
             }
           }
         ]
