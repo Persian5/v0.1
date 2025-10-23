@@ -45,6 +45,18 @@ const MODULE_COMPLETION_DATA: Record<string, ModuleCompletionData> = {
       "Using numbers in daily conversation"
     ]
   },
+  "module3": {
+    title: "Module 3 Complete!",
+    description: "You can now talk about your family and relationships in Persian!",
+    motivationalMessage: "Fantastic! You've mastered family vocabulary and possessive structures!",
+    skillsLearned: [
+      "Talking about parents (madar/pedar)",
+      "Describing siblings (baradar/khahar)",
+      "Using possessive suffixes (-am/-et)",
+      "Asking about family members",
+      "Building complex family sentences"
+    ]
+  },
   // Add more modules as they're developed
 };
 
@@ -56,7 +68,7 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
   const completionData = MODULE_COMPLETION_DATA[moduleId];
   
   // Get next module info
-  const nextModuleId = moduleId === "module1" ? "module2" : "module3"; // Simple logic for now
+  const nextModuleId = moduleId === "module1" ? "module2" : moduleId === "module2" ? "module3" : "module4"; // Updated logic
   const nextModule = getModule(nextModuleId);
   const isNextModuleAvailable = nextModule?.available || false;
   

@@ -46,14 +46,10 @@ function getAudioFilename(text: string): string {
   
   // Map specific texts to their audio filenames
   const audioMap: Record<string, string> = {
-    "hello": "hello.mp3",
     "salam": "salam.mp3",
-    "how are you?": "howareyou.mp3",
     "chetori": "chetori.mp3",
-    "goodbye": "goodbye.mp3",
     "khodafez": "khodafez.mp3",
-    "welcome": "welcome.mp3",
-    "khosh amadid": "khoshamadid.mp3"
+    "khosh amadid": "khosh_amadid.mp3"
   };
   
   return audioMap[cleanText] || "";

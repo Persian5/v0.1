@@ -1643,7 +1643,7 @@ export const curriculumData: Module[] = [
             lessonId: "module2-lesson3"
           },
           {
-            id: "ahle_from",
+            id: "ahle",
             en: "From",
             fa: "اهل",
             finglish: "Ahle",
@@ -1695,7 +1695,7 @@ export const curriculumData: Module[] = [
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "ahle_from"
+              vocabularyId: "ahle"
             }
           },
           {
@@ -1710,7 +1710,7 @@ export const curriculumData: Module[] = [
             type: "audio-meaning",
             points: 2,
             data: {
-              vocabularyId: "ahle_from",
+              vocabularyId: "ahle",
               distractors: ["koja", "hasti", "iran"]
             }
           },
@@ -1778,7 +1778,7 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["shoma", "ahle_from", "koja", "hasti"],
+              sequence: ["shoma", "ahle", "koja", "hasti"],
               expectedTranslation: "where are you from"
             }
           },
@@ -1788,22 +1788,22 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "ahle_from_1", text: "Ahle", translation: "From" },
+                { id: "ahle_1", text: "Ahle", translation: "From" },
                 { id: "koja", text: "Koja", translation: "Where" },
                 { id: "hasti", text: "Hasti", translation: "You are" },
                 { id: "man", text: "Man", translation: "I" },
-                { id: "ahle_from_2", text: "Ahle", translation: "From" },
+                { id: "ahle_2", text: "Ahle", translation: "From" },
                 { id: "iran", text: "Iran", translation: "Iran" },
                 { id: "hastam", text: "Hastam", translation: "I am" }
               ],
-              targetWords: ["shoma", "ahle_from_1", "koja", "hasti", "man", "ahle_from_2", "iran", "hastam"],
+              targetWords: ["shoma", "ahle_1", "koja", "hasti", "man", "ahle_2", "iran", "hastam"],
               title: "Where Are You From?",
               successMessage: "Excellent! You can now ask and answer where someone is from!",
               incorrectMessage: "Almost there—let's practice that location conversation again!",
               conversationFlow: {
                 description: "A complete conversation about origins",
                 expectedPhrase: "where are you from? I am from Iran",
-                persianSequence: ["shoma", "ahle_from_1", "koja", "hasti", "man", "ahle_from_2", "iran", "hastam"]
+                persianSequence: ["shoma", "ahle_1", "koja", "hasti", "man", "ahle_2", "iran", "hastam"]
               }
             }
           }
@@ -1816,7 +1816,7 @@ export const curriculumData: Module[] = [
         emoji: "🏠",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "koja", "ahle_from", "man", "shoma", "khoobam"],
+        reviewVocabulary: ["salam", "koja", "ahle", "man", "shoma", "khoobam"],
         vocabulary: [
           {
             id: "zendegi",
@@ -2032,7 +2032,7 @@ export const curriculumData: Module[] = [
         emoji: "🔗",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle_from", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"],
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"],
         vocabulary: [
           {
             id: "va",
@@ -2237,7 +2237,7 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "man", text: "Man", translation: "I" },
-                { id: "ahle_from", text: "Ahle", translation: "From" },
+                { id: "ahle", text: "Ahle", translation: "From" },
                 { id: "iran", text: "Iran", translation: "Iran" },
                 { id: "hastam", text: "Hastam", translation: "I am" },
                 { id: "vali", text: "Vali", translation: "But" },
@@ -2246,14 +2246,14 @@ export const curriculumData: Module[] = [
                 { id: "zendegi", text: "Zendegi", translation: "Live" },
                 { id: "mikonam", text: "Mikonam", translation: "I do" }
               ],
-              targetWords: ["man", "ahle_from", "iran", "hastam", "vali", "dar", "amrika", "zendegi", "mikonam"],
+              targetWords: ["man", "ahle", "iran", "hastam", "vali", "dar", "amrika", "zendegi", "mikonam"],
               title: "Say It Naturally",
               successMessage: "Perfect! You connected ideas naturally!",
               incorrectMessage: "Almost—watch where vali goes for contrast!",
               conversationFlow: {
                 description: "Express origin and residence with contrast",
                 expectedPhrase: "I am from Iran but I live in America",
-                persianSequence: ["man", "ahle_from", "iran", "hastam", "vali", "dar", "amrika", "zendegi", "mikonam"]
+                persianSequence: ["man", "ahle", "iran", "hastam", "vali", "dar", "amrika", "zendegi", "mikonam"]
               }
             }
           }
@@ -2266,7 +2266,7 @@ export const curriculumData: Module[] = [
         emoji: "🔄",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "khodafez", "baleh", "na", "man", "shoma", "khoob", "hastam", "hasti", "neestam", "neesti", "kheily", "va", "ham", "vali", "ahle_from", "koja", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "esme", "chiye", "khoshbakhtam"],
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "khodafez", "baleh", "na", "man", "shoma", "khoob", "hastam", "hasti", "neestam", "neesti", "kheily", "va", "ham", "vali", "ahle", "koja", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "esme", "chiye", "khoshbakhtam"],
         vocabulary: [],
         steps: [
           {
@@ -2499,7 +2499,7 @@ export const curriculumData: Module[] = [
                 { id: "khoobam", text: "Khoobam", translation: "I am good" },
                 { id: "merci", text: "Merci", translation: "Thank you" },
                 { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "ahle_from_1", text: "Ahle", translation: "From" },
+                { id: "ahle_1", text: "Ahle", translation: "From" },
                 { id: "koja", text: "Koja", translation: "Where" },
                 { id: "hasti", text: "Hasti", translation: "You are" },
                 { id: "man_2", text: "Man", translation: "I" },
@@ -2508,19 +2508,19 @@ export const curriculumData: Module[] = [
                 { id: "zendegi", text: "Zendegi", translation: "Live" },
                 { id: "mikonam", text: "Mikonam", translation: "I do" },
                 { id: "vali", text: "Vali", translation: "But" },
-                { id: "ahle_from_2", text: "Ahle", translation: "From" },
+                { id: "ahle_2", text: "Ahle", translation: "From" },
                 { id: "iran", text: "Iran", translation: "Iran" },
                 { id: "hastam", text: "Hastam", translation: "I am" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "chetori", "man_1", "kheily", "khoobam", "merci", "shoma", "ahle_from_1", "koja", "hasti", "man_2", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from_2", "iran", "hastam", "khodafez"],
+              targetWords: ["salam", "chetori", "man_1", "kheily", "khoobam", "merci", "shoma", "ahle_1", "koja", "hasti", "man_2", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_2", "iran", "hastam", "khodafez"],
               title: "Complete Conversation",
               successMessage: "Amazing! You've mastered all of Module 2!",
               incorrectMessage: "Almost there—review the order and try again!",
               conversationFlow: {
                 description: "A complete conversation using everything from Module 2",
                 expectedPhrase: "Hello, how are you? I am very good, thank you. Where are you from? I live in America, but I am from Iran. Goodbye.",
-                persianSequence: ["salam", "chetori", "man_1", "kheily", "khoobam", "merci", "shoma", "ahle_from_1", "koja", "hasti", "man_2", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_from_2", "iran", "hastam", "khodafez"]
+                persianSequence: ["salam", "chetori", "man_1", "kheily", "khoobam", "merci", "shoma", "ahle_1", "koja", "hasti", "man_2", "dar", "amrika", "zendegi", "mikonam", "vali", "ahle_2", "iran", "hastam", "khodafez"]
               }
             }
           }
@@ -2533,7 +2533,7 @@ export const curriculumData: Module[] = [
         emoji: "💬",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "kheily", "esme", "chiye", "ahle_from", "koja", "hasti", "iran", "vali", "dar", "amrika", "zendegi", "mikonam", "ham", "khoshbakhtam", "khodafez"],
+        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "kheily", "esme", "chiye", "ahle", "koja", "hasti", "iran", "vali", "dar", "amrika", "zendegi", "mikonam", "ham", "khoshbakhtam", "khodafez"],
         vocabulary: [],
         steps: [
           {
@@ -2642,7 +2642,7 @@ export const curriculumData: Module[] = [
                     {
                       id: "choice3a",
                       text: "Man ahle Iran hastam, shoma chi?",
-                      vocabularyUsed: ["man", "ahle_from", "iran", "hastam", "shoma"],
+                      vocabularyUsed: ["man", "ahle", "iran", "hastam", "shoma"],
                       isCorrect: true,
                       points: 1,
                       responseMessage: "Perfect! You answered and asked back using 'chi' (what about you)."
@@ -2650,7 +2650,7 @@ export const curriculumData: Module[] = [
                     {
                       id: "choice3b",
                       text: "Man ahle Iran neestam.",
-                      vocabularyUsed: ["man", "ahle_from", "iran", "neestam"],
+                      vocabularyUsed: ["man", "ahle", "iran", "neestam"],
                       isCorrect: false,
                       points: 0,
                       responseMessage: "You said you're NOT from Iran. If that's true, say where you ARE from!"
@@ -2658,7 +2658,7 @@ export const curriculumData: Module[] = [
                     {
                       id: "choice3c",
                       text: "Shoma ahle Iran hastam, shoma chi?",
-                      vocabularyUsed: ["shoma", "ahle_from", "iran", "hastam"],
+                      vocabularyUsed: ["shoma", "ahle", "iran", "hastam"],
                       isCorrect: false,
                       points: 0,
                       responseMessage: "Watch out! You said 'you are from Iran' instead of 'I am from Iran'. Use 'man' and 'hastam'."
@@ -2786,8 +2786,8 @@ export const curriculumData: Module[] = [
     title: "Module 3: Family & Relationships",
     description: "Describe your family or ask about someone else's. Includes parents, siblings, friends, and possessive structures.",
     emoji: "👪",
-    lessonCount: 5,
-    estimatedTime: "100 minutes",
+    lessonCount: 6,
+    estimatedTime: "120 minutes",
     available: true,
     requiresPremium: true,
     lessons: [
@@ -2798,7 +2798,7 @@ export const curriculumData: Module[] = [
         emoji: "🔄",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "man", "shoma", "merci", "esm", "esmam", "chi", "chiye", "ahle_from", "koja", "dar", "iran", "amrika", "mikonam", "mikoni", "zendegi", "hast", "neest", "hastam", "hasti", "neestam", "neesti", "khoob", "kheily", "va", "ham", "vali", "khodafez"],
+        reviewVocabulary: ["salam", "chetori", "man", "shoma", "merci", "esm", "esmam", "chi", "chiye", "ahle", "koja", "dar", "iran", "amrika", "mikonam", "mikoni", "zendegi", "hast", "neest", "hastam", "hasti", "neestam", "neesti", "khoob", "kheily", "va", "ham", "vali", "khodafez"],
         vocabulary: [],
         steps: [
           {
@@ -2901,7 +2901,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               words: [
-                { id: "ahle_from", text: "ahle", slotId: "from" },
+                { id: "ahle", text: "ahle", slotId: "from" },
                 { id: "koja", text: "koja", slotId: "where" },
                 { id: "dar", text: "dar", slotId: "in" },
                 { id: "iran", text: "iran", slotId: "iran" }
@@ -3275,7 +3275,7 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["in", "hast", "va", "ahle_from", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "mikoni", "esm", "esmam", "esmet"],
+        reviewVocabulary: ["in", "hast", "va", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "mikoni", "esm", "esmam", "esmet"],
         vocabulary: [
           {
             id: "madar",
@@ -3467,7 +3467,12 @@ export const curriculumData: Module[] = [
               targetWords: ["esme_1", "pedare", "shoma", "chiye", "esme_2", "pedaram", "Bob-e"],
               title: "Ask About Family",
               successMessage: "Amazing! You can now talk about your parents!",
-              incorrectMessage: "Try again - remember the question comes first!"
+              incorrectMessage: "Try again - remember the question comes first!",
+              conversationFlow: {
+                description: "Ask about someone's father's name",
+                expectedPhrase: "what is your father's name? My father's name is Bob",
+                persianSequence: ["esme_1", "pedare", "shoma", "chiye", "esme_2", "pedaram", "Bob-e"]
+              }
             }
           }
         ]
@@ -3479,7 +3484,7 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👦‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "salam", "khodafez", "chetori", "merci", "baleh", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "hastam", "va", "ahle_from", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "khoob"],
+        reviewVocabulary: ["madar", "pedar", "salam", "khodafez", "chetori", "merci", "baleh", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "hastam", "va", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "khoob"],
         vocabulary: [],
         steps: [
           {
@@ -3584,7 +3589,7 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["madar", "ahle_from", "iran", "hast"],
+              sequence: ["madar", "ahle", "iran", "hast"],
               expectedTranslation: "mother is from Iran",
               targetWordCount: 4
             }
@@ -3619,7 +3624,7 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["pedar", "ahle_from", "amrika", "hast"],
+              sequence: ["pedar", "ahle", "amrika", "hast"],
               expectedTranslation: "father is from America",
               targetWordCount: 4
             }
@@ -3628,7 +3633,7 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["madar", "ahle_from", "amrika", "hast", "vali", "pedar", "ahle_from", "iran", "hast"],
+              sequence: ["madar", "ahle", "amrika", "hast", "vali", "pedar", "ahle", "iran", "hast"],
               expectedTranslation: "mother is from America but father is from Iran",
               targetWordCount: 9
             }
@@ -3649,7 +3654,12 @@ export const curriculumData: Module[] = [
               targetWords: ["esme_1", "pedaram", "Bob-e", "vali", "esme_2", "madaram", "Sara-e"],
               title: "Introduce Your Parents",
               successMessage: "Amazing! You can confidently talk about your parents!",
-              incorrectMessage: "Try again - start with father's name, then mother's!"
+              incorrectMessage: "Try again - start with father's name, then mother's!",
+              conversationFlow: {
+                description: "Introduce both parents with their names",
+                expectedPhrase: "my father's name is bob but my mother's name is Sara",
+                persianSequence: ["esme_1", "pedaram", "Bob-e", "vali", "esme_2", "madaram", "Sara-e"]
+              }
             }
           }
         ]
@@ -3661,7 +3671,7 @@ export const curriculumData: Module[] = [
         emoji: "👫",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ham", "ahle_from", "koja", "zendegi"],
+        reviewVocabulary: ["madar", "pedar", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ham", "ahle", "koja", "zendegi"],
         vocabulary: [
           {
             id: "baradar",
@@ -3859,7 +3869,241 @@ export const curriculumData: Module[] = [
               targetWords: ["baradaret", "khoob_1", "hast_1", "khaharet", "khoob_2", "hast_2", "baradaram", "khoob_3", "neest", "vali", "khaharam", "khoob_4", "hast_3"],
               title: "Talk About Siblings",
               successMessage: "Amazing! You can now talk about your entire family!",
-              incorrectMessage: "Try again - ask about their brother and sister first!"
+              incorrectMessage: "Try again - ask about their brother and sister first!",
+              conversationFlow: {
+                description: "Compare siblings with contrasting qualities",
+                expectedPhrase: "is your brother good? is your sister good? my brother is not good but my sister is good",
+                persianSequence: ["baradaret", "khoob_1", "hast_1", "khaharet", "khoob_2", "hast_2", "baradaram", "khoob_3", "neest", "vali", "khaharam", "khoob_4", "hast_3"]
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "lesson6",
+        title: "Family Review",
+        description: "Practice everything you've learned about family members and put it all together!",
+        emoji: "👨‍👩‍👧‍👦",
+        progress: 0,
+        locked: false,
+        reviewVocabulary: ["madar", "pedar", "baradar", "khahar", "salam", "khodafez", "merci", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "kheily", "na", "baleh"],
+        vocabulary: [],
+        steps: [
+          {
+            type: "welcome",
+            title: "Family Review",
+            description: "Let's practice everything you've learned about family!",
+            points: 0,
+            data: {
+              objectives: [
+                "Review all family vocabulary",
+                "Master possession suffixes",
+                "Practice complex family sentences",
+                "Review important Module 1 & 2 words"
+              ],
+              lessonType: "review"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "madar", text: "madar", slotId: "mother" },
+                { id: "pedar", text: "pedar", slotId: "father" },
+                { id: "baradar", text: "baradar", slotId: "brother" },
+                { id: "khahar", text: "khahar", slotId: "sister" }
+              ],
+              slots: [
+                { id: "mother", text: "mother" },
+                { id: "father", text: "father" },
+                { id: "brother", text: "brother" },
+                { id: "sister", text: "sister" }
+              ]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "baradar",
+              distractors: ["pedar", "khahar", "madar"]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -am mean when added to a noun?",
+              options: ["my", "your", "is", "of"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'my brother'?",
+              answer: "baradar-am"
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["esme", "madar", "Sara-e", "vali", "esme", "pedar", "Bob-e"],
+              expectedTranslation: "my mother's name is Sara but my father's name is Bob",
+              targetWordCount: 11
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "salam", text: "salam", slotId: "hello" },
+                { id: "khodafez", text: "khodafez", slotId: "goodbye" },
+                { id: "merci", text: "merci", slotId: "thank_you" },
+                { id: "khoshbakhtam", text: "khoshbakhtam", slotId: "nice_to_meet_you" }
+              ],
+              slots: [
+                { id: "hello", text: "hello" },
+                { id: "goodbye", text: "goodbye" },
+                { id: "thank_you", text: "thank you" },
+                { id: "nice_to_meet_you", text: "nice to meet you" }
+              ]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -e mean in 'madare man'?",
+              options: ["of / belonging to", "and", "also", "my"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khoshbakhtam",
+              distractors: ["khodafez", "salam", "merci"]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "madaret va khaharet",
+              expectedTranslation: "your mother and your sister"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does the suffix -et mean when added to a noun?",
+              options: ["your", "my", "is", "of"],
+              correct: 0
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'your mother'?",
+              answer: "madar-et"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "koja",
+              distractors: ["ahle", "dar", "zendegi"]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "esme baradare shoma chiye?",
+              expectedTranslation: "what is your brother's name"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "What does 'kheily' mean?",
+              options: ["very", "good", "also", "where"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "madaret", text: "madaret", slotId: "your_mother" },
+                { id: "pedare_shoma", text: "pedare shoma", slotId: "your_father" },
+                { id: "khaharam", text: "khaharam", slotId: "my_sister" },
+                { id: "baradare_man", text: "baradare man", slotId: "my_brother" }
+              ],
+              slots: [
+                { id: "your_mother", text: "your mother" },
+                { id: "your_father", text: "your father" },
+                { id: "my_sister", text: "my sister" },
+                { id: "my_brother", text: "my brother" }
+              ]
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "in", "pedar", "man", "hast"],
+              expectedTranslation: "hello this is my father",
+              targetWordCount: 5
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "baradaram khoob hast vali madaram khoob neest",
+              expectedTranslation: "my brother is good but my mother is not good"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "madaram ahle iran hast vali pedaram ahle amrika hast",
+              expectedTranslation: "my mother is from Iran but my father is from America"
+            }
+          },
+          {
+            type: "final",
+            points: 4,
+            data: {
+              words: [
+                { id: "khahare", text: "khahare", translation: "sister of" },
+                { id: "shoma", text: "shoma", translation: "you" },
+                { id: "ahle", text: "ahle", translation: "from" },
+                { id: "amrika", text: "amrika", translation: "America" },
+                { id: "hast", text: "hast", translation: "is" },
+                { id: "na", text: "na", translation: "no" },
+                { id: "khaharam", text: "khaharam", translation: "my sister" },
+                { id: "ahle_2", text: "ahle", translation: "from" },
+                { id: "iran", text: "iran", translation: "Iran" },
+                { id: "hast_2", text: "hast", translation: "is" }
+              ],
+              targetWords: ["khahare", "shoma", "ahle", "amrika", "hast", "na", "khaharam", "ahle_2", "iran", "hast_2"],
+              title: "Is your sister from America? No, my sister is from Iran",
+              successMessage: "Incredible! You've mastered family vocabulary in Persian!",
+              incorrectMessage: "Almost there - remember the question comes first, then the answer!"
             }
           }
         ]
