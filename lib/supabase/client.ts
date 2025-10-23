@@ -13,7 +13,14 @@ if (!supabaseAnonKey) {
 }
 
 // Create browser client for client-side operations
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+// Explicitly enable auto-refresh and session persistence for token management
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
+})
 
 // Export types for use throughout the app
 export type { User } from '@supabase/supabase-js' 

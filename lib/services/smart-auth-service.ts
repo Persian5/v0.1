@@ -141,6 +141,9 @@ export class SmartAuthService {
       // Set up page unload handler to save data before leaving
       this.setupPageUnloadHandler()
       
+      // Set up auth state change listener for token refresh events
+      this.setupAuthStateListener()
+      
       // Start background sync
       this.startBackgroundSync()
       
@@ -485,12 +488,82 @@ export class SmartAuthService {
     
     window.addEventListener('beforeunload', handleBeforeUnload)
     
-    // Also handle visibility change (when tab becomes hidden)
-    document.addEventListener('visibilitychange', () => {
+    // Also handle visibility change (when tab becomes hidden or visible)
+    document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState === 'hidden') {
+        // Tab is being hidden - force sync
         this.forceSyncNow().catch(error => {
           console.warn('Failed to sync on visibility change:', error)
         })
+      } else if (document.visibilityState === 'visible') {
+        // Tab is becoming visible (wake from sleep) - refresh token proactively
+        console.log('Tab waking up - checking token freshness')
+        try {
+          const { ensureFreshSession } = await import('../utils/token-guard')
+          await ensureFreshSession()
+        } catch (error) {
+          console.warn('Failed to refresh token on wake:', error)
+        }
+      }
+    })
+  }
+  
+  /**
+   * Set up auth state change listener to handle token refresh events
+   * This keeps the session cache in sync with Supabase's token state
+   */
+  static setupAuthStateListener(): void {
+    if (typeof window === 'undefined') return
+    
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event)
+      
+      // Handle token refresh - update cached session
+      if (event === 'TOKEN_REFRESHED' && session) {
+        console.log('Token refreshed - updating session cache')
+        
+        if (this.sessionCache) {
+          // Update cached user with fresh token data
+          this.sessionCache.user = session.user
+          this.sessionCache.isEmailVerified = !!session.user.email_confirmed_at
+          this.sessionCache.expiresAt = Date.now() + this.SESSION_DURATION
+          this.sessionCache.lastSync = Date.now()
+          
+          // Emit event to notify UI components
+          this.emitEvent('session-changed', { 
+            user: session.user, 
+            isEmailVerified: !!session.user.email_confirmed_at 
+          })
+        }
+      }
+      
+      // Handle sign out - clear cache
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out - clearing session cache')
+        this.sessionCache = null
+        this.stopBackgroundSync()
+        
+        // Emit event to notify UI components
+        this.emitEvent('session-changed', { 
+          user: null, 
+          isEmailVerified: false 
+        })
+      }
+      
+      // Handle user updates (email verification, profile changes)
+      if (event === 'USER_UPDATED' && session) {
+        console.log('User updated - refreshing session cache')
+        
+        if (this.sessionCache) {
+          this.sessionCache.user = session.user
+          this.sessionCache.isEmailVerified = !!session.user.email_confirmed_at
+          
+          // Emit event to notify UI components
+          this.emitEvent('session-changed', { 
+            user: session.user, 
+            isEmailVerified: !!session.user.email_confirmed_at 
+          })
+        }
       }
     })
   }

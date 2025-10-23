@@ -52,3 +52,12 @@
 | user_xp_transactions | lesson_id              | text                     | YES         | null               |
 | user_xp_transactions | metadata               | jsonb                    | YES         | null               |
 | user_xp_transactions | created_at             | timestamp with time zone | NO          | now()              |
+
+## Constraints
+
+### user_lesson_progress
+- **UNIQUE**: `(user_id, module_id, lesson_id)` - Prevents duplicate lesson progress records
+
+### user_xp_transactions
+- **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)
+- **INDEX**: `idx_xp_transactions_lookup` on `(user_id, source, lesson_id)` - Faster lookups
