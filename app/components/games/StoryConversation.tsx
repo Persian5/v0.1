@@ -12,7 +12,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 interface StoryConversationProps {
   step: StoryConversationStep;
   onComplete: () => void;
-  onXpStart?: () => void; // Not used - XP awarded per-choice via addXp instead
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed; // Not used - XP awarded per-choice via addXp instead
   addXp?: (amount: number, source: string, metadata?: any) => void;
 }
 
@@ -37,6 +37,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   const [progress, setProgress] = useState(0);
   const [isCharacterTyping, setIsCharacterTyping] = useState(false);
   const [isUserTyping, setIsUserTyping] = useState(false);
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -590,6 +591,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
         <XpAnimation
           amount={1}
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onComplete={() => setShowXp(false)}
         />
       )}

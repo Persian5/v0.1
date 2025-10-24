@@ -11,7 +11,7 @@ export interface GrammarConceptProps {
   conceptId: string;
   points?: number;
   onComplete: (correct: boolean) => void;
-  onXpStart?: () => void;
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed;
 }
 
 export function GrammarConcept({ 
@@ -25,6 +25,7 @@ export function GrammarConcept({
   const [showXp, setShowXp] = useState(false)
   const [practiceComplete, setPracticeComplete] = useState(false)
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
 
   const concept = getGrammarConcept(conceptId)
   
@@ -108,7 +109,8 @@ export function GrammarConcept({
     playSuccessSound()
     
     if (onXpStart) {
-      onXpStart()
+      const wasGranted = await onXpStart(); // Await the Promise to get result
+      setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
     }
     
     setShowXp(true)
@@ -179,6 +181,7 @@ export function GrammarConcept({
         <XpAnimation 
           amount={currentPhase.points} 
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={handleXpComplete}
         />

@@ -35,7 +35,7 @@ export interface FinalChallengeProps {
   // Gameplay
   points: number;
   onComplete: (success: boolean) => void;
-  onXpStart?: () => void;
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed;
 }
 
 export function FinalChallenge({ 
@@ -162,6 +162,7 @@ export function FinalChallenge({
   const [showFeedback, setShowFeedback] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [showXp, setShowXp] = useState(false)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   const confettiCanvasRef = useRef<HTMLDivElement>(null)
 
   // Reset items and slots when props change
@@ -211,7 +212,7 @@ export function FinalChallenge({
   const allSlotsFilled = slots.every(slot => slot.itemId !== null)
   
   // Validate order
-  const checkOrder = () => {
+  const checkOrder = async () => {
     // Get current order of items
     const currentOrder = slots.map(slot => {
       const item = items.find(item => item.id === slot.itemId)
@@ -265,9 +266,10 @@ export function FinalChallenge({
       // Play success sound for correct order
       playSuccessSound();
       
-      // Award XP immediately when correct order is achieved
+      // Award XP and check if step was already completed
       if (onXpStart) {
-        onXpStart();
+        const wasGranted = await onXpStart(); // Await the Promise to get result
+        setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
       }
       
       // Trigger XP animation for visual feedback
@@ -344,6 +346,7 @@ export function FinalChallenge({
           <XpAnimation 
             amount={points} 
             show={showXp}
+            isAlreadyCompleted={isAlreadyCompleted}
             onStart={undefined}
             onComplete={() => {
               // Just hide animation - don't call onComplete again
