@@ -75,7 +75,10 @@ export class SmartAuthService {
    * Emit event to all listeners
    */
   private static emitEvent(eventType: SmartAuthEventType, data: any): void {
-    console.log(`📢 Emitting event: ${eventType}`, { listenerCount: this.eventListeners.size, data })
+    if (this.eventListeners.size === 0) {
+      console.warn(`⚠️ No listeners registered for ${eventType} - UI won't update! This can happen during HMR.`)
+    }
+    
     this.eventListeners.forEach(listener => {
       try {
         listener(eventType, data)
