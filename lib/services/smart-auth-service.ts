@@ -282,11 +282,11 @@ export class SmartAuthService {
    * Refresh XP from database (use after RPC awards to sync UI)
    */
   static async refreshXpFromDb(): Promise<void> {
-    if (!this.sessionCache) return
+    if (!this.sessionCache?.user?.id) return
     
     try {
       const { DatabaseService } = await import('@/lib/supabase/database')
-      const freshXp = await DatabaseService.getUserTotalXp(this.sessionCache.userId)
+      const freshXp = await DatabaseService.getUserTotalXp(this.sessionCache.user.id)
       
       const oldXp = this.sessionCache.totalXp
       this.sessionCache.totalXp = freshXp
