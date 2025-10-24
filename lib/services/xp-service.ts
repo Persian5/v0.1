@@ -389,18 +389,8 @@ export class XpService {
         }
         console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
         
-        // Reconcile: If DB value differs from UI, trust the DB (handles edge cases)
-        try {
-          const { SmartAuthService } = await import('./smart-auth-service')
-          const currentUiXp = SmartAuthService.getUserXp()
-          if (Math.abs(currentUiXp - newXp) > amount) {
-            // Significant mismatch - reconcile to DB value
-            console.log(`🔄 Reconciling XP: UI=${currentUiXp}, DB=${newXp}`)
-            SmartAuthService.setXpDirectly(newXp)
-          }
-        } catch (error) {
-          console.warn('Failed to reconcile XP:', error)
-        }
+        // No reconciliation needed - optimistic update is already correct
+        // The RPC confirmed the award, so our optimistic +amount is accurate
       } else {
         // XP already awarded - rollback optimistic update
         if (typeof window !== 'undefined') {
