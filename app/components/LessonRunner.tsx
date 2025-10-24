@@ -19,6 +19,10 @@ import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
 import { SyncService } from '@/lib/services/sync-service'
 import { useRouter } from 'next/navigation'
+import { deriveStepUid } from '@/lib/utils/step-uid'
+import { useAuth } from '@/components/auth/AuthProvider'
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -54,9 +58,12 @@ export function LessonRunner({
   const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
   const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
   const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
+  const [isNavigating, setIsNavigating] = useState(false) // Prevent rapid back button clicks
+  const [showXp, setShowXp] = useState(false) // Track XP animation state
   const stateRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { user } = useAuth(); // Get user for idempotent XP
 
   // Get all vocabulary for this lesson (including review vocabulary)
   const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
@@ -391,26 +398,51 @@ export function LessonRunner({
     };
   };
 
-  // UNIFIED XP HANDLER: Create step-based XP handler using curriculum data
+  // IDEMPOTENT XP HANDLER: Award XP once per step (back button safe)
   const createStepXpHandler = () => {
-    return () => {
+    return async () => {
       const currentStep = steps[idx];
-      if (!currentStep) {
-        console.warn('No current step available for XP calculation', { idx, stepsLength: steps.length });
+      if (!currentStep || !user?.id) {
+        console.warn('No current step or user available for XP', { idx, userId: user?.id });
         return;
       }
 
-      // Use new unified XP calculation from curriculum step
+      // Derive stable step UID
+      const stepUid = deriveStepUid(currentStep, idx);
+      
+      // Get XP amount from curriculum
       const xpReward = XpService.getStepXp(currentStep);
       
-      // Add XP with same metadata structure
-      addXp(xpReward.amount, xpReward.source, {
-        lessonId,
+      // Award XP idempotently (database enforces once-per-step)
+      const result = await XpService.awardXpOnce({
+        userId: user.id,
         moduleId,
-        activityType: currentStep.type,
-        stepIndex: idx,
-        isRemediation: isInRemediation
+        lessonId,
+        stepUid,
+        amount: xpReward.amount,
+        source: xpReward.source,
+        metadata: {
+          activityType: currentStep.type,
+          stepIndex: idx,
+          isRemediation: isInRemediation
+        }
       });
+      
+      // If XP was NOT granted (already awarded), still show optimistic UI
+      // This allows smooth UX even when users go back and forth
+      if (result.granted) {
+        // XP awarded - update local state optimistically
+        addXp(xpReward.amount, xpReward.source, {
+          lessonId,
+          moduleId,
+          activityType: currentStep.type,
+          stepIndex: idx,
+          isRemediation: isInRemediation
+        });
+      } else {
+        console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
+        // Don't update local XP - user already earned this
+      }
     };
   };
   
@@ -431,6 +463,27 @@ export function LessonRunner({
       }
     }
   }
+
+  // BACK BUTTON HANDLER
+  const handleBackButton = () => {
+    // Guard: prevent rapid clicks or navigation during animations
+    if (isNavigating || showXp || isPending) {
+      console.log('Back button disabled (navigating or showing XP)');
+      return;
+    }
+    
+    setIsNavigating(true);
+    
+    // Navigate to previous step (minimum 0)
+    if (idx > 0) {
+      setIdx(idx - 1);
+      // Clear any pending remediation when going back
+      setPendingRemediation([]);
+    }
+    
+    // Reset navigation guard after 300ms
+    setTimeout(() => setIsNavigating(false), 300);
+  };
 
   // Render remediation content
   if (isInRemediation && remediationQueue.length > 0) {
@@ -493,6 +546,22 @@ export function LessonRunner({
   return (
     <>
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
+      
+      {/* BACK BUTTON - Hidden on welcome screen (step 0) */}
+      {idx > 0 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBackButton}
+          disabled={isNavigating || showXp || isPending}
+          className="fixed left-3 top-3 z-50 gap-2 text-sm bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white disabled:opacity-40 transition-all"
+          aria-label="Go back to previous step"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      )}
+      
       {/* Render current step based on type */}
       {step.type === 'welcome' ? (
         <LessonIntro 
