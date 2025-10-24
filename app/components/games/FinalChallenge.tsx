@@ -114,10 +114,11 @@ export function FinalChallenge({
     if (description) return personalizeText(description);
     
     if (conversationFlow) {
-      return `${conversationFlow.description}: "${personalizeText(conversationFlow.expectedPhrase)}"`;
+      return `Build this sentence: "${personalizeText(conversationFlow.expectedPhrase)}"`;
     }
     
-    // Show the English translations in the correct order so students know the target conversation flow
+    // For final challenges without conversationFlow, we need to create proper sentences
+    // This is a fallback for older final challenges that don't have conversationFlow defined
     const orderedTranslations = targetWords.map(targetId => {
       const word = shuffledWords.find(w => w.id === targetId);
       return word ? word.translation : '';
@@ -127,7 +128,16 @@ export function FinalChallenge({
       return "Arrange these words to create a sentence.";
     }
     
-    return `Build this sentence: ${orderedTranslations.join(' ')}`;
+    // Create a proper sentence instead of just joining words
+    let sentence = orderedTranslations.join(' ');
+    
+    // Basic sentence formatting - capitalize first letter and add period if missing
+    sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+    if (!sentence.endsWith('.') && !sentence.endsWith('?') && !sentence.endsWith('!')) {
+      sentence += '.';
+    }
+    
+    return `Build this sentence: "${sentence}"`;
   };
 
   // Initialize items from props instead of hardcoding

@@ -51,6 +51,7 @@
 | user_xp_transactions | source                 | text                     | NO          | null               |
 | user_xp_transactions | lesson_id              | text                     | YES         | null               |
 | user_xp_transactions | metadata               | jsonb                    | YES         | null               |
+| user_xp_transactions | idempotency_key        | text                     | YES         | null               |
 | user_xp_transactions | created_at             | timestamp with time zone | NO          | now()              |
 
 ## Constraints
@@ -60,4 +61,5 @@
 
 ### user_xp_transactions
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)
+- **UNIQUE**: `(user_id, idempotency_key)` WHERE `idempotency_key IS NOT NULL` - Ensures once-per-step XP awards (format: moduleId:lessonId:stepUid)
 - **INDEX**: `idx_xp_transactions_lookup` on `(user_id, source, lesson_id)` - Faster lookups

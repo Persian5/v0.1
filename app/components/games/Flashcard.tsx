@@ -99,10 +99,11 @@ export function Flashcard({
     if (!componentMountedRef.current) {
       componentMountedRef.current = true;
       
-      // Play Persian audio for vocabulary items
-      if (vocabularyItem?.id) {
+      // Only play Persian audio if we're already showing the Persian side (isFlipped = true)
+      // This prevents playing Persian audio when English side is shown initially
+      if (isFlipped && vocabularyItem?.id) {
         AudioService.playVocabularyAudio(vocabularyItem.id);
-      } else if (front) {
+      } else if (isFlipped && front) {
         // Fallback for legacy flashcard format
         const audioFile = getAudioFilename(front);
         if (audioFile) {
@@ -110,7 +111,7 @@ export function Flashcard({
         }
       }
     }
-  }, [vocabularyItem?.id, front]);
+  }, [vocabularyItem?.id, front, isFlipped]);
 
   // Play audio when flip state changes
   useEffect(() => {

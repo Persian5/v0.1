@@ -5,6 +5,8 @@ import { SyncService } from './sync-service'
 import { AuthService } from './auth-service'
 import { DatabaseService } from '@/lib/supabase/database'
 import { LessonStep } from '../types'
+import { supabase } from '@/lib/supabase/client'
+import { makeStepKey } from '@/lib/utils/step-uid'
 
 export interface XpReward {
   amount: number
@@ -295,5 +297,111 @@ export class XpService {
    */
   static async forceSyncNow(): Promise<boolean> {
     return await SyncService.forceSyncNow()
+  }
+
+  // ===== IDEMPOTENT XP AWARDS (BACK BUTTON SAFE) =====
+
+  /**
+   * Award XP for a step using idempotency key.
+   * Ensures users can only earn XP once per step, even with back button navigation.
+   * 
+   * Uses database-enforced uniqueness - race-proof and multi-tab safe.
+   * LocalStorage cache for instant "already earned" checks (UX optimization).
+   * 
+   * @param userId - User ID
+   * @param moduleId - Module ID (e.g., "module1")
+   * @param lessonId - Lesson ID (e.g., "lesson2")
+   * @param stepUid - Stable step identifier (e.g., "flashcard-salam")
+   * @param amount - XP amount to award
+   * @param source - XP source (e.g., "flashcard_flip")
+   * @param metadata - Additional metadata to store
+   * @returns Object with granted (boolean) and reason (string)
+   */
+  static async awardXpOnce({
+    userId,
+    moduleId,
+    lessonId,
+    stepUid,
+    amount,
+    source,
+    metadata = {}
+  }: {
+    userId: string,
+    moduleId: string,
+    lessonId: string,
+    stepUid: string,
+    amount: number,
+    source: string,
+    metadata?: any
+  }): Promise<{ granted: boolean, reason?: string, error?: any }> {
+    // Build idempotency key (stable across app restarts)
+    const idempotencyKey = makeStepKey(moduleId, lessonId, stepUid)
+    
+    // Optional: Check localStorage cache first for instant feedback
+    // This prevents unnecessary network calls for steps user already completed
+    const cacheKey = `xp-${userId}-${idempotencyKey}`
+    if (typeof window !== 'undefined' && localStorage.getItem(cacheKey)) {
+      console.log(`⏭️ XP already earned (cached): ${idempotencyKey}`)
+      return { granted: false, reason: 'cached' }
+    }
+    
+    try {
+      // Call RPC function - single write, zero reads, race-proof
+      const { data, error } = await supabase.rpc('award_step_xp_idem', {
+        p_user_id: userId,
+        p_idempotency_key: idempotencyKey,
+        p_amount: amount,
+        p_source: source,
+        p_lesson_id: `${moduleId}/${lessonId}`,
+        p_metadata: {
+          moduleId,
+          lessonId,
+          stepUid,
+          ...metadata
+        }
+      })
+      
+      if (error) {
+        console.error('❌ Error awarding XP:', error)
+        return { granted: false, reason: 'error', error }
+      }
+      
+      const granted = data === true
+      
+      if (granted) {
+        // XP awarded successfully - cache locally for instant future checks
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(cacheKey, '1')
+        }
+        console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
+      } else {
+        // XP already awarded previously - cache to prevent future calls
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(cacheKey, '1')
+        }
+        console.log(`⏭️ XP already earned: ${idempotencyKey}`)
+      }
+      
+      return { granted, reason: granted ? 'success' : 'already_awarded' }
+      
+    } catch (error) {
+      console.error('❌ Exception awarding XP:', error)
+      return { granted: false, reason: 'exception', error }
+    }
+  }
+
+  /**
+   * Clear XP cache (useful on logout or testing)
+   */
+  static clearXpCache(): void {
+    if (typeof window === 'undefined') return
+    
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('xp-')) {
+        localStorage.removeItem(key)
+      }
+    })
+    
+    console.log('🧹 XP cache cleared')
   }
 } 

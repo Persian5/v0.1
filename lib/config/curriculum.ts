@@ -174,6 +174,11 @@ export const curriculumData: Module[] = [
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
               targetWords: ["salam", "khosh_amadid", "chetori", "khodafez"],
+              conversationFlow: {
+                description: "A polite introduction conversation",
+                expectedPhrase: "Hello, welcome, how are you, goodbye",
+                persianSequence: ["salam", "khosh_amadid", "chetori", "khodafez"]
+              },
               title: "Your First Conversation",
               successMessage: "You're a natural—you made a great impression!",
               incorrectMessage: "Almost there—let's try that conversation order again!"
@@ -416,6 +421,11 @@ export const curriculumData: Module[] = [
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
               targetWords: ["salam", "chetori", "khoobam", "merci", "khodafez"],
+              conversationFlow: {
+                description: "A polite conversation",
+                expectedPhrase: "Hello, how are you? I'm good, thank you, goodbye",
+                persianSequence: ["salam", "chetori", "khoobam", "merci", "khodafez"]
+              },
               title: "Your Polite Conversation",
               successMessage: "Perfect! You handled that polite conversation beautifully!",
               incorrectMessage: "Almost there—let's practice that conversation flow again!"
@@ -1379,6 +1389,11 @@ export const curriculumData: Module[] = [
                 { id: "khoobi", text: "khoobi", translation: "Are you good" }
               ],
               targetWords: ["salam", "chetori", "khoobam", "khoobi"],
+              conversationFlow: {
+                description: "A conversation with adjective suffixes",
+                expectedPhrase: "Hello, how are you? I am good, are you good?",
+                persianSequence: ["salam", "chetori", "khoobam", "khoobi"]
+              },
               title: "Grammar Practice",
               successMessage: "Excellent! You understand adjective suffixes!",
               incorrectMessage: "Almost there—let's practice that suffix pattern again!"
