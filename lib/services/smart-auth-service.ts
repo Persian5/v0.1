@@ -271,35 +271,11 @@ export class SmartAuthService {
       metadata 
     })
     
-    // Use existing SyncService for reliable background sync
-    // This is the proven system that already works correctly
-    try {
-      const { SyncService } = await import('./sync-service')
-      SyncService.queueXpTransaction({
-        amount,
-        source,
-        lesson_id: metadata?.lessonId || null,
-        metadata: {
-          moduleId: metadata?.moduleId,
-          activityType: metadata?.activityType,
-          ...metadata
-        }
-      })
-      
-      // Start sync service if not already running
-      if (SyncService.getQueueStatus().pendingCount === 1) {
-        SyncService.startSync()
-      }
-    } catch (error) {
-      console.error('Failed to queue XP transaction:', error)
-      // Rollback optimistic update on failure
-      this.sessionCache.totalXp = oldXp
-      this.emitEvent('xp-updated', { 
-        newXp: oldXp, 
-        oldXp: this.sessionCache.totalXp,
-        error: 'Failed to queue XP transaction' 
-      })
-    }
+    // ⚠️ DEPRECATED: Old SyncService path - now using XpService.awardXpOnce for idempotent awards
+    // Keeping this method for compatibility with legacy code, but it only does optimistic UI updates
+    // The actual XP persistence happens via XpService.awardXpOnce in LessonRunner
+    
+    // No background sync needed - idempotent system handles it at award time
   }
   
   /**

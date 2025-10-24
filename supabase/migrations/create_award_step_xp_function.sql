@@ -40,7 +40,7 @@ BEGIN
     p_idempotency_key,
     now()
   )
-  ON CONFLICT (user_id, idempotency_key) DO NOTHING;
+  ON CONFLICT ON CONSTRAINT uniq_xp_idem_constraint DO NOTHING;
 
   -- Check if row was inserted
   GET DIAGNOSTICS row_count_val = ROW_COUNT;
