@@ -346,7 +346,7 @@ export class XpService {
     }
     
     try {
-      // Call RPC function - single write, zero reads, race-proof
+      // Call RPC function - single atomic operation that returns new XP total
       const { data, error } = await supabase.rpc('award_step_xp_idem', {
         p_user_id: userId,
         p_idempotency_key: idempotencyKey,
@@ -366,21 +366,23 @@ export class XpService {
         return { granted: false, reason: 'error', error }
       }
       
-      const granted = data === true
+      // RPC returns {awarded: boolean, new_xp: integer}
+      const granted = data?.awarded === true
+      const newXp = data?.new_xp
       
       if (granted) {
         // XP awarded successfully - cache locally for instant future checks
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
+        console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey} | New total: ${newXp}`)
         
-        // Refresh UI from DB (don't add optimistically - DB is source of truth)
+        // Update UI directly with the atomic value from RPC (no race condition!)
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
-          await SmartAuthService.refreshXpFromDb()
+          SmartAuthService.setXpDirectly(newXp)
         } catch (error) {
-          console.warn('Failed to refresh UI:', error)
+          console.warn('Failed to update UI:', error)
           // Non-critical - XP is already in DB, will sync on next page load
         }
       } else {
@@ -388,10 +390,18 @@ export class XpService {
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        console.log(`⏭️ XP already earned: ${idempotencyKey}`)
+        console.log(`⏭️ XP already earned: ${idempotencyKey} | Current total: ${newXp}`)
+        
+        // Still update UI to ensure it shows correct value
+        try {
+          const { SmartAuthService } = await import('./smart-auth-service')
+          SmartAuthService.setXpDirectly(newXp)
+        } catch (error) {
+          console.warn('Failed to update UI:', error)
+        }
       }
       
-      return { granted, reason: granted ? 'success' : 'already_awarded' }
+      return { granted, reason: granted ? 'success' : 'already_awarded', newXp }
       
     } catch (error) {
       console.error('❌ Exception awarding XP:', error)

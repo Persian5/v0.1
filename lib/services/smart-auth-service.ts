@@ -280,7 +280,28 @@ export class SmartAuthService {
   }
   
   /**
-   * Refresh XP from database (use after RPC awards to sync UI)
+   * Set XP directly (use when RPC returns atomic value - no fetch needed)
+   */
+  static setXpDirectly(newXp: number): void {
+    if (!this.sessionCache) return
+    
+    const oldXp = this.sessionCache.totalXp
+    this.sessionCache.totalXp = newXp
+    
+    console.log(`💎 XP set directly: ${oldXp} → ${newXp} (delta: ${newXp - oldXp})`)
+    
+    // Emit event for reactive UI updates
+    this.emitEvent('xp-updated', { 
+      newXp, 
+      oldXp,
+      delta: newXp - oldXp,
+      source: 'atomic_rpc'
+    })
+  }
+  
+  /**
+   * Refresh XP from database (fallback for cases where atomic value isn't available)
+   * @deprecated Prefer setXpDirectly when possible to avoid race conditions
    */
   static async refreshXpFromDb(): Promise<void> {
     if (!this.sessionCache?.user?.id) return
