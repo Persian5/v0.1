@@ -280,7 +280,27 @@ export class SmartAuthService {
   }
   
   /**
-   * Set XP directly (use when RPC returns atomic value - no fetch needed)
+   * Add XP optimistically (immediate UI feedback before DB confirms)
+   */
+  static addXpOptimistic(amount: number, source: string): void {
+    if (!this.sessionCache) return
+    
+    const oldXp = this.sessionCache.totalXp
+    this.sessionCache.totalXp += amount
+    
+    // Silent update - no console log spam for optimistic updates
+    
+    // Emit event for reactive UI updates
+    this.emitEvent('xp-updated', { 
+      newXp: this.sessionCache.totalXp, 
+      oldXp,
+      delta: amount,
+      source: 'optimistic'
+    })
+  }
+  
+  /**
+   * Set XP directly to exact value (use for reconciliation with DB)
    */
   static setXpDirectly(newXp: number): void {
     if (!this.sessionCache) return
@@ -288,14 +308,17 @@ export class SmartAuthService {
     const oldXp = this.sessionCache.totalXp
     this.sessionCache.totalXp = newXp
     
-    console.log(`💎 XP set directly: ${oldXp} → ${newXp} (delta: ${newXp - oldXp})`)
+    // Silent unless there's a change
+    if (oldXp !== newXp) {
+      console.log(`🔄 XP reconciled: ${oldXp} → ${newXp}`)
+    }
     
     // Emit event for reactive UI updates
     this.emitEvent('xp-updated', { 
       newXp, 
       oldXp,
       delta: newXp - oldXp,
-      source: 'atomic_rpc'
+      source: 'reconcile'
     })
   }
   

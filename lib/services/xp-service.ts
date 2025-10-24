@@ -345,8 +345,16 @@ export class XpService {
       return { granted: false, reason: 'cached' }
     }
     
+    // Optimistic UI update - show XP immediately for instant feedback
     try {
-      // Call RPC function - single atomic operation that returns new XP total
+      const { SmartAuthService } = await import('./smart-auth-service')
+      SmartAuthService.addXpOptimistic(amount, source)
+    } catch (error) {
+      console.warn('Failed optimistic update:', error)
+    }
+    
+    try {
+      // Call RPC function - awards XP in database and returns new total for validation
       const { data, error } = await supabase.rpc('award_step_xp_idem', {
         p_user_id: userId,
         p_idempotency_key: idempotencyKey,
@@ -363,6 +371,11 @@ export class XpService {
       
       if (error) {
         console.error('❌ Error awarding XP:', error)
+        // Rollback optimistic update
+        try {
+          const { SmartAuthService } = await import('./smart-auth-service')
+          SmartAuthService.addXpOptimistic(-amount, 'rollback')
+        } catch (e) {}
         return { granted: false, reason: 'error', error }
       }
       
@@ -375,29 +388,34 @@ export class XpService {
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey} | New total: ${newXp}`)
+        console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
         
-        // Update UI directly with the atomic value from RPC (no race condition!)
+        // Reconcile: If DB value differs from UI, trust the DB (handles edge cases)
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
-          SmartAuthService.setXpDirectly(newXp)
+          const currentUiXp = SmartAuthService.getUserXp()
+          if (Math.abs(currentUiXp - newXp) > amount) {
+            // Significant mismatch - reconcile to DB value
+            console.log(`🔄 Reconciling XP: UI=${currentUiXp}, DB=${newXp}`)
+            SmartAuthService.setXpDirectly(newXp)
+          }
         } catch (error) {
-          console.warn('Failed to update UI:', error)
-          // Non-critical - XP is already in DB, will sync on next page load
+          console.warn('Failed to reconcile XP:', error)
         }
       } else {
-        // XP already awarded previously - cache to prevent future calls
+        // XP already awarded - rollback optimistic update
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        console.log(`⏭️ XP already earned: ${idempotencyKey} | Current total: ${newXp}`)
+        console.log(`⏭️ XP already earned: ${idempotencyKey}`)
         
-        // Still update UI to ensure it shows correct value
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
+          SmartAuthService.addXpOptimistic(-amount, 'already_awarded_rollback')
+          // Also reconcile to DB value to be safe
           SmartAuthService.setXpDirectly(newXp)
         } catch (error) {
-          console.warn('Failed to update UI:', error)
+          console.warn('Failed to rollback optimistic XP:', error)
         }
       }
       
