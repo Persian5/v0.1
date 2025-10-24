@@ -13,7 +13,7 @@ interface TextSequenceProps {
   points?: number
   maxWordBankSize?: number // Maximum number of options in word bank
   onContinue: () => void
-  onXpStart?: () => void
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
 }
 
 export function TextSequence({
@@ -30,6 +30,7 @@ export function TextSequence({
   const [showXp, setShowXp] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
 
   // SMART WORD BANK: Generate contextual options with sentence-building distractors
   const [wordBankOptions] = useState<string[]>(() => {
@@ -123,7 +124,7 @@ export function TextSequence({
     setUserOrder(prev => prev.filter(w => w !== wordKey))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const expectedWords = expectedTranslation.split(' ').filter(word => word.length > 0)
     
     if (userOrder.length !== expectedWords.length) return
@@ -141,7 +142,8 @@ export function TextSequence({
     if (correct) {
       playSuccessSound()
       if (onXpStart) {
-        onXpStart()
+        const wasGranted = await onXpStart(); // Await the Promise to get result
+        setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
       }
       setShowXp(true)
     } else {
@@ -173,6 +175,7 @@ export function TextSequence({
         <XpAnimation
           amount={points}
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={handleXpComplete}
         />
