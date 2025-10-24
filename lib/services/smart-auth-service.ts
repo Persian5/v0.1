@@ -75,6 +75,7 @@ export class SmartAuthService {
    * Emit event to all listeners
    */
   private static emitEvent(eventType: SmartAuthEventType, data: any): void {
+    console.log(`📢 Emitting event: ${eventType}`, { listenerCount: this.eventListeners.size, data })
     this.eventListeners.forEach(listener => {
       try {
         listener(eventType, data)
@@ -290,6 +291,8 @@ export class SmartAuthService {
       
       const oldXp = this.sessionCache.totalXp
       this.sessionCache.totalXp = freshXp
+      
+      console.log(`🔄 XP refreshed from DB: ${oldXp} → ${freshXp} (delta: ${freshXp - oldXp})`)
       
       // Emit event for reactive UI updates
       this.emitEvent('xp-updated', { 

@@ -4,7 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from "@vercel/analytics/next"
-import { AuthProvider } from "@/components/auth/AuthProvider"
+import { SmartAuthProvider } from "@/components/auth/SmartAuthProvider"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -41,9 +41,9 @@ export default function RootLayout({
           enableSystem={false} 
           disableTransitionOnChange
         >
-          <AuthProvider>
+          <SmartAuthProvider>
             {children}
-          </AuthProvider>
+          </SmartAuthProvider>
         </ThemeProvider>
         <Analytics />
       </body>
