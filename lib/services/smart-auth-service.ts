@@ -279,6 +279,31 @@ export class SmartAuthService {
   }
   
   /**
+   * Refresh XP from database (use after RPC awards to sync UI)
+   */
+  static async refreshXpFromDb(): Promise<void> {
+    if (!this.sessionCache) return
+    
+    try {
+      const { DatabaseService } = await import('@/lib/supabase/database')
+      const freshXp = await DatabaseService.getUserTotalXp(this.sessionCache.userId)
+      
+      const oldXp = this.sessionCache.totalXp
+      this.sessionCache.totalXp = freshXp
+      
+      // Emit event for reactive UI updates
+      this.emitEvent('xp-updated', { 
+        newXp: freshXp, 
+        oldXp,
+        delta: freshXp - oldXp,
+        source: 'db_refresh'
+      })
+    } catch (error) {
+      console.error('Failed to refresh XP from DB:', error)
+    }
+  }
+  
+  /**
    * Update lesson progress with optimistic update
    */
   static async updateLessonProgress(

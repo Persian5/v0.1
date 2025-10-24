@@ -375,14 +375,13 @@ export class XpService {
         }
         console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
         
-        // Trigger optimistic UI update via SmartAuthService
-        // The DB is already updated by RPC, this just refreshes the UI immediately
+        // Refresh UI from DB (don't add optimistically - DB is source of truth)
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
-          SmartAuthService.addUserXp(amount, source, metadata)
+          await SmartAuthService.refreshXpFromDb()
         } catch (error) {
-          console.warn('Failed to trigger UI update:', error)
-          // Non-critical - XP is already in DB
+          console.warn('Failed to refresh UI:', error)
+          // Non-critical - XP is already in DB, will sync on next page load
         }
       } else {
         // XP already awarded previously - cache to prevent future calls
