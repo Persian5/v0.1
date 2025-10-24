@@ -337,15 +337,14 @@ export class XpService {
     // Build idempotency key (stable across app restarts)
     const idempotencyKey = makeStepKey(moduleId, lessonId, stepUid)
     
-    // Optional: Check localStorage cache first for instant feedback
-    // This prevents unnecessary network calls for steps user already completed
+    // Check localStorage cache FIRST - prevents optimistic updates on duplicates
     const cacheKey = `xp-${userId}-${idempotencyKey}`
     if (typeof window !== 'undefined' && localStorage.getItem(cacheKey)) {
       console.log(`⏭️ XP already earned (cached): ${idempotencyKey}`)
       return { granted: false, reason: 'cached' }
     }
     
-    // Optimistic UI update - show XP immediately for instant feedback
+    // Optimistic UI update - show XP immediately (only for new awards)
     try {
       const { SmartAuthService } = await import('./smart-auth-service')
       SmartAuthService.addXpOptimistic(amount, source)
