@@ -44,6 +44,9 @@ export class SmartAuthService {
   private static syncInterval: NodeJS.Timeout | null = null
   private static isInitializing = false
   
+  // Auth listener guard - prevents multiple registrations
+  private static authListenerUnsubscribe: (() => void) | null = null
+  
   // Event system for reactive updates
   private static eventListeners: Set<SmartAuthEventListener> = new Set()
   
@@ -511,11 +514,22 @@ export class SmartAuthService {
   /**
    * Set up auth state change listener to handle token refresh events
    * This keeps the session cache in sync with Supabase's token state
+   * 
+   * CRITICAL: Uses guard to prevent multiple listener registrations
+   * which was causing XP explosion (16 listeners = 16x XP multiplication)
    */
   static setupAuthStateListener(): void {
     if (typeof window === 'undefined') return
     
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    // Guard: if listener already registered, don't register another
+    if (this.authListenerUnsubscribe) {
+      console.log('Auth listener already registered - skipping duplicate registration')
+      return
+    }
+    
+    console.log('Registering auth state listener (first time)')
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event)
       
       // Handle token refresh - update cached session
@@ -566,6 +580,9 @@ export class SmartAuthService {
         }
       }
     })
+    
+    // Store the unsubscribe function for cleanup
+    this.authListenerUnsubscribe = subscription.unsubscribe
   }
   
   /**
