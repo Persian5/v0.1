@@ -428,20 +428,11 @@ export function LessonRunner({
         }
       });
       
-      // If XP was NOT granted (already awarded), still show optimistic UI
-      // This allows smooth UX even when users go back and forth
-      if (result.granted) {
-        // XP awarded - update local state optimistically
-        addXp(xpReward.amount, xpReward.source, {
-          lessonId,
-          moduleId,
-          activityType: currentStep.type,
-          stepIndex: idx,
-          isRemediation: isInRemediation
-        });
-      } else {
+      // XP is already handled by awardXpOnce (optimistic update + RPC)
+      // No need to call addXp here - would be a duplicate
+      
+      if (!result.granted) {
         console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
-        // Don't update local XP - user already earned this
       }
     };
   };

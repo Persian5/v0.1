@@ -291,6 +291,8 @@ export class SmartAuthService {
     const oldXp = this.sessionCache.totalXp
     this.sessionCache.totalXp += amount
     
+    console.log(`⚡ Optimistic: ${oldXp} → ${this.sessionCache.totalXp} (+${amount})`)
+    
     // Emit event for reactive UI updates
     this.emitEvent('xp-updated', { 
       newXp: this.sessionCache.totalXp, 

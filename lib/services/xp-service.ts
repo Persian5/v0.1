@@ -387,7 +387,7 @@ export class XpService {
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        // XP awarded successfully - optimistic update already applied
+        console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
         
         // No reconciliation needed - optimistic update is already correct
         // The RPC confirmed the award, so our optimistic +amount is accurate
