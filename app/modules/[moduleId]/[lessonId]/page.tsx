@@ -308,10 +308,10 @@ function LessonPageContent() {
         <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <Link 
             href={`/modules/${moduleId}`} 
-            className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary"
+            className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Module {moduleId.replace('module', '')}</span>
+            <ChevronLeft className="h-4 w-4" />
+            <span>Back to Module {moduleId.replace('module', '')}</span>
           </Link>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">

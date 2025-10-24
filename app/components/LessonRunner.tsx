@@ -60,7 +60,6 @@ export function LessonRunner({
   const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
   const [isNavigating, setIsNavigating] = useState(false) // Prevent rapid back button clicks
   const [showXp, setShowXp] = useState(false) // Track XP animation state
-  const [stepAlreadyCompleted, setStepAlreadyCompleted] = useState(false) // Track if current step XP was already earned
   const stateRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -400,12 +399,13 @@ export function LessonRunner({
   };
 
   // IDEMPOTENT XP HANDLER: Award XP once per step (back button safe)
+  // Returns a promise that resolves to whether XP was granted (false = already completed)
   const createStepXpHandler = () => {
-    return async () => {
+    return async (): Promise<boolean> => {
       const currentStep = steps[idx];
       if (!currentStep || !user?.id) {
         console.warn('No current step or user available for XP', { idx, userId: user?.id });
-        return;
+        return false;
       }
 
       // Derive stable step UID
@@ -432,13 +432,11 @@ export function LessonRunner({
       // XP is already handled by awardXpOnce (optimistic update + RPC)
       // No need to call addXp here - would be a duplicate
       
-      // Update state to track if this step was already completed
       if (!result.granted) {
         console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
-        setStepAlreadyCompleted(true);
-      } else {
-        setStepAlreadyCompleted(false);
       }
+      
+      return result.granted; // Return true if XP was granted, false if already completed
     };
   };
   
@@ -475,8 +473,6 @@ export function LessonRunner({
       setIdx(idx - 1);
       // Clear any pending remediation when going back
       setPendingRemediation([]);
-      // Reset step completion state for new step
-      setStepAlreadyCompleted(false);
     }
     
     // Reset navigation guard after 300ms
@@ -506,7 +502,6 @@ export function LessonRunner({
             points={1}
             onContinue={() => completeRemediation()}
             onXpStart={createStepXpHandler()}
-            isAlreadyCompleted={stepAlreadyCompleted}
           />
         </>
       );
@@ -546,20 +541,21 @@ export function LessonRunner({
     <>
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
       
-      {/* STEP BACK BUTTON - Inside lesson content, visible from step 1 onwards */}
-      {idx > 0 && (
-        <button
-          onClick={handleBackButton}
-          disabled={isNavigating || showXp || isPending}
-          className="absolute left-4 top-4 z-10 flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:pointer-events-none transition-colors"
-          aria-label="Go back to previous step"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Previous
-        </button>
-      )}
-      
-      {/* Render current step based on type */}
+      <div className="relative">
+        {/* STEP BACK BUTTON - Inside lesson content, visible from step 1 onwards */}
+        {idx > 0 && (
+          <button
+            onClick={handleBackButton}
+            disabled={isNavigating || showXp || isPending}
+            className="absolute left-4 top-4 z-10 flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            aria-label="Go back to previous step"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Previous
+          </button>
+        )}
+        
+        {/* Render current step based on type */}
       {step.type === 'welcome' ? (
         <LessonIntro 
           title={(step as WelcomeStep).title} 
@@ -595,7 +591,6 @@ export function LessonRunner({
           points={step.points}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
-          isAlreadyCompleted={stepAlreadyCompleted}
         />
       ) : step.type === 'quiz' ? (
         <Quiz
@@ -707,6 +702,7 @@ export function LessonRunner({
           addXp={addXp}
         />
       ) : null}
+      </div>
     </>
   );
 } 

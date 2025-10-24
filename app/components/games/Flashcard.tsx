@@ -30,11 +30,10 @@ interface FlashcardProps {
   }
   points?: number
   onContinue: () => void
-  onXpStart?: () => void
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   isFlipped?: boolean
   onFlip?: () => void
   showContinueButton?: boolean
-  isAlreadyCompleted?: boolean // Show "Step Already Completed" animation
 }
 
 // Helper function to convert card text to audio filename - DEPRECATED
@@ -83,11 +82,11 @@ export function Flashcard({
   isFlipped: extFlipped,
   onFlip: extFlip,
   showContinueButton,
-  isAlreadyCompleted = false,
 }: FlashcardProps) {
   const [localFlip, setLocalFlip] = useState(false)
   const [localShowNext, setLocalShowNext] = useState(false)
   const [showXp, setShowXp] = useState(false)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if this step was already completed
   const [lastFlipState, setLastFlipState] = useState(false)
   const [hasBeenFlipped, setHasBeenFlipped] = useState(false)
   const componentMountedRef = useRef(false)
@@ -171,13 +170,14 @@ export function Flashcard({
     }
   }
 
-  function handleContinueClick() {
+  async function handleContinueClick() {
     // Play success sound when continuing
     playSuccessSound();
     
-    // Award XP immediately when user clicks Continue
+    // Award XP and check if step was already completed
     if (onXpStart) {
-      onXpStart();
+      const wasGranted = await onXpStart();
+      setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
     }
     
     // Trigger XP animation for visual feedback
