@@ -1,7 +1,11 @@
 -- Update RPC function to return {awarded: boolean, new_xp: integer}
 -- This eliminates race conditions by returning the XP value atomically
 
-CREATE OR REPLACE FUNCTION award_step_xp_idem(
+-- Drop the old function signature first (can't change return type with CREATE OR REPLACE)
+DROP FUNCTION IF EXISTS award_step_xp_idem(uuid,text,integer,text,text,jsonb);
+
+-- Create new function with jsonb return type
+CREATE FUNCTION award_step_xp_idem(
   p_user_id uuid,
   p_idempotency_key text,
   p_amount int,
