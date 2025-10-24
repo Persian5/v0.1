@@ -8,7 +8,7 @@ interface MatchingGameProps {
   words: { id: string; text: string; slotId: string }[]  // words to match
   slots:  { id: string; text: string }[]                // match targets
   points: number
-  onXpStart?: () => void
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onComplete: (allCorrect: boolean) => void
 }
 
@@ -51,6 +51,7 @@ export function MatchingGame({
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null) // NEW: track selected slot
   const [showXp, setShowXp] = useState(false)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   const [showFeedback, setShowFeedback] = useState<{ 
     slotId: string; 
     wordId: string;
@@ -113,7 +114,7 @@ export function MatchingGame({
   };
 
   // NEW: Unified matching logic
-  const tryMatch = (wordId: string, slotId: string) => {
+  const tryMatch = async (wordId: string, slotId: string) => {
     // Find the word object for the selected ID
     const selectedWord = shuffledWords.find(w => w.id === wordId);
     if (!selectedWord) return;
@@ -132,9 +133,10 @@ export function MatchingGame({
       if (nextCount === shuffledWords.length) {
         playSuccessSound();
         
-        // Award XP immediately when all words are matched
+        // Award XP and check if step was already completed
         if (onXpStart) {
-          onXpStart();
+          const wasGranted = await onXpStart(); // Await the Promise to get result
+          setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
         }
         
         // Trigger XP animation for visual feedback
@@ -177,6 +179,7 @@ export function MatchingGame({
         <XpAnimation 
           amount={points} 
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={() => {
             // Just hide animation - don't call onComplete again

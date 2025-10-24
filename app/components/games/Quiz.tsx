@@ -17,7 +17,7 @@ export interface QuizProps {
   correct: number;
   points?: number;
   onComplete: (correct: boolean) => void;
-  onXpStart?: () => void;
+  onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
   onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
 }
@@ -35,6 +35,7 @@ export function Quiz({
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
   const [isCorrectAnswer, setIsCorrectAnswer] = useState(false)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   
   // Generate unique instance ID for this quiz component
   const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
@@ -58,7 +59,7 @@ export function Quiz({
     return [...formattedOptions].sort(() => Math.random() - 0.5);
   }, [optionsHash]); // Only re-shuffle if content actually changes
 
-  const handleSelect = (index: number) => {
+  const handleSelect = async (index: number) => {
     // Prevent multiple selections
     if (quizState !== 'selecting') return;
     
@@ -72,9 +73,10 @@ export function Quiz({
       // Play success sound when the correct answer is selected
       playSuccessSound();
       
-      // Award XP immediately when user selects correct answer
+      // Award XP and check if step was already completed
       if (onXpStart) {
-        onXpStart();
+        const wasGranted = await onXpStart(); // Await the Promise to get result
+        setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
       }
       
       // Move to completed state after brief delay to show success - REDUCED timeout
@@ -170,9 +172,10 @@ export function Quiz({
         {quizState === 'showing-result' && isCorrectAnswer && (
         <XpAnimation 
           amount={points} 
-            show={true}
-            onStart={undefined}
-            onComplete={() => {}} // Handle completion in handleSelect instead
+          show={true}
+          isAlreadyCompleted={isAlreadyCompleted}
+          onStart={undefined}
+          onComplete={() => {}} // Handle completion in handleSelect instead
         />
         )}
         

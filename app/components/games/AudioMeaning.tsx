@@ -14,7 +14,7 @@ interface AudioMeaningProps {
   points?: number
   autoPlay?: boolean // Keep for backward compatibility but don't use
   onContinue: () => void
-  onXpStart?: () => void
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
 }
 
 export function AudioMeaning({
@@ -33,6 +33,7 @@ export function AudioMeaning({
   const [hasPlayedAudio, setHasPlayedAudio] = useState(false)
   const [shuffledOptions, setShuffledOptions] = useState<string[]>([])
   const [correctAnswerIndex, setCorrectAnswerIndex] = useState<number>(0)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
 
   // Find the target vocabulary item
   const targetVocabulary = vocabularyBank.find(v => v.id === vocabularyId)
@@ -60,7 +61,7 @@ export function AudioMeaning({
     }
   }
 
-  const handleAnswerSelect = (answerIndex: number) => {
+  const handleAnswerSelect = async (answerIndex: number) => {
     // Block re-clicks while feedback animates
     if (showResult) return;
 
@@ -73,7 +74,12 @@ export function AudioMeaning({
     if (correct) {
       // ✅ Correct flow – behave like Quick Quiz (green border, brief pause, XP, then auto-continue)
       playSuccessSound();
-      if (onXpStart) onXpStart();
+      
+      // Award XP and check if step was already completed
+      if (onXpStart) {
+        const wasGranted = await onXpStart(); // Await the Promise to get result
+        setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
+      }
 
       setTimeout(() => setShowXp(true), 100); // let border show
     } else {
@@ -110,6 +116,7 @@ export function AudioMeaning({
         <XpAnimation
           amount={points}
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={handleXpComplete}
         />

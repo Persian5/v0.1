@@ -12,7 +12,7 @@ export interface InputExerciseProps {
   answer: string
   points?: number
   onComplete: (correct: boolean) => void
-  onXpStart?: () => void
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
   onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
 }
@@ -308,6 +308,7 @@ export function InputExercise({
   const [showXp, setShowXp] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [showHint, setShowHint] = useState(false)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
 
   // Check if this is a grammar lesson (contains hyphen)
   const hasHyphen = answer.includes('-');
@@ -319,7 +320,7 @@ export function InputExercise({
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Normalize both input and answer for comparison
     const normalizeForComparison = (text: string): string => {
       return text.toLowerCase().trim().replace(/[^a-z]/g, '');
@@ -349,9 +350,10 @@ export function InputExercise({
       // Play success sound for correct answers
       playSuccessSound();
       
-      // Award XP immediately when user submits correct answer
+      // Award XP and check if step was already completed
       if (onXpStart) {
-        onXpStart();
+        const wasGranted = await onXpStart(); // Await the Promise to get result
+        setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
       }
       
       // Trigger XP animation for visual feedback
@@ -394,6 +396,7 @@ export function InputExercise({
         <XpAnimation 
           amount={points} 
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={() => {
             setShowXp(false)  // reset for next use

@@ -544,7 +544,7 @@ export function LessonRunner({
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
       
       {/* Positioned wrapper for step content + back button */}
-      <div className="relative w-full min-h-screen">
+      <div className="relative w-full">
         {/* STEP BACK BUTTON - Top-left corner, visible from step 1 onwards */}
         {idx > 0 && (
           <button
