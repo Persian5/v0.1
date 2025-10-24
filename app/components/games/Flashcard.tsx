@@ -86,7 +86,7 @@ export function Flashcard({
   const [localFlip, setLocalFlip] = useState(false)
   const [localShowNext, setLocalShowNext] = useState(false)
   const [showXp, setShowXp] = useState(false)
-  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if this step was already completed
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   const [lastFlipState, setLastFlipState] = useState(false)
   const [hasBeenFlipped, setHasBeenFlipped] = useState(false)
   const componentMountedRef = useRef(false)
@@ -176,11 +176,11 @@ export function Flashcard({
     
     // Award XP and check if step was already completed
     if (onXpStart) {
-      const wasGranted = await onXpStart();
+      const wasGranted = await onXpStart(); // Await the Promise to get result
       setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
     }
     
-    // Trigger XP animation for visual feedback
+    // Trigger XP animation for visual feedback (animation will show appropriate message)
     setShowXp(true);
   }
 

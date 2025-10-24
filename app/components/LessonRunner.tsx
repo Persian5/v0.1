@@ -399,13 +399,13 @@ export function LessonRunner({
   };
 
   // IDEMPOTENT XP HANDLER: Award XP once per step (back button safe)
-  // Returns a promise that resolves to whether XP was granted (false = already completed)
+  // Returns Promise<boolean>: true if XP was granted, false if already completed
   const createStepXpHandler = () => {
     return async (): Promise<boolean> => {
       const currentStep = steps[idx];
       if (!currentStep || !user?.id) {
         console.warn('No current step or user available for XP', { idx, userId: user?.id });
-        return false;
+        return false; // No XP granted
       }
 
       // Derive stable step UID
@@ -432,11 +432,13 @@ export function LessonRunner({
       // XP is already handled by awardXpOnce (optimistic update + RPC)
       // No need to call addXp here - would be a duplicate
       
+      // Log if step was already completed
       if (!result.granted) {
         console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
       }
       
-      return result.granted; // Return true if XP was granted, false if already completed
+      // Return whether XP was granted (true = new XP, false = already done)
+      return result.granted;
     };
   };
   
@@ -541,13 +543,14 @@ export function LessonRunner({
     <>
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
       
-      <div className="relative">
-        {/* STEP BACK BUTTON - Inside lesson content, visible from step 1 onwards */}
+      {/* Positioned wrapper for step content + back button */}
+      <div className="relative w-full min-h-screen">
+        {/* STEP BACK BUTTON - Top-left corner, visible from step 1 onwards */}
         {idx > 0 && (
           <button
             onClick={handleBackButton}
             disabled={isNavigating || showXp || isPending}
-            className="absolute left-4 top-4 z-10 flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="absolute left-4 top-4 z-50 flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:pointer-events-none transition-colors"
             aria-label="Go back to previous step"
           >
             <ArrowLeft className="h-4 w-4" />
