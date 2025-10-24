@@ -311,8 +311,7 @@ function LessonPageContent() {
             className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary"
           >
             <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="hidden sm:inline">Back to Module</span>
-            <span className="sm:hidden">Back</span>
+            <span>Module {moduleId.replace('module', '')}</span>
           </Link>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">

@@ -34,6 +34,7 @@ interface FlashcardProps {
   isFlipped?: boolean
   onFlip?: () => void
   showContinueButton?: boolean
+  isAlreadyCompleted?: boolean // Show "Step Already Completed" animation
 }
 
 // Helper function to convert card text to audio filename - DEPRECATED
@@ -82,6 +83,7 @@ export function Flashcard({
   isFlipped: extFlipped,
   onFlip: extFlip,
   showContinueButton,
+  isAlreadyCompleted = false,
 }: FlashcardProps) {
   const [localFlip, setLocalFlip] = useState(false)
   const [localShowNext, setLocalShowNext] = useState(false)
@@ -197,6 +199,7 @@ export function Flashcard({
         <XpAnimation
           amount={points}
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={handleXpComplete}
         />
