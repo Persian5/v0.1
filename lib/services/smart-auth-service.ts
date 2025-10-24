@@ -75,8 +75,8 @@ export class SmartAuthService {
    * Emit event to all listeners
    */
   private static emitEvent(eventType: SmartAuthEventType, data: any): void {
-    if (this.eventListeners.size === 0) {
-      console.warn(`⚠️ No listeners registered for ${eventType} - UI won't update! This can happen during HMR.`)
+    if (this.eventListeners.size === 0 && process.env.NODE_ENV === 'development') {
+      console.warn(`⚠️ No listeners registered for ${eventType} - UI won't update! (This can happen during HMR - do a hard refresh)`)
     }
     
     this.eventListeners.forEach(listener => {
@@ -290,8 +290,6 @@ export class SmartAuthService {
     
     const oldXp = this.sessionCache.totalXp
     this.sessionCache.totalXp += amount
-    
-    // Silent update - no console log spam for optimistic updates
     
     // Emit event for reactive UI updates
     this.emitEvent('xp-updated', { 

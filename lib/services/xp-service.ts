@@ -387,7 +387,7 @@ export class XpService {
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
+        // XP awarded successfully - optimistic update already applied
         
         // No reconciliation needed - optimistic update is already correct
         // The RPC confirmed the award, so our optimistic +amount is accurate
@@ -396,7 +396,7 @@ export class XpService {
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        console.log(`⏭️ XP already earned: ${idempotencyKey}`)
+        // XP already earned - rollback will happen below
         
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
