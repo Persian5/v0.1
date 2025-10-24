@@ -16,7 +16,7 @@ interface AudioSequenceProps {
   targetWordCount?: number // Number of English words expected (overrides sequence.length)
   maxWordBankSize?: number // Maximum number of options in word bank (prevents crowding)
   onContinue: () => void
-  onXpStart?: () => void
+  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
 }
 
 export function AudioSequence({
@@ -36,6 +36,7 @@ export function AudioSequence({
   const [showXp, setShowXp] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
 
   // WORD BANK: Parse expectedTranslation into individual words (same logic as TextSequence)
   const [allWordBankOptions] = useState<{ vocabItems: VocabularyItem[]; vocabIds: string[] }>(() => {
@@ -134,7 +135,7 @@ export function AudioSequence({
     setUserOrder(prev => prev.filter(id => id !== vocabularyId))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Calculate expected word count
     let expectedWordCount: number;
     
@@ -176,7 +177,8 @@ export function AudioSequence({
     if (correct) {
       playSuccessSound()
       if (onXpStart) {
-        onXpStart()
+        const wasGranted = await onXpStart(); // Await the Promise to get result
+        setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
       }
       setShowXp(true)
     } else {
@@ -206,6 +208,7 @@ export function AudioSequence({
         <XpAnimation
           amount={points}
           show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={handleXpComplete}
         />
