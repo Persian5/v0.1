@@ -58,14 +58,14 @@ export function MatchingGame({
     correct: boolean 
   } | null>(null)
 
-  // Reset feedback after 1.5s for incorrect attempts
+  // Reset feedback after 600ms for incorrect attempts
   useEffect(() => {
     if (showFeedback && !showFeedback.correct) {
       const timer = setTimeout(() => {
         setShowFeedback(null);
         setSelectedWordId(null);
         setSelectedSlotId(null); // Clear both selections
-      }, 1500);
+      }, 600); // Reduced from 1500ms for snappier feedback
       
       return () => clearTimeout(timer);
     }
