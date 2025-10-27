@@ -213,6 +213,15 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "You're welcoming guests into your home. What do you say?",
+              options: ["Khosh Amadid", "Salam", "Chetori", "Khodafez"],
+              correct: 0
+            }
+          },
+          {
             type: "matching",
             points: 3,
             data: {
