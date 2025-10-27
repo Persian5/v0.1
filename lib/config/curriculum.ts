@@ -272,22 +272,25 @@ export const curriculumData: Module[] = [
             }
           },
           
-          // PHASE 2: NEW VOCABULARY INTRODUCTION - "khoobam" & "merci"
+          // PHASE 2: INTRODUCE BASE ADJECTIVE - "khoob"
           {
             type: "flashcard",
             points: 1,
             data: {
-              vocabularyId: "khoobam"
+              vocabularyId: "khoob"
             }
           },
           {
-            type: "audio-meaning",
+            type: "quiz",
             points: 2,
             data: {
-              vocabularyId: "khoobam",
-              distractors: ["salam", "chetori", "khodafez"]
+              prompt: "What does 'khoob' mean?",
+              options: ["Good", "Bad", "Hello", "Thank you"],
+              correct: 0
             }
           },
+          
+          // PHASE 3: INTRODUCE "merci" & YES/NO
           {
             type: "flashcard",
             points: 1,
@@ -300,18 +303,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               vocabularyId: "merci",
-              distractors: ["salam", "khoobam", "khodafez"]
-            }
-          },
-          
-          // PHASE 3: INTEGRATION & APPLICATION
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you respond to 'Chetori?' (How are you?)",
-              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
-              correct: 0
+              distractors: ["salam", "salam", "khodafez"]
             }
           },
           {
@@ -322,15 +314,6 @@ export const curriculumData: Module[] = [
               answer: "Merci"
             }
           },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["khoobam", "merci"]
-            }
-          },
-          
-          // PHASE 4: YES/NO VOCABULARY - "baleh" & "na"
           {
             type: "flashcard",
             points: 1,
@@ -350,7 +333,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               vocabularyId: "baleh",
-              distractors: ["na", "merci", "khoobam"]
+              distractors: ["na", "merci", "salam"]
             }
           },
           {
@@ -369,23 +352,12 @@ export const curriculumData: Module[] = [
               ]
             }
           },
-          
-          // PHASE 5: PHRASE BUILDING
           {
             type: "quiz",
             points: 2,
             data: {
               prompt: "How do you say 'No, thank you' in Persian?",
-              options: ["Na, merci", "Baleh, merci", "Salam, merci", "Khoobam, merci"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'I'm good' in Persian?",
-              options: ["Khoobam", "Salam", "Baleh", "Na"],
+              options: ["Na, merci", "Baleh, merci", "Salam, merci", "Salam"],
               correct: 0
             }
           },
@@ -397,8 +369,6 @@ export const curriculumData: Module[] = [
               answer: "Baleh"
             }
           },
-          
-          // PHASE 6: COMPREHENSIVE PRACTICE
           {
             type: "matching",
             points: 3,
@@ -415,6 +385,57 @@ export const curriculumData: Module[] = [
                 { id: "slot3", text: "Goodbye" },
                 { id: "slot4", text: "Yes" }
               ]
+            }
+          },
+          
+          // PHASE 4: GRAMMAR CONCEPT - ADJECTIVE SUFFIXES
+          {
+            type: "grammar-concept",
+            points: 2,
+            data: {
+              conceptId: "adjective-suffixes"
+            }
+          },
+          
+          // PHASE 5: APPLY GRAMMAR - INTRODUCE "khoobam" & "khoobi"
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khoobam"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khoobam",
+              distractors: ["salam", "chetori", "khodafez"]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you respond to 'Chetori?' (How are you?)",
+              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'I'm good' in Persian?",
+              options: ["Khoobam", "Salam", "Baleh", "Na"],
+              correct: 0
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["khoobam", "merci"]
             }
           },
           {
