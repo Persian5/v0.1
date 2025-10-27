@@ -62,16 +62,26 @@ export function GrammarConcept({
       // Suffix is everything from hyphen to next space (or end if no space)
       const suffix = spaceIndex > 0 ? afterHyphen.substring(0, spaceIndex) : afterHyphen
       
-      // Base is everything before the hyphen + everything after the suffix
-      const beforeHyphen = transformed.substring(0, hyphenIndex)
+      // Parts: before hyphen, suffix, after suffix
+      const beforeSuffix = transformed.substring(0, hyphenIndex)
       const afterSuffix = spaceIndex > 0 ? afterHyphen.substring(spaceIndex) : ''
-      const basePart = beforeHyphen + afterSuffix
       
-      return { basePart, suffixPart: suffix }
+      return { 
+        beforeSuffix, 
+        suffixPart: suffix, 
+        afterSuffix,
+        // For backward compatibility
+        basePart: beforeSuffix + afterSuffix
+      }
     }
     
     // Fallback for non-hyphenated (shouldn't happen)
-    return { basePart: transformed, suffixPart: '' }
+    return { 
+      beforeSuffix: transformed, 
+      suffixPart: '', 
+      afterSuffix: '',
+      basePart: transformed 
+    }
   }
   
   // Extract just the suffix for button display
@@ -258,13 +268,14 @@ export function GrammarConcept({
                 {/* Transformations (branches) */}
                 <div className="flex justify-center gap-3 flex-wrap">
                   {concept.phases.map((phase, index) => {
-                    const { basePart, suffixPart } = splitWordWithSuffix(phase.baseWord, phase.transformedWord)
+                    const { beforeSuffix, suffixPart, afterSuffix } = splitWordWithSuffix(phase.baseWord, phase.transformedWord)
                     return (
                       <div key={index} className="flex flex-col items-center">
                         <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3 min-w-[130px]">
                           <div className="text-lg font-bold text-green-700">
-                            <span>{basePart}</span>
+                            <span>{beforeSuffix}</span>
                             <span className="text-orange-600">-{suffixPart}</span>
+                            <span>{afterSuffix}</span>
                             {phase.transformedWord.includes('?') && <span className="text-orange-600">?</span>}
                           </div>
                           <div className="text-xs text-green-600 mt-1">
@@ -309,7 +320,7 @@ export function GrammarConcept({
 
               <div className="space-y-4">
                 {concept.phases.map((phase, index) => {
-                  const { basePart, suffixPart } = splitWordWithSuffix(phase.baseWord, phase.transformedWord)
+                  const { beforeSuffix, suffixPart, afterSuffix } = splitWordWithSuffix(phase.baseWord, phase.transformedWord)
                   const isQuestion = phase.transformedWord.includes('?')
                   return (
                   <motion.div
@@ -321,8 +332,9 @@ export function GrammarConcept({
                   >
                     <div className="flex items-center gap-4">
                       <div className="text-2xl font-bold text-blue-700">
-                          <span>{basePart}</span>
+                          <span>{beforeSuffix}</span>
                           <span className="text-orange-600">-{suffixPart}</span>
+                          <span>{afterSuffix}</span>
                           {isQuestion && <span className="text-orange-600 font-extrabold">?</span>}
                         </div>
                         <div>
@@ -425,11 +437,12 @@ export function GrammarConcept({
                       >
                         <div className="text-3xl font-bold text-green-700 mb-2">
                           {(() => {
-                            const { basePart, suffixPart } = splitWordWithSuffix(currentPracticePhase.baseWord, currentPracticePhase.transformedWord)
+                            const { beforeSuffix, suffixPart, afterSuffix } = splitWordWithSuffix(currentPracticePhase.baseWord, currentPracticePhase.transformedWord)
                             return (
                               <>
-                                <span>{basePart}</span>
+                                <span>{beforeSuffix}</span>
                                 <span className="text-orange-600">-{suffixPart}</span>
+                                <span>{afterSuffix}</span>
                               </>
                             )
                           })()}
