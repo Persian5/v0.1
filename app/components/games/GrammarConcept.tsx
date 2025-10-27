@@ -189,14 +189,14 @@ export function GrammarConcept({
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <div className="text-center space-y-4 mb-8">
-                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">
                   {concept.title}
                 </h3>
                 {/* Badge for suffix type (shared) */}
                 {concept.phases[0]?.suffixType && (
-                  <div>
-                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-base font-semibold ${
+                  <div className="mb-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                       concept.phases[0].suffixType === 'state' 
                         ? 'bg-blue-100 text-blue-800' 
                         : concept.phases[0].suffixType === 'possession'
@@ -211,53 +211,45 @@ export function GrammarConcept({
                     </span>
                   </div>
                 )}
-                <p className="text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto font-medium">
+                <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
                   {concept.rule}
                 </p>
               </div>
 
               {/* Tree map: Base word at top, transformations below */}
-              <div className="flex flex-col items-center space-y-8 py-8 bg-gradient-to-b from-gray-50 to-white rounded-2xl">
+              <div className="flex flex-col items-center space-y-4 py-6">
                 {/* Base word (root) */}
-                <div className="bg-white border-3 border-gray-400 rounded-2xl p-6 shadow-lg">
-                  <div className="text-3xl sm:text-4xl font-bold text-gray-900">
+                <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-gray-800">
                     {concept.phases[0].baseWord}
                   </div>
-                  <div className="text-base text-gray-600 mt-2">
+                  <div className="text-sm text-gray-600 mt-1">
                     {concept.phases[0].baseDefinition}
                   </div>
                 </div>
 
                 {/* Connector lines */}
-                <div className="flex justify-center gap-4">
-                  {concept.phases.map((_, index) => (
-                    <div key={index} className="h-12 w-1 bg-gradient-to-b from-gray-400 to-green-400 rounded-full"></div>
-                  ))}
+                <div className="flex justify-center">
+                  <div className="h-6 w-0.5 bg-gray-300"></div>
                 </div>
 
                 {/* Transformations (branches) */}
-                <div className="flex justify-center gap-6 flex-wrap px-4">
+                <div className="flex justify-center gap-3 flex-wrap">
                   {concept.phases.map((phase, index) => {
                     const { basePart, suffixPart } = splitWordWithSuffix(phase.baseWord, phase.transformedWord)
                     return (
-                      <motion.div 
-                        key={index} 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex flex-col items-center"
-                      >
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 border-3 border-green-300 rounded-2xl p-6 min-w-[160px] shadow-lg">
-                          <div className="text-2xl sm:text-3xl font-bold text-green-800 mb-2">
+                      <div key={index} className="flex flex-col items-center">
+                        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3 min-w-[130px]">
+                          <div className="text-lg font-bold text-green-700">
                             <span>{basePart}</span>
                             <span className="text-orange-600">-{suffixPart}</span>
-                            {phase.transformedWord.includes('?') && <span className="text-orange-600 text-3xl">?</span>}
+                            {phase.transformedWord.includes('?') && <span className="text-orange-600">?</span>}
                           </div>
-                          <div className="text-sm text-green-700 font-medium">
+                          <div className="text-xs text-green-600 mt-1">
                             {phase.transformedDefinition}
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     )
                   })}
                 </div>

@@ -103,7 +103,7 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "khoob-i?",
         baseDefinition: "good",
         transformedDefinition: "are you good?",
-        explanation: "Add –i with rising tone to ask a question",
+        explanation: "Add –i? to the descriptive word to say 'are you?'",
         exampleBefore: "khoob (good)",
         exampleAfter: "khoobi? (are you good?)",
         points: 1,
