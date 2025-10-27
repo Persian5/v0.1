@@ -813,7 +813,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               prompt: "Which of the following phrases means 'What is your name?'?",
-              options: ["Esme shoma chiye?", "Esme man chiye?", "Man chiye?", "Shoma chi?"],
+              options: ["Esme shoma chiye?", "Esme man chiye?", "Esme chiye?", "Esm chiye?"],
               correct: 0
             }
           },
