@@ -505,7 +505,7 @@ export function GrammarConcept({
                       value={useItInput}
                       onChange={(e) => setUseItInput(e.target.value)}
                       className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg font-semibold text-center focus:border-primary focus:outline-none"
-                      placeholder="am"
+                      placeholder="Type here"
                       disabled={useItCorrect}
                     />
                   </div>
