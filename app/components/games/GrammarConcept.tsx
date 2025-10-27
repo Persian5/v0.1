@@ -495,19 +495,66 @@ export function GrammarConcept({
                     </p>
                   </div>
 
-                  {/* Input field */}
+                  {/* Input field with letter-by-letter feedback */}
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
                       What suffix goes after "{currentPhase.baseWord}" to make this sentence correct?
                     </label>
-                    <input
-                      type="text"
-                      value={useItInput}
-                      onChange={(e) => setUseItInput(e.target.value)}
-                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg font-semibold text-center focus:border-primary focus:outline-none"
-                      placeholder="Type here"
-                      disabled={useItCorrect}
-                    />
+                    {(() => {
+                      const targetSuffix = currentPhase.transformedWord
+                        .replace(currentPhase.baseWord, '')
+                        .replace(/-/g, '')
+                        .trim()
+                        .toLowerCase()
+                      
+                      const inputValue = useItInput.toLowerCase()
+                      
+                      // Validate each character
+                      const validateChar = (char: string, index: number): 'correct' | 'incorrect' | 'pending' => {
+                        if (index >= inputValue.length) return 'pending'
+                        if (index >= targetSuffix.length) return 'incorrect'
+                        return inputValue[index] === targetSuffix[index] ? 'correct' : 'incorrect'
+                      }
+                      
+                      return (
+                        <div className="w-full">
+                          <input
+                            type="text"
+                            value={useItInput}
+                            onChange={(e) => setUseItInput(e.target.value)}
+                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg font-semibold text-center focus:border-primary focus:outline-none"
+                            placeholder="Type here"
+                            disabled={useItCorrect}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck="false"
+                          />
+                          {/* Letter-by-letter feedback below input */}
+                          <div className="flex flex-wrap gap-1 justify-center mt-2">
+                            {targetSuffix.split('').map((char, index) => {
+                              const status = validateChar(char, index)
+                              return (
+                                <motion.span
+                                  key={index}
+                                  initial={{ scale: 0.8 }}
+                                  animate={{ scale: 1 }}
+                                  className={`inline-flex items-center justify-center min-w-[24px] h-[28px] rounded text-sm font-medium transition-all ${
+                                    status === 'correct' 
+                                      ? 'bg-green-100 text-green-700 border border-green-300' 
+                                      : status === 'incorrect'
+                                      ? 'bg-red-100 text-red-700 border border-red-300'
+                                      : 'bg-gray-50 text-gray-400 border border-gray-200'
+                                  }`}
+                                >
+                                  {status === 'pending' ? '_' : inputValue[index] || ''}
+                                </motion.span>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   {/* Submit button */}

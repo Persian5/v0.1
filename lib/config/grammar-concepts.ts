@@ -30,7 +30,7 @@ export const grammarConcepts: GrammarConcept[] = [
     title: "I Am / You Are: Adding Suffixes",
     description: "When you want to say 'I am' or 'you are' something, you add a suffix to the descriptive word. Add –am to say 'I am' and –i to say 'you are'.",
     rule: "Add –am for 'I am' and –i for 'you are' to any descriptive word",
-    useItSentence: "man khoob-am, shoma khoob-i? (I am good, are you good?)",
+    useItSentence: "na merci, man khoob-am (No thank you, I am good)",
     phases: [
       {
         id: "khoob-to-khoob-am",
