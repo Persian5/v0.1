@@ -699,6 +699,15 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which of the following words mean 'You'?",
+              options: ["Shoma", "Man", "Esm", "Chi"],
+              correct: 0
+            }
+          },
+          {
             type: "audio-meaning",
             points: 2,
             data: {
@@ -712,6 +721,15 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               conceptId: "ezafe-connector"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which of the following words mean 'Name'?",
+              options: ["Esm", "Esm-e", "Man", "Shoma"],
+              correct: 0
             }
           },
           {
@@ -791,11 +809,12 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "input",
+            type: "quiz",
             points: 2,
             data: {
-              question: "What is 'name' in Farsi?",
-              answer: "esm"
+              prompt: "Which of the following phrases means 'What is your name?'?",
+              options: ["Esme shoma chiye?", "Esme man chiye?", "Man chiye?", "Shoma chi?"],
+              correct: 0
             }
           },
           {
