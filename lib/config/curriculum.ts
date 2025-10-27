@@ -80,8 +80,8 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
-              prompt: "What does 'Salam' mean?",
-              options: ["Hello", "Goodbye", "Thank you", "How are you"],
+              prompt: "Which of the following words mean 'Hello'?",
+              options: ["Salam", "Chetori", "Khosh Amadid", "Khodafez"],
               correct: 0
             }
           },
@@ -110,17 +110,12 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "matching",
-            points: 3,
+            type: "quiz",
+            points: 2,
             data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Chetori", slotId: "slot2" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "How are you?" }
-              ]
+              prompt: "Which of the following words mean 'How are you?'?",
+              options: ["Chetori", "Salam", "Khosh Amadid", "Khodafez"],
+              correct: 0
             }
           },
           {
@@ -237,6 +232,14 @@ export const curriculumData: Module[] = [
                 { id: "slot3", text: "How are you?" },
                 { id: "slot4", text: "Goodbye" }
               ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type how you say 'Goodbye' in Persian",
+              answer: "Khodafez"
             }
           },
           {
