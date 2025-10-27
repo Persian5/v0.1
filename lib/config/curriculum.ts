@@ -101,18 +101,12 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "flashcard",
-            points: 1,
+            type: "text-sequence",
+            points: 3,
             data: {
-              vocabularyId: "khosh_amadid"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chetori",
-              distractors: ["salam", "khosh_amadid", "khodafez"]
+              finglishText: "Salam chetori",
+              expectedTranslation: "Hello How are you",
+              maxWordBankSize: 10
             }
           },
           {
@@ -125,9 +119,47 @@ export const curriculumData: Module[] = [
               ],
               slots: [
                 { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "How are you?" }
+              ]
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khosh_amadid"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "salam",
+              distractors: ["chetori", "khosh_amadid", "khodafez"]
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "How do you say 'How are you?' in Persian?",
+              options: ["Chetori", "Salam", "Khodafez", "Khosh Amadid"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Salam", slotId: "slot1" },
+                { id: "word2", text: "Chetori", slotId: "slot2" },
+                { id: "word3", text: "Khosh Amadid", slotId: "slot3" }
+              ],
+              slots: [
+                { id: "slot1", text: "Hello" },
                 { id: "slot2", text: "How are you?" },
-                { id: "slot3", text: "Welcome" },
-                { id: "slot4", text: "Goodbye" }
+                { id: "slot3", text: "Welcome" }
               ]
             }
           },
@@ -135,9 +167,17 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "Salam khosh amadid",
-              expectedTranslation: "Hello Welcome",
+              finglishText: "Salam khosh amadid chetori",
+              expectedTranslation: "Hello Welcome How are you",
               maxWordBankSize: 10
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "khosh_amadid", "chetori"],
+              expectedTranslation: "Hello Welcome How are you"
             }
           },
           {
@@ -148,19 +188,30 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-sequence",
-            points: 3,
+            type: "quiz",
+            points: 2,
             data: {
-              sequence: ["khosh_amadid", "chetori"],
-              expectedTranslation: "Welcome How are you"
+              prompt: "How do you say 'goodbye' in Persian?",
+              options: ["Khodafez", "Salam", "Khosh Amadid", "Chetori"],
+              correct: 0
             }
           },
           {
-            type: "audio-meaning",
-            points: 2,
+            type: "matching",
+            points: 3,
             data: {
-              vocabularyId: "khodafez",
-              distractors: ["salam", "khosh_amadid", "khoobam"]
+              words: [
+                { id: "word1", text: "Salam", slotId: "slot1" },
+                { id: "word2", text: "Khosh Amadid", slotId: "slot2" },
+                { id: "word3", text: "Chetori", slotId: "slot3" },
+                { id: "word4", text: "Khodafez", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "Welcome" },
+                { id: "slot3", text: "How are you?" },
+                { id: "slot4", text: "Goodbye" }
+              ]
             }
           },
           {
