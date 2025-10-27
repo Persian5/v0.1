@@ -53,37 +53,31 @@ export function GrammarConcept({
 
   // Split word to show base + suffix with different colors
   const splitWordWithSuffix = (base: string, transformed: string) => {
-    const hyphenated = transformed.includes('-') ? transformed : `${base}-${transformed.replace(base, '')}`
-    
-    // Special handling for connector suffix (e/ye): only highlight the suffix, not the next word
-    if (hyphenated.includes('esm-e') || hyphenated.includes('chi-ye')) {
-      const parts = hyphenated.split(/\s+/)
-      if (parts.length > 1) {
-        // Find which part has the hyphen
-        const hyphenatedPart = parts.find(p => p.includes('-'))
-        if (hyphenatedPart) {
-          const [baseWord, suffix] = hyphenatedPart.split('-')
-          const remainingWords = parts.filter(p => p !== hyphenatedPart).join(' ')
-          return { 
-            basePart: baseWord + (remainingWords ? ' ' + remainingWords : ''), 
-            suffixPart: suffix 
-          }
-        }
-      }
+    // If transformed has a hyphen, extract exactly what's between the hyphen and the next space (or end)
+    if (transformed.includes('-')) {
+      const hyphenIndex = transformed.indexOf('-')
+      const afterHyphen = transformed.substring(hyphenIndex + 1)
+      const spaceIndex = afterHyphen.indexOf(' ')
+      
+      // Suffix is everything from hyphen to next space (or end if no space)
+      const suffix = spaceIndex > 0 ? afterHyphen.substring(0, spaceIndex) : afterHyphen
+      
+      // Base is everything before the hyphen + everything after the suffix
+      const beforeHyphen = transformed.substring(0, hyphenIndex)
+      const afterSuffix = spaceIndex > 0 ? afterHyphen.substring(spaceIndex) : ''
+      const basePart = beforeHyphen + afterSuffix
+      
+      return { basePart, suffixPart: suffix }
     }
     
-    const [basePart, suffixPart] = hyphenated.split('-')
-    return { basePart, suffixPart: suffixPart || '' }
+    // Fallback for non-hyphenated (shouldn't happen)
+    return { basePart: transformed, suffixPart: '' }
   }
   
-  // Extract just the suffix (e/ye) for button display
+  // Extract just the suffix for button display
   const getSuffixForButton = (baseWord: string, transformedWord: string) => {
-    // Special handling for connector
-    if (transformedWord.includes('esm-e') || transformedWord.includes('chi-ye')) {
-      return 'e'
-    }
-    // For other cases, extract suffix after base word
-    return transformedWord.replace(baseWord, '').replace(/-/g, '').trim()
+    const { suffixPart } = splitWordWithSuffix(baseWord, transformedWord)
+    return suffixPart
   }
 
   // Play audio for a word
