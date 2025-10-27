@@ -11,6 +11,7 @@ export interface GrammarPhase {
   exampleBefore: string; // Example sentence with base word
   exampleAfter: string;  // Example sentence with transformed word
   points: number;
+  suffixType?: 'state' | 'possession' | 'question' | 'connector'; // For color-coding badges
 }
 
 export interface GrammarConcept {
@@ -19,15 +20,17 @@ export interface GrammarConcept {
   description: string;
   rule: string;
   phases: GrammarPhase[];
+  useItSentence?: string; // Example sentence for "Use It" tab
 }
 
 // All grammar concepts for the Persian learning app
 export const grammarConcepts: GrammarConcept[] = [
   {
     conceptId: "adjective-suffixes",
-    title: "Adjective Suffixes: –am vs –i",
-    description: "Attach –am to an adjective to say \"I am ...\" and –i to say \"you are ....\" Applies only to adjectives.",
-    rule: "Add –am/–i to the adjective stem (here: khoob).",
+    title: "I Am / You Are: Adding Suffixes",
+    description: "When you want to say 'I am' or 'you are' something, you add a suffix to the descriptive word. Add –am to say 'I am' and –i to say 'you are'.",
+    rule: "Add –am for 'I am' and –i for 'you are' to any descriptive word",
+    useItSentence: "man khoob-am, shoma khoob-i? (I am good, are you good?)",
     phases: [
       {
         id: "khoob-to-khoob-am",
@@ -35,10 +38,11 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "khoob-am",
         baseDefinition: "good",
         transformedDefinition: "I am good",
-        explanation: "Add –am to say 'I am...'",
-        exampleBefore: "khoob (just 'good')",
+        explanation: "Add –am to the descriptive word to say 'I am'",
+        exampleBefore: "khoob (good)",
         exampleAfter: "khoobam (I am good)",
-        points: 1
+        points: 1,
+        suffixType: 'state'
       },
       {
         id: "khoob-to-khoob-i",
@@ -46,18 +50,20 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "khoob-i",
         baseDefinition: "good",
         transformedDefinition: "you are good",
-        explanation: "Add –i to say 'you are...'",
-        exampleBefore: "khoob (just 'good')",
+        explanation: "Add –i to the descriptive word to say 'you are'",
+        exampleBefore: "khoob (good)",
         exampleAfter: "khoobi (you are good)",
-        points: 1
+        points: 1,
+        suffixType: 'state'
       }
     ]
   },
   {
     conceptId: "ezafe-connector",
-    title: "Why do we say \"esme\", not \"esm\"?",
-    description: "In Persian, we say \"esme man\" — not \"esm man\" — to mean \"my name.\"\nThe little \"-e\" connects words like \"name of me\" or \"Sara's name.\"\nThis sound is called ezāfe, and it's one of the most common features in Persian.",
-    rule: "Connect words with -e to show possession or relationship (like 'of' in English)",
+    title: "Name Of: The –e Connector",
+    description: "In Persian, you say 'esme man' (not 'esm man') to mean 'my name.' The little 'e' connects words to show ownership or relationship, like 'of' in English.",
+    rule: "Add -e between words to show possession or relationship",
+    useItSentence: "esme man Amir-e (my name is Amir)",
     phases: [
       {
         id: "esm-to-esme",
@@ -68,15 +74,17 @@ export const grammarConcepts: GrammarConcept[] = [
         explanation: "Add -e to connect words (called ezāfe)",
         exampleBefore: "esm (name)",
         exampleAfter: "esme man (my name)",
-        points: 1
+        points: 1,
+        suffixType: 'connector'
       }
     ]
   },
   {
     conceptId: "verb-contraction",
-    title: "Verb Contraction: Adding 'is'",
-    description: "Learn how -ye is a shortened form of 'is' in Persian",
-    rule: "Add -ye to create questions meaning 'what is it?'",
+    title: "What Is It: Adding –ye",
+    description: "When you want to ask 'what is it?' in Persian, you add –ye to 'what.' This creates a question about something specific.",
+    rule: "Add -ye to 'chi' to create questions meaning 'what is it?'",
+    useItSentence: "esme shoma chi-ye? (what is your name?)",
     phases: [
       {
         id: "chi-to-chiye",
@@ -84,18 +92,20 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "chiye", 
         baseDefinition: "what",
         transformedDefinition: "what is it?",
-        explanation: "Add -ye (shortened 'is') to ask about something specific",
+        explanation: "Add -ye to create questions",
         exampleBefore: "chi (what)",
         exampleAfter: "chiye (what is it?)",
-        points: 1
+        points: 1,
+        suffixType: 'question'
       }
     ]
   },
   {
     conceptId: "connectors-placement",
-    title: "How to Use Connectors",
-    description: "Learn where va, ham, and vali go in Persian sentences",
-    rule: "ham follows what it emphasizes, vali contrasts ideas, va joins equal things",
+    title: "Linking Words: va, ham, vali",
+    description: "In Persian, you use linking words to connect ideas. 'va' means 'and' (joins things), 'ham' means 'also' (goes after the word), and 'vali' means 'but' (contrasts ideas).",
+    rule: "'va' joins things, 'ham' goes after the word it emphasizes, 'vali' contrasts ideas",
+    useItSentence: "man ham khoobam, shoma khoob-i? vali man khoob neest-am (I am also good, are you good? but I am not good)",
     phases: [
       {
         id: "ham-placement",
@@ -114,7 +124,7 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "man khoobam vali",
         baseDefinition: "I am good",
         transformedDefinition: "I am good but",
-        explanation: "vali means 'but' and connects contrasting ideas",
+        explanation: "vali means 'but' and contrasts ideas",
         exampleBefore: "man khoobam (I am good)",
         exampleAfter: "man khoobam vali... (I am good but...)",
         points: 1
@@ -125,7 +135,7 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "man va shoma",
         baseDefinition: "I, you",
         transformedDefinition: "I and you",
-        explanation: "va joins equal things like nouns or phrases",
+        explanation: "va joins equal things like words or phrases",
         exampleBefore: "man, shoma (I, you)",
         exampleAfter: "man va shoma (I and you)",
         points: 1
@@ -134,9 +144,10 @@ export const grammarConcepts: GrammarConcept[] = [
   },
   {
     conceptId: "possession-suffixes",
-    title: "My & Your: Possession Suffixes",
-    description: "Add -am to a noun to say 'my' and -et to say 'your'",
-    rule: "Add -am for 'my' and -et for 'your' to any noun",
+    title: "My & Your: Adding Suffixes",
+    description: "When you want to say 'my' or 'your,' you add a suffix to the word. Add –am to say 'my' and –et to say 'your.'",
+    rule: "Add -am for 'my' and -et for 'your' to any word",
+    useItSentence: "esm-am Amir-e (my name is Amir)",
     phases: [
       {
         id: "esm-to-esmam",
@@ -144,10 +155,11 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "esm-am",
         baseDefinition: "name",
         transformedDefinition: "my name",
-        explanation: "Add -am to a noun to say 'my'",
+        explanation: "Add -am to a word to say 'my'",
         exampleBefore: "esm (name)",
         exampleAfter: "esmam (my name)",
-        points: 1
+        points: 1,
+        suffixType: 'possession'
       },
       {
         id: "esm-to-esmet",
@@ -155,10 +167,11 @@ export const grammarConcepts: GrammarConcept[] = [
         transformedWord: "esm-et",
         baseDefinition: "name",
         transformedDefinition: "your name",
-        explanation: "Add -et to a noun to say 'your'",
+        explanation: "Add -et to a word to say 'your'",
         exampleBefore: "esm (name)",
         exampleAfter: "esmet (your name)",
-        points: 1
+        points: 1,
+        suffixType: 'possession'
       }
     ]
   }
