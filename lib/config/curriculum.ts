@@ -464,6 +464,15 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which of the following words mean 'Thank you'?",
+              options: ["Merci", "Baleh", "Na", "Khoob"],
+              correct: 0
+            }
+          },
+          {
             type: "audio-meaning",
             points: 2,
             data: {
