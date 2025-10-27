@@ -115,7 +115,7 @@ export const grammarConcepts: GrammarConcept[] = [
     conceptId: "ezafe-connector",
     title: "Name Of: The –e Connector",
     description: "In Persian, you say 'esme man' (not 'esm man') to mean 'my name.' The little 'e' sound connects words together to show 'of' or possession.",
-    rule: "Add –e to connect 'esm' with pronouns like 'man' or 'shoma'",
+    rule: "esm man → esm-e man     esm shoma → esm-e shoma",
     useItSentence: "esme man (my name)", // Kept for backward compatibility
     useItExamples: [
       {
@@ -134,33 +134,33 @@ export const grammarConcepts: GrammarConcept[] = [
       },
       {
         type: 'quiz',
-        question: "What does 'esme man' literally mean?",
-        options: ["name of me (my name)", "my good name", "I am name", "your name"],
+        question: "What does 'esm-e man' mean?",
+        options: ["my name", "your name", "I am name", "good name"],
         correctIndex: 0
       }
     ],
     phases: [
       {
-        id: "esm-to-esme-man",
-        baseWord: "esm",
-        transformedWord: "esm-e",
-        baseDefinition: "name", 
-        transformedDefinition: "name of",
-        explanation: "Add –e to connect 'name' with 'man' (me)",
-        exampleBefore: "esm (name)",
-        exampleAfter: "esme man (my name)",
+        id: "esm-man-to-esme-man",
+        baseWord: "esm man",
+        transformedWord: "esm-e man",
+        baseDefinition: "name me", 
+        transformedDefinition: "my name",
+        explanation: "Add –e after 'esm' to connect with 'man'",
+        exampleBefore: "esm man",
+        exampleAfter: "esm-e man (my name)",
         points: 1,
         suffixType: 'connector'
       },
       {
-        id: "esm-to-esme-shoma",
-        baseWord: "esm",
-        transformedWord: "esm-e",
-        baseDefinition: "name",
-        transformedDefinition: "name of",
-        explanation: "Add –e to connect 'name' with 'shoma' (you)",
-        exampleBefore: "esm (name)",
-        exampleAfter: "esme shoma (your name)",
+        id: "esm-shoma-to-esme-shoma",
+        baseWord: "esm shoma",
+        transformedWord: "esm-e shoma",
+        baseDefinition: "name you",
+        transformedDefinition: "your name",
+        explanation: "Add –e after 'esm' to connect with 'shoma'",
+        exampleBefore: "esm shoma",
+        exampleAfter: "esm-e shoma (your name)",
         points: 1,
         suffixType: 'connector'
       }
