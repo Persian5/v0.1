@@ -541,12 +541,12 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               words: [
-                { id: "word1", text: "Khoobam", slotId: "slot1" },
-                { id: "word2", text: "Khoobi", slotId: "slot2" }
+                { id: "word1", text: "-am", slotId: "slot1" },
+                { id: "word2", text: "-i", slotId: "slot2" }
               ],
               slots: [
-                { id: "slot1", text: "I am good" },
-                { id: "slot2", text: "You are good" }
+                { id: "slot1", text: "I am" },
+                { id: "slot2", text: "You are" }
               ]
             }
           },
@@ -557,6 +557,15 @@ export const curriculumData: Module[] = [
               finglishText: "Khoobam merci",
               expectedTranslation: "I'm good thank you",
               maxWordBankSize: 10
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which suffix do you use to say 'I am' something?",
+              options: ["-am", "-i", "-e", "-et"],
+              correct: 0
             }
           },
           {
@@ -572,7 +581,7 @@ export const curriculumData: Module[] = [
             type: "audio-meaning",
             points: 2,
             data: {
-              vocabularyId: "khoobam",
+              vocabularyId: "khoobi",
               distractors: ["salam", "chetori", "khodafez"]
             }
           },
