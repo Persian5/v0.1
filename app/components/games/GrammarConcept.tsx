@@ -479,10 +479,16 @@ export function GrammarConcept({
 
               {concept.useItSentence && (
                 <div className="space-y-6">
-                  {/* Sentence with blank */}
+                  {/* Sentence with blank - need to extract base word and show blank */}
                   <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
                     <p className="text-xl font-bold text-blue-700 mb-2">
-                      {concept.useItSentence}
+                      {(() => {
+                        // Show sentence with blank for suffix
+                        const sentence = concept.useItSentence.split('(')[0].trim()
+                        // Replace the suffix with blank
+                        const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                        return sentence.replace(currentPhase.transformedWord.replace(/-/g, ''), `${basePart}-___`)
+                      })()}
                     </p>
                     <p className="text-sm text-gray-600">
                       {concept.useItSentence.split('(')[1]?.replace(')', '')}
@@ -533,20 +539,37 @@ export function GrammarConcept({
                       className="bg-green-50 border-2 border-green-200 rounded-lg p-6 space-y-4"
                     >
                       <div>
-                        <p className="text-green-800 font-semibold mb-2">
+                        <p className="text-green-800 font-semibold mb-4">
                           Perfect! You got it right!
                         </p>
-                        <p className="text-xl font-bold text-green-700 mb-4">
-                          {(() => {
-                            const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
-                            return (
-                              <>
-                                <span>{basePart}</span>
-                                <span className="text-orange-600">-{suffixPart}</span>
-                              </>
-                            )
-                          })()}
-                        </p>
+                        {/* Show full sentence with highlighted suffix */}
+                        <div className="bg-white rounded-lg p-4 mb-4">
+                          <p className="text-xl font-bold text-gray-800 mb-2">
+                            Full sentence:
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {(() => {
+                              const sentence = concept.useItSentence.split('(')[0].trim()
+                              const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                              const fullWord = `${basePart}-${suffixPart}`
+                              const highlightedWord = fullWord.replace(/-/g, '')
+                              
+                              // Split sentence and highlight the word
+                              const parts = sentence.split(highlightedWord)
+                              
+                              return (
+                                <>
+                                  {parts[0]}
+                                  <span className="text-orange-600">{highlightedWord}</span>
+                                  {parts[1]}
+                                </>
+                              )
+                            })()}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-2">
+                            {concept.useItSentence.split('(')[1]?.replace(')', '')}
+                          </p>
+                        </div>
                       </div>
                       
                       <div className="flex gap-3 justify-center">
