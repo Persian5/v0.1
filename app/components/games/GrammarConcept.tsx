@@ -54,8 +54,36 @@ export function GrammarConcept({
   // Split word to show base + suffix with different colors
   const splitWordWithSuffix = (base: string, transformed: string) => {
     const hyphenated = transformed.includes('-') ? transformed : `${base}-${transformed.replace(base, '')}`
+    
+    // Special handling for connector suffix (e/ye): only highlight the suffix, not the next word
+    if (hyphenated.includes('esm-e') || hyphenated.includes('chi-ye')) {
+      const parts = hyphenated.split(/\s+/)
+      if (parts.length > 1) {
+        // Find which part has the hyphen
+        const hyphenatedPart = parts.find(p => p.includes('-'))
+        if (hyphenatedPart) {
+          const [baseWord, suffix] = hyphenatedPart.split('-')
+          const remainingWords = parts.filter(p => p !== hyphenatedPart).join(' ')
+          return { 
+            basePart: baseWord + (remainingWords ? ' ' + remainingWords : ''), 
+            suffixPart: suffix 
+          }
+        }
+      }
+    }
+    
     const [basePart, suffixPart] = hyphenated.split('-')
     return { basePart, suffixPart: suffixPart || '' }
+  }
+  
+  // Extract just the suffix (e/ye) for button display
+  const getSuffixForButton = (baseWord: string, transformedWord: string) => {
+    // Special handling for connector
+    if (transformedWord.includes('esm-e') || transformedWord.includes('chi-ye')) {
+      return 'e'
+    }
+    // For other cases, extract suffix after base word
+    return transformedWord.replace(baseWord, '').replace(/-/g, '').trim()
   }
 
   // Play audio for a word
@@ -92,11 +120,11 @@ export function GrammarConcept({
         handleCompleteGrammarConcept()
       } else {
         // Auto-advance to next example after brief delay
-        setTimeout(() => {
+    setTimeout(() => {
           setUseItExampleIndex(prev => prev + 1)
           setUseItInput('')
-        }, 800)
-      }
+    }, 800)
+  }
     }
   }
 
@@ -169,13 +197,13 @@ export function GrammarConcept({
               activeTab === tab.id
                 ? 'bg-primary text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <span className="mr-1">{tab.icon}</span>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+              }`}
+            >
+              <span className="mr-1">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
       {/* Tab content */}
       <div className="min-h-[400px]">
@@ -189,10 +217,10 @@ export function GrammarConcept({
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <div className="text-center">
+          <div className="text-center">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
                   {concept.title}
-                </h3>
+              </h3>
                 {/* Badge for suffix type (shared) */}
                 {concept.phases[0]?.suffixType && (
                   <div className="mb-4">
@@ -213,8 +241,8 @@ export function GrammarConcept({
                 )}
                 <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
                   {concept.rule}
-                </p>
-              </div>
+            </p>
+          </div>
 
               {/* Tree map: Base word at top, transformations below */}
               <div className="flex flex-col items-center space-y-4 py-6">
@@ -253,7 +281,7 @@ export function GrammarConcept({
                     )
                   })}
                 </div>
-              </div>
+                </div>
 
               <div className="text-center">
                 <Button
@@ -290,15 +318,15 @@ export function GrammarConcept({
                   const { basePart, suffixPart } = splitWordWithSuffix(phase.baseWord, phase.transformedWord)
                   const isQuestion = phase.transformedWord.includes('?')
                   return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.2 }}
-                      className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="text-2xl font-bold text-blue-700">
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.2 }}
+                    className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="text-2xl font-bold text-blue-700">
                           <span>{basePart}</span>
                           <span className="text-orange-600">-{suffixPart}</span>
                           {isQuestion && <span className="text-orange-600 font-extrabold">?</span>}
@@ -306,17 +334,17 @@ export function GrammarConcept({
                         <div>
                           <div className="text-sm text-gray-700">{phase.transformedDefinition}</div>
                           <div className="text-xs text-gray-500 mt-1">{phase.explanation}</div>
-                        </div>
                       </div>
-                      <Button
+                    </div>
+                    <Button
                         onClick={() => playExampleAudio(phase.transformedWord.replace(/-/g, '').replace('?', ''))}
-                        variant="outline"
-                        size="sm"
+                  variant="outline"
+                  size="sm"
                         className="gap-2 border-blue-300 text-blue-700"
-                      >
-                        <Volume2 className="h-3 w-3" />
-                      </Button>
-                    </motion.div>
+                    >
+                      <Volume2 className="h-3 w-3" />
+                    </Button>
+                  </motion.div>
                   )
                 })}
               </div>
@@ -377,29 +405,28 @@ export function GrammarConcept({
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center">
-                  {!showTransformation ? (
-                    <Button
-                      onClick={handleTransform}
+            <div className="flex flex-col items-center">
+              {!showTransformation ? (
+                <Button
+                  onClick={handleTransform}
                       size="lg"
                       className="bg-primary hover:bg-primary/90 text-white px-6 py-3 text-lg"
-                    >
-                      {(() => {
-                        const suffix = currentPracticePhase.transformedWord.replace(currentPracticePhase.baseWord, '').replace(/-/g, '').trim()
-                        return `+ ${suffix}`
-                      })()}
-                    </Button>
-                  ) : (
+                >
+                      {getSuffixForButton(currentPracticePhase.baseWord, currentPracticePhase.transformedWord) 
+                        ? `+ -${getSuffixForButton(currentPracticePhase.baseWord, currentPracticePhase.transformedWord)}` 
+                        : '+ -'}
+                </Button>
+              ) : (
                     <div className="text-4xl font-bold text-green-600">✓</div>
-                  )}
-                </div>
+              )}
+            </div>
 
-                <div className="text-center">
-                  <AnimatePresence>
+            <div className="text-center">
+              <AnimatePresence>
                     {showTransformation && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
                         className="bg-green-100 rounded-lg p-6"
                       >
                         <div className="text-3xl font-bold text-green-700 mb-2">
@@ -414,50 +441,50 @@ export function GrammarConcept({
                           })()}
                         </div>
                         <div className="text-sm text-green-600">{currentPracticePhase.transformedDefinition}</div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
 
-              {showTransformation && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center space-y-4"
-                >
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-green-800 font-medium">
+            {showTransformation && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                    className="text-center space-y-4"
+              >
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-green-800 font-medium">
                       Perfect! {currentPracticePhase.exampleBefore} → {currentPracticePhase.exampleAfter}
-                    </p>
-                  </div>
+                </p>
+                    </div>
 
                   {isLastPracticePhase ? (
                     <div className="space-y-2">
                       <p className="text-sm text-gray-600">
                         Great job! Now let's use it in real sentences →
                       </p>
-                      <Button
+                          <Button
                         onClick={handleNextPracticePhrase}
                         className="bg-accent hover:bg-accent/90 text-white px-8 py-3"
-                      >
+                          >
                         Try Using It
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
                     </div>
-                  ) : (
-                    <Button
+                        ) : (
+                          <Button
                       onClick={handleNextPracticePhrase}
                       className="bg-primary hover:bg-primary/90 text-white px-8 py-3"
-                    >
+                          >
                       Next Phrase ({practicePhaseIndex + 1}/{concept.phases.length})
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  )}
-                </motion.div>
-              )}
-            </motion.div>
-          )}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        )}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
 
           {/* Tab 4: Use It - Multi-example with progression */}
           {activeTab === 3 && (
@@ -592,10 +619,10 @@ export function GrammarConcept({
                   )}
                 </div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
       </div>
     </div>
   )
-}
+} 
