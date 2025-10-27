@@ -93,20 +93,20 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'How are you?' in Persian?",
-              answer: "Chetori"
-            }
-          },
-          {
             type: "text-sequence",
             points: 3,
             data: {
               finglishText: "Salam chetori",
               expectedTranslation: "Hello How are you",
               maxWordBankSize: 10
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'How are you?' in Persian?",
+              answer: "Chetori"
             }
           },
           {
@@ -148,6 +148,14 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khosh_amadid",
+              distractors: ["salam", "chetori", "khodafez"]
+            }
+          },
+          {
             type: "matching",
             points: 3,
             data: {
@@ -176,8 +184,8 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["salam", "khosh_amadid", "chetori"],
-              expectedTranslation: "Hello Welcome How are you"
+              sequence: ["salam", "chetori"],
+              expectedTranslation: "Hello How are you"
             }
           },
           {
@@ -194,6 +202,14 @@ export const curriculumData: Module[] = [
               prompt: "How do you say 'goodbye' in Persian?",
               options: ["Khodafez", "Salam", "Khosh Amadid", "Chetori"],
               correct: 0
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "khosh_amadid", "chetori"],
+              expectedTranslation: "Hello Welcome How are you"
             }
           },
           {
