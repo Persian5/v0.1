@@ -1019,20 +1019,19 @@ export const curriculumData: Module[] = [
             type: "input",
             points: 2,
             data: {
-              question: "Type the suffix for 'I am' after the word 'khoob': khoob-___",
-              answer: "am"
+              question: "Type the suffix for 'you are' after the word 'khoob': khoob-___",
+              answer: "i"
             }
           },
           {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Which of the following words mean 'Yes'?",
-              options: ["Baleh", "Na", "Merci", "Chi"],
+              prompt: "Which Persian phrase means 'What is your name?'?",
+              options: ["Esme shoma chiye?", "Man khoobam", "Khoshbakhtam", "Khosh amadid"],
               correct: 0
             }
           },
-          // 8) audio to sequence of na merci, khoobam
           {
             type: "audio-sequence",
             points: 3,
@@ -1040,7 +1039,6 @@ export const curriculumData: Module[] = [
               sequence: ["na", "merci", "khoobam"]
             }
           },
-          // 9) audio to sequence of khosh amadid, khodafez
           {
             type: "audio-sequence",
             points: 3,
@@ -1048,7 +1046,6 @@ export const curriculumData: Module[] = [
               sequence: ["khosh_amadid", "khodafez"]
             }
           },
-          // 10) multiple choice of what does esme man mean
           {
             type: "quiz",
             points: 2,
@@ -1058,37 +1055,15 @@ export const curriculumData: Module[] = [
               correct: 0
             }
           },
-          // 11) multiple choice of how do you say yes in persian
           {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "How do you say 'Yes' in Persian?",
-              options: ["Baleh", "Na", "Chi", "Merci"],
+              prompt: "Which Persian word means 'Nice to meet you'?",
+              options: ["Khoshbakhtam", "Khosh amadid", "Merci", "Khodafez"],
               correct: 0
             }
           },
-          // 12) multiple choice of how do you say welcome
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'Welcome' in Persian?",
-              options: ["Khosh Amadid", "Khoshbakhtam", "Khoobam", "Khodafez"],
-              correct: 0
-            }
-          },
-          // 13) multiple choice of how do you say what
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'What' in Persian?",
-              options: ["Chi", "Chiye", "Esm", "Man"],
-              correct: 0
-            }
-          },
-          // 14) audio to english of khosh amadid
           {
             type: "audio-meaning",
             points: 2,
@@ -1097,25 +1072,6 @@ export const curriculumData: Module[] = [
               distractors: ["salam", "khodafez", "khoshbakhtam"]
             }
           },
-          // 15) audio to english of esm
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "esm",
-              distractors: ["esme", "chi", "man"]
-            }
-          },
-          // 16) audio to english of what is it
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chiye",
-              distractors: ["chi", "esme", "shoma"]
-            }
-          },
-          // 17) audio to english of esme man sequence
           {
             type: "audio-sequence",
             points: 3,
@@ -1124,16 +1080,15 @@ export const curriculumData: Module[] = [
               expectedTranslation: "My name"
             }
           },
-          // 18) audio to english of na
           {
-            type: "audio-meaning",
+            type: "quiz",
             points: 2,
             data: {
-              vocabularyId: "na",
-              distractors: ["baleh", "merci", "chi"]
+              prompt: "Which Persian phrase means 'No, thank you'?",
+              options: ["Na merci", "Baleh", "merci", "Chetori", "Khosh amadid"],
+              correct: 0
             }
           },
-          // 19) audio to english of chetori
           {
             type: "audio-meaning",
             points: 2,
@@ -1142,16 +1097,7 @@ export const curriculumData: Module[] = [
               distractors: ["salam", "khoobam", "khodafez"]
             }
           },
-          // 20) audio to english of shoma
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "shoma",
-              distractors: ["man", "esm", "chi"]
-            }
-          },
-          // 21) final challenge organize the sentence Hello, what is your name? How Are you? Im good, thank you. goodbye
+          // final challenge organize the sentence Hello, what is your name? How Are you? Im good, thank you. goodbye
           {
             type: "final",
             points: 4,
