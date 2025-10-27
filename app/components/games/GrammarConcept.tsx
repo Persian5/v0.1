@@ -438,13 +438,18 @@ export function GrammarConcept({
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         ) : (
-                          <Button
-                            onClick={handleComplete}
-                            className="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-full font-semibold"
-                          >
-                            Complete Grammar Lesson
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-600 mb-2">
+                              Great job! Now try using it in a real sentence →
+                            </p>
+                            <Button
+                              onClick={() => setActiveTab(3)}
+                              className="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-full font-semibold"
+                            >
+                              Go to "Use It" Tab
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                       </motion.div>
                     )}
@@ -525,30 +530,45 @@ export function GrammarConcept({
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="bg-green-50 border-2 border-green-200 rounded-lg p-6"
+                      className="bg-green-50 border-2 border-green-200 rounded-lg p-6 space-y-4"
                     >
-                      <p className="text-green-800 font-semibold mb-2">
-                        Perfect! You got it right!
-                      </p>
-                      <p className="text-xl font-bold text-green-700 mb-4">
-                        {(() => {
-                          const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
-                          return (
-                            <>
-                              <span>{basePart}</span>
-                              <span className="text-orange-600">-{suffixPart}</span>
-                            </>
-                          )
-                        })()}
-                      </p>
-                      <Button
-                        onClick={() => playExampleAudio(currentPhase.transformedWord.replace(/-/g, ''))}
-                        variant="outline"
-                        className="gap-2 border-green-300 text-green-700 hover:bg-green-100"
-                      >
-                        <Volume2 className="h-4 w-4" />
-                        Hear It
-                      </Button>
+                      <div>
+                        <p className="text-green-800 font-semibold mb-2">
+                          Perfect! You got it right!
+                        </p>
+                        <p className="text-xl font-bold text-green-700 mb-4">
+                          {(() => {
+                            const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                            return (
+                              <>
+                                <span>{basePart}</span>
+                                <span className="text-orange-600">-{suffixPart}</span>
+                              </>
+                            )
+                          })()}
+                        </p>
+                      </div>
+                      
+                      <div className="flex gap-3 justify-center">
+                        <Button
+                          onClick={() => playExampleAudio(currentPhase.transformedWord.replace(/-/g, ''))}
+                          variant="outline"
+                          className="gap-2 border-green-300 text-green-700 hover:bg-green-100"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                          Hear It
+                        </Button>
+                        
+                        {isLastPhase && (
+                          <Button
+                            onClick={handleComplete}
+                            className="bg-primary hover:bg-primary/90 text-white px-6 py-2"
+                          >
+                            Complete Lesson
+                            <CheckCircle className="ml-2 h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </motion.div>
                   )}
                 </div>
