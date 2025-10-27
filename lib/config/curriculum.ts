@@ -770,6 +770,22 @@ export const curriculumData: Module[] = [
               vocabularyId: "esm"
             }
           },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "man",
+              distractors: ["shoma", "chi", "khoobam"]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "esm",
+              distractors: ["esme", "shoma", "man"]
+            }
+          },
           // PHASE 2: GRAMMAR CONCEPT - EZAFE CONNECTOR  
           {
             type: "grammar-concept",
@@ -779,11 +795,12 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-sequence",
+            type: "text-sequence",
             points: 3,
             data: {
-              sequence: ["esme", "man"],
-              expectedTranslation: "My name"
+              finglishText: "Esme shoma",
+              expectedTranslation: "Your name",
+              maxWordBankSize: 10
             }
           },
           {
@@ -813,6 +830,15 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Man khoobam shoma chi?",
+              expectedTranslation: "I am good what about you",
+              maxWordBankSize: 10
+            }
+          },
+          {
             type: "input",
             points: 2,
             data: {
@@ -827,13 +853,13 @@ export const curriculumData: Module[] = [
               conceptId: "verb-contraction"
             }
           },
-          // PHASE 4: AUDIO SEQUENCES WITH SHOMA (NOW PROPERLY INTRODUCED)
           {
-            type: "audio-sequence",
+            type: "text-sequence",
             points: 3,
             data: {
-              sequence: ["esme", "shoma"],
-              expectedTranslation: "Your name"
+              finglishText: "Esme shoma chiye?",
+              expectedTranslation: "What is your name",
+              maxWordBankSize: 10
             }
           },
           {
@@ -852,41 +878,39 @@ export const curriculumData: Module[] = [
               answer: "esm"
             }
           },
-          // PHASE 5: QUIZ SECTION
           {
-            type: "quiz",
-            points: 2,
+            type: "matching",
+            points: 3,
             data: {
-              prompt: "What does 'Shoma' mean?",
-              options: ["You", "I / Me", "Name", "What"],
-              correct: 0
+              words: [
+                { id: "word1", text: "Esme shoma", slotId: "slot1" },
+                { id: "word2", text: "Esme man", slotId: "slot2" },
+                { id: "word3", text: "Esme", slotId: "slot3" },
+                { id: "word4", text: "Esm", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Your Name" },
+                { id: "slot2", text: "My Name" },
+                { id: "slot3", text: "Name Of" },
+                { id: "slot4", text: "Name" }
+              ]
             }
           },
           {
-            type: "quiz",
-            points: 2,
+            type: "audio-sequence",
+            points: 3,
             data: {
-              prompt: "How do you say 'my name' in Farsi?",
-              options: ["esme man", "man esm", "shoma esm", "esm chi"],
-              correct: 0
+              sequence: ["salam", "esme", "shoma", "chiye"],
+              expectedTranslation: "Hello what is your name"
             }
           },
           {
-            type: "quiz",
-            points: 2,
+            type: "text-sequence",
+            points: 3,
             data: {
-              prompt: "How do you ask 'What is your name?' in Persian?",
-              options: ["Esme shoma chiye?", "Esme man chiye?", "Chi shoma?", "Shoma chi?"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'Salam' mean?",
-              options: ["Hello", "Goodbye", "Thank you", "How are you"],
-              correct: 0
+              finglishText: "Esme man Amir-e khodafez",
+              expectedTranslation: "My name is Amir goodbye",
+              maxWordBankSize: 10
             }
           },
           {
@@ -898,7 +922,7 @@ export const curriculumData: Module[] = [
               correct: 0
             }
           },
-          // PHASE 6: REVIEW AUDIO SEQUENCE (KEEPING BOTH AS REQUESTED)
+          // PHASE 6: REVIEW AUDIO SEQUENCE
           {
             type: "audio-sequence",
             points: 3,
@@ -906,14 +930,6 @@ export const curriculumData: Module[] = [
               sequence: ["esme", "man", "chiye"],
               expectedTranslation: "What is my name",
               targetWordCount: 4
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type how you ask 'What is it?' in Persian",
-              answer: "chiye"
             }
           },
           {
