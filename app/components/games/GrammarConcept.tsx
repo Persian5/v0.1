@@ -43,10 +43,11 @@ export function GrammarConcept({
     { id: 2, label: "Practice", icon: "🎯" }
   ]
 
-  // Dynamic examples from all phases
+  // Dynamic examples from all phases - include hyphenated version for suffix highlighting
   const examples = concept.phases.map(phase => ({
-    persian: phase.transformedWord.replace(/-/g, ''), // Remove hyphens for display
-    english: phase.transformedDefinition
+    persian: phase.transformedWord, // Keep hyphen for splitWordWithSuffix
+    english: phase.transformedDefinition,
+    baseWord: phase.baseWord
   }))
 
   // Dynamic problem content from current phase
@@ -58,7 +59,7 @@ export function GrammarConcept({
       note: "❌ Before" 
     },
     rightExample: { 
-      text: currentPhase.transformedWord.replace(/-/g, ''), 
+      text: currentPhase.transformedWord, // Keep hyphen for splitWordWithSuffix
       translation: currentPhase.transformedDefinition, 
       note: "✅ After" 
     },
@@ -69,6 +70,13 @@ export function GrammarConcept({
   const getButtonText = (base: string, transformed: string) => {
     const suffix = transformed.replace(base, '').replace(/-/g, '').trim()
     return `+ ${suffix}`
+  }
+
+  // Split word to show base + suffix with different colors
+  const splitWordWithSuffix = (base: string, transformed: string) => {
+    const hyphenated = transformed.includes('-') ? transformed : `${base}-${transformed.replace(base, '')}`
+    const [basePart, suffixPart] = hyphenated.split('-')
+    return { basePart, suffixPart: suffixPart || '' }
   }
 
   // Dynamic practice content from current phase
@@ -129,11 +137,11 @@ export function GrammarConcept({
   }
 
   const handleNextPhase = () => {
-    // Move to next phase
+    // Move to next phase but keep current tab active (don't reset to Problem tab)
     setCurrentPhaseIndex(prev => prev + 1)
     setShowTransformation(false)
     setPracticeComplete(false)
-    setActiveTab(0) // Reset to Problem tab for next phase
+    // Keep activeTab as-is so user can continue with same tab (Problem/Examples/Practice)
   }
 
   const handleComplete = () => {
@@ -220,7 +228,17 @@ export function GrammarConcept({
                 {/* Right way */}
                 <div className="text-center">
                   <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-2">
-                    <div className="text-lg font-bold text-green-700 mb-1">{problemContent?.rightExample.text}</div>
+                    <div className="text-lg font-bold text-green-700 mb-1">
+                      {(() => {
+                        const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                        return (
+                          <>
+                            <span>{basePart}</span>
+                            <span className="text-orange-600">-{suffixPart}</span>
+                          </>
+                        )
+                      })()}
+                    </div>
                     <div className="text-sm text-green-600">{problemContent?.rightExample.translation}</div>
                     <div className="text-xs text-green-500 mt-2">{problemContent?.rightExample.note}</div>
                   </div>
@@ -268,7 +286,15 @@ export function GrammarConcept({
                   >
                     <div className="flex items-center gap-4">
                       <div className="text-2xl font-bold text-blue-700">
-                        {example.persian}
+                        {(() => {
+                          const { basePart, suffixPart } = splitWordWithSuffix(example.baseWord, example.persian)
+                          return (
+                            <>
+                              <span>{basePart}</span>
+                              <span className="text-orange-600">-{suffixPart}</span>
+                            </>
+                          )
+                        })()}
                       </div>
                       <div className="text-gray-600">=</div>
                       <div className="text-gray-700">
@@ -276,7 +302,7 @@ export function GrammarConcept({
                       </div>
                     </div>
                     <Button
-                      onClick={() => playExampleAudio(example.persian)}
+                      onClick={() => playExampleAudio(example.persian.replace(/-/g, ''))}
                   variant="outline"
                   size="sm"
                       className="gap-1 border-blue-300 text-blue-700 hover:bg-blue-100"
@@ -353,7 +379,17 @@ export function GrammarConcept({
                     animate={{ opacity: 1, scale: 1 }}
                         className="bg-green-50 border-2 border-green-200 rounded-lg p-6"
                       >
-                        <div className="text-3xl font-bold text-green-700 mb-2">{practiceContent?.transformedWord.text}</div>
+                        <div className="text-3xl font-bold text-green-700 mb-2">
+                          {(() => {
+                            const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                            return (
+                              <>
+                                <span>{basePart}</span>
+                                <span className="text-orange-600">-{suffixPart}</span>
+                              </>
+                            )
+                          })()}
+                        </div>
                         <div className="text-sm text-green-600">{practiceContent?.transformedWord.translation}</div>
                   </motion.div>
                 ) : (
