@@ -1059,6 +1059,15 @@ export const curriculumData: Module[] = [
             type: "quiz",
             points: 2,
             data: {
+              prompt: "Which Persian word means 'Yes'?",
+              options: ["Baleh", "Na", "Merci", "Chi"],
+              correct: 0
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
               prompt: "Which Persian word means 'Nice to meet you'?",
               options: ["Khoshbakhtam", "Khosh amadid", "Merci", "Khodafez"],
               correct: 0
