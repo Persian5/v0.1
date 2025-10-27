@@ -115,7 +115,7 @@ export const grammarConcepts: GrammarConcept[] = [
     conceptId: "ezafe-connector",
     title: "Name Of: The –e Connector",
     description: "In Persian, you say 'esme man' (not 'esm man') to mean 'my name.' The little 'e' sound connects words together to show 'of' or possession.",
-    rule: "esm man → esm-e man     esm shoma → esm-e shoma",
+    rule: "In Persian we use '-e' to connect words together, like adding 'of' in English to show relationship or possession.",
     useItSentence: "esme man (my name)", // Kept for backward compatibility
     useItExamples: [
       {
@@ -142,24 +142,24 @@ export const grammarConcepts: GrammarConcept[] = [
     phases: [
       {
         id: "esm-man-to-esme-man",
-        baseWord: "esm man",
+        baseWord: "esm",
         transformedWord: "esm-e man",
-        baseDefinition: "name me", 
+        baseDefinition: "name", 
         transformedDefinition: "my name",
         explanation: "Add –e after 'esm' to connect with 'man'",
-        exampleBefore: "esm man",
+        exampleBefore: "esm (name)",
         exampleAfter: "esm-e man (my name)",
         points: 1,
         suffixType: 'connector'
       },
       {
         id: "esm-shoma-to-esme-shoma",
-        baseWord: "esm shoma",
+        baseWord: "esm",
         transformedWord: "esm-e shoma",
-        baseDefinition: "name you",
+        baseDefinition: "name",
         transformedDefinition: "your name",
         explanation: "Add –e after 'esm' to connect with 'shoma'",
-        exampleBefore: "esm shoma",
+        exampleBefore: "esm (name)",
         exampleAfter: "esm-e shoma (your name)",
         points: 1,
         suffixType: 'connector'
