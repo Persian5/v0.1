@@ -485,12 +485,15 @@ export function GrammarConcept({
                       {(() => {
                         // Show sentence with blank for suffix - include context words
                         const sentence = concept.useItSentence.split('(')[0].trim()
-                        const { basePart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
-                        // Replace the word (with or without hyphen) with "base-___"
-                        // Handle both "khoobam" and "khoob-am"
-                        const wordWithoutHyphen = currentPhase.transformedWord.replace(/-/g, '')
-                        const replaceWord = wordWithoutHyphen
-                        return sentence.replace(replaceWord, `${basePart}-___`)
+                        const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                        // Replace "base-suffix" or "basesuffix" with "base-___"
+                        const targetWord = basePart + '-' + suffixPart
+                        let result = sentence.replace(targetWord, basePart + '-___')
+                        // Also try without hyphen
+                        if (result === sentence) {
+                          result = sentence.replace(targetWord.replace(/-/g, ''), basePart + '-___')
+                        }
+                        return result
                       })()}
                     </p>
                     <p className="text-sm text-gray-600">
@@ -595,9 +598,6 @@ export function GrammarConcept({
                       className="bg-green-50 border-2 border-green-200 rounded-lg p-6 space-y-4"
                     >
                       <div>
-                        <p className="text-green-800 font-semibold mb-4">
-                          Perfect! You got it right!
-                        </p>
                         {/* Show full sentence with highlighted suffix */}
                         <div className="bg-white rounded-lg p-4 mb-4">
                           <p className="text-xl font-bold text-gray-800 mb-2">
