@@ -114,19 +114,53 @@ export const grammarConcepts: GrammarConcept[] = [
   {
     conceptId: "ezafe-connector",
     title: "Name Of: The –e Connector",
-    description: "In Persian, you say 'esme man' (not 'esm man') to mean 'my name.' The little 'e' connects words to show ownership or relationship, like 'of' in English.",
-    rule: "Add -e between words to show possession or relationship",
-    useItSentence: "esme man Amir-e (my name is Amir)",
+    description: "In Persian, you say 'esme man' (not 'esm man') to mean 'my name.' The little 'e' sound connects words together to show 'of' or possession.",
+    rule: "Add –e to connect 'esm' with pronouns like 'man' or 'shoma'",
+    useItSentence: "esme man (my name)", // Kept for backward compatibility
+    useItExamples: [
+      {
+        type: 'input',
+        sentence: 'esm-___ man',
+        translation: 'my name',
+        targetSuffix: 'e',
+        baseWord: 'esm'
+      },
+      {
+        type: 'input',
+        sentence: 'esm-___ shoma',
+        translation: 'your name',
+        targetSuffix: 'e',
+        baseWord: 'esm'
+      },
+      {
+        type: 'quiz',
+        question: "What does 'esme man' literally mean?",
+        options: ["name of me (my name)", "my good name", "I am name", "your name"],
+        correctIndex: 0
+      }
+    ],
     phases: [
       {
-        id: "esm-to-esme",
+        id: "esm-to-esme-man",
         baseWord: "esm",
-        transformedWord: "esme",
+        transformedWord: "esm-e",
         baseDefinition: "name", 
         transformedDefinition: "name of",
-        explanation: "Add -e to connect words (called ezāfe)",
+        explanation: "Add –e to connect 'name' with 'man' (me)",
         exampleBefore: "esm (name)",
         exampleAfter: "esme man (my name)",
+        points: 1,
+        suffixType: 'connector'
+      },
+      {
+        id: "esm-to-esme-shoma",
+        baseWord: "esm",
+        transformedWord: "esm-e",
+        baseDefinition: "name",
+        transformedDefinition: "name of",
+        explanation: "Add –e to connect 'name' with 'shoma' (you)",
+        exampleBefore: "esm (name)",
+        exampleAfter: "esme shoma (your name)",
         points: 1,
         suffixType: 'connector'
       }
@@ -135,19 +169,41 @@ export const grammarConcepts: GrammarConcept[] = [
   {
     conceptId: "verb-contraction",
     title: "What Is It: Adding –ye",
-    description: "When you want to ask 'what is it?' in Persian, you add –ye to 'what.' This creates a question about something specific.",
-    rule: "Add -ye to 'chi' to create questions meaning 'what is it?'",
-    useItSentence: "esme shoma chi-ye? (what is your name?)",
+    description: "When you want to ask 'what is it?' in Persian, you add –ye to 'chi' (what). This is the same connector –e, but it sounds like 'ye' after certain words.",
+    rule: "Add –ye to 'chi' to ask 'what is it?'",
+    useItSentence: "esme shoma chiye? (what is your name?)", // Kept for backward compatibility
+    useItExamples: [
+      {
+        type: 'input',
+        sentence: 'chi-___?',
+        translation: 'what is it?',
+        targetSuffix: 'ye',
+        baseWord: 'chi'
+      },
+      {
+        type: 'input',
+        sentence: 'esme shoma chi-___?',
+        translation: 'what is your name?',
+        targetSuffix: 'ye',
+        baseWord: 'chi'
+      },
+      {
+        type: 'quiz',
+        question: "How do you ask 'what is it?' in Persian?",
+        options: ["chiye?", "chi?", "esme?", "man chi?"],
+        correctIndex: 0
+      }
+    ],
     phases: [
       {
         id: "chi-to-chiye",
         baseWord: "chi",
-        transformedWord: "chiye", 
+        transformedWord: "chi-ye",
         baseDefinition: "what",
         transformedDefinition: "what is it?",
-        explanation: "Add -ye to create questions",
+        explanation: "Add –ye to turn 'what' into 'what is it?'",
         exampleBefore: "chi (what)",
-        exampleAfter: "chiye (what is it?)",
+        exampleAfter: "chiye? (what is it?)",
         points: 1,
         suffixType: 'question'
       }
