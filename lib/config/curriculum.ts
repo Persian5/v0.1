@@ -288,6 +288,14 @@ export const curriculumData: Module[] = [
             lessonId: "module1-lesson2"
           },
           {
+            id: "khoobi",
+            en: "You Are Good",
+            fa: "خوبی",
+            finglish: "Khoobi",
+            phonetic: "khoo-BEE",
+            lessonId: "module1-lesson2"
+          },
+          {
             id: "merci",
             en: "Thank You",
             fa: "مرسی",
@@ -522,29 +530,50 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khoobi"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Khoobam", slotId: "slot1" },
+                { id: "word2", text: "Khoobi", slotId: "slot2" }
+              ],
+              slots: [
+                { id: "slot1", text: "I am good" },
+                { id: "slot2", text: "You are good" }
+              ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Khoobam merci",
+              expectedTranslation: "I'm good thank you",
+              maxWordBankSize: 10
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Khoobam khoobi",
+              expectedTranslation: "I'm good you are good",
+              maxWordBankSize: 10
+            }
+          },
+          {
             type: "audio-meaning",
             points: 2,
             data: {
               vocabularyId: "khoobam",
               distractors: ["salam", "chetori", "khodafez"]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you respond to 'Chetori?' (How are you?)",
-              options: ["Khoobam", "Salam", "Chetori", "Baleh"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'I'm good' in Persian?",
-              options: ["Khoobam", "Salam", "Baleh", "Na"],
-              correct: 0
             }
           },
           {
