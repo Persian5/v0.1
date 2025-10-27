@@ -674,15 +674,13 @@ export function GrammarConcept({
                           Hear It
                         </Button>
                         
-                        {isLastPhase && (
-                          <Button
-                            onClick={handleComplete}
-                            className="bg-primary hover:bg-primary/90 text-white px-6 py-2"
-                          >
-                            Complete Lesson
-                            <CheckCircle className="ml-2 h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button
+                          onClick={handleComplete}
+                          className="bg-primary hover:bg-primary/90 text-white px-6 py-2"
+                        >
+                          {isLastPhase ? 'Complete Lesson' : 'Next Step'}
+                          <CheckCircle className="ml-2 h-4 w-4" />
+                        </Button>
                       </div>
                     </motion.div>
                   )}
