@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Lightbulb, Volume2, CheckCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -485,9 +485,12 @@ export function GrammarConcept({
                       {(() => {
                         // Show sentence with blank for suffix - include context words
                         const sentence = concept.useItSentence.split('(')[0].trim()
-                        const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
-                        // Replace the word with suffix with "base-___"
-                        return sentence.replace(currentPhase.transformedWord.replace(/-/g, ''), `${basePart}-___`)
+                        const { basePart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                        // Replace the word (with or without hyphen) with "base-___"
+                        // Handle both "khoobam" and "khoob-am"
+                        const wordWithoutHyphen = currentPhase.transformedWord.replace(/-/g, '')
+                        const replaceWord = wordWithoutHyphen
+                        return sentence.replace(replaceWord, `${basePart}-___`)
                       })()}
                     </p>
                     <p className="text-sm text-gray-600">
@@ -517,20 +520,25 @@ export function GrammarConcept({
                       }
                       
                       return (
-                        <div className="w-full">
+                        <div className="relative w-full">
+                          {/* Hidden input for actual typing */}
                           <input
                             type="text"
                             value={useItInput}
                             onChange={(e) => setUseItInput(e.target.value)}
-                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg font-semibold text-center focus:border-primary focus:outline-none"
-                            placeholder="Type here"
+                            className="absolute opacity-0 w-full h-0"
                             disabled={useItCorrect}
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"
                             spellCheck="false"
+                            ref={(el) => {
+                              if (el && !useItCorrect) {
+                                setTimeout(() => el.focus(), 100)
+                              }
+                            }}
                           />
-                          {/* Letter-by-letter feedback below input */}
+                          {/* Visual letter-by-letter feedback display */}
                           <div className="flex flex-wrap gap-1 justify-center mt-2">
                             {targetSuffix.split('').map((char, index) => {
                               const status = validateChar(char, index)
@@ -539,12 +547,13 @@ export function GrammarConcept({
                                   key={index}
                                   initial={{ scale: 0.8 }}
                                   animate={{ scale: 1 }}
-                                  className={`inline-flex items-center justify-center min-w-[24px] h-[28px] rounded text-sm font-medium transition-all ${
+                                  onClick={() => !useItCorrect && document.querySelector('input[type="text"]')?.focus()}
+                                  className={`inline-flex items-center justify-center min-w-[40px] h-[50px] rounded-lg text-lg font-bold transition-all cursor-text ${
                                     status === 'correct' 
-                                      ? 'bg-green-100 text-green-700 border border-green-300' 
+                                      ? 'bg-green-100 text-green-700 border-2 border-green-500' 
                                       : status === 'incorrect'
-                                      ? 'bg-red-100 text-red-700 border border-red-300'
-                                      : 'bg-gray-50 text-gray-400 border border-gray-200'
+                                      ? 'bg-red-100 text-red-700 border-2 border-red-500'
+                                      : 'bg-gray-50 text-gray-400 border-2 border-gray-300'
                                   }`}
                                 >
                                   {status === 'pending' ? '_' : inputValue[index] || ''}
