@@ -196,6 +196,14 @@ export const curriculumData: Module[] = [
         reviewVocabulary: ["salam", "chetori"],
         vocabulary: [
           {
+            id: "khoob",
+            en: "Good",
+            fa: "خوب",
+            finglish: "Khoob",
+            phonetic: "khoob",
+            lessonId: "module1-lesson2"
+          },
+          {
             id: "khoobam",
             en: "I'm Good",
             fa: "خوبم",
