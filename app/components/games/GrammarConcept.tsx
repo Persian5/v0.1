@@ -479,14 +479,14 @@ export function GrammarConcept({
 
               {concept.useItSentence && (
                 <div className="space-y-6">
-                  {/* Sentence with blank - need to extract base word and show blank */}
+                  {/* Sentence with blank - show context but hide which suffix */}
                   <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
                     <p className="text-xl font-bold text-blue-700 mb-2">
                       {(() => {
-                        // Show sentence with blank for suffix
+                        // Show sentence with blank for suffix - include context words
                         const sentence = concept.useItSentence.split('(')[0].trim()
-                        // Replace the suffix with blank
                         const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                        // Replace the word with suffix with "base-___"
                         return sentence.replace(currentPhase.transformedWord.replace(/-/g, ''), `${basePart}-___`)
                       })()}
                     </p>
@@ -498,7 +498,7 @@ export function GrammarConcept({
                   {/* Input field */}
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
-                      Type the suffix:
+                      What suffix goes after "{currentPhase.baseWord}" to make this sentence correct?
                     </label>
                     <input
                       type="text"
