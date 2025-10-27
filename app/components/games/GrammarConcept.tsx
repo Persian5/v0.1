@@ -189,14 +189,14 @@ export function GrammarConcept({
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <div className="text-center">
-                <h3 className="text-xl font-semibold mb-4 text-gray-800">
+              <div className="text-center space-y-4 mb-8">
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {concept.title}
                 </h3>
                 {/* Badge for suffix type (shared) */}
                 {concept.phases[0]?.suffixType && (
-                  <div className="mb-4">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  <div>
+                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-base font-semibold ${
                       concept.phases[0].suffixType === 'state' 
                         ? 'bg-blue-100 text-blue-800' 
                         : concept.phases[0].suffixType === 'possession'
@@ -211,45 +211,53 @@ export function GrammarConcept({
                     </span>
                   </div>
                 )}
-                <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
+                <p className="text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto font-medium">
                   {concept.rule}
                 </p>
               </div>
 
               {/* Tree map: Base word at top, transformations below */}
-              <div className="flex flex-col items-center space-y-6 py-6">
+              <div className="flex flex-col items-center space-y-8 py-8 bg-gradient-to-b from-gray-50 to-white rounded-2xl">
                 {/* Base word (root) */}
-                <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-gray-800">
+                <div className="bg-white border-3 border-gray-400 rounded-2xl p-6 shadow-lg">
+                  <div className="text-3xl sm:text-4xl font-bold text-gray-900">
                     {concept.phases[0].baseWord}
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="text-base text-gray-600 mt-2">
                     {concept.phases[0].baseDefinition}
                   </div>
                 </div>
 
                 {/* Connector lines */}
-                <div className="flex justify-center">
-                  <div className="h-8 w-0.5 bg-gray-300"></div>
+                <div className="flex justify-center gap-4">
+                  {concept.phases.map((_, index) => (
+                    <div key={index} className="h-12 w-1 bg-gradient-to-b from-gray-400 to-green-400 rounded-full"></div>
+                  ))}
                 </div>
 
                 {/* Transformations (branches) */}
-                <div className="flex justify-center gap-4 flex-wrap">
+                <div className="flex justify-center gap-6 flex-wrap px-4">
                   {concept.phases.map((phase, index) => {
                     const { basePart, suffixPart } = splitWordWithSuffix(phase.baseWord, phase.transformedWord)
                     return (
-                      <div key={index} className="flex flex-col items-center">
-                        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 min-w-[140px]">
-                          <div className="text-xl font-bold text-green-700">
+                      <motion.div 
+                        key={index} 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex flex-col items-center"
+                      >
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 border-3 border-green-300 rounded-2xl p-6 min-w-[160px] shadow-lg">
+                          <div className="text-2xl sm:text-3xl font-bold text-green-800 mb-2">
                             <span>{basePart}</span>
                             <span className="text-orange-600">-{suffixPart}</span>
-                            {phase.transformedWord.includes('?') && <span className="text-orange-600">?</span>}
+                            {phase.transformedWord.includes('?') && <span className="text-orange-600 text-3xl">?</span>}
                           </div>
-                          <div className="text-sm text-green-600 mt-1">
+                          <div className="text-sm text-green-700 font-medium">
                             {phase.transformedDefinition}
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )
                   })}
                 </div>
@@ -490,7 +498,7 @@ export function GrammarConcept({
                   </div>
 
                   {/* Input field with letter-by-letter feedback */}
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <label className="block text-sm font-medium text-gray-700">
                       What suffix goes after "{currentUseItExample.baseWord}"?
                     </label>
@@ -505,23 +513,23 @@ export function GrammarConcept({
                       }
                       
                       return (
-                        <div className="relative w-full">
+                        <div className="w-full space-y-3">
+                          {/* Regular visible input */}
                           <input
                             type="text"
                             value={useItInput}
                             onChange={(e) => setUseItInput(e.target.value)}
-                            className="absolute opacity-0 w-full h-0"
+                            className="w-full px-6 py-4 border-2 border-gray-300 rounded-xl text-2xl font-bold text-center focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            placeholder="Type suffix here..."
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="off"
                             spellCheck="false"
-                            ref={(el) => {
-                              if (el) {
-                                setTimeout(() => el.focus(), 100)
-                              }
-                            }}
+                            autoFocus
                           />
-                          <div className="flex flex-wrap gap-1 justify-center mt-2">
+                          
+                          {/* Letter-by-letter feedback below */}
+                          <div className="flex flex-wrap gap-2 justify-center">
                             {targetSuffix.split('').map((char, index) => {
                               const status = validateChar(char, index)
                               return (
@@ -529,11 +537,7 @@ export function GrammarConcept({
                                   key={index}
                                   initial={{ scale: 0.8 }}
                                   animate={{ scale: 1 }}
-                                  onClick={() => {
-                                    const input = document.querySelector('input[type="text"]') as HTMLInputElement | null
-                                    input?.focus()
-                                  }}
-                                  className={`inline-flex items-center justify-center min-w-[40px] h-[50px] rounded-lg text-lg font-bold transition-all cursor-text ${
+                                  className={`inline-flex items-center justify-center w-12 h-12 rounded-lg text-lg font-bold transition-all ${
                                     status === 'correct' 
                                       ? 'bg-green-100 text-green-700 border-2 border-green-500' 
                                       : status === 'incorrect'

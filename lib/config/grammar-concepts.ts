@@ -96,6 +96,18 @@ export const grammarConcepts: GrammarConcept[] = [
         exampleAfter: "khoobi (you are good)",
         points: 1,
         suffixType: 'state'
+      },
+      {
+        id: "khoob-to-khoob-i-question",
+        baseWord: "khoob",
+        transformedWord: "khoob-i?",
+        baseDefinition: "good",
+        transformedDefinition: "are you good?",
+        explanation: "Add –i with rising tone to ask a question",
+        exampleBefore: "khoob (good)",
+        exampleAfter: "khoobi? (are you good?)",
+        points: 1,
+        suffixType: 'question'
       }
     ]
   },
