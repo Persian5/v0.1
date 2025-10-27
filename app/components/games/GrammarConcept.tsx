@@ -211,6 +211,24 @@ export function GrammarConcept({
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
                   {problemContent?.title}
               </h3>
+                {/* Badge for suffix type */}
+                {currentPhase.suffixType && (
+                  <div className="mb-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      currentPhase.suffixType === 'state' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : currentPhase.suffixType === 'possession'
+                        ? 'bg-green-100 text-green-800'
+                        : currentPhase.suffixType === 'question'
+                        ? 'bg-purple-100 text-purple-800'
+                        : currentPhase.suffixType === 'connector'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {currentPhase.suffixType.charAt(0).toUpperCase() + currentPhase.suffixType.slice(1)}
+                    </span>
+                  </div>
+                )}
                 <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
                   {problemContent?.explanation}
             </p>
@@ -341,6 +359,24 @@ export function GrammarConcept({
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">
                   {practiceContent?.title}
                 </h3>
+                {/* Badge for suffix type */}
+                {currentPhase.suffixType && (
+                  <div className="mb-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      currentPhase.suffixType === 'state' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : currentPhase.suffixType === 'possession'
+                        ? 'bg-green-100 text-green-800'
+                        : currentPhase.suffixType === 'question'
+                        ? 'bg-purple-100 text-purple-800'
+                        : currentPhase.suffixType === 'connector'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {currentPhase.suffixType.charAt(0).toUpperCase() + currentPhase.suffixType.slice(1)}
+                    </span>
+                  </div>
+                )}
                 <p className="text-gray-600 mb-6">
                   {practiceContent?.description}
                 </p>
