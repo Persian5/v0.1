@@ -938,47 +938,6 @@ export const curriculumData: Module[] = [
               vocabularyId: "khoshbakhtam"
             }
           },
-          // 1) matching game of salam khodafez khosh amadid khoobam
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Khodafez", slotId: "slot2" },
-                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
-                { id: "word4", text: "Khoobam", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "Goodbye" },
-                { id: "slot3", text: "Welcome" },
-                { id: "slot4", text: "I'm good" }
-              ]
-            }
-          },
-          // 2) matching game of esm chi baleh nah merci
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Esm", slotId: "slot1" },
-                { id: "word2", text: "Chi", slotId: "slot2" },
-                { id: "word3", text: "Baleh", slotId: "slot3" },
-                { id: "word4", text: "Na", slotId: "slot4" },
-                { id: "word5", text: "Merci", slotId: "slot5" }
-              ],
-              slots: [
-                { id: "slot1", text: "Name" },
-                { id: "slot2", text: "What" },
-                { id: "slot3", text: "Yes" },
-                { id: "slot4", text: "No" },
-                { id: "slot5", text: "Thank you" }
-              ]
-            }
-          },
-          // NEW: khoshbakhtam audio to english game (between items 3 and 4)
           {
             type: "audio-meaning",
             points: 2,
@@ -987,61 +946,90 @@ export const curriculumData: Module[] = [
               distractors: ["khoobam", "khosh_amadid", "khodafez"]
             }
           },
-          // 4) matching game of shoma man chetori khoshbakhtam (now moved to position 5)
           {
-            type: "matching",
+            type: "text-sequence",
             points: 3,
             data: {
-              words: [
-                { id: "word1", text: "Shoma", slotId: "slot1" },
-                { id: "word2", text: "Man", slotId: "slot2" },
-                { id: "word3", text: "Chetori", slotId: "slot3" },
-                { id: "word4", text: "Khoshbakhtam", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "You" },
-                { id: "slot2", text: "I / Me" },
-                { id: "slot3", text: "How are you?" },
-                { id: "slot4", text: "Nice to meet you" }
-              ]
+              finglishText: "Salam esme shoma chiye?",
+              expectedTranslation: "Hello What is your name",
+              maxWordBankSize: 10
             }
           },
-          // 5) matching game of esme chiye esm chi (now moved to position 6)
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Esme", slotId: "slot1" },
-                { id: "word2", text: "Chiye", slotId: "slot2" },
-                { id: "word3", text: "Esm", slotId: "slot3" },
-                { id: "word4", text: "Chi", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Name of" },
-                { id: "slot2", text: "What is it?" },
-                { id: "slot3", text: "Name" },
-                { id: "slot4", text: "What" }
-              ]
-            }
-          },
-          // 6) audio to sequence of salam, khosh amadid, chetori (now moved to position 7)
           {
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["salam", "khosh_amadid", "chetori"]
+              sequence: ["salam", "chetori", "man", "khoobam"],
+              expectedTranslation: "Hello How are you I am good"
             }
           },
-          // 7) audio to sequence of esme shoma chiye? khoshbakhtam (now moved to position 8)
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Baleh merci",
+              expectedTranslation: "Yes thank you",
+              maxWordBankSize: 10
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Salam esme man Sara-e khoshbakhtam",
+              expectedTranslation: "Hello my name is Sara nice to meet you",
+              maxWordBankSize: 10
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "khosh_amadid", "chetori"],
+              expectedTranslation: "Hello Welcome How are you"
+            }
+          },
           {
             type: "audio-sequence",
             points: 3,
             data: {
               sequence: ["esme", "shoma", "chiye", "khoshbakhtam"],
-              expectedTranslation: "What is your name nice to meet you",
-              targetWordCount: 5,
-              maxWordBankSize: 6
+              expectedTranslation: "What is your name nice to meet you"
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Salam", slotId: "slot1" },
+                { id: "word2", text: "Khodafez", slotId: "slot2" },
+                { id: "word3", text: "Khoshbakhtam", slotId: "slot3" },
+                { id: "word4", text: "Chetori", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Hello" },
+                { id: "slot2", text: "Goodbye" },
+                { id: "slot3", text: "Nice to meet you" },
+                { id: "slot4", text: "How are you?" }
+              ]
+            }
+          },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "Type the suffix for 'I am' after the word 'khoob': khoob-___",
+              answer: "am"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which of the following words mean 'Yes'?",
+              options: ["Baleh", "Na", "Merci", "Chi"],
+              correct: 0
             }
           },
           // 8) audio to sequence of na merci, khoobam
