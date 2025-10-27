@@ -296,6 +296,14 @@ export const curriculumData: Module[] = [
             lessonId: "module1-lesson2"
           },
           {
+            id: "khoobi-question",
+            en: "Are You Good?",
+            fa: "خوبی؟",
+            finglish: "Khoobi?",
+            phonetic: "khoo-BEE?",
+            lessonId: "module1-lesson2"
+          },
+          {
             id: "merci",
             en: "Thank You",
             fa: "مرسی",
@@ -572,8 +580,8 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "Khoobam khoobi",
-              expectedTranslation: "I'm good you are good",
+              finglishText: "Khoobam khoobi?",
+              expectedTranslation: "I'm good are you good",
               maxWordBankSize: 10
             }
           },
