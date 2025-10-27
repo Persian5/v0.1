@@ -26,6 +26,8 @@ export function GrammarConcept({
   const [practiceComplete, setPracticeComplete] = useState(false)
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  const [useItInput, setUseItInput] = useState('')
+  const [useItCorrect, setUseItCorrect] = useState(false)
 
   const concept = getGrammarConcept(conceptId)
   
@@ -38,9 +40,10 @@ export function GrammarConcept({
   const isLastPhase = currentPhaseIndex === concept.phases.length - 1
   
   const tabs = [
-    { id: 0, label: "Problem", icon: "🤔" },
+    { id: 0, label: "The Rule", icon: "📚" },
     { id: 1, label: "Examples", icon: "📝" },
-    { id: 2, label: "Practice", icon: "🎯" }
+    { id: 2, label: "Practice", icon: "✏️" },
+    { id: 3, label: "Use It", icon: "💬" }
   ]
 
   // Dynamic examples from all phases - include hyphenated version for suffix highlighting
@@ -450,6 +453,108 @@ export function GrammarConcept({
               </AnimatePresence>
               </motion.div>
             )}
+
+          {/* Tab 4: Use It */}
+          {activeTab === 3 && (
+            <motion.div
+              key="use-it"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">
+                  Try It in a Real Sentence
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Fill in the blank to complete the sentence
+                </p>
+              </div>
+
+              {concept.useItSentence && (
+                <div className="space-y-6">
+                  {/* Sentence with blank */}
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                    <p className="text-xl font-bold text-blue-700 mb-2">
+                      {concept.useItSentence}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {concept.useItSentence.split('(')[1]?.replace(')', '')}
+                    </p>
+                  </div>
+
+                  {/* Input field */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Type the suffix:
+                    </label>
+                    <input
+                      type="text"
+                      value={useItInput}
+                      onChange={(e) => setUseItInput(e.target.value)}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-lg font-semibold text-center focus:border-primary focus:outline-none"
+                      placeholder="am"
+                      disabled={useItCorrect}
+                    />
+                  </div>
+
+                  {/* Submit button */}
+                  {!useItCorrect && (
+                    <Button
+                      onClick={() => {
+                        // Check if input matches current phase suffix
+                        const suffix = currentPhase.transformedWord
+                          .replace(currentPhase.baseWord, '')
+                          .replace(/-/g, '')
+                          .trim()
+                        
+                        if (useItInput.toLowerCase() === suffix.toLowerCase()) {
+                          setUseItCorrect(true)
+                          playSuccessSound()
+                        }
+                      }}
+                      className="w-full bg-primary hover:bg-primary/90 text-white py-3"
+                    >
+                      Check Answer
+                    </Button>
+                  )}
+
+                  {/* Success message */}
+                  {useItCorrect && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-green-50 border-2 border-green-200 rounded-lg p-6"
+                    >
+                      <p className="text-green-800 font-semibold mb-2">
+                        Perfect! You got it right!
+                      </p>
+                      <p className="text-xl font-bold text-green-700 mb-4">
+                        {(() => {
+                          const { basePart, suffixPart } = splitWordWithSuffix(currentPhase.baseWord, currentPhase.transformedWord)
+                          return (
+                            <>
+                              <span>{basePart}</span>
+                              <span className="text-orange-600">-{suffixPart}</span>
+                            </>
+                          )
+                        })()}
+                      </p>
+                      <Button
+                        onClick={() => playExampleAudio(currentPhase.transformedWord.replace(/-/g, ''))}
+                        variant="outline"
+                        className="gap-2 border-green-300 text-green-700 hover:bg-green-100"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                        Hear It
+                      </Button>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
           </AnimatePresence>
       </div>
     </div>
