@@ -1,5 +1,23 @@
 import { VocabularyItem } from "../types";
 
+// Use It example types
+export interface UseItInputExample {
+  type: 'input';
+  sentence: string; // e.g., "na merci, man khoob-___"
+  translation: string; // e.g., "No thank you, I am good"
+  targetSuffix: string; // e.g., "am"
+  baseWord: string; // e.g., "khoob"
+}
+
+export interface UseItQuizExample {
+  type: 'quiz';
+  question: string;
+  options: string[];
+  correctIndex: number;
+}
+
+export type UseItExample = UseItInputExample | UseItQuizExample;
+
 // Grammar concept interfaces
 export interface GrammarPhase {
   id: string;
@@ -20,7 +38,8 @@ export interface GrammarConcept {
   description: string;
   rule: string;
   phases: GrammarPhase[];
-  useItSentence?: string; // Example sentence for "Use It" tab
+  useItSentence?: string; // Deprecated: kept for backward compatibility
+  useItExamples?: UseItExample[]; // New: array of examples for "Use It" tab
 }
 
 // All grammar concepts for the Persian learning app
@@ -30,7 +49,29 @@ export const grammarConcepts: GrammarConcept[] = [
     title: "I Am / You Are: Adding Suffixes",
     description: "When you want to say 'I am' or 'you are' something, you add a suffix to the descriptive word. Add –am to say 'I am' and –i to say 'you are'.",
     rule: "Add –am for 'I am' and –i for 'you are' to any descriptive word",
-    useItSentence: "na merci, man khoob-am (No thank you, I am good)",
+    useItSentence: "na merci, man khoob-am (No thank you, I am good)", // Kept for backward compatibility
+    useItExamples: [
+      {
+        type: 'input',
+        sentence: 'na merci, man khoob-___',
+        translation: 'No thank you, I am good',
+        targetSuffix: 'am',
+        baseWord: 'khoob'
+      },
+      {
+        type: 'input',
+        sentence: 'khoob-___',
+        translation: 'you are good',
+        targetSuffix: 'i',
+        baseWord: 'khoob'
+      },
+      {
+        type: 'quiz',
+        question: "What does 'Khoobi?' mean as a question?",
+        options: ["Are you good?", "You are good", "I am good", "Goodbye"],
+        correctIndex: 0
+      }
+    ],
     phases: [
       {
         id: "khoob-to-khoob-am",
