@@ -347,6 +347,22 @@ export const curriculumData: Module[] = [
               ]
             }
           },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "chetori",
+              distractors: ["salam", "khosh_amadid", "khodafez"]
+            }
+          },
+          {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "khosh_amadid"],
+              expectedTranslation: "Hello Welcome"
+            }
+          },
           
           // PHASE 2: INTRODUCE BASE ADJECTIVE - "khoob"
           {
@@ -354,6 +370,14 @@ export const curriculumData: Module[] = [
             points: 1,
             data: {
               vocabularyId: "khoob"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khodafez",
+              distractors: ["salam", "chetori", "khosh_amadid"]
             }
           },
           {
@@ -365,6 +389,14 @@ export const curriculumData: Module[] = [
               correct: 0
             }
           },
+          {
+            type: "input",
+            points: 2,
+            data: {
+              question: "How do you say 'good' in Persian?",
+              answer: "Khoob"
+            }
+          },
           
           // PHASE 3: INTRODUCE "merci" & YES/NO
           {
@@ -372,6 +404,14 @@ export const curriculumData: Module[] = [
             points: 1,
             data: {
               vocabularyId: "merci"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khosh_amadid",
+              distractors: ["salam", "chetori", "khodafez"]
             }
           },
           {
