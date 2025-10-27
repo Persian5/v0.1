@@ -707,6 +707,23 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "audio-sequence",
+            points: 3,
+            data: {
+              sequence: ["salam", "man", "khoobam"],
+              expectedTranslation: "Hi I am good"
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Salam Khosh Amadid Chetori?",
+              expectedTranslation: "Hello Welcome How are You",
+              maxWordBankSize: 10
+            }
+          },
+          {
             type: "flashcard",
             points: 1,
             data: {
@@ -727,6 +744,23 @@ export const curriculumData: Module[] = [
                 { id: "slot3", text: "Name" },
                 { id: "slot4", text: "What" }
               ]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Salam shoma khoobi?",
+              expectedTranslation: "Hello are you good",
+              maxWordBankSize: 10
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "shoma",
+              distractors: ["man", "esm", "chi"]
             }
           },
           {
