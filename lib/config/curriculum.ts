@@ -1145,7 +1145,7 @@ export const curriculumData: Module[] = [
         steps: [
           {
             type: "story-conversation",
-            points: 0, // XP awarded per-choice, not at completion
+            points: 6, // XP awarded once at story completion (idempotent)
             data: {
               storyId: "module1-story",
               title: "Meeting Someone New",
@@ -1170,8 +1170,8 @@ export const curriculumData: Module[] = [
                     },
                     {
                       id: "choice1b", 
-                      text: "Salam, khosh amadid",
-                      vocabularyUsed: ["salam", "khosh_amadid"],
+                      text: "Khodafez",
+                      vocabularyUsed: ["khodafez"],
                       isCorrect: false,
                       points: 0
                     }
@@ -1184,13 +1184,6 @@ export const curriculumData: Module[] = [
                   choices: [
                     {
                       id: "choice2a",
-                      text: "Baleh",
-                      vocabularyUsed: ["baleh"],
-                      isCorrect: false,
-                      points: 0
-                    },
-                    {
-                      id: "choice2b",
                       text: "Khoobam, merci!",
                       vocabularyUsed: ["khoobam", "merci"],
                       isCorrect: true,
@@ -1198,9 +1191,16 @@ export const curriculumData: Module[] = [
                       responseMessage: ""
                     },
                     {
+                      id: "choice2b",
+                      text: "Baleh, merci",
+                      vocabularyUsed: ["baleh", "merci"],
+                      isCorrect: false,
+                      points: 0
+                    },
+                    {
                       id: "choice2c",
-                      text: "Esme man {name}-e?",
-                      vocabularyUsed: ["esme_man"],
+                      text: "Khoobi, merci",
+                      vocabularyUsed: ["khoobi", "merci"],
                       isCorrect: false,
                       points: 0
                     }
@@ -1287,11 +1287,10 @@ export const curriculumData: Module[] = [
                     },
                     {
                       id: "choice6b",
-                      text: "Khoshbakhtam",
-                      vocabularyUsed: ["khoshbakhtam"],
-                      isCorrect: true,
-                      points: 1,
-                      responseMessage: "Khoshbakhtam {name}!"
+                      text: "Khosh amadid",
+                      vocabularyUsed: ["khosh_amadid"],
+                      isCorrect: false,
+                      points: 0
                     }
                   ]
                 },
@@ -2691,7 +2690,7 @@ export const curriculumData: Module[] = [
           },
           {
             type: "story-conversation",
-            points: 0, // XP awarded per-choice, not at completion
+            points: 6, // XP awarded once at story completion (idempotent)
             data: {
               storyId: "module2-review-leyla",
               title: "Chat with Leyla",

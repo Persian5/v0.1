@@ -329,7 +329,7 @@ function LessonPageContent() {
         {currentView !== 'completion' && currentView !== 'module-completion' && currentView !== 'summary' && (
           <Progress value={progress} className="w-full h-2 mb-4" />
         )}
-        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+        <div className="flex-1 flex flex-col w-full">
           {/* Content Area - takes remaining space */}
           <div className="flex-1 flex flex-col items-center justify-start min-h-0 w-full">
             {/* Render the appropriate content based on currentView */}

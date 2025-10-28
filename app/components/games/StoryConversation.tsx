@@ -12,8 +12,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 interface StoryConversationProps {
   step: StoryConversationStep;
   onComplete: () => void;
-  onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed; // Not used - XP awarded per-choice via addXp instead
-  addXp?: (amount: number, source: string, metadata?: any) => void;
+  onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
+  addXp?: (amount: number, source: string, metadata?: any) => void; // Not used - XP awarded once via onXpStart
 }
 
 interface ChatMessage {
@@ -41,8 +41,9 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const choicesRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
-  const prevIsUserTyping = useRef(false);
+  const lastScrolledExchangeId = useRef<string | null>(null);
   const { data: storyData } = step;
   
   // Initialize story
@@ -145,6 +146,12 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
       .replace(/{characterName}/g, storyData.characterName);
   };
 
+  // Helper function to capitalize first letter of sentences
+  const capitalizeSentence = (text: string): string => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   const handleChoiceSelect = async (choice: StoryChoiceType) => {
     if (selectedChoiceId || showResult) return;
     
@@ -163,16 +170,8 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
       };
       setChatHistory(prev => [...prev, userMessage]);
 
-      // Award XP for correct first-try choice
-      if (choice.points > 0 && addXp) {
-        addXp(choice.points, 'story-choice', {
-          activityType: 'story-conversation',
-          storyId: storyData.storyId,
-          exchangeIndex: currentExchangeIndex
-        });
-        setShowXp(true);
-        playSuccessSound();
-      }
+      // Play success sound for correct choice (no XP animation per choice)
+      playSuccessSound();
 
       // Update progress
       StoryProgressService.updateProgress(
@@ -282,14 +281,24 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     setShowXp(false);
   };
 
-  const handleStoryCompletion = () => {
+  const handleStoryCompletion = async () => {
     StoryProgressService.markStoryCompleted(storyData.storyId);
     setIsCompleted(true);
     
-    // Note: XP is awarded per-choice via addXp(choice.points)
-    // No additional completion bonus needed - step.points should be 0
+    // Award XP once for story completion (idempotent, back button safe)
+    if (onXpStart) {
+      const wasGranted = await onXpStart(); // Returns true if XP granted, false if already completed
+      setIsAlreadyCompleted(!wasGranted); // Track if step was already completed
+      
+      // Show XP animation only if XP was granted
+      if (wasGranted) {
+        setShowXp(true);
+        // Wait for XP animation before completing
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
     
-    // Call onComplete immediately to trigger module completion logic
+    // Call onComplete to trigger lesson completion logic
     onComplete();
   };
 
@@ -299,26 +308,26 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     setChatHistory([]);
   };
 
-  // Auto-scroll to bottom when new messages are added (iMessage-style)
-  useEffect(() => {
-    // Use requestAnimationFrame for smoother, non-conflicting scroll
-    requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    });
-  }, [chatHistory]);
+  // REMOVED: Auto-scroll behavior
+  // Messages now naturally stack upward (iMessage style)
+  // Users scroll up to see history, new messages appear at bottom
 
-  // Auto-scroll when user typing STARTS (only on state change false -> true)
+  // Auto-scroll to choices when they first appear (desktop and mobile)
   useEffect(() => {
-    // Only scroll if isUserTyping changed from false to true
-    if (isUserTyping && !prevIsUserTyping.current) {
-      // Delay slightly to ensure choices are rendered before scrolling
-      requestAnimationFrame(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      });
+    const currentExchangeId = getCurrentExchange()?.id;
+    
+    // Only scroll if:
+    // 1. User typing indicator is active (choices are visible)
+    // 2. Current exchange has choices
+    // 3. We haven't already scrolled for this exchange
+    if (isUserTyping && currentExchangeId && currentExchangeId !== lastScrolledExchangeId.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        choicesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        lastScrolledExchangeId.current = currentExchangeId;
+      }, 100);
     }
-    // Update the ref to track current state for next render
-    prevIsUserTyping.current = isUserTyping;
-  }, [isUserTyping]);
+  }, [isUserTyping, currentExchangeIndex]);
 
   // Show name input if needed
   if (needsName) {
@@ -339,26 +348,25 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   }, [currentExchange?.id, currentExchange?.choices]);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row bg-gray-50">
-      {/* Main Chat Area - Left Side on Desktop */}
-      <div className="flex-1 lg:flex-[2] flex flex-col bg-gray-50">
-        {/* Story Header */}
-        <div className="bg-white border-b px-4 py-3 text-center lg:text-left">
-          <h3 className="font-semibold text-primary">{storyData.title}</h3>
-          <p className="text-sm text-muted-foreground">{storyData.setting}</p>
+    <div className="h-full w-full flex flex-col lg:flex-row bg-white">
+      {/* Main Chat Area - 60% on desktop, Full Screen on Mobile */}
+      <div className="flex-1 lg:flex-[3] flex flex-col bg-white">
+        {/* Story Header - Fixed */}
+        <div className="bg-white border-b px-4 py-3 text-center flex-shrink-0">
+          <h3 className="font-semibold text-primary">{capitalizeSentence(storyData.title)}</h3>
+          <p className="text-sm text-muted-foreground">{capitalizeSentence(storyData.setting)}</p>
         </div>
 
-        {/* Chat Container - Wider on desktop */}
+        {/* Chat Container - Scrollable Messages Area */}
         <div 
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-2 pb-6 lg:px-6"
-          style={{ minHeight: '400px' }}
+          className="flex-1 overflow-y-auto p-4 space-y-2 lg:px-6"
         >
           {/* All Chat Messages from history */}
           {chatHistory.map(message => (
             <ChatBubble
               key={message.id}
-              message={message.message}
+              message={capitalizeSentence(message.message)}
               isUser={message.isUser}
               characterName={storyData.characterName}
               characterEmoji={storyData.characterEmoji}
@@ -429,26 +437,29 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
             </div>
           )}
 
-          {/* Choice Bubbles - Wider on desktop */}
+          {/* Choice Section - Inline in message flow (both mobile and desktop) */}
           {!isCompleted && 
            currentExchange && 
            currentExchange.choices && 
            currentExchange.choices.length > 0 &&
            !isCharacterTyping && 
            isUserTyping && (
-            <div className="space-y-3 px-2 py-3">
+            <div 
+              ref={choicesRef}
+              className="space-y-3 px-2 py-3"
+            >
               {/* Choice Instructions */}
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-gray-500 text-center mb-3">
                 Choose your response:
               </p>
               
-              {/* Story Choices - Responsive grid on desktop */}
-              <div className="flex flex-col gap-2 max-w-md lg:max-w-2xl mx-auto w-full lg:grid lg:grid-cols-2 lg:gap-3">
+              {/* Story Choices - Full-Width Stacked Bubbles */}
+              <div className="flex flex-col gap-3 w-full max-w-3xl mx-auto">
                 {shuffledChoices.map(choice => {
                   // Create a personalized version of the choice for display
                   const personalizedChoice = {
                     ...choice,
-                    text: personalizeText(choice.text)
+                    text: capitalizeSentence(personalizeText(choice.text))
                   };
                   
                   // Style based on state
@@ -476,8 +487,8 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
                       }}
                       disabled={showResult}
                       className={`
-                        text-center px-4 py-3 rounded-full border transition-all duration-200
-                        text-sm font-medium shadow-sm w-full lg:text-base lg:py-4
+                        w-full text-center px-6 py-4 rounded-full border transition-all duration-200
+                        text-base font-medium shadow-sm
                         ${getButtonStyle()}
                       `}
                       animate={
@@ -499,18 +510,20 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
           )}
         </div>
 
-        {/* Bottom area - minimal since choices are in chat */}
-        <div className="bg-white border-t px-4 py-2">
-          <div className="text-center text-xs text-gray-400">
-            {/* Space for future features */}
+        {/* Bottom Footer - Fixed (only show when no choices) */}
+        {(isCompleted || !currentExchange || !isUserTyping) && (
+          <div className="bg-white border-t px-4 py-2 flex-shrink-0">
+            <div className="text-center text-xs text-gray-400">
+              {/* Space for future features */}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Context Panel - Right Side on Desktop, Hidden on Mobile */}
-      <div className="hidden lg:flex lg:flex-1 lg:flex-col bg-white border-l border-gray-200">
+      {/* Context Panel - 20% on desktop, Hidden on Mobile */}
+      <div className="hidden lg:flex lg:flex-[1] lg:flex-col bg-white border-l border-gray-200 overflow-y-auto">
         {/* Character Info Section */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex-shrink-0">
           <div className="text-center">
             <div className="text-6xl mb-3">{storyData.characterEmoji}</div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">{storyData.characterName}</h3>
@@ -519,7 +532,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
         </div>
 
         {/* Progress Section */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex-shrink-0">
           <h4 className="font-semibold text-gray-800 mb-3">Progress</h4>
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
@@ -540,7 +553,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
         </div>
 
         {/* Vocabulary Hints Section */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex-shrink-0">
           <h4 className="font-semibold text-gray-800 mb-3">Key Vocabulary</h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -565,38 +578,43 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Cultural Notes Section */}
-        <div className="flex-1 p-6">
-          <h4 className="font-semibold text-gray-800 mb-3">Cultural Tips</h4>
-          <div className="space-y-3 text-sm text-gray-600">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <p className="font-medium text-blue-800 mb-1">💡 Greeting Tip</p>
-              <p>In Persian culture, it's polite to ask "Chetori?" (How are you?) after saying hello, even to people you just met.</p>
-            </div>
-            <div className="bg-green-50 p-3 rounded-lg">
-              <p className="font-medium text-green-800 mb-1">🤝 Meeting People</p>
-              <p>"Khoshbakhtam" literally means "I am happy/pleased" and is the standard way to say "Nice to meet you."</p>
-            </div>
-            <div className="bg-purple-50 p-3 rounded-lg">
-              <p className="font-medium text-purple-800 mb-1">🗣️ Pronunciation</p>
-              <p>Persian is phonetic - words are pronounced exactly as they're written in Finglish!</p>
-            </div>
+      {/* Cultural Tips Panel - 20% on desktop, Hidden on Mobile */}
+      <div className="hidden lg:flex lg:flex-[1] lg:flex-col bg-white border-l border-gray-200 overflow-y-auto">
+        {/* Cultural Notes Header */}
+        <div className="p-6 border-b border-gray-100 flex-shrink-0">
+          <h4 className="font-semibold text-gray-800 text-center">Cultural Tips</h4>
+        </div>
+
+        {/* Cultural Tips Content */}
+        <div className="flex-1 p-6 space-y-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <p className="font-medium text-blue-800 mb-2">💡 Greeting tip</p>
+            <p className="text-sm text-gray-600">In Persian culture, it's polite to ask "Chetori?" (How are you?) after saying hello, even to people you just met.</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <p className="font-medium text-green-800 mb-2">🤝 Meeting people</p>
+            <p className="text-sm text-gray-600">"Khoshbakhtam" literally means "I am happy/pleased" and is the standard way to say "Nice to meet you."</p>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <p className="font-medium text-purple-800 mb-2">🗣️ Pronunciation</p>
+            <p className="text-sm text-gray-600">Persian is phonetic - words are pronounced exactly as they're written in Finglish!</p>
           </div>
         </div>
       </div>
 
-      {/* XP Animation */}
+      {/* XP Animation - Shows only at story completion */}
       {showXp && (
         <XpAnimation
-          amount={1}
+          amount={step.points}
           show={showXp}
           isAlreadyCompleted={isAlreadyCompleted}
           onComplete={() => setShowXp(false)}
         />
       )}
 
-      {/* Sentinel for auto page scroll */}
+      {/* Sentinel for scroll reference (no longer used for auto-scroll) */}
       <div ref={bottomRef} />
     </div>
   );
