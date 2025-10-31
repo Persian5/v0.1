@@ -398,19 +398,20 @@ export class XpService {
         // No reconciliation needed - optimistic update is already correct
         // The RPC confirmed the award, so our optimistic +amount is accurate
       } else {
-        // XP already awarded - rollback optimistic update
+        // XP already awarded - don't rollback, just reconcile to DB value
         if (typeof window !== 'undefined') {
           localStorage.setItem(cacheKey, '1')
         }
-        // XP already earned - rollback will happen below
         
+        // Reconcile XP to database value (no visual glitch - just sync)
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
-          SmartAuthService.addXpOptimistic(-amount, 'already_awarded_rollback')
-          // Also reconcile to DB value to be safe
-          SmartAuthService.setXpDirectly(newXp)
+          // Set XP directly to DB value (smooth transition, no rollback animation)
+          if (newXp !== undefined) {
+            SmartAuthService.setXpDirectly(newXp)
+          }
         } catch (error) {
-          console.warn('Failed to rollback optimistic XP:', error)
+          console.warn('Failed to reconcile XP:', error)
         }
       }
       
