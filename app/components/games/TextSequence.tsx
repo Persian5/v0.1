@@ -117,9 +117,9 @@ export function TextSequence({
 
     // Track vocabulary performance PER-WORD (accurate tracking for multi-word games)
     if (onVocabTrack) {
-      // Convert user's display keys back to word text
-      const userAnswerWords = userOrder.map(displayKey => 
-        wordBankData.displayKeyToWordText.get(displayKey) || displayKey.split('-').slice(0, -1).join('-')
+      // Convert user's word keys back to actual word text (strip index suffix)
+      const userAnswerWords = userOrder.map(wordKey => 
+        wordKey.split('-').slice(0, -1).join('-')
       );
       
       // Validate each word individually
