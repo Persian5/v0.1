@@ -53,6 +53,30 @@
 | user_xp_transactions | metadata               | jsonb                    | YES         | null               |
 | user_xp_transactions | idempotency_key        | text                     | YES         | null               |
 | user_xp_transactions | created_at             | timestamp with time zone | NO          | now()              |
+| vocabulary_performance | id                   | uuid                     | NO          | gen_random_uuid()  |
+| vocabulary_performance | user_id              | uuid                     | NO          | null               |
+| vocabulary_performance | vocabulary_id        | text                     | NO          | null               |
+| vocabulary_performance | word_text            | text                     | NO          | null               |
+| vocabulary_performance | total_attempts       | integer                  | NO          | 0                  |
+| vocabulary_performance | total_correct        | integer                  | NO          | 0                  |
+| vocabulary_performance | total_incorrect      | integer                  | NO          | 0                  |
+| vocabulary_performance | consecutive_correct  | integer                  | NO          | 0                  |
+| vocabulary_performance | mastery_level        | smallint                 | NO          | 0                  |
+| vocabulary_performance | last_seen_at         | timestamp with time zone | YES         | null               |
+| vocabulary_performance | next_review_at       | timestamp with time zone | YES         | null               |
+| vocabulary_performance | created_at           | timestamp with time zone | NO          | now()              |
+| vocabulary_performance | updated_at           | timestamp with time zone | NO          | now()              |
+| vocabulary_attempts    | id                   | uuid                     | NO          | gen_random_uuid()  |
+| vocabulary_attempts    | user_id              | uuid                     | NO          | null               |
+| vocabulary_attempts    | vocabulary_id        | text                     | NO          | null               |
+| vocabulary_attempts    | game_type            | text                     | NO          | null               |
+| vocabulary_attempts    | module_id            | text                     | YES         | null               |
+| vocabulary_attempts    | lesson_id            | text                     | YES         | null               |
+| vocabulary_attempts    | step_uid             | text                     | YES         | null               |
+| vocabulary_attempts    | is_correct           | boolean                  | NO          | null               |
+| vocabulary_attempts    | time_spent_ms        | integer                  | YES         | null               |
+| vocabulary_attempts    | context_data         | jsonb                    | YES         | null               |
+| vocabulary_attempts    | created_at           | timestamp with time zone | NO          | now()              |
 
 ## Constraints
 
@@ -63,3 +87,15 @@
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)
 - **UNIQUE**: `(user_id, idempotency_key)` WHERE `idempotency_key IS NOT NULL` - Ensures once-per-step XP awards (format: moduleId:lessonId:stepUid)
 - **INDEX**: `idx_xp_transactions_lookup` on `(user_id, source, lesson_id)` - Faster lookups
+
+### vocabulary_performance
+- **UNIQUE**: `(user_id, vocabulary_id)` - One performance record per user per word
+- **INDEX**: `idx_vocab_perf_user_next_review` on `(user_id, next_review_at)` WHERE `next_review_at IS NOT NULL` - Spaced repetition queries
+- **INDEX**: `idx_vocab_perf_user_consecutive` on `(user_id, consecutive_correct DESC)` - Finding weak words by streak
+- **INDEX**: `idx_vocab_perf_user_mastery` on `(user_id, mastery_level ASC)` - Finding words by mastery level
+
+### vocabulary_attempts
+- **INDEX**: `idx_vocab_attempts_user_time` on `(user_id, created_at DESC)` - User's recent attempts
+- **INDEX**: `idx_vocab_attempts_user_vocab` on `(user_id, vocabulary_id, created_at DESC)` - Per-word history
+- **INDEX**: `idx_vocab_attempts_vocab_global` on `(vocabulary_id, created_at DESC)` - Global analytics
+- **INDEX**: `idx_vocab_attempts_context_gin` on `context_data` using GIN - JSONB queries
