@@ -20,6 +20,7 @@ export interface VocabularyItem {
   phonetic: string;     // Pronunciation guide (e.g., "sah-LUHM")
   lessonId: string;     // "module1-lesson1"
   audio?: string;       // optional audio file path
+  semanticGroup?: string; // Semantic group for distractor generation (e.g., "greetings", "pronouns")
 }
 
 // Lesson types
