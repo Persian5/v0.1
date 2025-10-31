@@ -57,6 +57,7 @@ export function LessonRunner({
   const [isInRemediation, setIsInRemediation] = useState(false) // Are we in remediation mode?
   const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
   const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
+  const [incorrectAttempts, setIncorrectAttempts] = useState<Record<string, number>>({}) // Track incorrect attempts per vocabulary ID (NEW: for 2+ trigger)
   const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
   const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
   const [isNavigating, setIsNavigating] = useState(false) // Prevent rapid back button clicks
@@ -202,18 +203,31 @@ export function LessonRunner({
   }
 
   // Handle remediation when a word is answered incorrectly - HYBRID phrase + vocabulary approach
+  // NEW: Only trigger remediation after 2+ incorrect attempts (soft threshold)
   const handleRemediationNeeded = (dataOrId?: any) => {
     if (!dataOrId) return; // Nothing provided
+
+    // Helper function to check and potentially queue a vocabulary ID
+    const maybeQueueForRemediation = (vocabularyId: string) => {
+      // Increment incorrect attempt counter
+      const currentCount = incorrectAttempts[vocabularyId] || 0;
+      const newCount = currentCount + 1;
+      
+      setIncorrectAttempts(prev => ({ ...prev, [vocabularyId]: newCount }));
+      
+      // Only trigger remediation on 2nd+ incorrect attempt
+      if (newCount >= 2 && !pendingRemediation.includes(vocabularyId)) {
+        console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
+        setPendingRemediation(prev => [...prev, vocabularyId]);
+      } else if (newCount === 1) {
+        console.log(`⚠️ First incorrect attempt for "${vocabularyId}" (${newCount}/2 - no remediation yet)`);
+      }
+    };
 
     // Determine if we received a direct vocabulary ID (string) or full quiz step data (object)
     if (typeof dataOrId === 'string') {
       // Direct vocabulary ID provided (e.g., from InputExercise)
-      const vocabularyId = dataOrId;
-      
-      // Add to pending remediation queue if not already there
-      if (!pendingRemediation.includes(vocabularyId)) {
-        setPendingRemediation(prev => [...prev, vocabularyId]);
-      }
+      maybeQueueForRemediation(dataOrId);
     } else {
       // Quiz step data - implement hybrid phrase + vocabulary logic
       const quizData = dataOrId;
@@ -231,23 +245,18 @@ export function LessonRunner({
         // Determine which critical vocabulary actually needs remediation
         const vocabForRemediation = VocabularyService.getVocabularyForRemediation(criticalVocab);
         
-        // Add critical vocabulary that needs help to remediation queue
+        // Add critical vocabulary that needs help to remediation queue (using 2+ threshold)
         for (const vocabId of vocabForRemediation) {
-          if (!pendingRemediation.includes(vocabId)) {
-            setPendingRemediation(prev => [...prev, vocabId]);
-          }
+          maybeQueueForRemediation(vocabId);
         }
         
-        console.log(`Phrase "${phraseId}" failed. Critical vocab for remediation:`, vocabForRemediation);
+        console.log(`Phrase "${phraseId}" failed. Critical vocab being tracked:`, vocabForRemediation);
       } else {
         // Fallback to individual vocabulary word logic
         const vocabularyId = VocabularyService.extractVocabularyFromQuiz(quizData, allVocabForExtraction);
         
         if (vocabularyId) {
-          // Add to pending remediation queue if not already there
-          if (!pendingRemediation.includes(vocabularyId)) {
-            setPendingRemediation(prev => [...prev, vocabularyId]);
-          }
+          maybeQueueForRemediation(vocabularyId);
         }
       }
     }
