@@ -42,11 +42,6 @@ export function Quiz({
   // Time tracking for analytics
   const startTime = useRef(Date.now())
   
-  // Reset timer when quiz content changes (new question)
-  useEffect(() => {
-    startTime.current = Date.now()
-  }, [prompt, optionsHash])
-  
   // Generate unique instance ID for this quiz component
   const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
@@ -57,6 +52,11 @@ export function Quiz({
       : '';
     return `${optionsStr}-${correct}`;
   }, [options, correct]);
+  
+  // Reset timer when quiz content changes (new question)
+  useEffect(() => {
+    startTime.current = Date.now()
+  }, [prompt, optionsHash])
 
   // Randomize options ONCE on mount - more efficient than useEffect
   const shuffledOptions = useMemo(() => {
