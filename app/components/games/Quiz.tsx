@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -38,6 +38,14 @@ export function Quiz({
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
   const [isCorrectAnswer, setIsCorrectAnswer] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
+  
+  // Reset timer when quiz content changes (new question)
+  useEffect(() => {
+    startTime.current = Date.now()
+  }, [prompt, optionsHash])
   
   // Generate unique instance ID for this quiz component
   const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
@@ -83,18 +91,24 @@ export function Quiz({
       
       // Move to completed state after brief delay to show success - REDUCED timeout
       setTimeout(() => {
+        // Calculate time spent on this question
+        const timeSpentMs = Date.now() - startTime.current
+        
         // Track vocabulary performance to Supabase
         if (vocabularyId && onVocabTrack) {
-          onVocabTrack(vocabularyId, prompt, true);
+          onVocabTrack(vocabularyId, prompt, true, timeSpentMs);
         }
         
         setQuizState('completed');
         onComplete(true);
       }, 800); // Reduced from 1200ms to prevent component transition glitches
     } else {
+      // Calculate time spent on incorrect attempt
+      const timeSpentMs = Date.now() - startTime.current
+      
       // For incorrect answers, track immediately since we're not advancing
       if (vocabularyId && onVocabTrack) {
-        onVocabTrack(vocabularyId, prompt, false);
+        onVocabTrack(vocabularyId, prompt, false, timeSpentMs);
       }
       
       // Trigger remediation if callback provided
