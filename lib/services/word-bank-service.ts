@@ -1188,5 +1188,79 @@ export class WordBankService {
     }
     return shuffled;
   }
+
+  /**
+   * Validate user answer against expected translation (PER-WORD validation)
+   * 
+   * This is CRITICAL for accurate tracking in multi-word games.
+   * Instead of marking ALL words as correct/incorrect, this validates each word individually.
+   * 
+   * Example:
+   *   Expected: "Hello, how are you?"
+   *   User: "Hello, goodbye"
+   *   Result: [
+   *     { vocabularyId: "salam", wordText: "Hello", isCorrect: true },
+   *     { vocabularyId: "chetori", wordText: "How are you", isCorrect: false }
+   *   ]
+   * 
+   * @param params - Validation parameters
+   * @returns Array of per-word validation results
+   */
+  static validateUserAnswer(params: {
+    userAnswer: string[];           // User's selected words in order (e.g., ["Hello", "goodbye"])
+    expectedTranslation: string;    // Expected English translation (e.g., "Hello, how are you?")
+    vocabularyBank: VocabularyItem[];
+    sequenceIds?: string[];         // Optional: vocabulary IDs for fallback matching
+  }): Array<{ vocabularyId: string, wordText: string, isCorrect: boolean }> {
+    const { userAnswer, expectedTranslation, vocabularyBank, sequenceIds } = params;
+
+    // Step 1: Generate word bank to get expected semantic units
+    const wordBankResult = this.generateWordBank({
+      expectedTranslation,
+      vocabularyBank,
+      sequenceIds
+    });
+
+    // Step 2: Extract expected units (correct answers only)
+    const expectedUnits = wordBankResult.wordBankItems
+      .filter(item => item.isCorrect)
+      .map(item => ({
+        vocabularyId: item.vocabularyId || '',
+        wordText: item.wordText,
+        normalized: this.normalizeForValidation(item.wordText)
+      }));
+
+    // Step 3: Normalize user answer
+    const userUnits = userAnswer.map(word => this.normalizeForValidation(word));
+
+    // Step 4: Match each expected unit to user unit (in order)
+    const results = expectedUnits.map((expected, index) => {
+      const userUnit = userUnits[index];
+      
+      // Check if user's answer matches expected (handles synonyms)
+      const isMatch = userUnit && expected.normalized.some(exp => {
+        // Exact match
+        if (userUnit === exp) return true;
+        
+        // Synonym match (for greetings: hi/hello/salam)
+        const userLower = userUnit.toLowerCase();
+        const expLower = exp.toLowerCase();
+        if ((userLower === 'hi' || userLower === 'hello' || userLower === 'salam') &&
+            (expLower === 'hi' || expLower === 'hello' || expLower === 'salam')) {
+          return true;
+        }
+        
+        return false;
+      });
+
+      return {
+        vocabularyId: expected.vocabularyId,
+        wordText: expected.wordText,
+        isCorrect: isMatch
+      };
+    });
+
+    return results;
+  }
 }
 
