@@ -15,6 +15,7 @@ interface AudioMeaningProps {
   autoPlay?: boolean // Keep for backward compatibility but don't use
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 export function AudioMeaning({
@@ -24,7 +25,8 @@ export function AudioMeaning({
   points = 2,
   autoPlay = false, // Default to false now
   onContinue,
-  onXpStart
+  onXpStart,
+  onVocabTrack
 }: AudioMeaningProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showResult, setShowResult] = useState(false)
@@ -70,6 +72,11 @@ export function AudioMeaning({
 
     const correct = answerIndex === correctAnswerIndex;
     setIsCorrect(correct);
+
+    // Track vocabulary performance to Supabase
+    if (onVocabTrack && targetVocabulary) {
+      onVocabTrack(vocabularyId, targetVocabulary.en, correct);
+    }
 
     if (correct) {
       // ✅ Correct flow – behave like Quick Quiz (green border, brief pause, XP, then auto-continue)

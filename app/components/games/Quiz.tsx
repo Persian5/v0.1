@@ -20,6 +20,7 @@ export interface QuizProps {
   onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
   onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 export function Quiz({ 
@@ -30,7 +31,8 @@ export function Quiz({
   onComplete,
   onXpStart,
   vocabularyId,
-  onRemediationNeeded
+  onRemediationNeeded,
+  onVocabTrack
 }: QuizProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
@@ -81,9 +83,9 @@ export function Quiz({
       
       // Move to completed state after brief delay to show success - REDUCED timeout
       setTimeout(() => {
-        // Track vocabulary performance AFTER animation completes to prevent re-renders
-        if (vocabularyId) {
-          VocabularyService.recordCorrectAnswer(vocabularyId);
+        // Track vocabulary performance to Supabase
+        if (vocabularyId && onVocabTrack) {
+          onVocabTrack(vocabularyId, prompt, true);
         }
         
         setQuizState('completed');
@@ -91,12 +93,13 @@ export function Quiz({
       }, 800); // Reduced from 1200ms to prevent component transition glitches
     } else {
       // For incorrect answers, track immediately since we're not advancing
-      if (vocabularyId) {
-        VocabularyService.recordIncorrectAnswer(vocabularyId);
-        // Trigger remediation if callback provided
-        if (onRemediationNeeded) {
-          onRemediationNeeded(vocabularyId);
-        }
+      if (vocabularyId && onVocabTrack) {
+        onVocabTrack(vocabularyId, prompt, false);
+      }
+      
+      // Trigger remediation if callback provided
+      if (vocabularyId && onRemediationNeeded) {
+        onRemediationNeeded(vocabularyId);
       }
       
       // Reset after showing feedback

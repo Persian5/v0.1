@@ -34,6 +34,7 @@ interface FlashcardProps {
   isFlipped?: boolean
   onFlip?: () => void
   showContinueButton?: boolean
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 // Helper function to convert card text to audio filename - DEPRECATED
@@ -82,6 +83,7 @@ export function Flashcard({
   isFlipped: extFlipped,
   onFlip: extFlip,
   showContinueButton,
+  onVocabTrack
 }: FlashcardProps) {
   const [localFlip, setLocalFlip] = useState(false)
   const [localShowNext, setLocalShowNext] = useState(false)
@@ -173,6 +175,11 @@ export function Flashcard({
   async function handleContinueClick() {
     // Play success sound when continuing
     playSuccessSound();
+    
+    // Track vocabulary performance (flashcards are always "seen", counted as correct)
+    if (vocabularyItem?.id && onVocabTrack) {
+      onVocabTrack(vocabularyItem.id, vocabularyItem.en, true);
+    }
     
     // Award XP and check if step was already completed
     if (onXpStart) {
