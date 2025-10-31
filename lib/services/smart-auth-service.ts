@@ -291,7 +291,10 @@ export class SmartAuthService {
     const oldXp = this.sessionCache.totalXp
     this.sessionCache.totalXp += amount
     
-    console.log(`⚡ Optimistic: ${oldXp} → ${this.sessionCache.totalXp} (+${amount})`)
+    // Silent rollback (no log spam for already-completed steps)
+    if (source !== 'silent_already_completed') {
+      console.log(`⚡ Optimistic: ${oldXp} → ${this.sessionCache.totalXp} (+${amount})`)
+    }
     
     // Emit event for reactive UI updates
     this.emitEvent('xp-updated', { 
