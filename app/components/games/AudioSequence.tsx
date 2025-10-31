@@ -18,6 +18,7 @@ interface AudioSequenceProps {
   maxWordBankSize?: number // Maximum number of options in word bank (prevents crowding)
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 export function AudioSequence({
@@ -29,7 +30,8 @@ export function AudioSequence({
   targetWordCount, // Add support for custom word count
   maxWordBankSize = 12, // Default max 12 options for better variety while manageable
   onContinue,
-  onXpStart
+  onXpStart,
+  onVocabTrack
 }: AudioSequenceProps) {
   const [hasPlayedAudio, setHasPlayedAudio] = useState(false)
   const [userOrder, setUserOrder] = useState<string[]>([])
@@ -236,6 +238,16 @@ export function AudioSequence({
     
     setIsCorrect(correct)
     setShowResult(true)
+
+    // Track vocabulary performance for each word in sequence
+    if (onVocabTrack) {
+      sequence.forEach(vocabId => {
+        const vocab = vocabularyBank.find(v => v.id === vocabId)
+        if (vocab) {
+          onVocabTrack(vocabId, vocab.en, correct)
+        }
+      })
+    }
 
     if (correct) {
       playSuccessSound()

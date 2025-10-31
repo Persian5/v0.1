@@ -15,6 +15,7 @@ interface TextSequenceProps {
   maxWordBankSize?: number // Maximum number of options in word bank
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 export function TextSequence({
@@ -24,7 +25,8 @@ export function TextSequence({
   points = 3,
   maxWordBankSize = 10,
   onContinue,
-  onXpStart
+  onXpStart,
+  onVocabTrack
 }: TextSequenceProps) {
   const [userOrder, setUserOrder] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
@@ -106,6 +108,24 @@ export function TextSequence({
       });
     setIsCorrect(correct)
     setShowResult(true)
+
+    // Track vocabulary performance for all words in the translation
+    // Extract vocabulary IDs from the expected translation to track them
+    if (onVocabTrack) {
+      const wordBankResult = WordBankService.generateWordBank({
+        expectedTranslation,
+        vocabularyBank
+      });
+      
+      // Track each vocabulary item that's part of the correct answer
+      wordBankResult.wordBankItems
+        .filter(item => item.isCorrect && item.vocabularyId)
+        .forEach(item => {
+          if (item.vocabularyId) {
+            onVocabTrack(item.vocabularyId, item.wordText, correct)
+          }
+        });
+    }
 
     if (correct) {
       playSuccessSound()
