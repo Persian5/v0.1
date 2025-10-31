@@ -74,24 +74,24 @@ export function TextSequence({
       vocabularyBank
     });
     
-    // Extract expected semantic units (normalized)
+    // Extract expected semantic units (normalized with contractions and punctuation)
     const expectedUnits = wordBankResult.wordBankItems
       .filter(item => item.isCorrect)
-      .map(item => item.wordText.toLowerCase().replace(/[?.,!]/g, '').trim());
+      .flatMap(item => WordBankService.normalizeForValidation(item.wordText));
     
-    // Extract user's semantic units from wordKeys
-    const userUnits = userOrder.map(wordKey => {
+    // Extract user's semantic units from wordKeys (normalized)
+    const userUnits = userOrder.flatMap(wordKey => {
       const wordText = wordKey.split('-').slice(0, -1).join('-');
-      return wordText.toLowerCase().replace(/[?.,!]/g, '').trim();
+      return WordBankService.normalizeForValidation(wordText);
     });
     
-    // Compare semantic units (order matters, but allow synonyms)
+    // Compare semantic units (order matters, but allow synonyms and contractions)
     // Check if each user unit matches expected unit (with synonym support)
     const correct = expectedUnits.length === userUnits.length &&
       userUnits.every((userUnit, index) => {
         const expectedUnit = expectedUnits[index];
         
-        // Exact match
+        // Exact match (already normalized)
         if (userUnit === expectedUnit) return true;
         
         // Synonym match (for greetings: hi/hello/salam)

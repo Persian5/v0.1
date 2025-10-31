@@ -196,23 +196,23 @@ export function AudioSequence({
         sequenceIds: undefined
       });
       
-      // Extract expected semantic units (normalized)
+      // Extract expected semantic units (normalized with contractions and punctuation)
       const expectedUnits = wordBankResult.wordBankItems
         .filter(item => item.isCorrect)
-        .map(item => item.wordText.toLowerCase().replace(/[?.,!]/g, '').trim());
+        .flatMap(item => WordBankService.normalizeForValidation(item.wordText));
       
-      // Extract user's semantic units from display keys
-      const userUnits = userOrder.map(displayKey => {
+      // Extract user's semantic units from display keys (normalized)
+      const userUnits = userOrder.flatMap(displayKey => {
         const wordText = wordBankData.displayKeyToWordText.get(displayKey) || displayKey.split('-').slice(0, -1).join('-');
-        return wordText.toLowerCase().replace(/[?.,!]/g, '').trim();
+        return WordBankService.normalizeForValidation(wordText);
       });
       
-      // Compare semantic units (order matters, but allow synonyms)
+      // Compare semantic units (order matters, but allow synonyms and contractions)
       correct = expectedUnits.length === userUnits.length &&
         userUnits.every((userUnit, index) => {
           const expectedUnit = expectedUnits[index];
           
-          // Exact match
+          // Exact match (already normalized)
           if (userUnit === expectedUnit) return true;
           
           // Synonym match (for greetings: hi/hello/salam)
