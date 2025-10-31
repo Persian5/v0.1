@@ -546,6 +546,7 @@ export function LessonRunner({
             points={1}
             onContinue={() => completeRemediation()}
             onXpStart={createStepXpHandler()}
+            onVocabTrack={createVocabularyTracker()}
           />
         </>
       );
@@ -575,6 +576,7 @@ export function LessonRunner({
             onXpStart={createStepXpHandler()}
             vocabularyId={currentWord}
             onRemediationNeeded={handleRemediationNeeded}
+            onVocabTrack={createVocabularyTracker()}
           />
         </>
       );
@@ -636,6 +638,7 @@ export function LessonRunner({
           points={step.points}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'quiz' ? (
         <Quiz
@@ -648,6 +651,7 @@ export function LessonRunner({
           onXpStart={createStepXpHandler()}
           vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as QuizStep).data)}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'reverse-quiz' ? (
         <Quiz
@@ -660,6 +664,7 @@ export function LessonRunner({
           onXpStart={createStepXpHandler()}
           vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as ReverseQuizStep).data)}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'input' ? (
         <InputExercise
@@ -671,6 +676,7 @@ export function LessonRunner({
           onXpStart={createStepXpHandler()}
           vocabularyId={getStepVocabularyId(step)}
           onRemediationNeeded={handleRemediationNeeded}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'matching' ? (
         <MatchingGame
@@ -713,6 +719,7 @@ export function LessonRunner({
           autoPlay={(step as AudioMeaningStep).data.autoPlay}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'audio-sequence' ? (
         <AudioSequence
@@ -726,6 +733,7 @@ export function LessonRunner({
           maxWordBankSize={(step as AudioSequenceStep).data.maxWordBankSize}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'text-sequence' ? (
         <TextSequence
@@ -737,6 +745,7 @@ export function LessonRunner({
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           maxWordBankSize={(step as TextSequenceStep).data.maxWordBankSize}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'story-conversation' ? (
         <StoryConversation
