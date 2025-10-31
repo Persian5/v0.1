@@ -1238,7 +1238,7 @@ export class WordBankService {
       const userUnit = userUnits[index];
       
       // Check if user's answer matches expected (handles synonyms)
-      const isMatch = userUnit && expected.normalized.some(exp => {
+      const isMatch: boolean = Boolean(userUnit && expected.normalized.some(exp => {
         // Exact match
         if (userUnit.toLowerCase() === exp.toLowerCase()) return true;
         
@@ -1251,7 +1251,7 @@ export class WordBankService {
         }
         
         return false;
-      });
+      }));
 
       return {
         vocabularyId: expected.vocabularyId,
