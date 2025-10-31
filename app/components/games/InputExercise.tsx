@@ -311,6 +311,14 @@ export function InputExercise({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
+  
+  // Reset timer when question changes
+  useEffect(() => {
+    startTime.current = Date.now()
+  }, [question, answer])
 
   // Check if this is a grammar lesson (contains hyphen)
   const hasHyphen = answer.includes('-');
@@ -335,9 +343,12 @@ export function InputExercise({
     setIsCorrect(isAnswerCorrect)
     setShowFeedback(true)
 
+    // Calculate time spent on this input
+    const timeSpentMs = Date.now() - startTime.current
+
     // Track vocabulary performance to Supabase
     if (vocabularyId && onVocabTrack) {
-      onVocabTrack(vocabularyId, question, isAnswerCorrect);
+      onVocabTrack(vocabularyId, question, isAnswerCorrect, timeSpentMs);
     }
     
     // Trigger remediation if incorrect

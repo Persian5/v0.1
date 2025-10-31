@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
@@ -36,6 +36,9 @@ export function AudioMeaning({
   const [shuffledOptions, setShuffledOptions] = useState<string[]>([])
   const [correctAnswerIndex, setCorrectAnswerIndex] = useState<number>(0)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
 
   // Find the target vocabulary item
   const targetVocabulary = vocabularyBank.find(v => v.id === vocabularyId)
@@ -73,9 +76,12 @@ export function AudioMeaning({
     const correct = answerIndex === correctAnswerIndex;
     setIsCorrect(correct);
 
+    // Calculate time spent
+    const timeSpentMs = Date.now() - startTime.current
+
     // Track vocabulary performance to Supabase
     if (onVocabTrack && targetVocabulary) {
-      onVocabTrack(vocabularyId, targetVocabulary.en, correct);
+      onVocabTrack(vocabularyId, targetVocabulary.en, correct, timeSpentMs);
     }
 
     if (correct) {

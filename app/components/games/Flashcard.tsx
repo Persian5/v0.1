@@ -92,6 +92,9 @@ export function Flashcard({
   const [lastFlipState, setLastFlipState] = useState(false)
   const [hasBeenFlipped, setHasBeenFlipped] = useState(false)
   const componentMountedRef = useRef(false)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
 
   const isFlipped = extFlipped ?? localFlip
   const showNext  = showContinueButton ?? localShowNext
@@ -176,9 +179,12 @@ export function Flashcard({
     // Play success sound when continuing
     playSuccessSound();
     
+    // Calculate time spent viewing this flashcard
+    const timeSpentMs = Date.now() - startTime.current
+    
     // Track vocabulary performance (flashcards are always "seen", counted as correct)
     if (vocabularyItem?.id && onVocabTrack) {
-      onVocabTrack(vocabularyItem.id, vocabularyItem.en, true);
+      onVocabTrack(vocabularyItem.id, vocabularyItem.en, true, timeSpentMs);
     }
     
     // Award XP and check if step was already completed
