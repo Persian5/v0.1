@@ -245,14 +245,35 @@ export function AudioSequence({
     // Calculate time spent
     const timeSpentMs = Date.now() - startTime.current
 
-    // Track vocabulary performance for each word in sequence
-    if (onVocabTrack) {
-      sequence.forEach(vocabId => {
-        const vocab = vocabularyBank.find(v => v.id === vocabId)
-        if (vocab) {
-          onVocabTrack(vocabId, vocab.en, correct, timeSpentMs)
+    // Track vocabulary performance PER-WORD (accurate tracking for multi-word games)
+    if (onVocabTrack && expectedTranslation) {
+      // Convert user's display keys back to word text
+      const userAnswerWords = userOrder.map(displayKey => 
+        wordBankData.displayKeyToWordText.get(displayKey) || displayKey.split('-').slice(0, -1).join('-')
+      );
+      
+      // Validate each word individually
+      const perWordResults = WordBankService.validateUserAnswer({
+        userAnswer: userAnswerWords,
+        expectedTranslation,
+        vocabularyBank,
+        sequenceIds: sequence
+      });
+      
+      // Track each word with its individual result
+      perWordResults.forEach(result => {
+        if (result.vocabularyId) {
+          onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
         }
-      })
+      });
+    } else if (onVocabTrack) {
+      // Fallback: If no expectedTranslation, use old bulk tracking
+      sequence.forEach(vocabId => {
+        const vocab = vocabularyBank.find(v => v.id === vocabId);
+        if (vocab) {
+          onVocabTrack(vocabId, vocab.en, correct, timeSpentMs);
+        }
+      });
     }
 
     if (correct) {
