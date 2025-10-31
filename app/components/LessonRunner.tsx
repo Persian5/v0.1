@@ -14,6 +14,7 @@ import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, ReverseQuizStep, Inpu
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
+import { VocabularyTrackingService } from '@/lib/services/vocabulary-tracking-service'
 import { PhraseTrackingService } from '@/lib/services/phrase-tracking-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
@@ -439,6 +440,47 @@ export function LessonRunner({
       
       // Return whether XP was granted (true = new XP, false = already done)
       return result.granted;
+    };
+  };
+  
+  // VOCABULARY TRACKING HANDLER: Track word performance for review mode
+  // Returns void (fire-and-forget for now, don't block UI)
+  const createVocabularyTracker = () => {
+    return async (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => {
+      const currentStep = steps[idx];
+      if (!currentStep || !user?.id) {
+        console.warn('No current step or user available for vocabulary tracking');
+        return;
+      }
+
+      // Derive stable step UID
+      const stepUid = deriveStepUid(currentStep, idx);
+      
+      // Track in background (don't await to avoid blocking UI)
+      VocabularyTrackingService.storeAttempt({
+        userId: user.id,
+        vocabularyId,
+        wordText,
+        gameType: currentStep.type,
+        isCorrect,
+        timeSpentMs,
+        moduleId,
+        lessonId,
+        stepUid,
+        contextData: {
+          stepIndex: idx,
+          isRemediation: isInRemediation
+        }
+      }).catch((error) => {
+        console.error('Failed to track vocabulary attempt:', error);
+      });
+      
+      // Also keep localStorage tracking for backwards compatibility (for now)
+      if (isCorrect) {
+        VocabularyService.recordCorrectAnswer(vocabularyId);
+      } else {
+        VocabularyService.recordIncorrectAnswer(vocabularyId);
+      }
     };
   };
   
