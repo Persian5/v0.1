@@ -111,22 +111,24 @@ export function deriveStepUid(step: LessonStep, stepIndex: number): string {
     }
     
     case 'matching': {
-      // Extract vocabulary IDs from matching pairs for content-based UID
-      const pairs = (step as any).data?.pairs
-      if (pairs && Array.isArray(pairs) && pairs.length > 0) {
-        // Create stable identifier from pair contents
-        // Use vocabulary IDs if available, otherwise finglish text
-        const pairIds = pairs.map((p: any) => {
-          return p.vocabularyId || p.vocab || p.finglish || ''
-        }).filter(Boolean).join(',')
+      // Extract content from matching words for content-based UID
+      const words = (step as any).data?.words
+      const slots = (step as any).data?.slots
+      
+      if (words && Array.isArray(words) && words.length > 0) {
+        // Create stable identifier from word texts and their slot assignments
+        // Format: "word1Text:slot1Id,word2Text:slot2Id"
+        const wordSlotPairs = words.map((w: any) => {
+          return `${w.text || w.id}:${w.slotId || ''}`
+        }).join(',')
         
-        if (pairIds) {
-          return `${UID_VERSION}-matching-${simpleHash(pairIds)}`
+        if (wordSlotPairs) {
+          return `${UID_VERSION}-matching-${simpleHash(wordSlotPairs)}`
         }
       }
       
       // Fallback: use index (matching is contextual, so reordering = new challenge)
-      console.warn(`Matching step ${stepIndex} missing pairs data, using index fallback`)
+      console.warn(`Matching step ${stepIndex} missing words data, using index fallback`)
       return `${UID_VERSION}-matching-${stepIndex}`
     }
     
