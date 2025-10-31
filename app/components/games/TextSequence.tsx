@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Type, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
@@ -34,6 +34,9 @@ export function TextSequence({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
 
   // Calculate expected semantic unit count (phrases count as 1, words count as 1)
   const expectedWordCount = WordBankService.getSemanticUnits({
@@ -109,6 +112,9 @@ export function TextSequence({
     setIsCorrect(correct)
     setShowResult(true)
 
+    // Calculate time spent
+    const timeSpentMs = Date.now() - startTime.current
+
     // Track vocabulary performance for all words in the translation
     // Extract vocabulary IDs from the expected translation to track them
     if (onVocabTrack) {
@@ -122,7 +128,7 @@ export function TextSequence({
         .filter(item => item.isCorrect && item.vocabularyId)
         .forEach(item => {
           if (item.vocabularyId) {
-            onVocabTrack(item.vocabularyId, item.wordText, correct)
+            onVocabTrack(item.vocabularyId, item.wordText, correct, timeSpentMs)
           }
         });
     }

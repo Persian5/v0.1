@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
@@ -40,6 +40,9 @@ export function AudioSequence({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
 
   // Calculate expected semantic unit count (phrases count as 1, words count as 1)
   const expectedWordCount = targetWordCount || WordBankService.getSemanticUnits({
@@ -101,8 +104,8 @@ export function AudioSequence({
       }
       displayKeyToWordText.set(displayKey, wordText)
     })
-
-    return {
+      
+      return {
       wordBankItems: wordBankResult.allOptions,
       displayKeyToVocabId,
       displayKeyToWordText
@@ -143,7 +146,7 @@ export function AudioSequence({
     const vocab = vocabularyBank.find(v => v.id === id)
     if (vocab) {
       // Normalize display text (handle slash-separated translations)
-      return {
+    return {
         ...vocab,
         en: WordBankService.normalizeVocabEnglish(vocab.en)
       }
@@ -239,12 +242,15 @@ export function AudioSequence({
     setIsCorrect(correct)
     setShowResult(true)
 
+    // Calculate time spent
+    const timeSpentMs = Date.now() - startTime.current
+
     // Track vocabulary performance for each word in sequence
     if (onVocabTrack) {
       sequence.forEach(vocabId => {
         const vocab = vocabularyBank.find(v => v.id === vocabId)
         if (vocab) {
-          onVocabTrack(vocabId, vocab.en, correct)
+          onVocabTrack(vocabId, vocab.en, correct, timeSpentMs)
         }
       })
     }
