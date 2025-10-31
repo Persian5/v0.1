@@ -217,7 +217,10 @@ export class VocabularyTrackingService {
       }
 
       // Existing record - UPDATE
-      const newConsecutive = isCorrect ? current.consecutive_correct + 1 : 0
+      // Soft reset: incorrect answers drop consecutive by 2 (minimum 0), not full reset
+      const newConsecutive = isCorrect 
+        ? current.consecutive_correct + 1 
+        : Math.max(0, current.consecutive_correct - 2)
       const newMasteryLevel = this.calculateMasteryLevel(
         current.mastery_level,
         newConsecutive,
