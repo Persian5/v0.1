@@ -1,306 +1,438 @@
 /**
  * Vocabulary Tracking Service
  * 
- * Unified tracking system for vocabulary performance across all game types.
- * Tracks attempts at both overall and per-word level with full context.
- * Designed for Supabase integration (abstracted for now).
+ * Tracks user performance on vocabulary words for:
+ * - Spaced Repetition System (SRS)
+ * - Review Mode
+ * - Adaptive Learning
+ * - Analytics
  * 
- * Architecture:
- * - VocabularyTrackingAttempt: Complete attempt record (overall + per-word)
- * - AttemptResult: Aggregated results from attempt
- * - WordAttempt: Individual word performance within attempt
- * - VocabularyPerformanceStats: Aggregated stats per word (for review mode)
+ * Key Features:
+ * - Records every vocabulary attempt
+ * - Calculates mastery level (0-5)
+ * - Determines next review date (SRS)
+ * - Identifies weak vs mastered words
+ * - Tracks consecutive correct streak (for "5 in a row" mastery)
  */
 
-import { VocabularyItem } from '../types';
+import { supabase } from '@/lib/supabase/client'
 
-/**
- * Game types that support vocabulary tracking
- * Matches LessonViewType where applicable, plus flashcard views
- */
-export type VocabularyGameType = 
-  | 'quiz' 
-  | 'input' 
-  | 'audio-sequence' 
-  | 'text-sequence' 
-  | 'matching' 
-  | 'story-conversation' 
-  | 'flashcard-view'  // Separate from practice (view only)
-  | 'word-rush';
+// ============================================================================
+// TYPES
+// ============================================================================
 
-/**
- * Complete vocabulary tracking attempt
- * Records a single user interaction with vocabulary content
- */
-export interface VocabularyTrackingAttempt {
-  // WHO & WHEN
-  userId: string;
-  timestamp: string;
-  
-  // WHAT GAME
-  gameType: VocabularyGameType;
-  
-  // CONTEXT
-  moduleId: string;
-  lessonId: string;
-  stepIndex?: number; // Which step in lesson (0-indexed)
-  
-  // ATTEMPT DATA
-  attemptResult: AttemptResult;
-  
-  // METADATA
-  metadata?: {
-    stepUid?: string; // For idempotency (like XP system)
-    attemptUid?: string; // Unique identifier for this attempt
-    sessionId?: string; // Session identifier
-    timeSpentMs?: number; // How long user took
-    retryCount?: number; // How many times user retried
-  };
+export interface VocabularyPerformance {
+  id: string
+  user_id: string
+  vocabulary_id: string
+  word_text: string
+  total_attempts: number
+  total_correct: number
+  total_incorrect: number
+  consecutive_correct: number
+  mastery_level: number  // 0-5
+  last_seen_at: string | null
+  next_review_at: string | null
+  created_at: string
+  updated_at: string
 }
 
-/**
- * Aggregated result from an attempt
- * Contains overall result + per-word breakdown
- */
-export interface AttemptResult {
-  // Overall result
-  isCorrect: boolean;
-  
-  // Per-word breakdown
-  words: WordAttempt[];
-  
-  // Aggregated stats
-  totalWords: number;
-  correctWords: number;
-  incorrectWords: number;
+export interface VocabularyAttempt {
+  id?: string
+  user_id: string
+  vocabulary_id: string
+  game_type: string
+  module_id?: string
+  lesson_id?: string
+  step_uid?: string
+  is_correct: boolean
+  time_spent_ms?: number
+  context_data?: any
+  created_at?: string
 }
 
-/**
- * Individual word performance within an attempt
- * Tracks each vocabulary item/user interaction separately
- */
-export interface WordAttempt {
-  // Which vocabulary item
-  vocabularyId: string; // e.g., "salam"
-  wordText: string; // e.g., "Hello" (normalized display text)
-  
-  // Result
-  isCorrect: boolean;
-  
-  // Context
-  context?: {
-    position?: number; // Position in sequence (0, 1, 2...)
-    isPhrase?: boolean; // Is this a phrase like "How are you"?
-    wasDistractor?: boolean; // Was this a distractor the user saw?
-  };
+export interface StoreAttemptParams {
+  userId: string
+  vocabularyId: string
+  wordText: string
+  gameType: string
+  isCorrect: boolean
+  timeSpentMs?: number
+  moduleId?: string
+  lessonId?: string
+  stepUid?: string
+  contextData?: any
 }
 
-/**
- * Aggregated performance statistics for a vocabulary word
- * Used for review mode and analytics
- * 
- * Note: This is separate from vocabulary-service.ts WordPerformance
- * to avoid conflicts. This version is designed for Supabase aggregation.
- */
-export interface VocabularyPerformanceStats {
-  // Word identification
-  vocabularyId: string;
-  wordText: string; // Normalized display text
-  
-  // Aggregated stats
-  timesCorrect: number;
-  timesIncorrect: number;
-  totalAttempts: number;
-  
-  // Timestamps
-  firstSeenAt: string;
-  lastSeenAt: string;
-  lastCorrectAt?: string;
-  lastIncorrectAt?: string;
-  
-  // Review flags
-  needsReview: boolean;
-  masteryLevel: number; // 0=new, 1=learning, 2=mastered
-  
-  // Metadata
-  lessonId?: string;
-  moduleId?: string;
+export interface WeakWord {
+  vocabulary_id: string
+  word_text: string
+  consecutive_correct: number
+  total_attempts: number
+  total_correct: number
+  total_incorrect: number
+  accuracy: number
+  last_seen_at: string | null
 }
 
-/**
- * Vocabulary Tracking Service
- * 
- * Handles recording vocabulary attempts and querying performance stats.
- * Currently abstracted - will integrate with Supabase when ready.
- */
+// ============================================================================
+// SPACED REPETITION SCHEDULE
+// ============================================================================
+
+const SRS_SCHEDULE = {
+  0: 1 * 60 * 60 * 1000,          // 1 hour (new word)
+  1: 8 * 60 * 60 * 1000,          // 8 hours (learning)
+  2: 24 * 60 * 60 * 1000,         // 1 day (familiar)
+  3: 3 * 24 * 60 * 60 * 1000,     // 3 days (known)
+  4: 7 * 24 * 60 * 60 * 1000,     // 1 week (strong)
+  5: 14 * 24 * 60 * 60 * 1000     // 2 weeks (mastered)
+} as const
+
+// ============================================================================
+// SERVICE
+// ============================================================================
+
 export class VocabularyTrackingService {
-  /**
-   * Record a vocabulary tracking attempt
-   * Idempotent: if attemptUid or stepUid provided, prevents duplicates
-   * 
-   * @param attempt - Complete attempt data
-   */
-  static async recordAttempt(attempt: VocabularyTrackingAttempt): Promise<void> {
-    // TODO: Implement Supabase integration
-    // For now, validate and log
-    this.validateAttempt(attempt);
-    
-    // Generate attemptUid if not provided
-    const attemptUid = attempt.metadata?.attemptUid || this.generateAttemptUid(attempt);
-    
-    // Check idempotency (when Supabase ready)
-    // const isDuplicate = await this.isAttemptDuplicate(attemptUid);
-    // if (isDuplicate) return;
-    
-    // Store in Supabase (when ready)
-    // await this.storeAttempt(attempt, attemptUid);
-    
-    console.log('[VocabularyTracking] Recorded attempt:', {
-      attemptUid,
-      gameType: attempt.gameType,
-      isCorrect: attempt.attemptResult.isCorrect,
-      words: attempt.attemptResult.words.length
-    });
-  }
   
   /**
-   * Get struggling words for a user
-   * Words where incorrect > correct OR needsReview = true
+   * Store a vocabulary attempt and update performance
    * 
-   * @param userId - User ID
-   * @param limit - Maximum number of words to return
-   * @returns Array of vocabulary IDs
+   * This is the MAIN function to call from game components.
+   * It handles both logging the attempt and updating aggregate stats.
    */
-  static async getStrugglingWords(userId: string, limit: number = 10): Promise<string[]> {
-    // TODO: Implement Supabase query
-    // Query vocabulary_performance table where:
-    // - user_id = userId
-    // - (times_incorrect > times_correct OR needs_review = true)
-    // - ORDER BY last_incorrect_at DESC
-    // - LIMIT limit
-    
-    return [];
+  static async storeAttempt(params: StoreAttemptParams): Promise<boolean> {
+    try {
+      const {
+        userId,
+        vocabularyId,
+        wordText,
+        gameType,
+        isCorrect,
+        timeSpentMs,
+        moduleId,
+        lessonId,
+        stepUid,
+        contextData
+      } = params
+
+      // 1. Log the detailed attempt
+      const { error: attemptError } = await supabase
+        .from('vocabulary_attempts')
+        .insert({
+          user_id: userId,
+          vocabulary_id: vocabularyId,
+          game_type: gameType,
+          is_correct: isCorrect,
+          time_spent_ms: timeSpentMs,
+          module_id: moduleId,
+          lesson_id: lessonId,
+          step_uid: stepUid,
+          context_data: contextData
+        })
+
+      if (attemptError) {
+        console.error('❌ Failed to log vocabulary attempt:', attemptError)
+        return false
+      }
+
+      // 2. Update or create performance record
+      const updated = await this.updatePerformance(
+        userId,
+        vocabularyId,
+        wordText,
+        isCorrect
+      )
+
+      if (!updated) {
+        console.error('❌ Failed to update vocabulary performance')
+        return false
+      }
+
+      console.log(`✅ Tracked ${vocabularyId}: ${isCorrect ? 'correct' : 'incorrect'}`)
+      return true
+
+    } catch (error) {
+      console.error('❌ Exception in storeAttempt:', error)
+      return false
+    }
   }
-  
+
   /**
-   * Get words needing review for a user
+   * Update performance record (upsert logic)
    * 
-   * @param userId - User ID
-   * @returns Array of vocabulary IDs
+   * Handles:
+   * - Incrementing counters
+   * - Updating consecutive streak
+   * - Calculating mastery level
+   * - Setting next review date (SRS)
    */
-  static async getWordsNeedingReview(userId: string): Promise<string[]> {
-    // TODO: Implement Supabase query
-    // Query vocabulary_performance table where:
-    // - user_id = userId
-    // - needs_review = true
-    // - ORDER BY last_incorrect_at DESC
-    
-    return [];
+  private static async updatePerformance(
+    userId: string,
+    vocabularyId: string,
+    wordText: string,
+    isCorrect: boolean
+  ): Promise<boolean> {
+    try {
+      // Fetch current performance
+      const { data: current, error: fetchError } = await supabase
+        .from('vocabulary_performance')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('vocabulary_id', vocabularyId)
+        .single()
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = not found
+        console.error('Error fetching performance:', fetchError)
+        return false
+      }
+
+      const now = new Date().toISOString()
+
+      if (!current) {
+        // First attempt - INSERT
+        const newMasteryLevel = isCorrect ? 1 : 0
+        const nextReviewAt = this.calculateNextReview(newMasteryLevel)
+
+        const { error: insertError } = await supabase
+          .from('vocabulary_performance')
+          .insert({
+            user_id: userId,
+            vocabulary_id: vocabularyId,
+            word_text: wordText,
+            total_attempts: 1,
+            total_correct: isCorrect ? 1 : 0,
+            total_incorrect: isCorrect ? 0 : 1,
+            consecutive_correct: isCorrect ? 1 : 0,
+            mastery_level: newMasteryLevel,
+            last_seen_at: now,
+            next_review_at: nextReviewAt
+          })
+
+        if (insertError) {
+          console.error('Error inserting performance:', insertError)
+          return false
+        }
+
+        return true
+      }
+
+      // Existing record - UPDATE
+      const newConsecutive = isCorrect ? current.consecutive_correct + 1 : 0
+      const newMasteryLevel = this.calculateMasteryLevel(
+        current.mastery_level,
+        newConsecutive,
+        current.total_correct + (isCorrect ? 1 : 0)
+      )
+      const nextReviewAt = this.calculateNextReview(newMasteryLevel)
+
+      const { error: updateError } = await supabase
+        .from('vocabulary_performance')
+        .update({
+          word_text: wordText, // Keep label fresh
+          total_attempts: current.total_attempts + 1,
+          total_correct: current.total_correct + (isCorrect ? 1 : 0),
+          total_incorrect: current.total_incorrect + (isCorrect ? 0 : 1),
+          consecutive_correct: newConsecutive,
+          mastery_level: newMasteryLevel,
+          last_seen_at: now,
+          next_review_at: nextReviewAt
+        })
+        .eq('user_id', userId)
+        .eq('vocabulary_id', vocabularyId)
+
+      if (updateError) {
+        console.error('Error updating performance:', updateError)
+        return false
+      }
+
+      return true
+
+    } catch (error) {
+      console.error('Exception in updatePerformance:', error)
+      return false
+    }
   }
-  
+
+  /**
+   * Calculate mastery level based on performance
+   * 
+   * Rules:
+   * - 5+ consecutive correct → mastery level 3+
+   * - 3+ consecutive correct → mastery level 2+
+   * - Total correct matters as backstop
+   * - Never decrease below current level (only increases)
+   */
+  private static calculateMasteryLevel(
+    currentLevel: number,
+    consecutiveCorrect: number,
+    totalCorrect: number
+  ): number {
+    let newLevel = currentLevel
+
+    // Consecutive streak (fast path to mastery)
+    if (consecutiveCorrect >= 5) {
+      newLevel = Math.max(newLevel, 5) // MASTERED!
+    } else if (consecutiveCorrect >= 3) {
+      newLevel = Math.max(newLevel, 3)
+    } else if (consecutiveCorrect >= 2) {
+      newLevel = Math.max(newLevel, 2)
+    }
+
+    // Total correct (backstop for consistency)
+    if (totalCorrect >= 10) {
+      newLevel = Math.max(newLevel, 4)
+    } else if (totalCorrect >= 5) {
+      newLevel = Math.max(newLevel, 3)
+    }
+
+    // Never exceed max level
+    return Math.min(newLevel, 5)
+  }
+
+  /**
+   * Calculate next review date based on mastery level (SRS)
+   */
+  private static calculateNextReview(masteryLevel: number): string {
+    const delayMs = SRS_SCHEDULE[masteryLevel as keyof typeof SRS_SCHEDULE] || SRS_SCHEDULE[0]
+    const nextReview = new Date(Date.now() + delayMs)
+    return nextReview.toISOString()
+  }
+
+  /**
+   * Get weak words needing review
+   * 
+   * Returns words that:
+   * - Have low consecutive streak (< 2)
+   * - Are due for review (next_review_at <= now)
+   * - Have been seen but not mastered
+   */
+  static async getWeakWords(userId: string, limit: number = 20): Promise<WeakWord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vocabulary_performance')
+        .select('*')
+        .eq('user_id', userId)
+        .or('consecutive_correct.lt.2,next_review_at.lte.' + new Date().toISOString())
+        .order('consecutive_correct', { ascending: true })
+        .order('total_attempts', { ascending: true })
+        .limit(limit)
+
+      if (error) {
+        console.error('Error fetching weak words:', error)
+        return []
+      }
+
+      return (data || []).map(d => ({
+        vocabulary_id: d.vocabulary_id,
+        word_text: d.word_text,
+        consecutive_correct: d.consecutive_correct,
+        total_attempts: d.total_attempts,
+        total_correct: d.total_correct,
+        total_incorrect: d.total_incorrect,
+        accuracy: d.total_attempts > 0 ? (d.total_correct / d.total_attempts) * 100 : 0,
+        last_seen_at: d.last_seen_at
+      }))
+
+    } catch (error) {
+      console.error('Exception in getWeakWords:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get mastered words (5 consecutive correct OR mastery_level = 5)
+   */
+  static async getMasteredWords(userId: string): Promise<WeakWord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vocabulary_performance')
+        .select('*')
+        .eq('user_id', userId)
+        .or('consecutive_correct.gte.5,mastery_level.eq.5')
+        .order('updated_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching mastered words:', error)
+        return []
+      }
+
+      return (data || []).map(d => ({
+        vocabulary_id: d.vocabulary_id,
+        word_text: d.word_text,
+        consecutive_correct: d.consecutive_correct,
+        total_attempts: d.total_attempts,
+        total_correct: d.total_correct,
+        total_incorrect: d.total_incorrect,
+        accuracy: d.total_attempts > 0 ? (d.total_correct / d.total_attempts) * 100 : 0,
+        last_seen_at: d.last_seen_at
+      }))
+
+    } catch (error) {
+      console.error('Exception in getMasteredWords:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get words due for review (SRS)
+   */
+  static async getWordsForReview(userId: string, limit: number = 10): Promise<WeakWord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vocabulary_performance')
+        .select('*')
+        .eq('user_id', userId)
+        .lte('next_review_at', new Date().toISOString())
+        .order('next_review_at', { ascending: true })
+        .limit(limit)
+
+      if (error) {
+        console.error('Error fetching review words:', error)
+        return []
+      }
+
+      return (data || []).map(d => ({
+        vocabulary_id: d.vocabulary_id,
+        word_text: d.word_text,
+        consecutive_correct: d.consecutive_correct,
+        total_attempts: d.total_attempts,
+        total_correct: d.total_correct,
+        total_incorrect: d.total_incorrect,
+        accuracy: d.total_attempts > 0 ? (d.total_correct / d.total_attempts) * 100 : 0,
+        last_seen_at: d.last_seen_at
+      }))
+
+    } catch (error) {
+      console.error('Exception in getWordsForReview:', error)
+      return []
+    }
+  }
+
   /**
    * Get performance stats for a specific word
-   * 
-   * @param userId - User ID
-   * @param vocabularyId - Vocabulary item ID
-   * @returns Performance stats or null if not found
    */
-  static async getWordPerformanceStats(
-    userId: string, 
+  static async getWordStats(
+    userId: string,
     vocabularyId: string
-  ): Promise<VocabularyPerformanceStats | null> {
-    // TODO: Implement Supabase query
-    // Query vocabulary_performance table where:
-    // - user_id = userId
-    // - vocabulary_id = vocabularyId
-    // Return aggregated stats
-    
-    return null;
-  }
-  
-  /**
-   * Get all word performance stats for a user
-   * 
-   * @param userId - User ID
-   * @returns Array of performance stats
-   */
-  static async getAllWordPerformanceStats(userId: string): Promise<VocabularyPerformanceStats[]> {
-    // TODO: Implement Supabase query
-    // Query vocabulary_performance table where:
-    // - user_id = userId
-    // - ORDER BY last_seen_at DESC
-    
-    return [];
-  }
-  
-  /**
-   * Validate attempt data structure
-   * Throws error if invalid
-   */
-  private static validateAttempt(attempt: VocabularyTrackingAttempt): void {
-    if (!attempt.userId) {
-      throw new Error('VocabularyTrackingAttempt requires userId');
+  ): Promise<VocabularyPerformance | null> {
+    try {
+      const { data, error } = await supabase
+        .from('vocabulary_performance')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('vocabulary_id', vocabularyId)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') return null // Not found
+        console.error('Error fetching word stats:', error)
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error('Exception in getWordStats:', error)
+      return null
     }
-    if (!attempt.gameType) {
-      throw new Error('VocabularyTrackingAttempt requires gameType');
-    }
-    if (!attempt.moduleId || !attempt.lessonId) {
-      throw new Error('VocabularyTrackingAttempt requires moduleId and lessonId');
-    }
-    if (!attempt.attemptResult) {
-      throw new Error('VocabularyTrackingAttempt requires attemptResult');
-    }
-    if (!attempt.attemptResult.words || attempt.attemptResult.words.length === 0) {
-      throw new Error('AttemptResult must contain at least one word');
-    }
-    if (attempt.attemptResult.totalWords !== attempt.attemptResult.words.length) {
-      throw new Error('totalWords must match words array length');
-    }
-    if (attempt.attemptResult.correctWords + attempt.attemptResult.incorrectWords !== attempt.attemptResult.totalWords) {
-      throw new Error('correctWords + incorrectWords must equal totalWords');
-    }
-  }
-  
-  /**
-   * Generate unique attempt UID
-   * Used for idempotency checks
-   */
-  private static generateAttemptUid(attempt: VocabularyTrackingAttempt): string {
-    // Priority 1: Use stepUid if provided (prevents back button duplicates)
-    if (attempt.metadata?.stepUid) {
-      return `${attempt.metadata.stepUid}-${attempt.gameType}`;
-    }
-    
-    // Priority 2: Generate from attempt data + timestamp
-    const vocabIds = attempt.attemptResult.words.map(w => w.vocabularyId).join(',');
-    return `${attempt.userId}-${attempt.gameType}-${attempt.moduleId}-${attempt.lessonId}-${attempt.stepIndex || 0}-${vocabIds}-${Date.now()}`;
-  }
-  
-  /**
-   * Check if attempt is duplicate (idempotency)
-   * TODO: Implement Supabase check
-   */
-  private static async isAttemptDuplicate(attemptUid: string): Promise<boolean> {
-    // TODO: Query Supabase vocabulary_attempts table
-    // SELECT COUNT(*) WHERE attempt_uid = attemptUid
-    // Return true if count > 0
-    
-    return false;
-  }
-  
-  /**
-   * Store attempt in Supabase
-   * TODO: Implement Supabase insert
-   */
-  private static async storeAttempt(
-    attempt: VocabularyTrackingAttempt,
-    attemptUid: string
-  ): Promise<void> {
-    // TODO: Insert into vocabulary_attempts table
-    // TODO: Insert word attempts into vocabulary_word_attempts table
-    // TODO: Update aggregated stats in vocabulary_performance table
-    
-    // For now, no-op
   }
 }
-
