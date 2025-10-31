@@ -6,7 +6,13 @@ import { AuthService } from './auth-service'
 import { DatabaseService } from '@/lib/supabase/database'
 import { LessonStep } from '../types'
 import { supabase } from '@/lib/supabase/client'
-import { makeStepKey } from '@/lib/utils/step-uid'
+import { makeStepKey, UID_VERSION } from '@/lib/utils/step-uid'
+
+/**
+ * XP Cache Version
+ * Tied to step UID version for automatic cache invalidation
+ */
+export const XP_CACHE_VERSION = UID_VERSION
 
 export interface XpReward {
   amount: number
@@ -333,7 +339,7 @@ export class XpService {
     amount: number,
     source: string,
     metadata?: any
-  }): Promise<{ granted: boolean, reason?: string, error?: any }> {
+  }): Promise<{ granted: boolean, reason?: string, error?: any, newXp?: number }> {
     // Build idempotency key (stable across app restarts)
     const idempotencyKey = makeStepKey(moduleId, lessonId, stepUid)
     
@@ -429,5 +435,25 @@ export class XpService {
     })
     
     console.log('🧹 XP cache cleared')
+  }
+
+  /**
+   * Ensure XP cache version matches current UID version
+   * Call this once on app boot to handle UID format changes
+   * 
+   * When UID format changes (e.g. v1 → v2), old cache keys become invalid
+   * This function detects version mismatches and clears stale cache
+   */
+  static ensureXpCacheVersion(): void {
+    if (typeof window === 'undefined') return
+    
+    const cachedVersion = localStorage.getItem('xp-cache-version')
+    
+    if (cachedVersion !== XP_CACHE_VERSION) {
+      console.log(`🔄 XP cache version mismatch (${cachedVersion} → ${XP_CACHE_VERSION}), clearing cache...`)
+      this.clearXpCache()
+      localStorage.setItem('xp-cache-version', XP_CACHE_VERSION)
+      console.log('✅ XP cache updated to version', XP_CACHE_VERSION)
+    }
   }
 } 

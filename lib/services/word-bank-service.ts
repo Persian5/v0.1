@@ -1117,13 +1117,18 @@ export class WordBankService {
 
     // Shuffle and take first N
     const shuffled = this.shuffleArray([...availableVocab]);
-    return shuffled.slice(0, maxDistractors).map(vocab => ({
-      vocabularyId: vocab.id,
-      wordText: vocab.en,
-      isPhrase: vocab.en.split(' ').length > 1,
-      semanticGroup: vocab.semanticGroup || getSemanticGroup(vocab.id),
-      isCorrect: false
-    }));
+    return shuffled.slice(0, maxDistractors).map(vocab => {
+      // CRITICAL: Normalize vocab.en before adding (remove slashes, normalize display)
+      const normalizedWordText = this.normalizeVocabEnglish(vocab.en);
+      
+      return {
+        vocabularyId: vocab.id,
+        wordText: normalizedWordText, // Use normalized (no slashes)
+        isPhrase: normalizedWordText.split(' ').length > 1,
+        semanticGroup: vocab.semanticGroup || getSemanticGroup(vocab.id),
+        isCorrect: false
+      };
+    });
   }
 
   /**

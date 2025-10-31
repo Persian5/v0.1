@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from "@vercel/analytics/next"
 import { SmartAuthProvider } from "@/components/auth/SmartAuthProvider"
+import { XpCacheInitializer } from "@/components/XpCacheInitializer"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -41,6 +42,7 @@ export default function RootLayout({
           enableSystem={false} 
           disableTransitionOnChange
         >
+          <XpCacheInitializer />
           <SmartAuthProvider>
             {children}
           </SmartAuthProvider>
