@@ -1230,8 +1230,8 @@ export class WordBankService {
         normalized: this.normalizeForValidation(item.wordText)
       }));
 
-    // Step 3: Normalize user answer
-    const userUnits = userAnswer.map(word => this.normalizeForValidation(word));
+    // Step 3: Normalize user answer (flatten arrays since each word returns string[])
+    const userUnits = userAnswer.flatMap(word => this.normalizeForValidation(word));
 
     // Step 4: Match each expected unit to user unit (in order)
     const results = expectedUnits.map((expected, index) => {
@@ -1240,7 +1240,7 @@ export class WordBankService {
       // Check if user's answer matches expected (handles synonyms)
       const isMatch = userUnit && expected.normalized.some(exp => {
         // Exact match
-        if (userUnit === exp) return true;
+        if (userUnit.toLowerCase() === exp.toLowerCase()) return true;
         
         // Synonym match (for greetings: hi/hello/salam)
         const userLower = userUnit.toLowerCase();
