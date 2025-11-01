@@ -141,10 +141,20 @@ export function MatchingGame({
         
         // Trigger XP animation for visual feedback
         setShowXp(true);
-        setTimeout(() => {
-          onComplete(true);
+        
+        // FIX: Set up fallback timeout in case XpAnimation doesn't trigger onComplete
+        // Clear any existing timeout first
+        if (completionTimeout) {
+          clearTimeout(completionTimeout);
+        }
+        
+        const timeoutId = setTimeout(() => {
+          // Fallback: If animation hasn't completed after 1.5s, manually advance
           setShowXp(false);
-        }, 800);
+          onComplete(true);
+        }, 1500);
+        
+        setCompletionTimeout(timeoutId);
       }
     } else {
       // Show error feedback
@@ -182,8 +192,13 @@ export function MatchingGame({
           isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={() => {
-            // Just hide animation - don't call onComplete again
+            // Animation completed - clear fallback timeout and advance
+            if (completionTimeout) {
+              clearTimeout(completionTimeout);
+              setCompletionTimeout(null);
+            }
             setShowXp(false);
+            onComplete(true);
           }}
         />
         

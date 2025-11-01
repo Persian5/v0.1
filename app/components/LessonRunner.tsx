@@ -284,10 +284,10 @@ export function LessonRunner({
       setRemediationStep('quiz');
     } else {
       // Quiz completed, remove from queue and continue
-      const currentWord = remediationQueue[0];
-      setRemediationQueue(prev => prev.slice(1));
+      const remainingQueue = remediationQueue.slice(1); // Get new queue state
+      setRemediationQueue(remainingQueue);
       
-      if (remediationQueue.length <= 1) {
+      if (remainingQueue.length === 0) {
         // No more words to remediate, advance to next lesson step
         setIsInRemediation(false);
         setRemediationStep('flashcard');
@@ -553,6 +553,10 @@ export function LessonRunner({
       
       // ✅ RULE 4: Wrong during remediation → do nothing (already being remediated)
       // This is automatically handled by the alreadyCounted check above
+      
+      // NOTE: Remediation is ONLY triggered here in createVocabularyTracker
+      // Components should NOT call onRemediationNeeded for vocabulary tracking - it's redundant
+      // and causes double-triggering. Only call onVocabTrack.
       
       // Also keep localStorage tracking for backwards compatibility (for now)
       if (isCorrect) {
