@@ -28,6 +28,9 @@
 | user_profiles        | updated_at             | timestamp with time zone | NO          | now()              |
 | user_profiles        | first_name             | text                     | YES         | null               |
 | user_profiles        | last_name              | text                     | YES         | null               |
+| user_profiles        | review_xp_earned_today | integer                 | NO          | 0                  |
+| user_profiles        | review_xp_reset_at     | timestamp with time zone | YES         | null               |
+| user_profiles        | timezone               | text                     | NO          | 'America/Los_Angeles' |
 | user_sessions        | id                     | uuid                     | NO          | gen_random_uuid()  |
 | user_sessions        | user_id                | uuid                     | NO          | null               |
 | user_sessions        | session_start          | timestamp with time zone | NO          | now()              |
@@ -82,6 +85,9 @@
 
 ### user_lesson_progress
 - **UNIQUE**: `(user_id, module_id, lesson_id)` - Prevents duplicate lesson progress records
+
+### user_profiles
+- **CHECK**: `review_xp_earned_today >= 0` - Ensures review XP cannot be negative
 
 ### user_xp_transactions
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)
