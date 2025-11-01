@@ -510,11 +510,18 @@ export function LessonRunner({
         // ✅ RULE 1: First response on this step
         if (!isCorrect) {
           // First response was WRONG → increment counter
+          const newCount = (incorrectAttempts[vocabularyId] || 0) + 1;
           setIncorrectAttempts(prev => ({
             ...prev,
-            [vocabularyId]: (prev[vocabularyId] || 0) + 1
+            [vocabularyId]: newCount
           }));
-          console.log(`❌ First wrong for "${vocabularyId}" on step ${idx} - counter: ${(incorrectAttempts[vocabularyId] || 0) + 1}/2`);
+          console.log(`❌ First wrong for "${vocabularyId}" on step ${idx} - counter: ${newCount}/2`);
+          
+          // Check if we hit remediation threshold (2+)
+          if (newCount >= 2 && !pendingRemediation.includes(vocabularyId) && !remediationQueue.includes(vocabularyId)) {
+            console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
+            setPendingRemediation(prev => [...prev, vocabularyId]);
+          }
         } else {
           console.log(`✅ First correct for "${vocabularyId}" on step ${idx} - no counter change`);
         }
