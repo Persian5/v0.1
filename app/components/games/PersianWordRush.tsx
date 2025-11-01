@@ -9,6 +9,9 @@ import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { XpService } from "@/lib/services/xp-service"
 import { VocabularyItem } from "@/lib/types"
 import { VocabularyProgressService } from "@/lib/services/vocabulary-progress-service"
+import { ReviewSessionService, ReviewFilter } from "@/lib/services/review-session-service"
+import { VocabularyTrackingService } from "@/lib/services/vocabulary-tracking-service"
+import { WordBankService } from "@/lib/services/word-bank-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 
 // Game states
@@ -48,7 +51,13 @@ interface SlidingWord {
   animationState: 'sliding' | 'shaking-green' | 'shaking-red' | 'exploding'
 }
 
-export function PersianWordRush() {
+export function PersianWordRush({ 
+  filter,
+  onExit 
+}: { 
+  filter?: ReviewFilter
+  onExit?: () => void 
+} = {}) {
   const [gameState, setGameState] = useState<GameState>('menu')
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([])
   const [vocabularyError, setVocabularyError] = useState<string | null>(null)
@@ -93,9 +102,27 @@ export function PersianWordRush() {
 
       try {
         setGameState('loading')
-        const userVocabulary = await VocabularyProgressService.getUserPracticeVocabulary({
-          maxWords: 100 // Get up to 100 words for variety
-        })
+        
+        let userVocabulary: VocabularyItem[] = []
+        
+        if (filter) {
+          // Review mode: use filter-based vocabulary
+          await ReviewSessionService.initializeUserTimezone(user.id)
+          const words = await ReviewSessionService.getVocabularyForFilter(user.id, filter, 100)
+          
+          // Convert to VocabularyItem[]
+          for (const word of words) {
+            const vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+            if (vocabItem) {
+              userVocabulary.push(vocabItem)
+            }
+          }
+        } else {
+          // Regular practice mode: use existing service
+          userVocabulary = await VocabularyProgressService.getUserPracticeVocabulary({
+            maxWords: 100
+          })
+        }
         
         if (userVocabulary.length === 0) {
           setVocabularyError('Complete some lessons first to unlock this game!')
@@ -115,7 +142,7 @@ export function PersianWordRush() {
     }
 
     loadVocabulary()
-  }, [user, isEmailVerified])
+  }, [user, isEmailVerified, filter])
 
   // Calculate current word speed based on progress
   const getCurrentSpeed = useCallback(() => {
@@ -252,7 +279,20 @@ export function PersianWordRush() {
           }))
 
           // Record performance
-          VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+          if (filter && user?.id) {
+            // Review mode: use VocabularyTrackingService (no remediation)
+            VocabularyTrackingService.storeAttempt({
+              userId: user.id,
+              vocabularyId: currentWord.word.id,
+              wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+              gameType: 'review-persian-word-rush',
+              isCorrect: false,
+              contextData: { reviewMode: true }
+            }).catch(console.error)
+          } else {
+            // Regular mode: use legacy tracking
+            VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+          }
 
           // Check game over or shake word red
           const newLives = gameStats.lives - 1
@@ -318,7 +358,23 @@ export function PersianWordRush() {
       }
 
       // Record performance
-      VocabularyService.recordCorrectAnswer(currentWord.word.id)
+      if (filter && user?.id) {
+        // Review mode: use VocabularyTrackingService (no remediation)
+        VocabularyTrackingService.storeAttempt({
+          userId: user.id,
+          vocabularyId: currentWord.word.id,
+          wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+          gameType: 'review-persian-word-rush',
+          isCorrect: true,
+          contextData: { reviewMode: true }
+        }).catch(console.error)
+        
+        // Award review XP (1 XP per correct)
+        ReviewSessionService.awardReviewXp(user.id, 1).catch(console.error)
+      } else {
+        // Regular mode: use legacy tracking
+        VocabularyService.recordCorrectAnswer(currentWord.word.id)
+      }
 
       // Shake word green and then start next word
       shakeWordGreen()
@@ -447,7 +503,7 @@ export function PersianWordRush() {
                 <div className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="font-medium">{vocabularyError}</p>
                 </div>
-                <Button onClick={() => window.history.back()} variant="outline" className="w-full">
+                <Button onClick={() => onExit ? onExit() : window.history.back()} variant="outline" className="w-full">
                   Go Back
                 </Button>
           </div>
