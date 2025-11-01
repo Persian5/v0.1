@@ -5,16 +5,20 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, Trophy, Target, BookOpen } from "lucide-react"
+import { Zap, Trophy, Target, BookOpen, Brain, Headphones } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { VocabularyProgressService } from "@/lib/services/vocabulary-progress-service"
 import { useAuth } from "@/components/auth/AuthProvider"
+import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
+import { ReviewFilter } from "@/lib/services/review-session-service"
 
-export default function PracticePage() {
+export default function ReviewPage() {
   const [mounted, setMounted] = useState(false)
   const [vocabularyCount, setVocabularyCount] = useState<number>(0)
   const [hasVocabulary, setHasVocabulary] = useState<boolean>(false)
   const [isLoadingVocabulary, setIsLoadingVocabulary] = useState<boolean>(true)
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const router = useRouter()
   const { user, isEmailVerified } = useAuth()
 
@@ -51,14 +55,56 @@ export default function PracticePage() {
     loadVocabulary()
   }, [mounted, user, isEmailVerified])
 
+  // Handle game selection with filter modal
+  const handleGameClick = (gameId: string) => {
+    setSelectedGame(gameId)
+    setShowFilterModal(true)
+  }
+
+  // Handle filter selection
+  const handleFilterSelect = (filter: ReviewFilter) => {
+    if (!selectedGame) return
+    
+    // Navigate to game with filter in URL
+    router.push(`/review/${selectedGame}?filter=${filter}`)
+    setShowFilterModal(false)
+    setSelectedGame(null)
+  }
+
   // Game modes available in Review section
   const gameModes = [
+    {
+      id: "memory-game",
+      title: "Memory Game",
+      description: "Match Persian words with their English translations",
+      icon: <Brain className="h-6 w-6" />,
+      available: hasVocabulary,
+      difficulty: "Easy",
+      features: ["Card matching", "4x2 grid", "3 lives", "XP per match"]
+    },
+    {
+      id: "audio-definitions",
+      title: "Unlimited Audio Definitions",
+      description: "Listen to Persian words and select their meanings",
+      icon: <Headphones className="h-6 w-6" />,
+      available: hasVocabulary,
+      difficulty: "Easy → Medium",
+      features: ["Unlimited questions", "Audio playback", "Streak tracking", "Auto-advance"]
+    },
+    {
+      id: "matching-marathon",
+      title: "Matching Marathon",
+      description: "Match pairs as fast as you can - difficulty increases!",
+      icon: <Target className="h-6 w-6" />,
+      available: hasVocabulary,
+      difficulty: "Medium → Hard",
+      features: ["Unlimited rounds", "Increasing difficulty", "3 lives", "Round counter"]
+    },
     {
       id: "word-rush",
       title: "Persian Word Rush",
       description: "Fast-paced vocabulary matching with increasing speed",
       icon: <Zap className="h-6 w-6" />,
-      href: "/review/word-rush",
       available: hasVocabulary,
       difficulty: "Easy → Hard",
       features: ["Sliding words", "4 lives system", "XP combos", `${vocabularyCount} words available`]
@@ -68,7 +114,6 @@ export default function PracticePage() {
       title: "Story Mode",
       description: "Character driven cultural game mode where you get to experience different Persian events and have to talk with people",
       icon: <Target className="h-6 w-6" />,
-      href: "#",
       available: false,
       difficulty: "Medium",
       features: ["Cultural immersion", "Story-driven", "Character conversations", "Persian events"]
@@ -78,7 +123,6 @@ export default function PracticePage() {
       title: "Pronunciation Check",
       description: "Testing a user's pronunciation of words",
       icon: <Trophy className="h-6 w-6" />,
-      href: "#",
       available: false,
       difficulty: "Medium → Hard",
       features: ["Voice recognition", "Pronunciation feedback", "Review sessions", "Progress tracking"]
@@ -207,11 +251,12 @@ export default function PracticePage() {
 
                   <div className="w-full">
                     {game.available ? (
-                      <Link href={game.href} className="block">
-                        <Button className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors">
-                          Play Now
-                        </Button>
-                      </Link>
+                      <Button
+                        onClick={() => handleGameClick(game.id)}
+                        className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors"
+                      >
+                        Play Now
+                      </Button>
                     ) : (
                       <Button 
                         className="w-full bg-gray-100 text-gray-500 cursor-not-allowed font-semibold py-3 rounded-lg"
@@ -237,6 +282,16 @@ export default function PracticePage() {
           </div>
         </div>
       </main>
+
+      {/* Filter Modal */}
+      <ReviewFilterModal
+        isOpen={showFilterModal}
+        onClose={() => {
+          setShowFilterModal(false)
+          setSelectedGame(null)
+        }}
+        onFilterSelect={handleFilterSelect}
+      />
 
       {/* Footer */}
       <footer className="border-t bg-white">
