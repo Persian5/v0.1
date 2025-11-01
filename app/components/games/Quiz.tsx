@@ -59,11 +59,22 @@ export function Quiz({
   }, [prompt, optionsHash])
 
   // Randomize options ONCE on mount - more efficient than useEffect
+  // If options are already QuizOption[] with correct flags, don't shuffle if already shuffled
   const shuffledOptions = useMemo(() => {
-  // Convert string[] to QuizOption[] if needed
-  const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
-    ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
-    : options as QuizOption[];
+    // Convert string[] to QuizOption[] if needed
+    const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
+      ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
+      : options as QuizOption[];
+
+    // Check if options are already shuffled (all have correct flag set correctly)
+    const hasCorrectFlags = formattedOptions.some(opt => opt.correct === true);
+    const isAlreadyShuffled = hasCorrectFlags && formattedOptions.length > 0;
+    
+    // If options are already shuffled (from remediation with deterministic shuffle), don't shuffle again
+    if (isAlreadyShuffled && formattedOptions.length === 4) {
+      // Options are already in correct order with correct flags - use as-is
+      return formattedOptions;
+    }
 
     // Shuffle the options once using stable seed
     return [...formattedOptions].sort(() => Math.random() - 0.5);

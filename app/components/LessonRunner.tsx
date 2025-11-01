@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useTransition } from 'react'
+import { useState, useEffect, useRef, useTransition, useMemo } from 'react'
 import { Flashcard } from '@/app/components/games/Flashcard'
 import { Quiz } from '@/app/components/games/Quiz'
 import { InputExercise } from '@/app/components/games/InputExercise'
@@ -346,15 +346,29 @@ export function LessonRunner({
   };
 
   // DYNAMIC: Generate remediation quiz using VocabularyService
-  const generateRemediationQuiz = (vocabularyId: string): { prompt: string, options: { text: string, correct: boolean }[] } | null => {
-    const targetVocab = findVocabularyById(vocabularyId);
-    if (!targetVocab) return null;
+  // Generate remediation quiz with MEMOIZED options (stable order per vocabulary ID)
+  const generateRemediationQuiz = useMemo(() => {
+    // Create a cache to store quiz data per vocabulary ID
+    const quizCache = new Map<string, { prompt: string, options: { text: string, correct: boolean }[] }>();
+    
+    return (vocabularyId: string): { prompt: string, options: { text: string, correct: boolean }[] } | null => {
+      // Check cache first
+      if (quizCache.has(vocabularyId)) {
+        return quizCache.get(vocabularyId)!;
+      }
+      
+      const targetVocab = findVocabularyById(vocabularyId);
+      if (!targetVocab) return null;
 
-    const prompt = VocabularyService.generateQuizPrompt(targetVocab);
-    const options = VocabularyService.generateQuizOptions(targetVocab, allVocabForExtraction);
+      const prompt = VocabularyService.generateQuizPrompt(targetVocab);
+      // Use deterministic=true for stable order (no shuffling per render)
+      const options = VocabularyService.generateQuizOptions(targetVocab, allVocabForExtraction, true);
 
-    return { prompt, options };
-  };
+      const quizData = { prompt, options };
+      quizCache.set(vocabularyId, quizData);
+      return quizData;
+    };
+  }, [allVocabForExtraction]); // Only recreate if vocabulary changes
 
   // Get vocabularyId for current step if applicable
   const getStepVocabularyId = (step: LessonStep): string | undefined => {

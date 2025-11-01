@@ -261,8 +261,10 @@ export class VocabularyService {
   /**
    * Generate quiz options with semantic distractors (70% same group, 30% related)
    * Uses WordBankService semantic distractor logic for consistency
+   * 
+   * @param deterministic - If true, uses vocabulary ID as seed for stable shuffle order
    */
-  static generateQuizOptions(targetVocab: VocabularyItem, allVocab: VocabularyItem[]): { text: string, correct: boolean }[] {
+  static generateQuizOptions(targetVocab: VocabularyItem, allVocab: VocabularyItem[], deterministic: boolean = false): { text: string, correct: boolean }[] {
     // Create correct answer (normalized)
     const correctText = WordBankService.normalizeVocabEnglish(targetVocab.en);
     const options = [
@@ -286,9 +288,36 @@ export class VocabularyService {
       options.push({ text: distractor.wordText, correct: false });
     });
 
-    // Shuffle options (but keep correct answer in random position)
-    const shuffled = [...options].sort(() => Math.random() - 0.5);
+    // Shuffle options deterministically or randomly
+    if (deterministic) {
+      // Use vocabulary ID as seed for stable shuffle order
+      const seed = targetVocab.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      return this.deterministicShuffle(options, seed);
+    } else {
+      // Random shuffle (for regular quiz steps)
+      return [...options].sort(() => Math.random() - 0.5);
+    }
+  }
 
+  /**
+   * Deterministic shuffle using seed for stable order
+   */
+  private static deterministicShuffle<T>(array: T[], seed: number): T[] {
+    const shuffled = [...array];
+    let currentSeed = seed;
+    
+    // Simple seeded random number generator
+    const seededRandom = () => {
+      currentSeed = (currentSeed * 9301 + 49297) % 233280;
+      return currentSeed / 233280;
+    };
+    
+    // Fisher-Yates shuffle with seed
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(seededRandom() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
     return shuffled;
   }
 
