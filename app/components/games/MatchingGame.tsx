@@ -52,6 +52,7 @@ export function MatchingGame({
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null) // NEW: track selected slot
   const [showXp, setShowXp] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  const [completionTimeout, setCompletionTimeout] = useState<NodeJS.Timeout | null>(null)
   const [showFeedback, setShowFeedback] = useState<{ 
     slotId: string; 
     wordId: string;
