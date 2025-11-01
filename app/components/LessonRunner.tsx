@@ -25,6 +25,7 @@ import { useAuth } from '@/components/auth/AuthProvider'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { WordBankService } from '@/lib/services/word-bank-service'
+import { SmartAuthService } from '@/lib/services/smart-auth-service'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -504,6 +505,9 @@ export function LessonRunner({
       }).catch((error) => {
         console.error('Failed to track vocabulary attempt:', error);
       });
+      
+      // Invalidate dashboard cache so stats update in real-time
+      SmartAuthService.invalidateDashboardStats();
       
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // REMEDIATION COUNTER LOGIC (Simple Rules)

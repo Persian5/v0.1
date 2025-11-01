@@ -8,7 +8,7 @@ import { MasteredWordsWidget } from "@/app/components/dashboard/MasteredWordsWid
 import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Button } from "@/components/ui/button"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 
@@ -33,18 +33,32 @@ function DashboardContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!user?.id) {
-        setIsLoading(false)
-        return
-      }
+function DashboardContent() {
+  const { user } = useAuth()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
+  const fetchStats = async (forceRefresh: boolean = false) => {
+    if (!user?.id) {
+      setIsLoading(false)
+      return
+    }
+
+    if (forceRefresh) {
+      setIsRefreshing(true)
+      // Invalidate cache when manually refreshing
+      SmartAuthService.invalidateDashboardStats()
+    } else {
       setIsLoading(true)
-      setError(null)
+    }
+    
+    setError(null)
 
-      try {
-        // Check cache first
+    try {
+      // Check cache first (unless force refresh)
+      if (!forceRefresh) {
         const cached = SmartAuthService.getCachedDashboardStats()
         if (cached) {
           setStats({
@@ -57,50 +71,77 @@ function DashboardContent() {
           fetchFreshStats()
           return
         }
+      }
 
-        // Fetch fresh data
-        await fetchFreshStats()
-      } catch (err) {
-        console.error('Error fetching dashboard stats:', err)
-        setError('Failed to load dashboard stats. Please refresh the page.')
+      // Fetch fresh data
+      await fetchFreshStats()
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err)
+      setError('Failed to load dashboard stats. Please refresh the page.')
+      setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }
+
+  const fetchFreshStats = async () => {
+    try {
+      const response = await fetch('/api/user-stats')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data: DashboardStats = await response.json()
+      
+      // Cache the stats
+      SmartAuthService.cacheDashboardStats(data)
+      
+      setStats(data)
+      setIsLoading(false)
+      setIsRefreshing(false)
+    } catch (err) {
+      // If fresh fetch fails but we have cached data, use cache
+      const cached = SmartAuthService.getCachedDashboardStats()
+      if (cached) {
+        setStats({
+          wordsLearned: cached.wordsLearned,
+          masteredWords: cached.masteredWords,
+          hardWords: cached.hardWords
+        })
         setIsLoading(false)
+        setIsRefreshing(false)
+        setError('Using cached data. Some information may be outdated.')
+      } else {
+        throw err
       }
     }
+  }
 
-    const fetchFreshStats = async () => {
-      try {
-        const response = await fetch('/api/user-stats')
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data: DashboardStats = await response.json()
-        
-        // Cache the stats
-        SmartAuthService.cacheDashboardStats(data)
-        
-        setStats(data)
-        setIsLoading(false)
-      } catch (err) {
-        // If fresh fetch fails but we have cached data, use cache
-        const cached = SmartAuthService.getCachedDashboardStats()
-        if (cached) {
-          setStats({
-            wordsLearned: cached.wordsLearned,
-            masteredWords: cached.masteredWords,
-            hardWords: cached.hardWords
-          })
-          setIsLoading(false)
-          setError('Using cached data. Some information may be outdated.')
-        } else {
-          throw err
-        }
-      }
-    }
-
-    fetchStats()
+  useEffect(() => {
+    fetchStats(false)
   }, [user?.id])
+
+  // Auto-refresh when window gains focus (user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Only refresh if cache might be stale (older than 2 minutes)
+      const cached = SmartAuthService.getCachedDashboardStats()
+      if (cached) {
+        const cacheAge = Date.now() - cached.timestamp
+        const TWO_MINUTES = 2 * 60 * 1000
+        if (cacheAge > TWO_MINUTES) {
+          fetchStats(true)
+        }
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [user?.id])
+
+  const handleRefresh = () => {
+    fetchStats(true)
+  }
 
   if (isLoading && !stats) {
     return (
@@ -120,6 +161,15 @@ function DashboardContent() {
             Dashboard
           </Link>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoading}
+              className="hover:bg-primary/10"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
             <Link href="/modules">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
                 Modules
