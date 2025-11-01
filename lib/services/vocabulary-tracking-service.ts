@@ -302,6 +302,94 @@ export class VocabularyTrackingService {
   }
 
   /**
+   * Get all learned words (any word with total_attempts > 0)
+   * Used for "All Learned Words" filter in review mode
+   */
+  static async getAllLearnedWords(userId: string, limit?: number): Promise<WeakWord[]> {
+    try {
+      let query = supabase
+        .from('vocabulary_performance')
+        .select('*')
+        .eq('user_id', userId)
+        .gt('total_attempts', 0)
+        .order('last_seen_at', { ascending: false })
+
+      if (limit) {
+        query = query.limit(limit)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching all learned words:', error)
+        return []
+      }
+
+      return (data || []).map(d => ({
+        vocabulary_id: d.vocabulary_id,
+        word_text: d.word_text,
+        consecutive_correct: d.consecutive_correct,
+        total_attempts: d.total_attempts,
+        total_correct: d.total_correct,
+        total_incorrect: d.total_incorrect,
+        accuracy: d.total_attempts > 0 ? (d.total_correct / d.total_attempts) * 100 : 0,
+        last_seen_at: d.last_seen_at
+      }))
+
+    } catch (error) {
+      console.error('Exception in getAllLearnedWords:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get hard words (matches dashboard logic)
+   * Returns words with:
+   * - total_attempts >= 2 (minimum attempts for meaningful error rate)
+   * - Sorted by error rate DESC (highest error rate first)
+   * - Limited to top N words (default 10, but can be overridden for review mode)
+   * 
+   * Used for "Words to Review" filter in review mode
+   */
+  static async getHardWords(userId: string, limit: number = 10): Promise<WeakWord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vocabulary_performance')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('total_attempts', 2) // Minimum 2 attempts
+
+      if (error) {
+        console.error('Error fetching hard words:', error)
+        return []
+      }
+
+      // Calculate error rate and sort by highest error rate first
+      const hardWordsWithErrorRate = (data || [])
+        .map(d => ({
+          vocabulary_id: d.vocabulary_id,
+          word_text: d.word_text,
+          consecutive_correct: d.consecutive_correct,
+          total_attempts: d.total_attempts,
+          total_correct: d.total_correct,
+          total_incorrect: d.total_incorrect,
+          accuracy: d.total_attempts > 0 ? (d.total_correct / d.total_attempts) * 100 : 0,
+          errorRate: d.total_attempts > 0 ? (d.total_incorrect / d.total_attempts) : 0,
+          last_seen_at: d.last_seen_at
+        }))
+        .sort((a, b) => b.errorRate - a.errorRate) // Highest error rate first
+        .slice(0, limit) // Top N hardest words
+        .map(({ errorRate, ...rest }) => rest) // Remove errorRate from output
+
+      return hardWordsWithErrorRate
+
+    } catch (error) {
+      console.error('Exception in getHardWords:', error)
+      return []
+    }
+  }
+
+  /**
    * Get weak words needing review
    * 
    * Returns words that:
