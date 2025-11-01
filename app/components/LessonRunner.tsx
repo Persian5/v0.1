@@ -69,6 +69,19 @@ export function LessonRunner({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { user } = useAuth(); // Get user for idempotent XP
+  
+  // Use refs to track queues for synchronous checks (prevents stale closure)
+  const remediationQueueRef = useRef<string[]>([]);
+  const pendingRemediationRef = useRef<string[]>([]);
+  
+  // Sync refs with state
+  useEffect(() => {
+    remediationQueueRef.current = remediationQueue;
+  }, [remediationQueue]);
+  
+  useEffect(() => {
+    pendingRemediationRef.current = pendingRemediation;
+  }, [pendingRemediation]);
 
   // Get all vocabulary for this lesson (including review vocabulary)
   const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
@@ -545,26 +558,12 @@ export function LessonRunner({
             
             // Check if we hit remediation threshold (2+) using functional state updates
             if (newCount >= 2) {
-              // Check both queues atomically using functional updates
-              setPendingRemediation(prevPending => {
-                // If already pending, don't add again
-                if (prevPending.includes(vocabularyId)) {
-                  return prevPending;
-                }
-                
-                // Check remediation queue (read-only check)
-                setRemediationQueue(prevQueue => {
-                  // If not in queue either, add to pending
-                  if (!prevQueue.includes(vocabularyId)) {
-                    console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
-                    return prevQueue; // Return unchanged (we'll update pending)
-                  }
-                  return prevQueue;
-                });
-                
-                // Add to pending remediation
-                return [...prevPending, vocabularyId];
-              });
+              // Check both queues synchronously using refs (prevents stale closure)
+              if (!pendingRemediationRef.current.includes(vocabularyId) && 
+                  !remediationQueueRef.current.includes(vocabularyId)) {
+                console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
+                setPendingRemediation(prev => [...prev, vocabularyId]);
+              }
             }
             
             return { ...prev, [vocabularyId]: newCount };
