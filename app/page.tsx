@@ -118,8 +118,11 @@ export default function HomePage() {
             <Link href="/modules" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
               Modules
             </Link>
-            <Link href="/practice" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
-              Practice
+            <Link href="/dashboard" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
+              Dashboard
+            </Link>
+            <Link href="/review" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
+              Review Mode
             </Link>
             {!user && (
               <Link href="/pricing" className="text-sm font-medium px-2 py-1 whitespace-nowrap rounded hover:bg-primary/10">
@@ -136,9 +139,14 @@ export default function HomePage() {
                 Modules
               </Button>
             </Link>
-            <Link href="/practice">
+            <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Practice
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/review">
+              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                Review Mode
               </Button>
             </Link>
             {!user && (

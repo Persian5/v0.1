@@ -12,6 +12,21 @@ interface SessionCache {
   totalXp: number
   lastSync: number
   expiresAt: number
+  dashboardStats?: {
+    wordsLearned: number
+    masteredWords: number
+    hardWords: Array<{
+      vocabulary_id: string
+      word_text: string
+      consecutive_correct: number
+      total_attempts: number
+      total_correct: number
+      total_incorrect: number
+      accuracy: number
+      last_seen_at: string | null
+    }>
+    timestamp: number
+  }
 }
 
 interface BackgroundSyncOperation {
@@ -722,5 +737,57 @@ export class SmartAuthService {
     while (this.isInitializing) {
       await new Promise(resolve => setTimeout(resolve, 50))
     }
+  }
+
+  /**
+   * Get cached dashboard stats (5 minute TTL)
+   */
+  static getCachedDashboardStats(): SessionCache['dashboardStats'] | null {
+    if (!this.sessionCache?.dashboardStats) return null
+    
+    const now = Date.now()
+    const cacheAge = now - this.sessionCache.dashboardStats.timestamp
+    const TTL = 5 * 60 * 1000 // 5 minutes
+    
+    if (cacheAge > TTL) {
+      // Cache expired
+      return null
+    }
+    
+    return this.sessionCache.dashboardStats
+  }
+
+  /**
+   * Cache dashboard stats
+   */
+  static cacheDashboardStats(stats: {
+    wordsLearned: number
+    masteredWords: number
+    hardWords: Array<{
+      vocabulary_id: string
+      word_text: string
+      consecutive_correct: number
+      total_attempts: number
+      total_correct: number
+      total_incorrect: number
+      accuracy: number
+      last_seen_at: string | null
+    }>
+  }): void {
+    if (!this.sessionCache) return
+    
+    this.sessionCache.dashboardStats = {
+      ...stats,
+      timestamp: Date.now()
+    }
+  }
+
+  /**
+   * Invalidate dashboard stats cache (call after vocabulary attempt)
+   */
+  static invalidateDashboardStats(): void {
+    if (!this.sessionCache) return
+    
+    delete this.sessionCache.dashboardStats
   }
 } 
