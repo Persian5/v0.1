@@ -292,24 +292,34 @@ export function LessonRunner({
   };
 
   // Complete current remediation and continue to next lesson step
+  // Guard: prevent double completion (flashcard already advances, quiz already advances)
   const completeRemediation = () => {
     if (remediationStep === 'flashcard') {
       // Move to quiz step
       setRemediationStep('quiz');
-    } else {
+    } else if (remediationStep === 'quiz') {
       // Quiz completed, remove from queue and continue
-      const remainingQueue = remediationQueue.slice(1); // Get new queue state
-      setRemediationQueue(remainingQueue);
-      
-      if (remainingQueue.length === 0) {
-        // No more words to remediate, advance to next lesson step
-        setIsInRemediation(false);
-        setRemediationStep('flashcard');
-        setIdx(i => i + 1);
-      } else {
-        // More words to remediate, start with next word
-        setRemediationStep('flashcard');
-      }
+      // Use functional update to ensure we're working with latest state
+      setRemediationQueue(prevQueue => {
+        if (prevQueue.length === 0) {
+          // Already empty, don't do anything (prevent double call)
+          return prevQueue;
+        }
+        
+        const remainingQueue = prevQueue.slice(1); // Get new queue state
+        
+        if (remainingQueue.length === 0) {
+          // No more words to remediate, advance to next lesson step
+          setIsInRemediation(false);
+          setRemediationStep('flashcard');
+          setIdx(i => i + 1);
+        } else {
+          // More words to remediate, start with next word
+          setRemediationStep('flashcard');
+        }
+        
+        return remainingQueue;
+      });
     }
   };
 
@@ -360,6 +370,8 @@ export function LessonRunner({
 
   // DYNAMIC: Generate remediation quiz using VocabularyService
   // Generate remediation quiz with MEMOIZED options (stable order per vocabulary ID)
+  // Each word always gets the same 4 distractors (deterministic shuffle)
+  // Cache is cleared when vocabulary changes (new words introduced)
   const generateRemediationQuiz = useMemo(() => {
     // Create a cache to store quiz data per vocabulary ID
     const quizCache = new Map<string, { prompt: string, options: { text: string, correct: boolean }[] }>();
@@ -374,14 +386,15 @@ export function LessonRunner({
       if (!targetVocab) return null;
 
       const prompt = VocabularyService.generateQuizPrompt(targetVocab);
-      // Use deterministic=true for stable order (no shuffling per render)
+      // Use deterministic=true for stable order (same 4 distractors per word)
+      // Each vocabulary ID always gets the same distractors (e.g., "salam" always gets same 4)
       const options = VocabularyService.generateQuizOptions(targetVocab, allVocabForExtraction, true);
 
       const quizData = { prompt, options };
       quizCache.set(vocabularyId, quizData);
       return quizData;
     };
-  }, [allVocabForExtraction]); // Only recreate if vocabulary changes
+  }, [allVocabForExtraction]); // Only recreate cache when vocabulary changes (new words introduced)
 
   // Get vocabularyId for current step if applicable
   const getStepVocabularyId = (step: LessonStep): string | undefined => {
@@ -579,16 +592,22 @@ export function LessonRunner({
         console.log(`🔄 Retry for "${vocabularyId}" on step ${idx} - counter unchanged (${incorrectAttempts[vocabularyId] || 0}/2)`);
       }
       
-      // ✅ RULE 3: Success during remediation → reset counter to 0
+  // ✅ RULE 3: Success during remediation → reset counter to 0
       // ONLY reset if this is actually a remediation step (vocabularyId matches currentWord in remediation queue)
+      // AND only reset once per remediation completion (not on every correct answer during retries)
       if (isInRemediation && remediationQueue.length > 0 && remediationQueue[0] === vocabularyId && isCorrect) {
-        setIncorrectAttempts(prev => {
-          if (prev[vocabularyId] > 0) {
-            console.log(`🎉 Remediation success for "${vocabularyId}" - counter reset to 0/2`);
-            return { ...prev, [vocabularyId]: 0 };
-          }
-          return prev;
-        });
+        // Check if this is the remediation quiz step (not just any correct answer)
+        const isRemediationQuizComplete = remediationStep === 'quiz';
+        
+        if (isRemediationQuizComplete) {
+          setIncorrectAttempts(prev => {
+            if (prev[vocabularyId] > 0) {
+              console.log(`🎉 Remediation success for "${vocabularyId}" - counter reset to 0/2`);
+              return { ...prev, [vocabularyId]: 0 };
+            }
+            return prev;
+          });
+        }
       }
       
       // ✅ RULE 4: Wrong during remediation → do nothing (already being remediated)
@@ -610,7 +629,11 @@ export function LessonRunner({
   // Generic handler for all components except Flashcard
   const handleItemComplete = (wasCorrect: boolean = true) => {
     if (isInRemediation) {
-      completeRemediation();
+      // Only complete remediation if answer was correct (don't advance on wrong answers)
+      if (wasCorrect) {
+        completeRemediation();
+      }
+      // If wrong, don't call completeRemediation - let user retry
     } else {
       // Only advance if the answer was correct
       if (wasCorrect) {
