@@ -24,6 +24,7 @@ import { deriveStepUid } from '@/lib/utils/step-uid'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { WordBankService } from '@/lib/services/word-bank-service'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -474,6 +475,14 @@ export function LessonRunner({
         return;
       }
 
+      // CRITICAL FIX: Look up vocabulary item to get correct word text
+      // Some components (Quiz, InputExercise) pass prompt/question instead of actual word text
+      // Example: Quiz passes "What does 'Man' mean?" but we need "I" (the actual vocab word)
+      const vocabItem = safeFindVocabularyById(vocabularyId);
+      const actualWordText = vocabItem?.en 
+        ? WordBankService.normalizeVocabEnglish(vocabItem.en) // Normalize for consistency ("I / Me" → "I")
+        : wordText; // Fallback to passed wordText if vocab not found
+
       // Derive stable step UID
       const stepUid = deriveStepUid(currentStep, idx);
       
@@ -481,7 +490,7 @@ export function LessonRunner({
       VocabularyTrackingService.storeAttempt({
         userId: user.id,
         vocabularyId,
-        wordText,
+        wordText: actualWordText, // Use normalized vocabulary word text, not prompt/question
         gameType: currentStep.type,
         isCorrect,
         timeSpentMs,
