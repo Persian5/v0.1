@@ -3,21 +3,27 @@ import { Button } from "../../../components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { motion, AnimatePresence } from "framer-motion"
 import { playSuccessSound } from "./Flashcard"
+import { VocabularyItem } from "@/lib/types"
+import { WordBankService } from "@/lib/services/word-bank-service"
 
 interface MatchingGameProps {
   words: { id: string; text: string; slotId: string }[]  // words to match
   slots:  { id: string; text: string }[]                // match targets
   points: number
+  vocabularyBank?: VocabularyItem[] // Optional: for vocabulary tracking
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onComplete: (allCorrect: boolean) => void
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void // Track vocabulary performance
 }
 
 export function MatchingGame({ 
   words,
   slots,
   points,
+  vocabularyBank = [],
   onXpStart,
   onComplete,
+  onVocabTrack
 }: MatchingGameProps) {
   // SYSTEMATIC RANDOMIZATION: Randomize both words and slots display order once on mount
   // Following same pattern as Quiz component for consistency
@@ -58,6 +64,45 @@ export function MatchingGame({
     wordId: string;
     correct: boolean 
   } | null>(null)
+  const [startTime] = useState(Date.now()) // Track start time for per-match tracking
+  const [trackedMatches, setTrackedMatches] = useState<Set<string>>(new Set()) // Track which pairs have been tracked
+  const [matchAttemptTimes, setMatchAttemptTimes] = useState<Record<string, number>>({}) // Track when each match was attempted
+
+  /**
+   * Find vocabulary ID for a matching pair
+   * Matches by Finglish (word.text) or English (slot.text)
+   */
+  const findVocabularyId = (wordText: string, slotText: string): { vocabularyId: string; wordText: string } | null => {
+    if (vocabularyBank.length === 0) return null;
+
+    // Try to match by Finglish first (word.text)
+    const byFinglish = vocabularyBank.find(v => 
+      v.finglish.toLowerCase() === wordText.toLowerCase()
+    );
+
+    if (byFinglish) {
+      return {
+        vocabularyId: byFinglish.id,
+        wordText: WordBankService.normalizeVocabEnglish(byFinglish.en)
+      };
+    }
+
+    // Try to match by English (slot.text) - normalize both for comparison
+    const normalizedSlotText = WordBankService.normalizeVocabEnglish(slotText).toLowerCase();
+    const byEnglish = vocabularyBank.find(v => {
+      const normalizedVocabEn = WordBankService.normalizeVocabEnglish(v.en).toLowerCase();
+      return normalizedVocabEn === normalizedSlotText;
+    });
+
+    if (byEnglish) {
+      return {
+        vocabularyId: byEnglish.id,
+        wordText: WordBankService.normalizeVocabEnglish(byEnglish.en)
+      };
+    }
+
+    return null;
+  }
 
   // Reset feedback after 600ms for incorrect attempts
   useEffect(() => {
@@ -114,14 +159,43 @@ export function MatchingGame({
     }
   };
 
-  // NEW: Unified matching logic
+  // NEW: Unified matching logic with per-word tracking
   const tryMatch = async (wordId: string, slotId: string) => {
     // Find the word object for the selected ID
     const selectedWord = shuffledWords.find(w => w.id === wordId);
     if (!selectedWord) return;
     
+    // Find the slot object
+    const selectedSlot = shuffledSlots.find(s => s.id === slotId);
+    if (!selectedSlot) return;
+    
     // Check if this is the correct slot for the selected word
     const correct = selectedWord.slotId === slotId;
+    
+    // Track this match attempt immediately (correct or incorrect)
+    const matchKey = `${wordId}-${slotId}`;
+    if (onVocabTrack && !trackedMatches.has(matchKey)) {
+      // Find vocabulary ID for this pair
+      const vocabMatch = findVocabularyId(selectedWord.text, selectedSlot.text);
+      
+      if (vocabMatch) {
+        // Record when this match attempt happened
+        const attemptTime = Date.now();
+        setMatchAttemptTimes(prev => ({ ...prev, [matchKey]: attemptTime }));
+        
+        // Calculate time spent: from game start to this attempt
+        const timeSpentMs = attemptTime - startTime;
+        
+        onVocabTrack(
+          vocabMatch.vocabularyId,
+          vocabMatch.wordText,
+          correct,
+          timeSpentMs
+        );
+        // Mark this pair as tracked
+        setTrackedMatches(prev => new Set(prev).add(matchKey));
+      }
+    }
     
     if (correct) {
       // Track next match count

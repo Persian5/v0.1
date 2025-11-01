@@ -771,8 +771,10 @@ export function LessonRunner({
           words={(step as MatchingStep).data.words}
           slots={(step as MatchingStep).data.slots}
           points={step.points}
+          vocabularyBank={allCurriculumVocab}
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
+          onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'final' ? (
         <FinalChallenge

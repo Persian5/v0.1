@@ -1,5 +1,7 @@
 import { VocabularyItem } from '../types';
 import { getLesson } from '../config/curriculum';
+import { getSemanticGroup, getRelatedGroups, getVocabIdsInGroup } from '../config/semantic-groups';
+import { WordBankService } from './word-bank-service';
 
 // Local storage key for vocabulary progress
 const VOCABULARY_PROGRESS_KEY = 'vocabulary-progress';
@@ -256,40 +258,143 @@ export class VocabularyService {
   }
 
   // Generate contextual quiz options for a vocabulary item
+  /**
+   * Generate quiz options with semantic distractors (70% same group, 30% related)
+   * Uses WordBankService semantic distractor logic for consistency
+   */
   static generateQuizOptions(targetVocab: VocabularyItem, allVocab: VocabularyItem[]): { text: string, correct: boolean }[] {
-    // Create correct answer
+    // Create correct answer (normalized)
+    const correctText = WordBankService.normalizeVocabEnglish(targetVocab.en);
     const options = [
-      { text: targetVocab.en, correct: true }
+      { text: correctText, correct: true }
     ];
 
-    // Generate distractors from same lesson's vocabulary (context-appropriate)
-    // Sort alphabetically to ensure deterministic order
-    const distractors = allVocab
-      .filter(vocab => vocab.id !== targetVocab.id) // Exclude target word
-      .map(vocab => vocab.en) // Get English translations
-      .filter(en => en !== targetVocab.en) // Avoid duplicates
-      .sort() // DETERMINISTIC: Sort alphabetically
-      .slice(0, 3); // Take first 3 as distractors
+    // Use semantic distractor generation (same as WordBankService)
+    const correctItem = {
+      vocabularyId: targetVocab.id,
+      wordText: correctText,
+      isPhrase: correctText.split(' ').length > 1,
+      semanticGroup: targetVocab.semanticGroup || getSemanticGroup(targetVocab.id),
+      isCorrect: true
+    };
+
+    // Generate 3 semantic distractors
+    const distractors = this.generateSemanticDistractors([correctItem], allVocab, 3);
 
     // Add distractors as incorrect options
     distractors.forEach(distractor => {
-      options.push({ text: distractor, correct: false });
+      options.push({ text: distractor.wordText, correct: false });
     });
 
-    // If we don't have enough distractors from lesson context, add common ones
-    const commonDistractors = ["Goodbye", "Thank you", "Please", "Yes", "No", "Welcome"];
-    while (options.length < 4) {
-      const commonDistractor = commonDistractors.find(common => 
-        !options.some(opt => opt.text === common)
-      );
-      if (commonDistractor) {
-        options.push({ text: commonDistractor, correct: false });
+    // Shuffle options (but keep correct answer in random position)
+    const shuffled = [...options].sort(() => Math.random() - 0.5);
+
+    return shuffled;
+  }
+
+  /**
+   * Generate semantic distractors using same logic as WordBankService
+   * 70% from same semantic group, 30% from related groups
+   */
+  private static generateSemanticDistractors(
+    correctItems: Array<{ vocabularyId: string; wordText: string; semanticGroup?: string }>,
+    vocabularyBank: VocabularyItem[],
+    maxDistractors: number
+  ): Array<{ wordText: string }> {
+    if (maxDistractors <= 0) return [];
+
+    const correctVocabIds = new Set(correctItems.map(item => item.vocabularyId));
+    const correctWordTexts = new Set(
+      correctItems.map(item => item.wordText.toLowerCase())
+    );
+
+    // Get semantic groups of correct words
+    const correctGroups = new Set<string>();
+    correctItems.forEach(item => {
+      if (item.semanticGroup) {
+        correctGroups.add(item.semanticGroup);
       } else {
-        break; // No more unique distractors available
+        const group = getSemanticGroup(item.vocabularyId);
+        if (group) correctGroups.add(group);
+      }
+    });
+
+    const distractors: Array<{ wordText: string }> = [];
+    const usedVocabIds = new Set<string>();
+
+    // 70% from same semantic groups
+    const sameGroupCount = Math.floor(maxDistractors * 0.7);
+    let sameGroupAdded = 0;
+
+    for (const group of Array.from(correctGroups)) {
+      if (sameGroupAdded >= sameGroupCount) break;
+
+      const groupVocabIds = getVocabIdsInGroup(group);
+      const availableVocab = vocabularyBank.filter(v => 
+        groupVocabIds.includes(v.id) &&
+        !correctVocabIds.has(v.id) &&
+        !usedVocabIds.has(v.id) &&
+        !correctWordTexts.has(WordBankService.normalizeVocabEnglish(v.en).toLowerCase())
+      );
+
+      for (const vocab of availableVocab) {
+        if (sameGroupAdded >= sameGroupCount) break;
+        
+        const normalizedWordText = WordBankService.normalizeVocabEnglish(vocab.en);
+        distractors.push({ wordText: normalizedWordText });
+        usedVocabIds.add(vocab.id);
+        sameGroupAdded++;
       }
     }
 
-    return options;
+    // 30% from related groups
+    const relatedGroupCount = maxDistractors - distractors.length;
+    if (relatedGroupCount > 0) {
+      const relatedGroups = new Set<string>();
+      Array.from(correctGroups).forEach(group => {
+        getRelatedGroups(group).forEach(relatedGroup => relatedGroups.add(relatedGroup));
+      });
+
+      let relatedAdded = 0;
+      for (const group of Array.from(relatedGroups)) {
+        if (relatedAdded >= relatedGroupCount) break;
+
+        const groupVocabIds = getVocabIdsInGroup(group);
+        const availableVocab = vocabularyBank.filter(v =>
+          groupVocabIds.includes(v.id) &&
+          !correctVocabIds.has(v.id) &&
+          !usedVocabIds.has(v.id) &&
+          !correctWordTexts.has(WordBankService.normalizeVocabEnglish(v.en).toLowerCase())
+        );
+
+        for (const vocab of availableVocab) {
+          if (relatedAdded >= relatedGroupCount) break;
+
+          const normalizedWordText = WordBankService.normalizeVocabEnglish(vocab.en);
+          distractors.push({ wordText: normalizedWordText });
+          usedVocabIds.add(vocab.id);
+          relatedAdded++;
+        }
+      }
+    }
+
+    // Fill remaining slots with random vocab if needed
+    if (distractors.length < maxDistractors) {
+      const remaining = vocabularyBank.filter(v =>
+        !correctVocabIds.has(v.id) &&
+        !usedVocabIds.has(v.id) &&
+        !correctWordTexts.has(WordBankService.normalizeVocabEnglish(v.en).toLowerCase())
+      );
+
+      for (const vocab of remaining) {
+        if (distractors.length >= maxDistractors) break;
+        const normalizedWordText = WordBankService.normalizeVocabEnglish(vocab.en);
+        distractors.push({ wordText: normalizedWordText });
+        usedVocabIds.add(vocab.id);
+      }
+    }
+
+    return distractors;
   }
 
   // Generate contextual quiz prompt for a vocabulary item
