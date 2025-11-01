@@ -517,7 +517,8 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["khoobam", "merci"]
+              sequence: ["khoobam", "merci"],
+              expectedTranslation: "I am good thank you"
             }
           },
           {
@@ -1036,14 +1037,16 @@ export const curriculumData: Module[] = [
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["na", "merci", "khoobam"]
+              sequence: ["na", "merci", "khoobam"],
+              expectedTranslation: "no thank you I am good"
             }
           },
           {
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["khosh_amadid", "khodafez"]
+              sequence: ["khosh_amadid", "khodafez"],
+              expectedTranslation: "welcome goodbye"
             }
           },
           {

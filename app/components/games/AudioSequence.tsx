@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
@@ -6,6 +6,7 @@ import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
+import { WordBankService } from "@/lib/services/word-bank-service"
 
 interface AudioSequenceProps {
   sequence: string[] // Array of vocabulary IDs in correct order
@@ -17,6 +18,7 @@ interface AudioSequenceProps {
   maxWordBankSize?: number // Maximum number of options in word bank (prevents crowding)
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 export function AudioSequence({
@@ -28,7 +30,8 @@ export function AudioSequence({
   targetWordCount, // Add support for custom word count
   maxWordBankSize = 12, // Default max 12 options for better variety while manageable
   onContinue,
-  onXpStart
+  onXpStart,
+  onVocabTrack
 }: AudioSequenceProps) {
   const [hasPlayedAudio, setHasPlayedAudio] = useState(false)
   const [userOrder, setUserOrder] = useState<string[]>([])
@@ -38,70 +41,116 @@ export function AudioSequence({
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
 
-  // WORD BANK: Parse expectedTranslation into individual words (same logic as TextSequence)
-  const [allWordBankOptions] = useState<{ vocabItems: VocabularyItem[]; vocabIds: string[] }>(() => {
-    if (!expectedTranslation) {
-      // Default behavior: curated selection from available vocabulary
-      const correctWords = vocabularyBank.filter(v => sequence.includes(v.id));
-      
-      // Add strategic distractors (avoid overwhelming)
-      const maxDistractors = Math.max(0, maxWordBankSize - correctWords.length);
-      const distractors = vocabularyBank
-        .filter(v => !sequence.includes(v.id))
-        .sort(() => Math.random() - 0.5)
-        .slice(0, maxDistractors);
-      
-      const curatedVocab = [...correctWords, ...distractors];
-      const vocabIds = curatedVocab.map(v => v.id).sort(() => Math.random() - 0.5);
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
+
+  // Calculate expected semantic unit count (phrases count as 1, words count as 1)
+  const expectedWordCount = targetWordCount || WordBankService.getSemanticUnits({
+    expectedTranslation,
+    vocabularyBank,
+    sequenceIds: expectedTranslation ? undefined : sequence
+  });
+
+  // WORD BANK: Use WordBankService for unified, consistent generation
+  // Create mapping from wordText → vocabularyId[] and unique keys for display
+  const [wordBankData] = useState<{
+    wordBankItems: string[]; // Shuffled wordText values for display (from allOptions)
+    displayKeyToVocabId: Map<string, string>; // Map display key → vocabularyId
+    displayKeyToWordText: Map<string, string>; // Map display key → wordText
+  }>(() => {
+    // Generate word bank using WordBankService
+    const wordBankResult = WordBankService.generateWordBank({
+      expectedTranslation,
+      vocabularyBank,
+      sequenceIds: expectedTranslation ? undefined : sequence,
+      maxSize: maxWordBankSize,
+      distractorStrategy: 'semantic'
+    })
+
+    // Build mappings for vocabulary ID lookup and duplicate handling
+    // Use shuffled allOptions for display order, but map to WordBankItems for metadata
+    const displayKeyToVocabId = new Map<string, string>()
+    const displayKeyToWordText = new Map<string, string>()
+
+    // Create a map from wordText (normalized) to WordBankItem[] for lookup
+    const wordTextToItems = new Map<string, typeof wordBankResult.wordBankItems>()
+    wordBankResult.wordBankItems.forEach((item) => {
+      const normalizedKey = item.wordText.toLowerCase()
+      if (!wordTextToItems.has(normalizedKey)) {
+        wordTextToItems.set(normalizedKey, [])
+      }
+      wordTextToItems.get(normalizedKey)!.push(item)
+    })
+
+    // Process shuffled allOptions to create display keys in display order
+    // Track how many times we've seen each wordText to handle duplicates
+    const wordTextCounts = new Map<string, number>()
+    wordBankResult.allOptions.forEach((wordText, displayIndex) => {
+      const normalizedKey = wordText.toLowerCase()
+      const count = wordTextCounts.get(normalizedKey) || 0
+      wordTextCounts.set(normalizedKey, count + 1)
+
+      // Create unique display key for this occurrence
+      const displayKey = `${wordText}-${displayIndex}`
+
+      // Find matching WordBankItem for this wordText occurrence
+      const matchingItems = wordTextToItems.get(normalizedKey) || []
+      const itemIndex = Math.min(count, matchingItems.length - 1)
+      const matchingItem = matchingItems[itemIndex]
+
+      // Map display key to vocabularyId and wordText
+      if (matchingItem?.vocabularyId) {
+        displayKeyToVocabId.set(displayKey, matchingItem.vocabularyId)
+      }
+      displayKeyToWordText.set(displayKey, wordText)
+    })
       
       return {
-        vocabItems: curatedVocab,
-        vocabIds
-      };
+      wordBankItems: wordBankResult.allOptions,
+      displayKeyToVocabId,
+      displayKeyToWordText
     }
-
-    // Parse expectedTranslation into individual words (same as TextSequence)
-    const words = expectedTranslation.split(' ').filter(w => w.length > 0);
-    
-    // Handle duplicates by creating unique IDs (e.g., "you" appears twice → "you_1", "you_2")
-    const wordCounts = new Map<string, number>();
-    const contextualVocab: VocabularyItem[] = [];
-    
-    words.forEach((word) => {
-      const normalizedWord = word.toLowerCase();
-      const currentCount = wordCounts.get(normalizedWord) || 0;
-      wordCounts.set(normalizedWord, currentCount + 1);
-      
-      const uniqueId = currentCount > 0 ? `${normalizedWord}_${currentCount + 1}` : normalizedWord;
-      
-      contextualVocab.push({
-        id: uniqueId,
-        en: word, // Keep original capitalization
-        fa: '',
-        finglish: word,
-        phonetic: '',
-        lessonId: 'generated'
-      });
-    });
-    
-    // Shuffle for word bank display
-    const shuffledIds = contextualVocab.map(v => v.id).sort(() => Math.random() - 0.5);
-    
-    return {
-      vocabItems: contextualVocab,
-      vocabIds: shuffledIds
-    };
   })
 
-  // Dynamic vocabulary lookup with contextual support
+  // Dynamic vocabulary lookup with WordBankService support
   const getVocabularyById = (id: string) => {
-    // First check the original vocabulary bank
-    let vocab = vocabularyBank.find(v => v.id === id)
-    if (vocab) return vocab
-    
-    // Check the contextual vocabulary items we created
-    const contextualVocab = allWordBankOptions.vocabItems.find((v: VocabularyItem) => v.id === id)
-    if (contextualVocab) return contextualVocab
+    // Check if this is a display key (from WordBankService)
+    if (wordBankData.displayKeyToWordText.has(id)) {
+      const wordText = wordBankData.displayKeyToWordText.get(id)!
+      const vocabId = wordBankData.displayKeyToVocabId.get(id)
+      
+      // If we have a vocabulary ID, lookup from vocabularyBank
+      if (vocabId) {
+        const vocab = vocabularyBank.find(v => v.id === vocabId)
+        if (vocab) {
+          // Normalize display text (handle slash-separated translations)
+          return {
+            ...vocab,
+            en: WordBankService.normalizeVocabEnglish(vocab.en)
+          }
+        }
+      }
+      
+      // Fallback: create a minimal vocab item from wordText
+      return {
+        id: id,
+        en: wordText,
+        fa: '',
+        finglish: wordText,
+        phonetic: '',
+        lessonId: 'generated'
+      } as VocabularyItem
+    }
+
+    // Check the original vocabulary bank
+    const vocab = vocabularyBank.find(v => v.id === id)
+    if (vocab) {
+      // Normalize display text (handle slash-separated translations)
+    return {
+        ...vocab,
+        en: WordBankService.normalizeVocabEnglish(vocab.en)
+      }
+    }
     
     return undefined
   }
@@ -124,55 +173,108 @@ export function AudioSequence({
     }
   }
 
-  const handleItemClick = (vocabularyId: string) => {
+  const handleItemClick = (wordText: string, index: number) => {
+    // Create display key for this word occurrence
+    const displayKey = `${wordText}-${index}`
+    
     // Click to add items to sequence in order
-    if (!userOrder.includes(vocabularyId)) {
-      setUserOrder(prev => [...prev, vocabularyId])
+    if (!userOrder.includes(displayKey)) {
+      setUserOrder(prev => [...prev, displayKey])
     }
   }
 
-  const handleRemoveItem = (vocabularyId: string) => {
-    setUserOrder(prev => prev.filter(id => id !== vocabularyId))
+  const handleRemoveItem = (displayKey: string) => {
+    setUserOrder(prev => prev.filter(key => key !== displayKey))
   }
 
   const handleSubmit = async () => {
-    // Calculate expected word count
-    let expectedWordCount: number;
-    
-    if (targetWordCount) {
-      expectedWordCount = targetWordCount;
-    } else if (expectedTranslation) {
-      // Count words in expectedTranslation
-      expectedWordCount = expectedTranslation.split(' ').filter(w => w.length > 0).length;
-    } else {
-      expectedWordCount = sequence.length;
-    }
-    
+    // expectedWordCount is already calculated via useMemo above
     if (userOrder.length !== expectedWordCount) return
 
     let correct = false
     
     if (expectedTranslation) {
-      // For expectedTranslation, build the expected base word sequence
-      const words = expectedTranslation.split(' ').filter(w => w.length > 0);
-      const expectedBaseWords = words.map(w => w.toLowerCase());
-      
-      // Extract user's base words by stripping _1, _2, _3, etc. suffixes
-      // This allows duplicates like "khoob_1", "khoob_2" to be interchangeable
-      const userBaseWords = userOrder.map(id => {
-        const match = id.match(/^(.+?)_\d+$/);
-        return match ? match[1] : id;
+      // Use semantic units for validation (get from WordBankService)
+      const wordBankResult = WordBankService.generateWordBank({
+        expectedTranslation,
+        vocabularyBank,
+        sequenceIds: undefined
       });
       
-      // Compare base words, allowing duplicates to be interchangeable
-      correct = JSON.stringify(userBaseWords) === JSON.stringify(expectedBaseWords);
+      // Extract expected semantic units (normalized with contractions and punctuation)
+      const expectedUnits = wordBankResult.wordBankItems
+        .filter(item => item.isCorrect)
+        .flatMap(item => WordBankService.normalizeForValidation(item.wordText));
+      
+      // Extract user's semantic units from display keys (normalized)
+      const userUnits = userOrder.flatMap(displayKey => {
+        const wordText = wordBankData.displayKeyToWordText.get(displayKey) || displayKey.split('-').slice(0, -1).join('-');
+        return WordBankService.normalizeForValidation(wordText);
+      });
+      
+      // Compare semantic units (order matters, but allow synonyms and contractions)
+      correct = expectedUnits.length === userUnits.length &&
+        userUnits.every((userUnit, index) => {
+          const expectedUnit = expectedUnits[index];
+          
+          // Exact match (already normalized)
+          if (userUnit === expectedUnit) return true;
+          
+          // Synonym match (for greetings: hi/hello/salam)
+          const userLower = userUnit.toLowerCase();
+          const expectedLower = expectedUnit.toLowerCase();
+          if ((userLower === 'hi' || userLower === 'hello' || userLower === 'salam') &&
+              (expectedLower === 'hi' || expectedLower === 'hello' || expectedLower === 'salam')) {
+            return true;
+          }
+          
+          return false;
+        });
     } else {
       // Default behavior: match vocabulary ID order
-      correct = JSON.stringify(userOrder) === JSON.stringify(sequence)
+      // Extract vocabulary IDs from display keys
+      const userVocabIds = userOrder.map(displayKey => {
+        return wordBankData.displayKeyToVocabId.get(displayKey) || displayKey
+      })
+      correct = JSON.stringify(userVocabIds) === JSON.stringify(sequence)
     }
     
     setIsCorrect(correct)
     setShowResult(true)
+
+    // Calculate time spent
+    const timeSpentMs = Date.now() - startTime.current
+
+    // Track vocabulary performance PER-WORD (accurate tracking for multi-word games)
+    if (onVocabTrack && expectedTranslation) {
+      // Convert user's display keys back to word text
+      const userAnswerWords = userOrder.map(displayKey => 
+        wordBankData.displayKeyToWordText.get(displayKey) || displayKey.split('-').slice(0, -1).join('-')
+      );
+      
+      // Validate each word individually
+      const perWordResults = WordBankService.validateUserAnswer({
+        userAnswer: userAnswerWords,
+        expectedTranslation,
+        vocabularyBank,
+        sequenceIds: sequence
+      });
+      
+      // Track each word with its individual result
+      perWordResults.forEach(result => {
+        if (result.vocabularyId) {
+          onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
+        }
+      });
+    } else if (onVocabTrack) {
+      // Fallback: If no expectedTranslation, use old bulk tracking
+      sequence.forEach(vocabId => {
+        const vocab = vocabularyBank.find(v => v.id === vocabId);
+        if (vocab) {
+          onVocabTrack(vocabId, vocab.en, correct, timeSpentMs);
+        }
+      });
+    }
 
     if (correct) {
       playSuccessSound()
@@ -298,14 +400,14 @@ export function AudioSequence({
       <div className="space-y-2 mb-3 w-full max-w-[92vw] mx-auto px-2">
         <h3 className="text-lg font-semibold mb-3 text-center">Word Bank:</h3>
         <div className="flex flex-wrap gap-2 justify-center">
-          {allWordBankOptions.vocabIds.map((id: string) => {
-            const vocab = getVocabularyById(id)
-            const isUsed = userOrder.includes(id)
+          {wordBankData.wordBankItems.map((wordText: string, index: number) => {
+            const displayKey = `${wordText}-${index}`
+            const isUsed = userOrder.includes(displayKey)
             
             return (
               <button
-                key={id}
-                onClick={() => !isUsed && !showResult && handleItemClick(id)}
+                key={displayKey}
+                onClick={() => !isUsed && !showResult && handleItemClick(wordText, index)}
                 disabled={isUsed || showResult}
                 className={`px-3 py-2 rounded-lg border-2 transition-all ${
                   isUsed 
@@ -313,7 +415,7 @@ export function AudioSequence({
                     : 'border-primary/30 bg-white sm:hover:border-primary sm:hover:bg-primary/5 sm:hover:scale-105 cursor-pointer'
                 } ${showResult ? 'cursor-not-allowed' : ''}`}
               >
-                <span className="font-medium">{vocab?.en || id}</span>
+                <span className="font-medium">{wordText}</span>
               </button>
             )
           })}
@@ -328,11 +430,11 @@ export function AudioSequence({
         <div className="text-center mb-4">
           <Button
             onClick={handleSubmit}
-            disabled={userOrder.length !== (targetWordCount || (expectedTranslation ? expectedTranslation.split(' ').filter(w => w.length > 0).length : sequence.length))}
+            disabled={userOrder.length !== expectedWordCount}
             className="gap-2"
             size="lg"
           >
-            Check My Answer ({userOrder.length}/{targetWordCount || (expectedTranslation ? expectedTranslation.split(' ').filter(w => w.length > 0).length : sequence.length)})
+            Check My Answer ({userOrder.length}/{expectedWordCount})
           </Button>
         </div>
       )}

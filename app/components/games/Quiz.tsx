@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -20,6 +20,7 @@ export interface QuizProps {
   onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
   onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 export function Quiz({ 
@@ -30,12 +31,16 @@ export function Quiz({
   onComplete,
   onXpStart,
   vocabularyId,
-  onRemediationNeeded
+  onRemediationNeeded,
+  onVocabTrack
 }: QuizProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
   const [isCorrectAnswer, setIsCorrectAnswer] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
   
   // Generate unique instance ID for this quiz component
   const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
@@ -47,6 +52,11 @@ export function Quiz({
       : '';
     return `${optionsStr}-${correct}`;
   }, [options, correct]);
+  
+  // Reset timer when quiz content changes (new question)
+  useEffect(() => {
+    startTime.current = Date.now()
+  }, [prompt, optionsHash])
 
   // Randomize options ONCE on mount - more efficient than useEffect
   const shuffledOptions = useMemo(() => {
@@ -81,22 +91,29 @@ export function Quiz({
       
       // Move to completed state after brief delay to show success - REDUCED timeout
       setTimeout(() => {
-        // Track vocabulary performance AFTER animation completes to prevent re-renders
-        if (vocabularyId) {
-          VocabularyService.recordCorrectAnswer(vocabularyId);
+        // Calculate time spent on this question
+        const timeSpentMs = Date.now() - startTime.current
+        
+        // Track vocabulary performance to Supabase
+        if (vocabularyId && onVocabTrack) {
+          onVocabTrack(vocabularyId, prompt, true, timeSpentMs);
         }
         
         setQuizState('completed');
         onComplete(true);
       }, 800); // Reduced from 1200ms to prevent component transition glitches
     } else {
+      // Calculate time spent on incorrect attempt
+      const timeSpentMs = Date.now() - startTime.current
+      
       // For incorrect answers, track immediately since we're not advancing
-      if (vocabularyId) {
-        VocabularyService.recordIncorrectAnswer(vocabularyId);
-        // Trigger remediation if callback provided
-        if (onRemediationNeeded) {
-          onRemediationNeeded(vocabularyId);
-        }
+      if (vocabularyId && onVocabTrack) {
+        onVocabTrack(vocabularyId, prompt, false, timeSpentMs);
+      }
+      
+      // Trigger remediation if callback provided
+      if (vocabularyId && onRemediationNeeded) {
+        onRemediationNeeded(vocabularyId);
       }
       
       // Reset after showing feedback

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Type, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { VocabularyItem } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
+import { WordBankService } from "@/lib/services/word-bank-service"
 
 interface TextSequenceProps {
   finglishText: string // Finglish phrase to display
@@ -14,6 +15,7 @@ interface TextSequenceProps {
   maxWordBankSize?: number // Maximum number of options in word bank
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 export function TextSequence({
@@ -23,7 +25,8 @@ export function TextSequence({
   points = 3,
   maxWordBankSize = 10,
   onContinue,
-  onXpStart
+  onXpStart,
+  onVocabTrack
 }: TextSequenceProps) {
   const [userOrder, setUserOrder] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
@@ -31,85 +34,27 @@ export function TextSequence({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
 
-  // SMART WORD BANK: Generate contextual options with sentence-building distractors
+  // Calculate expected semantic unit count (phrases count as 1, words count as 1)
+  const expectedWordCount = WordBankService.getSemanticUnits({
+    expectedTranslation,
+    vocabularyBank
+  });
+
+  // WORD BANK: Use WordBankService for unified, consistent generation
   const [wordBankOptions] = useState<string[]>(() => {
-    // Split expected translation into individual words
-    const correctWords = expectedTranslation.split(' ').filter(word => word.length > 0)
+    const wordBankResult = WordBankService.generateWordBank({
+      expectedTranslation,
+      vocabularyBank,
+      maxSize: maxWordBankSize,
+      distractorStrategy: 'semantic'
+    })
     
-    // Generate smart distractors that can form coherent sentences
-    const generateSmartDistractors = (targetWords: string[], vocab: VocabularyItem[]): string[] => {
-      const usedWords = new Set(targetWords.map(w => w.toLowerCase()))
-      const distractors: string[] = []
-      
-      // Define thematic word groups for sentence building
-      const wordGroups = {
-        questions: ['Where', 'When', 'Why', 'How', 'Who', 'Which'],
-        family: ['mother', 'brother', 'sister', 'family', 'daughter', 'son'],
-        verbs: ['is', 'are', 'was', 'were', 'do', 'does', 'did', 'have', 'has'],
-        pronouns: ['my', 'his', 'her', 'their', 'our', 'me', 'him', 'them'],
-        articles: ['the', 'a', 'an'],
-        common: ['good', 'nice', 'from', 'with', 'and', 'but', 'or']
-      }
-      
-      // Determine which groups to prioritize based on expected translation
-      const expectedLower = expectedTranslation.toLowerCase()
-      const relevantGroups: string[] = []
-      
-      if (expectedLower.includes('what') || expectedLower.includes('where') || expectedLower.includes('how')) {
-        relevantGroups.push(...wordGroups.questions)
-      }
-      if (expectedLower.includes('father') || expectedLower.includes('mother') || expectedLower.includes('name')) {
-        relevantGroups.push(...wordGroups.family)
-      }
-      if (expectedLower.includes('is') || expectedLower.includes('are')) {
-        relevantGroups.push(...wordGroups.verbs)
-      }
-      if (expectedLower.includes('your') || expectedLower.includes('my')) {
-        relevantGroups.push(...wordGroups.pronouns)
-      }
-      
-      // Add fallback groups if none match
-      if (relevantGroups.length === 0) {
-        relevantGroups.push(...wordGroups.common, ...wordGroups.verbs)
-      }
-      
-      // Select distractors from relevant groups
-      const maxDistractors = Math.min(5, maxWordBankSize - correctWords.length)
-      let addedCount = 0
-      
-      for (const word of relevantGroups) {
-        if (addedCount >= maxDistractors) break
-        if (!usedWords.has(word.toLowerCase()) && !distractors.includes(word)) {
-          distractors.push(word)
-          usedWords.add(word.toLowerCase())
-          addedCount++
-        }
-      }
-      
-      // Fill remaining slots with vocabulary from lesson context
-      if (addedCount < maxDistractors) {
-        const vocabWords = vocab
-          .map(v => v.en.split(' '))
-          .flat()
-          .filter(word => 
-            word.length > 0 && 
-            !usedWords.has(word.toLowerCase()) && 
-            !distractors.includes(word)
-          )
-          .slice(0, maxDistractors - addedCount)
-        
-        distractors.push(...vocabWords)
-      }
-      
-      return distractors
-    }
-    
-    const smartDistractors = generateSmartDistractors(correctWords, vocabularyBank)
-    const allOptions = [...correctWords, ...smartDistractors]
-    
-    // Shuffle the word bank for display
-    return allOptions.sort(() => Math.random() - 0.5)
+    // WordBankService returns normalized, shuffled words ready for display
+    return wordBankResult.allOptions
   })
 
   const handleItemClick = (word: string, wordIndex: number) => {
@@ -125,19 +70,72 @@ export function TextSequence({
   }
 
   const handleSubmit = async () => {
-    const expectedWords = expectedTranslation.split(' ').filter(word => word.length > 0)
-    
-    if (userOrder.length !== expectedWords.length) return
+    // Use semantic units for validation (phrases count as 1, words count as 1)
+    if (userOrder.length !== expectedWordCount) return
 
-    // Extract actual words from wordKeys (remove the index suffix)
-    const userWords = userOrder.map(wordKey => wordKey.split('-').slice(0, -1).join('-'))
-    const userTranslation = userWords.join(' ')
-    const normalizedUser = userTranslation.toLowerCase().trim()
-    const normalizedExpected = expectedTranslation.toLowerCase().trim()
+    // Get correct semantic units from WordBankService
+    const wordBankResult = WordBankService.generateWordBank({
+      expectedTranslation,
+      vocabularyBank
+    });
     
-    const correct = normalizedUser === normalizedExpected
+    // Extract expected semantic units (normalized with contractions and punctuation)
+    const expectedUnits = wordBankResult.wordBankItems
+      .filter(item => item.isCorrect)
+      .flatMap(item => WordBankService.normalizeForValidation(item.wordText));
+    
+    // Extract user's semantic units from wordKeys (normalized)
+    const userUnits = userOrder.flatMap(wordKey => {
+      const wordText = wordKey.split('-').slice(0, -1).join('-');
+      return WordBankService.normalizeForValidation(wordText);
+    });
+    
+    // Compare semantic units (order matters, but allow synonyms and contractions)
+    // Check if each user unit matches expected unit (with synonym support)
+    const correct = expectedUnits.length === userUnits.length &&
+      userUnits.every((userUnit, index) => {
+        const expectedUnit = expectedUnits[index];
+        
+        // Exact match (already normalized)
+        if (userUnit === expectedUnit) return true;
+        
+        // Synonym match (for greetings: hi/hello/salam)
+        const userLower = userUnit.toLowerCase();
+        const expectedLower = expectedUnit.toLowerCase();
+        if ((userLower === 'hi' || userLower === 'hello' || userLower === 'salam') &&
+            (expectedLower === 'hi' || expectedLower === 'hello' || expectedLower === 'salam')) {
+          return true;
+        }
+        
+        return false;
+      });
     setIsCorrect(correct)
     setShowResult(true)
+
+    // Calculate time spent
+    const timeSpentMs = Date.now() - startTime.current
+
+    // Track vocabulary performance PER-WORD (accurate tracking for multi-word games)
+    if (onVocabTrack) {
+      // Convert user's word keys back to actual word text (strip index suffix)
+      const userAnswerWords = userOrder.map(wordKey => 
+        wordKey.split('-').slice(0, -1).join('-')
+      );
+      
+      // Validate each word individually
+      const perWordResults = WordBankService.validateUserAnswer({
+        userAnswer: userAnswerWords,
+        expectedTranslation,
+        vocabularyBank
+      });
+      
+      // Track each word with its individual result
+      perWordResults.forEach(result => {
+        if (result.vocabularyId) {
+          onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
+        }
+      });
+    }
 
     if (correct) {
       playSuccessSound()
@@ -165,8 +163,6 @@ export function TextSequence({
     setIsCorrect(false)
     setShowIncorrect(false)
   }
-
-  const expectedWordCount = expectedTranslation.split(' ').filter(word => word.length > 0).length
 
   return (
     <div className="w-full max-w-2xl mx-auto p-4 relative">

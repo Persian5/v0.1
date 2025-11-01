@@ -15,6 +15,7 @@ export interface InputExerciseProps {
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
   onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
+  onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
 // Enhanced input component for grammar lessons with hyphen support
@@ -301,7 +302,8 @@ export function InputExercise({
   onComplete,
   onXpStart,
   vocabularyId,
-  onRemediationNeeded
+  onRemediationNeeded,
+  onVocabTrack
 }: InputExerciseProps) {
   const [input, setInput] = useState("")
   const [showFeedback, setShowFeedback] = useState(false)
@@ -309,6 +311,14 @@ export function InputExercise({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  
+  // Time tracking for analytics
+  const startTime = useRef(Date.now())
+  
+  // Reset timer when question changes
+  useEffect(() => {
+    startTime.current = Date.now()
+  }, [question, answer])
 
   // Check if this is a grammar lesson (contains hyphen)
   const hasHyphen = answer.includes('-');
@@ -333,17 +343,17 @@ export function InputExercise({
     setIsCorrect(isAnswerCorrect)
     setShowFeedback(true)
 
-    // Track vocabulary performance if vocabularyId is provided
-    if (vocabularyId) {
-      if (isAnswerCorrect) {
-        VocabularyService.recordCorrectAnswer(vocabularyId);
-      } else {
-        VocabularyService.recordIncorrectAnswer(vocabularyId);
-        // Trigger remediation if callback provided
-        if (onRemediationNeeded) {
-          onRemediationNeeded(vocabularyId);
-        }
-      }
+    // Calculate time spent on this input
+    const timeSpentMs = Date.now() - startTime.current
+
+    // Track vocabulary performance to Supabase
+    if (vocabularyId && onVocabTrack) {
+      onVocabTrack(vocabularyId, question, isAnswerCorrect, timeSpentMs);
+    }
+    
+    // Trigger remediation if incorrect
+    if (!isAnswerCorrect && vocabularyId && onRemediationNeeded) {
+      onRemediationNeeded(vocabularyId);
     }
 
     if (isAnswerCorrect) {
