@@ -209,6 +209,17 @@ export function LessonRunner({
 
     // Helper function to check and potentially queue a vocabulary ID
     const maybeQueueForRemediation = (vocabularyId: string) => {
+      // FIX #3: Don't queue duplicate remediation if already pending or in remediation queue
+      if (pendingRemediation.includes(vocabularyId)) {
+        console.log(`⏭️ Skipping duplicate remediation for "${vocabularyId}" (already pending)`);
+        return;
+      }
+      
+      if (remediationQueue.includes(vocabularyId)) {
+        console.log(`⏭️ Skipping duplicate remediation for "${vocabularyId}" (already in queue)`);
+        return;
+      }
+      
       // Increment incorrect attempt counter
       const currentCount = incorrectAttempts[vocabularyId] || 0;
       const newCount = currentCount + 1;
@@ -216,7 +227,7 @@ export function LessonRunner({
       setIncorrectAttempts(prev => ({ ...prev, [vocabularyId]: newCount }));
       
       // Only trigger remediation on 2nd+ incorrect attempt
-      if (newCount >= 2 && !pendingRemediation.includes(vocabularyId)) {
+      if (newCount >= 2) {
         console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
         setPendingRemediation(prev => [...prev, vocabularyId]);
       } else if (newCount === 1) {
@@ -483,6 +494,16 @@ export function LessonRunner({
       }).catch((error) => {
         console.error('Failed to track vocabulary attempt:', error);
       });
+      
+      // FIX #1: Decrement incorrect attempt counter on correct answers
+      // This prevents infinite remediation after user improves
+      if (isCorrect && incorrectAttempts[vocabularyId] > 0) {
+        setIncorrectAttempts(prev => ({
+          ...prev,
+          [vocabularyId]: Math.max(0, (prev[vocabularyId] || 0) - 1)
+        }));
+        console.log(`✅ Correct answer for "${vocabularyId}" - incorrect counter decremented`);
+      }
       
       // Also keep localStorage tracking for backwards compatibility (for now)
       if (isCorrect) {
