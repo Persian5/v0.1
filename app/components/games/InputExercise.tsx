@@ -14,7 +14,6 @@ export interface InputExerciseProps {
   onComplete: (correct: boolean) => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
-  onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
@@ -302,7 +301,6 @@ export function InputExercise({
   onComplete,
   onXpStart,
   vocabularyId,
-  onRemediationNeeded,
   onVocabTrack
 }: InputExerciseProps) {
   const [input, setInput] = useState("")
@@ -344,17 +342,15 @@ export function InputExercise({
     setShowFeedback(true)
 
     // Calculate time spent on this input
-    const timeSpentMs = Date.now() - startTime.current
+    const timeSpentMs = Date.now() - startTime.current;
 
     // Track vocabulary performance to Supabase
     if (vocabularyId && onVocabTrack) {
       onVocabTrack(vocabularyId, question, isAnswerCorrect, timeSpentMs);
     }
     
-    // Trigger remediation if incorrect
-    if (!isAnswerCorrect && vocabularyId && onRemediationNeeded) {
-      onRemediationNeeded(vocabularyId);
-    }
+    // NOTE: Remediation is handled automatically by onVocabTrack
+    // Do NOT call onRemediationNeeded - it causes double counting
 
     if (isAnswerCorrect) {
       // Play success sound for correct answers

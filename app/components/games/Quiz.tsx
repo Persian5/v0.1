@@ -19,7 +19,6 @@ export interface QuizProps {
   onComplete: (correct: boolean) => void;
   onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
-  onRemediationNeeded?: (vocabularyId: string | undefined) => void; // Callback for when remediation is needed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
@@ -31,7 +30,6 @@ export function Quiz({
   onComplete,
   onXpStart,
   vocabularyId,
-  onRemediationNeeded,
   onVocabTrack
 }: QuizProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
@@ -122,10 +120,8 @@ export function Quiz({
         onVocabTrack(vocabularyId, prompt, false, timeSpentMs);
       }
       
-      // Trigger remediation if callback provided
-      if (vocabularyId && onRemediationNeeded) {
-        onRemediationNeeded(vocabularyId);
-      }
+      // NOTE: Remediation is handled automatically by onVocabTrack
+      // Do NOT call onRemediationNeeded - it causes double counting
       
       // Reset after showing feedback
       setTimeout(() => {

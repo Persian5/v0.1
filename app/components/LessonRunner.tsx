@@ -537,18 +537,33 @@ export function LessonRunner({
         // ✅ RULE 1: First response on this step
         if (!isCorrect) {
           // First response was WRONG → increment counter
-          const newCount = (incorrectAttempts[vocabularyId] || 0) + 1;
-          setIncorrectAttempts(prev => ({
-            ...prev,
-            [vocabularyId]: newCount
-          }));
-          console.log(`❌ First wrong for "${vocabularyId}" on step ${idx} - counter: ${newCount}/2`);
-          
-          // Check if we hit remediation threshold (2+)
-          if (newCount >= 2 && !pendingRemediation.includes(vocabularyId) && !remediationQueue.includes(vocabularyId)) {
-            console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
-            setPendingRemediation(prev => [...prev, vocabularyId]);
-          }
+          setIncorrectAttempts(prev => {
+            const currentCount = prev[vocabularyId] || 0;
+            const newCount = currentCount + 1;
+            
+            console.log(`❌ First wrong for "${vocabularyId}" on step ${idx} - counter: ${newCount}/2`);
+            
+            // Check if we hit remediation threshold (2+) using functional state updates
+            if (newCount >= 2) {
+              setPendingRemediation(prevPending => {
+                // Only add if not already pending
+                if (!prevPending.includes(vocabularyId)) {
+                  setRemediationQueue(prevQueue => {
+                    // Only add if not already in queue
+                    if (!prevQueue.includes(vocabularyId)) {
+                      console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
+                      return [...prevPending, vocabularyId];
+                    }
+                    return prevQueue;
+                  });
+                  return [...prevPending, vocabularyId];
+                }
+                return prevPending;
+              });
+            }
+            
+            return { ...prev, [vocabularyId]: newCount };
+          });
         } else {
           console.log(`✅ First correct for "${vocabularyId}" on step ${idx} - no counter change`);
         }
@@ -561,12 +576,15 @@ export function LessonRunner({
       }
       
       // ✅ RULE 3: Success during remediation → reset counter to 0
-      if (isInRemediation && isCorrect && incorrectAttempts[vocabularyId] > 0) {
-        setIncorrectAttempts(prev => ({
-          ...prev,
-          [vocabularyId]: 0
-        }));
-        console.log(`🎉 Remediation success for "${vocabularyId}" - counter reset to 0/2`);
+      // ONLY reset if this is actually a remediation step (vocabularyId matches currentWord in remediation queue)
+      if (isInRemediation && remediationQueue.length > 0 && remediationQueue[0] === vocabularyId && isCorrect) {
+        setIncorrectAttempts(prev => {
+          if (prev[vocabularyId] > 0) {
+            console.log(`🎉 Remediation success for "${vocabularyId}" - counter reset to 0/2`);
+            return { ...prev, [vocabularyId]: 0 };
+          }
+          return prev;
+        });
       }
       
       // ✅ RULE 4: Wrong during remediation → do nothing (already being remediated)
@@ -676,7 +694,6 @@ export function LessonRunner({
             onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
             onXpStart={createStepXpHandler()}
             vocabularyId={currentWord}
-            onRemediationNeeded={handleRemediationNeeded}
             onVocabTrack={createVocabularyTracker()}
           />
         </>
@@ -751,7 +768,6 @@ export function LessonRunner({
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
           vocabularyId={extractVocabularyFromFailedQuiz(step)}
-          onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as QuizStep).data)}
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'reverse-quiz' ? (
@@ -764,7 +780,6 @@ export function LessonRunner({
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
           vocabularyId={extractVocabularyFromFailedQuiz(step)}
-          onRemediationNeeded={(_ignored) => handleRemediationNeeded((step as ReverseQuizStep).data)}
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'input' ? (
@@ -776,7 +791,6 @@ export function LessonRunner({
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
           vocabularyId={getStepVocabularyId(step)}
-          onRemediationNeeded={handleRemediationNeeded}
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'matching' ? (
