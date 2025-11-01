@@ -545,18 +545,25 @@ export function LessonRunner({
             
             // Check if we hit remediation threshold (2+) using functional state updates
             if (newCount >= 2) {
-              // Use functional updates to check both queues atomically
+              // Check both queues atomically using functional updates
               setPendingRemediation(prevPending => {
+                // If already pending, don't add again
+                if (prevPending.includes(vocabularyId)) {
+                  return prevPending;
+                }
+                
+                // Check remediation queue (read-only check)
                 setRemediationQueue(prevQueue => {
-                  // Only add if not already pending or in queue
-                  if (!prevPending.includes(vocabularyId) && !prevQueue.includes(vocabularyId)) {
+                  // If not in queue either, add to pending
+                  if (!prevQueue.includes(vocabularyId)) {
                     console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
-                    // Update pending remediation
-                    setPendingRemediation([...prevPending, vocabularyId]);
+                    return prevQueue; // Return unchanged (we'll update pending)
                   }
                   return prevQueue;
                 });
-                return prevPending;
+                
+                // Add to pending remediation
+                return [...prevPending, vocabularyId];
               });
             }
             
