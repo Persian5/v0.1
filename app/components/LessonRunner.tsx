@@ -58,6 +58,7 @@ export function LessonRunner({
   const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
   const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
   const [incorrectAttempts, setIncorrectAttempts] = useState<Record<string, number>>({}) // Track incorrect attempts per vocabulary ID (NEW: for 2+ trigger)
+  const [stepsCountedForRemediation, setStepsCountedForRemediation] = useState<Set<string>>(new Set()) // Track which steps have been counted (FIX: first response only)
   const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
   const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
   const [isNavigating, setIsNavigating] = useState(false) // Prevent rapid back button clicks
@@ -476,7 +477,7 @@ export function LessonRunner({
       // Derive stable step UID
       const stepUid = deriveStepUid(currentStep, idx);
       
-      // Track in background (don't await to avoid blocking UI)
+      // ALWAYS track to database (every attempt, for analytics)
       VocabularyTrackingService.storeAttempt({
         userId: user.id,
         vocabularyId,
@@ -495,15 +496,47 @@ export function LessonRunner({
         console.error('Failed to track vocabulary attempt:', error);
       });
       
-      // FIX #1: Decrement incorrect attempt counter on correct answers
-      // This prevents infinite remediation after user improves
-      if (isCorrect && incorrectAttempts[vocabularyId] > 0) {
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // REMEDIATION COUNTER LOGIC (Simple Rules)
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      
+      // Create unique key for this step + word combination
+      const stepKey = `${idx}-${vocabularyId}`;
+      
+      // Check if this step has already been counted for remediation
+      const alreadyCounted = stepsCountedForRemediation.has(stepKey);
+      
+      if (!alreadyCounted) {
+        // ✅ RULE 1: First response on this step
+        if (!isCorrect) {
+          // First response was WRONG → increment counter
+          setIncorrectAttempts(prev => ({
+            ...prev,
+            [vocabularyId]: (prev[vocabularyId] || 0) + 1
+          }));
+          console.log(`❌ First wrong for "${vocabularyId}" on step ${idx} - counter: ${(incorrectAttempts[vocabularyId] || 0) + 1}/2`);
+        } else {
+          console.log(`✅ First correct for "${vocabularyId}" on step ${idx} - no counter change`);
+        }
+        
+        // Mark this step as counted (whether right or wrong)
+        setStepsCountedForRemediation(prev => new Set(prev).add(stepKey));
+      } else {
+        // ✅ RULE 2: Retry on same step → do nothing to counter
+        console.log(`🔄 Retry for "${vocabularyId}" on step ${idx} - counter unchanged (${incorrectAttempts[vocabularyId] || 0}/2)`);
+      }
+      
+      // ✅ RULE 3: Success during remediation → reset counter to 0
+      if (isInRemediation && isCorrect && incorrectAttempts[vocabularyId] > 0) {
         setIncorrectAttempts(prev => ({
           ...prev,
-          [vocabularyId]: Math.max(0, (prev[vocabularyId] || 0) - 1)
+          [vocabularyId]: 0
         }));
-        console.log(`✅ Correct answer for "${vocabularyId}" - incorrect counter decremented`);
+        console.log(`🎉 Remediation success for "${vocabularyId}" - counter reset to 0/2`);
       }
+      
+      // ✅ RULE 4: Wrong during remediation → do nothing (already being remediated)
+      // This is automatically handled by the alreadyCounted check above
       
       // Also keep localStorage tracking for backwards compatibility (for now)
       if (isCorrect) {
