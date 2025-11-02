@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ReviewMemoryGame } from "@/app/components/review/ReviewMemoryGame"
 import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 
-export default function MemoryGamePage() {
+function MemoryGameContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [filter, setFilter] = useState<ReviewFilter | null>(null)
@@ -56,6 +56,21 @@ export default function MemoryGamePage() {
     <AuthGuard>
       <ReviewMemoryGame filter={filter} onExit={handleExit} />
     </AuthGuard>
+  )
+}
+
+export default function MemoryGamePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF8F3]">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#10B981] border-t-transparent mx-auto mb-4" />
+          <p className="text-[#1E293B]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <MemoryGameContent />
+    </Suspense>
   )
 }
 
