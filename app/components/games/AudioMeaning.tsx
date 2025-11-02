@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
@@ -6,6 +6,7 @@ import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
+import { WordBankService } from "@/lib/services/word-bank-service"
 
 interface AudioMeaningProps {
   vocabularyId: string
@@ -36,6 +37,10 @@ export function AudioMeaning({
   const [shuffledOptions, setShuffledOptions] = useState<string[]>([])
   const [correctAnswerIndex, setCorrectAnswerIndex] = useState<number>(0)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  const [hasTracked, setHasTracked] = useState(false) // Prevent duplicate tracking
+  
+  // Track if we've already shuffled for this vocabularyId (prevents double shuffle)
+  const lastShuffledVocabId = useRef<string | null>(null)
   
   // Time tracking for analytics
   const startTime = useRef(Date.now())
@@ -43,28 +48,162 @@ export function AudioMeaning({
   // Find the target vocabulary item
   const targetVocabulary = vocabularyBank.find(v => v.id === vocabularyId)
   
-  // Initialize shuffled options only once when component mounts
-  useEffect(() => {
-    const allOptions = [vocabularyId, ...distractors]
-    const shuffled = [...allOptions].sort(() => Math.random() - 0.5)
-    setShuffledOptions(shuffled)
-    setCorrectAnswerIndex(shuffled.indexOf(vocabularyId))
-  }, [vocabularyId, distractors])
+  // Fallback: if not found in bank, try to look it up from VocabularyService
+  const targetVocabularyWithFallback = targetVocabulary || (() => {
+    if (!vocabularyId) return null
+    try {
+      const { VocabularyService } = require('@/lib/services/vocabulary-service')
+      return VocabularyService.findVocabularyById(vocabularyId)
+    } catch {
+      return null
+    }
+  })()
   
-  // Get English meanings for the options
-  const answerOptions = shuffledOptions.map(id => {
-    const vocab = vocabularyBank.find(v => v.id === id)
-    return vocab?.en || id
-  })
-
-  const playTargetAudio = async () => {
-    if (targetVocabulary) {
-      const success = await AudioService.playVocabularyAudio(targetVocabulary.id)
+  // Define playTargetAudio callback before useEffects that use it
+  const playTargetAudio = useCallback(async () => {
+    if (targetVocabularyWithFallback) {
+      const success = await AudioService.playVocabularyAudio(targetVocabularyWithFallback.id)
       if (success) {
         setHasPlayedAudio(true)
       }
     }
-  }
+  }, [targetVocabularyWithFallback])
+  
+  // Initialize shuffled options - ONLY shuffle once per question (when vocabularyId changes)
+  useEffect(() => {
+    // Only shuffle if this is a NEW question (vocabularyId changed)
+    if (vocabularyId === lastShuffledVocabId.current) {
+      return // Already shuffled for this question, don't shuffle again
+    }
+    
+    lastShuffledVocabId.current = vocabularyId
+    
+    // Remove duplicates from distractors first
+    const uniqueDistractors = Array.from(new Set(distractors))
+    const allOptions = [vocabularyId, ...uniqueDistractors]
+    
+    // Use Fisher-Yates shuffle for better randomization
+    const shuffled = [...allOptions]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    
+    setShuffledOptions(shuffled)
+    setCorrectAnswerIndex(shuffled.indexOf(vocabularyId))
+  }, [vocabularyId]) // ONLY depend on vocabularyId - ignore distractors changes
+  
+  // Reset component state when vocabularyId changes (for review mode auto-advance)
+  useEffect(() => {
+    setSelectedAnswer(null)
+    setShowResult(false)
+    setShowXp(false)
+    setIsCorrect(false)
+    setHasPlayedAudio(false)
+    setIsAlreadyCompleted(false)
+    setHasTracked(false) // Reset tracking flag when vocabulary changes
+    startTime.current = Date.now()
+  }, [vocabularyId])
+  
+  // Auto-play audio when vocabularyId changes (for review mode)
+  useEffect(() => {
+    if (autoPlay && targetVocabularyWithFallback && !hasPlayedAudio) {
+      // Small delay to ensure audio service is ready
+      const timer = setTimeout(() => {
+        playTargetAudio()
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [vocabularyId, autoPlay, targetVocabularyWithFallback, hasPlayedAudio, playTargetAudio])
+  
+  // Get English meanings for the options - deduplicated and memoized
+  // CRITICAL: Always ensure 4 options (1 correct + 3 distractors), replace duplicates
+  const answerOptionsWithIndices = useMemo(() => {
+    const optionsMap = new Map<string, { text: string; originalIndex: number; vocabId: string }>()
+    const usedIndices = new Set<number>()
+    const duplicatesToReplace: Array<{ originalIndex: number; vocabId: string }> = []
+    
+    // First pass: collect unique options and identify duplicates
+    shuffledOptions.forEach((id, originalIndex) => {
+      let vocab = vocabularyBank.find(v => v.id === id)
+      
+      // If not found in bank, try looking it up from full curriculum (defensive fallback)
+      if (!vocab) {
+        try {
+          const { VocabularyService } = require('@/lib/services/vocabulary-service')
+          vocab = VocabularyService.findVocabularyById(id)
+        } catch {
+          // Fallback failed, skip this option
+        }
+      }
+      
+      if (!vocab) {
+        console.warn(`Vocabulary not found for ID: ${id}`)
+        return // Skip this option
+      }
+      
+      // Normalize English text
+      const normalizedText = WordBankService.normalizeVocabEnglish(vocab.en)
+      
+      // Only add if we haven't seen this normalized text before
+      if (!optionsMap.has(normalizedText)) {
+        optionsMap.set(normalizedText, { text: normalizedText, originalIndex, vocabId: id })
+        usedIndices.add(originalIndex)
+      } else {
+        // Duplicate detected - mark for replacement
+        duplicatesToReplace.push({ originalIndex, vocabId: id })
+      }
+    })
+    
+    // Replace duplicates with new distractors from vocabularyBank
+    // We need exactly 4 options total (1 correct + 3 distractors)
+    const targetCount = 4
+    const currentCount = optionsMap.size
+    
+    if (currentCount < targetCount && vocabularyBank.length > currentCount) {
+      // Find replacement distractors (exclude current options and correct answer)
+      const usedVocabIds = new Set(Array.from(optionsMap.values()).map(opt => opt.vocabId))
+      usedVocabIds.add(vocabularyId) // Also exclude correct answer
+      
+      const availableVocab = vocabularyBank.filter(v => 
+        !usedVocabIds.has(v.id) && v.id !== vocabularyId
+      )
+      
+      // Replace duplicates or add missing distractors
+      let replacementsNeeded = targetCount - currentCount
+      const shuffledAvailable = [...availableVocab].sort(() => Math.random() - 0.5)
+      
+      for (const replacement of shuffledAvailable) {
+        if (replacementsNeeded <= 0) break
+        
+        const normalizedText = WordBankService.normalizeVocabEnglish(replacement.en)
+        
+        // Only add if it's still unique
+        if (!optionsMap.has(normalizedText)) {
+          // Use the original index from first duplicate, or create new index
+          const replaceIndex = duplicatesToReplace.length > 0 
+            ? duplicatesToReplace.shift()!.originalIndex 
+            : shuffledOptions.length + optionsMap.size
+            
+          optionsMap.set(normalizedText, { 
+            text: normalizedText, 
+            originalIndex: replaceIndex, 
+            vocabId: replacement.id 
+          })
+          usedIndices.add(replaceIndex)
+          replacementsNeeded--
+        }
+      }
+    }
+    
+    // Update correctAnswerIndex based on deduplicated options
+    const correctOption = Array.from(optionsMap.values()).find(opt => opt.vocabId === vocabularyId)
+    if (correctOption) {
+      setCorrectAnswerIndex(correctOption.originalIndex)
+    }
+    
+    return Array.from(optionsMap.values())
+  }, [shuffledOptions, vocabularyBank, vocabularyId])
 
   const handleAnswerSelect = async (answerIndex: number) => {
     // Block re-clicks while feedback animates
@@ -80,12 +219,15 @@ export function AudioMeaning({
     const timeSpentMs = Date.now() - startTime.current
 
     // Track vocabulary performance to Supabase
-    if (onVocabTrack && targetVocabulary) {
-      onVocabTrack(vocabularyId, targetVocabulary.en, correct, timeSpentMs);
+    // In review mode: track every attempt (wrong or correct)
+    // hasTracked prevents duplicate tracking within same answer selection
+    if (onVocabTrack && targetVocabularyWithFallback && !hasTracked) {
+      setHasTracked(true) // Mark as tracked for this attempt
+      onVocabTrack(vocabularyId, targetVocabularyWithFallback.en, correct, timeSpentMs);
     }
 
     if (correct) {
-      // ✅ Correct flow – behave like Quick Quiz (green border, brief pause, XP, then auto-continue)
+      // ✅ Correct flow – green border, play sound, XP animation, then IMMEDIATELY auto-continue
       playSuccessSound();
       
       // Award XP and check if step was already completed
@@ -94,25 +236,32 @@ export function AudioMeaning({
         setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
       }
 
+      // Show XP animation briefly, then auto-continue immediately
       setTimeout(() => setShowXp(true), 100); // let border show
+      // XP animation will call onComplete which calls onContinue
     } else {
-      // ❌ Incorrect flow – flash red, then reset automatically (no Try Again button)
+      // ❌ Incorrect flow – flash red, reset state to allow retry (don't advance)
       setTimeout(() => {
         setShowResult(false);
         setSelectedAnswer(null);
         setIsCorrect(false);
-      }, 600); // 0.6 s red feedback before reset
+        // Reset hasTracked so user can retry and track again
+        setHasTracked(false);
+        // Reset start time for accurate retry timing
+        startTime.current = Date.now();
+      }, 600); // 0.6s red feedback before reset
     }
   }
 
   const handleXpComplete = () => {
+    // Immediately advance to next question (no delay)
     onContinue()
   }
 
-  if (!targetVocabulary) {
+  if (!targetVocabularyWithFallback) {
     return (
       <div className="text-center p-6">
-        <p className="text-red-500">Error: Vocabulary item not found</p>
+        <p className="text-red-500">Loading vocabulary...</p>
       </div>
     )
   }
@@ -123,7 +272,7 @@ export function AudioMeaning({
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4 relative">
+    <div className="w-full mx-auto p-2 sm:p-4 relative">
       {/* XP Animation - positioned like other games */}
       {showResult && isCorrect && (
         <XpAnimation
@@ -135,21 +284,21 @@ export function AudioMeaning({
         />
       )}
 
-      {/* Header */}
-      <div className="text-center mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-primary">
+      {/* Header - Compact on mobile */}
+      <div className="text-center mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 text-[#1E293B]">
           LISTENING CHALLENGE
         </h2>
-        <p className="text-sm sm:text-base text-muted-foreground">
+        <p className="text-xs sm:text-sm md:text-base text-gray-600">
           Listen to the Persian word and select its English meaning
         </p>
       </div>
 
-      {/* Audio Player Section */}
-      <div className="bg-primary/5 rounded-xl p-6 mb-6 text-center">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <Volume2 className="h-8 w-8 text-primary" />
-          <p className="text-lg font-medium text-primary">
+      {/* Audio Player Section - Compact on mobile */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-center border-2 border-[#10B981]/20 shadow-sm">
+        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+          <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-[#10B981]" />
+          <p className="text-base sm:text-lg font-medium text-[#1E293B]">
             {hasPlayedAudio ? "Ready to answer?" : "Click to hear the word..."}
           </p>
         </div>
@@ -158,63 +307,61 @@ export function AudioMeaning({
           onClick={playTargetAudio}
           variant="outline"
           size="lg"
-          className="gap-2"
+          className="gap-2 border-2 border-[#10B981] text-[#10B981] hover:bg-[#10B981] hover:text-white"
         >
           <Volume2 className="h-5 w-5" />
           {hasPlayedAudio ? 'Play Again' : 'Play Audio'}
         </Button>
       </div>
 
-      {/* Answer Options */}
-      <div className="space-y-3 mb-6">
-        {answerOptions.map((option, index) => {
-          // Reduce padding (height) by ~40% for more compact answer boxes. Remove transition-all to avoid conflict with framer-motion.
-          let buttonStyle = "w-full px-3 py-2.5 border-2 rounded-lg flex items-center justify-center text-center transition-colors duration-200 ";
+      {/* Answer Options - Card Grid (2x2) */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+        {answerOptionsWithIndices.map((optionData, displayIndex) => {
+          const actualIndex = optionData.originalIndex
+          
+          // Card styling with Iran flag colors
+          let cardStyle = "bg-white rounded-lg p-4 sm:p-5 border-2 transition-colors duration-200 cursor-pointer shadow-sm ";
 
           if (showResult) {
-            if (isCorrect && index === selectedAnswer) {
-              // Correct selection turns green
-              buttonStyle += "border-green-500 bg-green-50 text-green-700 ";
-            } else if (!isCorrect && index === selectedAnswer) {
-              // Incorrect selection turns light red (same as Quick Quiz)
-              buttonStyle += "border-red-300 bg-red-100 text-red-700 ";
+            if (isCorrect && actualIndex === selectedAnswer) {
+              // Correct selection - green border
+              cardStyle += "border-[#10B981] bg-[#10B981]/5 "
+            } else if (!isCorrect && actualIndex === selectedAnswer) {
+              // Incorrect selection - red border
+              cardStyle += "border-[#E63946] bg-[#E63946]/5 "
             } else {
               // Other options stay neutral
-              buttonStyle += "border-gray-200 bg-gray-50 text-gray-500 ";
+              cardStyle += "border-gray-200 bg-gray-50/50 "
             }
           } else {
-            if (selectedAnswer === index) {
-              buttonStyle += "border-primary bg-primary/10 text-primary ";
+            if (selectedAnswer === actualIndex) {
+              cardStyle += "border-[#10B981] bg-[#10B981]/5 "
             } else {
-              buttonStyle += "border-gray-200 sm:hover:border-primary/50 sm:hover:bg-primary/5 ";
+              cardStyle += "border-gray-200 hover:border-[#10B981]/50 hover:bg-[#10B981]/5 "
             }
           }
 
           const shakeKeyframes = { x: [0, -10, 10, -10, 10, 0] };
-          const isShaking = showResult && !isCorrect && index === selectedAnswer;
+          const isShaking = showResult && !isCorrect && actualIndex === selectedAnswer;
 
           return (
-            <motion.div
-              key={index}
+            <motion.button
+              key={`${optionData.text}-${optionData.originalIndex}`}
+              type="button"
+              onClick={() => handleAnswerSelect(actualIndex)}
+              disabled={showResult}
               initial={false}
               animate={isShaking ? shakeKeyframes : {}}
               transition={isShaking ? { duration: 0.6, ease: "easeInOut" } : {}}
-              className="w-full"
+              className={cardStyle}
             >
-              <button
-                type="button"
-                onClick={() => handleAnswerSelect(index)}
-                className={buttonStyle}
-                disabled={showResult}
-              >
-                <span className="text-base sm:text-lg font-medium">{option}</span>
-              </button>
-            </motion.div>
+              <span className="text-sm sm:text-base md:text-lg font-medium text-[#1E293B] block text-center">
+                {optionData.text}
+              </span>
+            </motion.button>
           );
         })}
       </div>
-
-      {/* (Popup feedback & retry button removed – buttons themselves convey feedback) */}
     </div>
   )
 } 
