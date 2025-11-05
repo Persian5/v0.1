@@ -23,6 +23,7 @@ import { useAuth } from "@/components/auth/AuthProvider"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { AuthModal } from "@/components/auth/AuthModal"
+import { PremiumLockModal } from "@/components/PremiumLockModal"
 
 function LessonPageContent() {
   const params = useParams()
@@ -40,18 +41,20 @@ function LessonPageContent() {
   const [currentView, setCurrentView] = useState(initialViewParam === 'module-completion' ? 'module-completion' : 'welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
   
-  // Unified state for auth + accessibility
+  // Unified state for auth + accessibility + premium
   const [appState, setAppState] = useState<{
     isLoading: boolean
     isAuthenticated: boolean
     isAccessible: boolean | null
     showAuthModal: boolean
+    showPremiumModal: boolean
     error: string | null
   }>({
     isLoading: true,
     isAuthenticated: false, 
     isAccessible: null,
     showAuthModal: false,
+    showPremiumModal: false,
     error: null
   })
   
@@ -83,9 +86,35 @@ function LessonPageContent() {
             isAuthenticated: false,
             isAccessible: moduleId === 'module1' && lessonId === 'lesson1',
             showAuthModal: shouldShowModal,
+            showPremiumModal: false,
             error: null
           })
           return
+        }
+        
+        // STEP: Check premium access FIRST (CRITICAL - prevents free users accessing premium lessons)
+        if (module?.requiresPremium) {
+          try {
+            const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+            if (accessResponse.ok) {
+              const accessData = await accessResponse.json()
+              if (!accessData.canAccess && accessData.reason === 'no_premium') {
+                // User doesn't have premium → show premium modal
+                setAppState({
+                  isLoading: false,
+                  isAuthenticated: true,
+                  isAccessible: false,
+                  showAuthModal: false,
+                  showPremiumModal: true,
+                  error: null
+                })
+                return
+              }
+            }
+          } catch (error) {
+            console.error('Failed to check premium access:', error)
+            // On error, continue to sequential check (fail open for now)
+          }
         }
         
         // For authenticated users, check accessibility using cached progress data
@@ -104,6 +133,7 @@ function LessonPageContent() {
             isAuthenticated: true,
             isAccessible,
             showAuthModal: false,
+            showPremiumModal: false,
             error: null
           })
         } else {
@@ -114,38 +144,64 @@ function LessonPageContent() {
             isAuthenticated: true,
             isAccessible,
             showAuthModal: false,
+            showPremiumModal: false,
             error: null
           })
         }
         
       } catch (error) {
         console.error('Failed to check auth and accessibility:', error)
-        setAppState({
-          isLoading: false,
-          isAuthenticated: false,
-          isAccessible: false,
-          showAuthModal: false,
-          error: 'Failed to load lesson. Please try again.'
-        })
+          setAppState({
+            isLoading: false,
+            isAuthenticated: false,
+            isAccessible: false,
+            showAuthModal: false,
+            showPremiumModal: false,
+            error: 'Failed to load lesson. Please try again.'
+          })
       }
     }
 
     if (moduleId && lessonId) {
       checkAuthAndAccessibility()
     } else {
-      setAppState({
-        isLoading: false,
-        isAuthenticated: false,
-        isAccessible: false,
-        showAuthModal: false,
-        error: 'Invalid lesson URL'
-      })
+        setAppState({
+          isLoading: false,
+          isAuthenticated: false,
+          isAccessible: false,
+          showAuthModal: false,
+          showPremiumModal: false,
+          error: 'Invalid lesson URL'
+        })
     }
   }, [moduleId, lessonId])
   
   // Handle auth success
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = async () => {
     setAppState(prev => ({ ...prev, showAuthModal: false }))
+    
+    // After auth success, check premium access FIRST
+    if (module?.requiresPremium) {
+      try {
+        const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+        if (accessResponse.ok) {
+          const accessData = await accessResponse.json()
+          if (!accessData.canAccess && accessData.reason === 'no_premium') {
+            // User signed in but doesn't have premium → show premium modal
+            setAppState(prev => ({
+              ...prev,
+              showAuthModal: false,
+              showPremiumModal: true,
+              isLoading: false
+            }))
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check premium after auth:', error)
+      }
+    }
+    
     // Re-run auth check
     const checkAuthAndAccessibility = async () => {
       const { user, isEmailVerified } = SmartAuthService.getSessionState()
@@ -164,7 +220,8 @@ function LessonPageContent() {
           ...prev,
           isAuthenticated: true,
           isAccessible,
-          showAuthModal: false
+          showAuthModal: false,
+          showPremiumModal: false
         }))
       }
     }
@@ -210,6 +267,22 @@ function LessonPageContent() {
           </Button>
         </div>
       </div>
+    )
+  }
+  
+  // Show premium modal if needed
+  if (appState.showPremiumModal) {
+    return (
+      <>
+        <PremiumLockModal
+          isOpen={true}
+          onClose={() => {
+            setAppState(prev => ({ ...prev, showPremiumModal: false }))
+            router.push('/modules')
+          }}
+          moduleTitle={module?.title}
+        />
+      </>
     )
   }
   

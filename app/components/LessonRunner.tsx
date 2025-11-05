@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useTransition, useMemo } from 'react'
+import { useState, useEffect, useRef, useTransition, useMemo, useCallback } from 'react'
 import { Flashcard } from '@/app/components/games/Flashcard'
 import { Quiz } from '@/app/components/games/Quiz'
 import { InputExercise } from '@/app/components/games/InputExercise'
@@ -59,8 +59,7 @@ export function LessonRunner({
   const [isInRemediation, setIsInRemediation] = useState(false) // Are we in remediation mode?
   const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
   const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
-  const [incorrectAttempts, setIncorrectAttempts] = useState<Record<string, number>>({}) // Track incorrect attempts per vocabulary ID (NEW: for 2+ trigger)
-  const [stepsCountedForRemediation, setStepsCountedForRemediation] = useState<Set<string>>(new Set()) // Track which steps have been counted (FIX: first response only)
+  const [incorrectAttempts, setIncorrectAttempts] = useState<Record<string, number>>({}) // Track incorrect attempts per vocabulary ID (2+ trigger threshold)
   const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
   const [storyCompleted, setStoryCompleted] = useState(false) // Track if story has completed to prevent lesson completion logic
   const [isNavigating, setIsNavigating] = useState(false) // Prevent rapid back button clicks
@@ -70,11 +69,15 @@ export function LessonRunner({
   const [isPending, startTransition] = useTransition();
   const { user } = useAuth(); // Get user for idempotent XP
   
-  // Use refs to track queues for synchronous checks (prevents stale closure)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SIMPLIFIED REMEDIATION SYSTEM (Launch Week Fix)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const remediationQueueRef = useRef<string[]>([]);
   const pendingRemediationRef = useRef<string[]>([]);
+  const remediationTriggeredRef = useRef<Set<string>>(new Set()); // Prevent duplicate remediation triggers
+  const currentStepTrackedRef = useRef<Set<string>>(new Set()); // Prevent retry counting on same step
   
-  // Sync refs with state
+  // Sync refs with state for re-render consistency
   useEffect(() => {
     remediationQueueRef.current = remediationQueue;
   }, [remediationQueue]);
@@ -93,6 +96,35 @@ export function LessonRunner({
   const allCurriculumVocab = VocabularyService.getAllCurriculumVocabulary();
   const allVocab = [...currentLessonVocab, ...reviewVocab]; // For lesson content
   const allVocabForExtraction = allCurriculumVocab; // For vocabulary extraction
+
+  // CRITICAL: Generate remediation quiz with MEMOIZED options (stable order per vocabulary ID)
+  // MUST be before any early returns to maintain consistent hook count
+  // Each word always gets the same 4 distractors (deterministic shuffle)
+  // Cache is cleared when vocabulary changes (new words introduced)
+  const generateRemediationQuiz = useMemo(() => {
+    // Create a cache to store quiz data per vocabulary ID
+    const quizCache = new Map<string, { prompt: string, options: { text: string, correct: boolean }[] }>();
+    
+    return (vocabularyId: string): { prompt: string, options: { text: string, correct: boolean }[] } | null => {
+      // Check cache first
+      if (quizCache.has(vocabularyId)) {
+        return quizCache.get(vocabularyId)!;
+      }
+      
+      // Use VocabularyService directly since findVocabularyById is defined later
+      const targetVocab = VocabularyService.findVocabularyById(vocabularyId);
+      if (!targetVocab) return null;
+
+      const prompt = VocabularyService.generateQuizPrompt(targetVocab);
+      // Use deterministic=true for stable order (same 4 distractors per word)
+      // Each vocabulary ID always gets the same distractors (e.g., "salam" always gets same 4)
+      const options = VocabularyService.generateQuizOptions(targetVocab, allVocabForExtraction, true);
+
+      const quizData = { prompt, options };
+      quizCache.set(vocabularyId, quizData);
+      return quizData;
+    };
+  }, [allVocabForExtraction]); // Only recreate cache when vocabulary changes (new words introduced)
 
   // Setup event listener for going back
   useEffect(() => {
@@ -128,6 +160,9 @@ export function LessonRunner({
     if (onViewChange && idx < steps.length && !isInRemediation) {
       onViewChange(steps[idx].type);
     }
+    
+    // SIMPLIFIED: Clear currentStepTrackedRef when step changes (allows new tracking on new step)
+    currentStepTrackedRef.current.clear();
   }, [idx, steps.length, onProgressChange, onViewChange, steps, isInRemediation]);
 
   // Handle lesson completion when reaching end of steps
@@ -147,11 +182,9 @@ export function LessonRunner({
         } catch (error) {
           console.error('Failed to mark lesson as completed:', error);
         } finally {
-          // Update progress
-          if (onProgressChange) {
-            onProgressChange(100);
-          }
-
+          // DON'T call onProgressChange here - it triggers parent re-render during render phase
+          // Progress is already at 100% from the previous useEffect (line 120-131)
+          
           // Flush XP; failure here should not block navigation
           try {
             await SyncService.forceSyncNow();
@@ -165,7 +198,7 @@ export function LessonRunner({
         }
       })();
     }
-  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, onProgressChange, router, xp]);
+  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, router, xp]);
 
   // Prefetch completion route when 80% done to avoid blank screen while chunk loads
   useEffect(() => {
@@ -189,12 +222,233 @@ export function LessonRunner({
     }
   }, [idx, isInRemediation, remediationStep]);
 
+  // SAFE CLEANUP: Skip remediation if vocabulary not found (via useEffect)
+  // CRITICAL: This MUST be before any early returns to avoid hook count mismatch
+  useEffect(() => {
+    if (isInRemediation && remediationQueue.length > 0) {
+      const currentWord = remediationQueue[0];
+      const vocabItem = findVocabularyById(currentWord);
+      
+      if (!vocabItem) {
+        console.warn(`Remediation vocabulary not found: ${currentWord}`);
+        setIsInRemediation(false);
+        setRemediationQueue([]);
+      }
+    }
+  }, [isInRemediation, remediationQueue]);
+  
+  // SAFE CLEANUP: Skip quiz if generation fails (via useEffect)
+  // CRITICAL: This MUST be before any early returns to avoid hook count mismatch
+  useEffect(() => {
+    if (isInRemediation && remediationQueue.length > 0 && remediationStep === 'quiz') {
+      const currentWord = remediationQueue[0];
+      const remediationQuizData = generateRemediationQuiz(currentWord);
+      
+      if (!remediationQuizData) {
+        console.warn(`Failed to generate remediation quiz for: ${currentWord}`);
+        completeRemediation();
+      }
+    }
+  }, [isInRemediation, remediationQueue, remediationStep]);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CRITICAL: All hooks MUST be before early returns
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  // IDEMPOTENT XP HANDLER: Award XP once per step (back button safe)
+  // Returns Promise<boolean>: true if XP was granted, false if already completed
+  const createStepXpHandler = () => {
+    return async (): Promise<boolean> => {
+      const currentStep = steps[idx];
+      if (!currentStep || !user?.id) {
+        console.warn('No current step or user available for XP', { idx, userId: user?.id });
+        return false; // No XP granted
+      }
+
+      // Derive stable step UID
+      const stepUid = deriveStepUid(currentStep, idx);
+      
+      // Get XP amount from curriculum
+      const xpReward = XpService.getStepXp(currentStep);
+      
+      // Award XP idempotently (database enforces once-per-step)
+      const result = await XpService.awardXpOnce({
+        userId: user.id,
+        moduleId,
+        lessonId,
+        stepUid,
+        amount: xpReward.amount,
+        source: xpReward.source,
+        metadata: {
+          activityType: currentStep.type,
+          stepIndex: idx,
+          isRemediation: isInRemediation
+        }
+      });
+      
+      // XP is already handled by awardXpOnce (optimistic update + RPC)
+      // No need to call addXp here - would be a duplicate
+      
+      // Log if step was already completed
+      if (!result.granted) {
+        console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
+      }
+      
+      // Return whether XP was granted (true = new XP, false = already done)
+      return result.granted;
+    };
+  };
+  
+  // VOCABULARY TRACKING HANDLER: Track word performance for review mode
+  // Returns void (fire-and-forget for now, don't block UI)
+  const createVocabularyTracker = useCallback(() => {
+    return async (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => {
+      const currentStep = steps[idx];
+      if (!currentStep || !user?.id) {
+        console.warn('No current step or user available for vocabulary tracking');
+        return;
+      }
+
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // SIMPLIFIED: Prevent retry counting on same step
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const stepKey = `${vocabularyId}-${idx}`;
+      
+      if (currentStepTrackedRef.current.has(stepKey)) {
+        console.log(`🔄 [RETRY BLOCKED] "${vocabularyId}" on step ${idx} - retry doesn't count`);
+        
+        // Still track to database for analytics (every attempt matters)
+        const vocabItem = safeFindVocabularyById(vocabularyId);
+        const actualWordText = vocabItem?.en 
+          ? WordBankService.normalizeVocabEnglish(vocabItem.en)
+          : wordText;
+        const stepUid = deriveStepUid(currentStep, idx);
+        
+        VocabularyTrackingService.storeAttempt({
+          userId: user.id,
+          vocabularyId,
+          wordText: actualWordText,
+          gameType: currentStep.type,
+          isCorrect,
+          timeSpentMs,
+          moduleId,
+          lessonId,
+          stepUid,
+          contextData: {
+            stepIndex: idx,
+            isRemediation: isInRemediation
+          }
+        }).catch((error) => {
+          console.error('Failed to track vocabulary attempt:', error);
+        });
+        
+        return; // Skip remediation logic for retries
+      }
+
+      // Mark step as tracked (prevents retry counting)
+      currentStepTrackedRef.current.add(stepKey);
+
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // Look up vocabulary item to get correct word text
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const vocabItem = safeFindVocabularyById(vocabularyId);
+      const actualWordText = vocabItem?.en 
+        ? WordBankService.normalizeVocabEnglish(vocabItem.en)
+        : wordText;
+
+      // Derive stable step UID
+      const stepUid = deriveStepUid(currentStep, idx);
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // ALWAYS track to database (for analytics/review mode)
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      VocabularyTrackingService.storeAttempt({
+        userId: user.id,
+        vocabularyId,
+        wordText: actualWordText,
+        gameType: currentStep.type,
+        isCorrect,
+        timeSpentMs,
+        moduleId,
+        lessonId,
+        stepUid,
+        contextData: {
+          stepIndex: idx,
+          isRemediation: isInRemediation
+        }
+      }).catch((error) => {
+        console.error('Failed to track vocabulary attempt:', error);
+      });
+      
+      // Invalidate dashboard cache so stats update in real-time
+      SmartAuthService.invalidateDashboardStats();
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // SIMPLIFIED REMEDIATION COUNTER LOGIC
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      
+      // Skip remediation during remediation mode
+      if (isInRemediation) {
+        console.log(`🎓 [IN REMEDIATION] "${vocabularyId}" - resetting counter to 0`);
+        // Reset counter after remediation (doesn't matter if correct or wrong)
+        setIncorrectAttempts(prev => ({ ...prev, [vocabularyId]: 0 }));
+        return;
+      }
+      
+      // Handle incorrect answer
+      if (!isCorrect) {
+        const currentCount = incorrectAttempts[vocabularyId] || 0;
+        const newCount = currentCount + 1;
+        
+        console.log(`❌ Wrong answer for "${vocabularyId}" - counter: ${newCount}/2`);
+        
+        // Update counter
+        setIncorrectAttempts(prev => ({ ...prev, [vocabularyId]: newCount }));
+        
+        // Trigger remediation at 2+ (but only once per word)
+        if (newCount >= 2 && !remediationTriggeredRef.current.has(vocabularyId)) {
+          console.log(`🎯 Remediation triggered for "${vocabularyId}"`);
+          
+          // Mark as triggered (prevents duplicate remediation)
+          remediationTriggeredRef.current.add(vocabularyId);
+          
+          // Add to pending queue (will be processed after current step)
+          setPendingRemediation(prev => {
+            if (prev.includes(vocabularyId)) {
+              return prev; // Already in queue
+            }
+            return [...prev, vocabularyId];
+          });
+        }
+      } else {
+        console.log(`✅ Correct answer for "${vocabularyId}" - counter unchanged`);
+      }
+      
+      // Keep localStorage tracking for backwards compatibility
+      if (isCorrect) {
+        VocabularyService.recordCorrectAnswer(vocabularyId);
+      } else {
+        VocabularyService.recordIncorrectAnswer(vocabularyId);
+      }
+    };
+  }, [idx, steps, user?.id, moduleId, lessonId, isInRemediation, incorrectAttempts]);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Early returns (after all hooks)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   // Inline completion UI is no longer used — dedicated routed pages handle completion.
   if (idx >= steps.length && !isInRemediation && !storyCompleted) {
     return null;
   }
 
   const step = steps[idx]
+  
+  // Guard: if step is undefined (edge case during navigation), return null
+  if (!step) {
+    console.warn('LessonRunner: step is undefined', { idx, stepsLength: steps.length });
+    return null;
+  }
 
   const next = () => {
     // Save current state before moving to next step
@@ -220,75 +474,13 @@ export function LessonRunner({
 
   // Handle remediation when a word is answered incorrectly - HYBRID phrase + vocabulary approach
   // NEW: Only trigger remediation after 2+ incorrect attempts (soft threshold)
+  // DEPRECATED: This function is NO LONGER USED - remediation is handled by createVocabularyTracker
+  // Keeping for backwards compatibility but it does nothing
   const handleRemediationNeeded = (dataOrId?: any) => {
-    if (!dataOrId) return; // Nothing provided
-
-    // Helper function to check and potentially queue a vocabulary ID
-    const maybeQueueForRemediation = (vocabularyId: string) => {
-      // FIX #3: Don't queue duplicate remediation if already pending or in remediation queue
-      if (pendingRemediation.includes(vocabularyId)) {
-        console.log(`⏭️ Skipping duplicate remediation for "${vocabularyId}" (already pending)`);
-        return;
-      }
-      
-      if (remediationQueue.includes(vocabularyId)) {
-        console.log(`⏭️ Skipping duplicate remediation for "${vocabularyId}" (already in queue)`);
-        return;
-      }
-      
-      // Increment incorrect attempt counter
-      const currentCount = incorrectAttempts[vocabularyId] || 0;
-      const newCount = currentCount + 1;
-      
-      setIncorrectAttempts(prev => ({ ...prev, [vocabularyId]: newCount }));
-      
-      // Only trigger remediation on 2nd+ incorrect attempt
-      if (newCount >= 2) {
-        console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
-        setPendingRemediation(prev => [...prev, vocabularyId]);
-      } else if (newCount === 1) {
-        console.log(`⚠️ First incorrect attempt for "${vocabularyId}" (${newCount}/2 - no remediation yet)`);
-      }
-    };
-
-    // Determine if we received a direct vocabulary ID (string) or full quiz step data (object)
-    if (typeof dataOrId === 'string') {
-      // Direct vocabulary ID provided (e.g., from InputExercise)
-      maybeQueueForRemediation(dataOrId);
-    } else {
-      // Quiz step data - implement hybrid phrase + vocabulary logic
-      const quizData = dataOrId;
-      
-      // STEP 1: Check if this is a phrase-based question
-      const phraseId = VocabularyService.extractPhraseFromQuiz(quizData);
-      
-      if (phraseId) {
-        // This is a phrase-based question - track phrase failure
-        PhraseTrackingService.recordPhraseIncorrect(phraseId);
-        
-        // Get critical vocabulary for this phrase
-        const criticalVocab = VocabularyService.getCriticalVocabularyForPhrase(phraseId);
-        
-        // Determine which critical vocabulary actually needs remediation
-        const vocabForRemediation = VocabularyService.getVocabularyForRemediation(criticalVocab);
-        
-        // Add critical vocabulary that needs help to remediation queue (using 2+ threshold)
-        for (const vocabId of vocabForRemediation) {
-          maybeQueueForRemediation(vocabId);
-        }
-        
-        console.log(`Phrase "${phraseId}" failed. Critical vocab being tracked:`, vocabForRemediation);
-      } else {
-        // Fallback to individual vocabulary word logic
-        const vocabularyId = VocabularyService.extractVocabularyFromQuiz(quizData, allVocabForExtraction);
-        
-        if (vocabularyId) {
-          maybeQueueForRemediation(vocabularyId);
-        }
-      }
-    }
-    
-    // Don't start remediation now - wait until user gets current question correct
+    // DEPRECATED: Do nothing - remediation is now handled by createVocabularyTracker
+    // This prevents any double-tracking if this function is accidentally called
+    console.warn('handleRemediationNeeded is deprecated - remediation is handled by createVocabularyTracker');
+    return;
   };
 
   // Complete current remediation and continue to next lesson step
@@ -368,34 +560,6 @@ export function LessonRunner({
     return getStepVocabularyId(step);
   };
 
-  // DYNAMIC: Generate remediation quiz using VocabularyService
-  // Generate remediation quiz with MEMOIZED options (stable order per vocabulary ID)
-  // Each word always gets the same 4 distractors (deterministic shuffle)
-  // Cache is cleared when vocabulary changes (new words introduced)
-  const generateRemediationQuiz = useMemo(() => {
-    // Create a cache to store quiz data per vocabulary ID
-    const quizCache = new Map<string, { prompt: string, options: { text: string, correct: boolean }[] }>();
-    
-    return (vocabularyId: string): { prompt: string, options: { text: string, correct: boolean }[] } | null => {
-      // Check cache first
-      if (quizCache.has(vocabularyId)) {
-        return quizCache.get(vocabularyId)!;
-      }
-      
-      const targetVocab = findVocabularyById(vocabularyId);
-      if (!targetVocab) return null;
-
-      const prompt = VocabularyService.generateQuizPrompt(targetVocab);
-      // Use deterministic=true for stable order (same 4 distractors per word)
-      // Each vocabulary ID always gets the same distractors (e.g., "salam" always gets same 4)
-      const options = VocabularyService.generateQuizOptions(targetVocab, allVocabForExtraction, true);
-
-      const quizData = { prompt, options };
-      quizCache.set(vocabularyId, quizData);
-      return quizData;
-    };
-  }, [allVocabForExtraction]); // Only recreate cache when vocabulary changes (new words introduced)
-
   // Get vocabularyId for current step if applicable
   const getStepVocabularyId = (step: LessonStep): string | undefined => {
     if (step.type === 'flashcard') {
@@ -461,170 +625,6 @@ export function LessonRunner({
       });
     };
   };
-
-  // IDEMPOTENT XP HANDLER: Award XP once per step (back button safe)
-  // Returns Promise<boolean>: true if XP was granted, false if already completed
-  const createStepXpHandler = () => {
-    return async (): Promise<boolean> => {
-      const currentStep = steps[idx];
-      if (!currentStep || !user?.id) {
-        console.warn('No current step or user available for XP', { idx, userId: user?.id });
-        return false; // No XP granted
-      }
-
-      // Derive stable step UID
-      const stepUid = deriveStepUid(currentStep, idx);
-      
-      // Get XP amount from curriculum
-      const xpReward = XpService.getStepXp(currentStep);
-      
-      // Award XP idempotently (database enforces once-per-step)
-      const result = await XpService.awardXpOnce({
-        userId: user.id,
-        moduleId,
-        lessonId,
-        stepUid,
-        amount: xpReward.amount,
-        source: xpReward.source,
-        metadata: {
-          activityType: currentStep.type,
-          stepIndex: idx,
-          isRemediation: isInRemediation
-        }
-      });
-      
-      // XP is already handled by awardXpOnce (optimistic update + RPC)
-      // No need to call addXp here - would be a duplicate
-      
-      // Log if step was already completed
-      if (!result.granted) {
-        console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
-      }
-      
-      // Return whether XP was granted (true = new XP, false = already done)
-      return result.granted;
-    };
-  };
-  
-  // VOCABULARY TRACKING HANDLER: Track word performance for review mode
-  // Returns void (fire-and-forget for now, don't block UI)
-  const createVocabularyTracker = () => {
-    return async (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => {
-      const currentStep = steps[idx];
-      if (!currentStep || !user?.id) {
-        console.warn('No current step or user available for vocabulary tracking');
-        return;
-      }
-
-      // CRITICAL FIX: Look up vocabulary item to get correct word text
-      // Some components (Quiz, InputExercise) pass prompt/question instead of actual word text
-      // Example: Quiz passes "What does 'Man' mean?" but we need "I" (the actual vocab word)
-      const vocabItem = safeFindVocabularyById(vocabularyId);
-      const actualWordText = vocabItem?.en 
-        ? WordBankService.normalizeVocabEnglish(vocabItem.en) // Normalize for consistency ("I / Me" → "I")
-        : wordText; // Fallback to passed wordText if vocab not found
-
-      // Derive stable step UID
-      const stepUid = deriveStepUid(currentStep, idx);
-      
-      // ALWAYS track to database (every attempt, for analytics)
-      VocabularyTrackingService.storeAttempt({
-        userId: user.id,
-        vocabularyId,
-        wordText: actualWordText, // Use normalized vocabulary word text, not prompt/question
-        gameType: currentStep.type,
-        isCorrect,
-        timeSpentMs,
-        moduleId,
-        lessonId,
-        stepUid,
-        contextData: {
-          stepIndex: idx,
-          isRemediation: isInRemediation
-        }
-      }).catch((error) => {
-        console.error('Failed to track vocabulary attempt:', error);
-      });
-      
-      // Invalidate dashboard cache so stats update in real-time
-      SmartAuthService.invalidateDashboardStats();
-      
-      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      // REMEDIATION COUNTER LOGIC (Simple Rules)
-      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      
-      // Create unique key for this step + word combination
-      const stepKey = `${idx}-${vocabularyId}`;
-      
-      // Check if this step has already been counted for remediation
-      const alreadyCounted = stepsCountedForRemediation.has(stepKey);
-      
-      if (!alreadyCounted) {
-        // ✅ RULE 1: First response on this step
-        if (!isCorrect) {
-          // First response was WRONG → increment counter
-          setIncorrectAttempts(prev => {
-            const currentCount = prev[vocabularyId] || 0;
-            const newCount = currentCount + 1;
-            
-            console.log(`❌ First wrong for "${vocabularyId}" on step ${idx} - counter: ${newCount}/2`);
-            
-            // Check if we hit remediation threshold (2+) using functional state updates
-            if (newCount >= 2) {
-              // Check both queues synchronously using refs (prevents stale closure)
-              if (!pendingRemediationRef.current.includes(vocabularyId) && 
-                  !remediationQueueRef.current.includes(vocabularyId)) {
-                console.log(`🎯 Remediation triggered for "${vocabularyId}" (${newCount} incorrect attempts)`);
-                setPendingRemediation(prev => [...prev, vocabularyId]);
-              }
-            }
-            
-            return { ...prev, [vocabularyId]: newCount };
-          });
-        } else {
-          console.log(`✅ First correct for "${vocabularyId}" on step ${idx} - no counter change`);
-        }
-        
-        // Mark this step as counted (whether right or wrong)
-        setStepsCountedForRemediation(prev => new Set(prev).add(stepKey));
-      } else {
-        // ✅ RULE 2: Retry on same step → do nothing to counter
-        console.log(`🔄 Retry for "${vocabularyId}" on step ${idx} - counter unchanged (${incorrectAttempts[vocabularyId] || 0}/2)`);
-      }
-      
-  // ✅ RULE 3: Success during remediation → reset counter to 0
-      // ONLY reset if this is actually a remediation step (vocabularyId matches currentWord in remediation queue)
-      // AND only reset once per remediation completion (not on every correct answer during retries)
-      if (isInRemediation && remediationQueue.length > 0 && remediationQueue[0] === vocabularyId && isCorrect) {
-        // Check if this is the remediation quiz step (not just any correct answer)
-        const isRemediationQuizComplete = remediationStep === 'quiz';
-        
-        if (isRemediationQuizComplete) {
-          setIncorrectAttempts(prev => {
-            if (prev[vocabularyId] > 0) {
-              console.log(`🎉 Remediation success for "${vocabularyId}" - counter reset to 0/2`);
-              return { ...prev, [vocabularyId]: 0 };
-            }
-            return prev;
-          });
-        }
-      }
-      
-      // ✅ RULE 4: Wrong during remediation → do nothing (already being remediated)
-      // This is automatically handled by the alreadyCounted check above
-      
-      // NOTE: Remediation is ONLY triggered here in createVocabularyTracker
-      // Components should NOT call onRemediationNeeded for vocabulary tracking - it's redundant
-      // and causes double-triggering. Only call onVocabTrack.
-      
-      // Also keep localStorage tracking for backwards compatibility (for now)
-      if (isCorrect) {
-        VocabularyService.recordCorrectAnswer(vocabularyId);
-      } else {
-        VocabularyService.recordIncorrectAnswer(vocabularyId);
-      }
-    };
-  };
   
   // Generic handler for all components except Flashcard
   const handleItemComplete = (wasCorrect: boolean = true) => {
@@ -674,10 +674,9 @@ export function LessonRunner({
     const currentWord = remediationQueue[0];
     const vocabItem = findVocabularyById(currentWord);
     
+    // Don't setState here - the useEffect above will handle cleanup
     if (!vocabItem) {
-      // If vocabulary item not found, skip remediation
-      setIsInRemediation(false);
-      return null;
+      return null; // Temporary render while useEffect cleans up
     }
 
     if (remediationStep === 'flashcard') {
@@ -700,10 +699,9 @@ export function LessonRunner({
       // DYNAMIC Quiz step for remediation - completely systemized
       const remediationQuizData = generateRemediationQuiz(currentWord);
       
+      // Don't setState here - the useEffect above will handle cleanup
       if (!remediationQuizData) {
-        // If we can't generate a quiz, skip this remediation
-        completeRemediation();
-        return null;
+        return null; // Temporary render while useEffect cleans up
       }
 
       return (

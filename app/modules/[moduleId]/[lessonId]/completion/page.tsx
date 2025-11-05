@@ -11,6 +11,7 @@ import { XpService } from "@/lib/services/xp-service"
 import LessonHeader from "@/app/components/LessonHeader"
 import { CountUpXP } from "@/app/components/CountUpXP"
 import { getModule } from "@/lib/config/curriculum"
+import { LessonRouteGuard } from "@/components/routes/LessonRouteGuard"
 
 interface CompletionPageProps {
   xp?: number;
@@ -18,7 +19,7 @@ interface CompletionPageProps {
   handleViewSummary?: () => void;
 }
 
-export default function CompletionPage({ 
+function CompletionPageContent({ 
   xp = 0, 
   resetLesson,
   handleViewSummary
@@ -100,11 +101,7 @@ export default function CompletionPage({
           <div className="bg-accent/10 rounded-lg p-4 mb-6 flex justify-center items-center gap-3">
             <Star className="h-6 w-6 text-yellow-500" />
             <span className="text-2xl font-bold">
-              {initialXp !== null && isLoading ? (
-                <CountUpXP target={initialXp} />
-              ) : (
-                XpService.formatXp(totalXp)
-              )}
+              <CountUpXP target={initialXp ?? totalXp} />
             </span>
             <Sparkles className="h-5 w-5 text-yellow-500" />
           </div>
@@ -134,5 +131,21 @@ export default function CompletionPage({
         </div>
       </main>
     </div>
+  )
+}
+
+export default function CompletionPage(props: CompletionPageProps) {
+  // Check if this is embedded context (props passed from parent) or standalone route
+  // If props are provided, it's embedded in lesson page (already authorized)
+  // If no props, it's standalone route access (needs guard check)
+  const isEmbedded = !!(props.resetLesson || props.handleViewSummary)
+  
+  return (
+    <LessonRouteGuard
+      requireCompleted={true}
+      isEmbedded={isEmbedded}
+    >
+      <CompletionPageContent {...props} />
+    </LessonRouteGuard>
   )
 } 

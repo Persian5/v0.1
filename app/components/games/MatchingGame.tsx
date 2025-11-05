@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "../../../components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -15,6 +15,7 @@ interface MatchingGameProps {
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onComplete: (allCorrect: boolean) => void
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void // Track vocabulary performance
+  preShuffled?: boolean // If true, skip internal shuffle (arrays already shuffled by parent)
 }
 
 export function MatchingGame({ 
@@ -24,17 +25,50 @@ export function MatchingGame({
   vocabularyBank = [],
   onXpStart,
   onComplete,
-  onVocabTrack
+  onVocabTrack,
+  preShuffled = false
 }: MatchingGameProps) {
   // SYSTEMATIC RANDOMIZATION: Randomize both words and slots display order once on mount
   // Following same pattern as Quiz component for consistency
+  // If preShuffled=true, use arrays as-is (parent already shuffled them)
+  // Use ref to track if we've already processed arrays (prevents re-shuffle on re-render)
+  const processedWordsRef = useRef<Array<{ id: string; text: string; slotId: string }> | null>(null)
+  const processedSlotsRef = useRef<Array<{ id: string; text: string }> | null>(null)
+  const lastRoundKeyRef = useRef<string>('') // Track round to detect round changes
+  
+  // Create a stable key from words array to detect when it's a new round
+  const wordsKey = useMemo(() => {
+    return words.map(w => w.id).join(',')
+  }, [words])
+  
   const shuffledWords = useMemo(() => {
-    return shuffle(words);
-  }, [words]);
+    // If preShuffled=true, always return arrays as-is (no shuffle, no recalculation)
+    if (preShuffled) {
+      // Only update ref if this is a new round (detected by wordsKey change)
+      if (wordsKey !== lastRoundKeyRef.current) {
+        processedWordsRef.current = words
+        lastRoundKeyRef.current = wordsKey
+      }
+      // Always return cached ref to prevent any recalculation
+      return processedWordsRef.current || words
+    }
+    // Normal shuffle for lesson games
+    return shuffle(words)
+  }, [words, preShuffled, wordsKey])
 
   const shuffledSlots = useMemo(() => {
-    return shuffle(slots);
-  }, [slots]);
+    // If preShuffled=true, always return arrays as-is (no shuffle, no recalculation)
+    if (preShuffled) {
+      // Only update ref if this is a new round (detected by wordsKey change)
+      if (wordsKey !== lastRoundKeyRef.current) {
+        processedSlotsRef.current = slots
+      }
+      // Always return cached ref to prevent any recalculation
+      return processedSlotsRef.current || slots
+    }
+    // Normal shuffle for lesson games
+    return shuffle(slots)
+  }, [slots, preShuffled, wordsKey])
 
   // Responsive height tweaks based on number of matching pairs
   const totalPairs = shuffledWords.length;

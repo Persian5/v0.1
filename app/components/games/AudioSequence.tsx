@@ -40,6 +40,7 @@ export function AudioSequence({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  const [isProcessingXp, setIsProcessingXp] = useState(false) // Guard against concurrent XP calls
 
   // Time tracking for analytics
   const startTime = useRef(Date.now())
@@ -278,9 +279,14 @@ export function AudioSequence({
 
     if (correct) {
       playSuccessSound()
-      if (onXpStart) {
-        const wasGranted = await onXpStart(); // Await the Promise to get result
-        setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
+      if (onXpStart && !isProcessingXp) {
+        setIsProcessingXp(true) // Guard: prevent concurrent calls
+        try {
+          const wasGranted = await onXpStart(); // Await the Promise to get result
+          setIsAlreadyCompleted(!wasGranted); // If not granted, it was already completed
+        } finally {
+          setIsProcessingXp(false) // Always clear guard
+        }
       }
       setShowXp(true)
     } else {
@@ -301,6 +307,7 @@ export function AudioSequence({
     setShowResult(false)
     setIsCorrect(false)
     setShowIncorrect(false)
+    setIsProcessingXp(false) // Reset guard on retry
   }
 
   return (

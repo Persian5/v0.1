@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { motion, AnimatePresence } from "framer-motion"
 import { playSuccessSound } from "@/app/components/games/Flashcard"
 import { ReviewFilter } from "@/lib/services/review-session-service"
@@ -14,6 +15,7 @@ import { useAuth } from "@/components/auth/AuthProvider"
 import { Heart, RotateCcw, Star, X, TrendingUp, TrendingDown, Home, BookOpen } from "lucide-react"
 import { useSmartXp } from "@/hooks/use-smart-xp"
 import Link from "next/link"
+import { shuffle } from "@/lib/utils"
 
 interface ReviewMemoryGameProps {
   filter: ReviewFilter
@@ -106,7 +108,7 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
     const pairsForRound = Math.min(roundPairs, 8)
     
     // Randomly select vocabulary items for this round
-    const shuffledVocab = [...vocabulary].sort(() => Math.random() - 0.5)
+    const shuffledVocab = shuffle(vocabulary)
     const vocabToUse = shuffledVocab.slice(0, pairsForRound)
 
     // Create pairs: each vocab item becomes 2 cards (Persian + English)
@@ -135,13 +137,7 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
     })
 
     // Shuffle cards using Fisher-Yates for better randomization
-    const shuffled = [...newCards]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    
-    setCards(shuffled)
+    setCards(shuffle(newCards))
     setFlippedCards([])
     setMatches(new Set())
     setLives(3) // Reset lives for new round
@@ -204,17 +200,54 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
 
   // Handle restart game (full reset to round 1)
   const handleRestart = useCallback(() => {
+    // CRITICAL: Reset isGameOver FIRST to hide modal immediately
+    setIsGameOver(false)
+    
+    // Reset state synchronously to prevent flash
     setCurrentRound(1)
     setRoundPairs(2)
     setCorrectCount(0)
     setWrongCount(0)
-    setIsGameOver(false)
+    setFlippedCards([])
+    setMatches(new Set())
+    setLives(3)
     setIsPreviewPhase(true)
     setIsGameActive(false)
-    setCards([])
     startTime.current = Date.now()
-    // Round will initialize via the effect that watches currentRound
-  }, [])
+    
+    // Initialize new round immediately (prevents empty card grid flash)
+    // Don't clear cards first - let initializeRound replace them
+    if (vocabulary.length > 0) {
+      // Inline initialize logic for immediate execution
+      const pairsForRound = 2 // Starting pairs
+      const shuffledVocab = shuffle(vocabulary)
+      const vocabToUse = shuffledVocab.slice(0, pairsForRound)
+      
+      const newCards: MemoryCard[] = []
+      vocabToUse.forEach((vocab) => {
+        newCards.push({
+          id: `persian-${vocab.id}-${Date.now()}-${Math.random()}`,
+          vocabularyId: vocab.id,
+          type: 'persian',
+          text: vocab.finglish,
+          isFlipped: true,
+          isMatched: false
+        })
+        newCards.push({
+          id: `english-${vocab.id}-${Date.now()}-${Math.random()}`,
+          vocabularyId: vocab.id,
+          type: 'english',
+          text: vocab.en,
+          isFlipped: true,
+          isMatched: false
+        })
+      })
+      
+      // Shuffle cards using Fisher-Yates algorithm
+      setCards(shuffle(newCards))
+      roundStartTime.current = Date.now()
+    }
+  }, [vocabulary])
 
   // Handle card flip (only during active game, not preview)
   const handleCardClick = (cardId: string) => {
@@ -415,58 +448,58 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
         )}
       </AnimatePresence>
 
-      {/* Game Over Overlay */}
-      <AnimatePresence>
-        {isGameOver && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-white rounded-lg p-6 sm:p-8 max-w-md w-full text-center border-2 border-[#10B981]"
+      {/* Game Over Dialog */}
+      <Dialog open={isGameOver} onOpenChange={(open) => !open && setIsGameOver(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl sm:text-3xl font-bold text-center">
+              Game Over
+            </DialogTitle>
+            <DialogDescription className="text-center text-base">
+              You reached Round {currentRound}!<br />
+              Correct: {correctCount} | Wrong: {wrongCount}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 pt-4">
+            <Button
+              onClick={handleRestart}
+              className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-[#1E293B]">
-                Game Over
-              </h2>
-              <p className="text-gray-600 mb-6">
-                You reached Round {currentRound}!<br />
-                Correct: {correctCount} | Wrong: {wrongCount}
-              </p>
-              <div className="space-y-3">
-                <Button
-                  onClick={handleRestart}
-                  className="w-full gap-2 bg-[#10B981] hover:bg-[#059669] text-white"
+              <RotateCcw className="h-4 w-4" />
+              Play Again
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant="outline" 
+                onClick={onExit} 
+                className="gap-2 border-primary text-primary hover:bg-primary/10"
+              >
+                <BookOpen className="h-4 w-4" />
+                Review Games
+              </Button>
+              <Link href="/" className="contents">
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
                 >
-                  <RotateCcw className="h-4 w-4" />
-                  Play Again
+                  <Home className="h-4 w-4" />
+                  Home
                 </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" onClick={onExit} className="gap-2 border-[#10B981] text-[#10B981] hover:bg-[#10B981]/10">
-                    <BookOpen className="h-4 w-4" />
-                    Review Games
-                  </Button>
-                  <Link href="/" className="contents">
-                    <Button variant="outline" className="w-full gap-2 border-[#10B981] text-[#10B981] hover:bg-[#10B981]/10">
-                      <Home className="h-4 w-4" />
-                      Home
-                    </Button>
-                  </Link>
-                </div>
-                <Link href="/modules" className="contents">
-                  <Button variant="outline" className="w-full gap-2 border-[#10B981] text-[#10B981] hover:bg-[#10B981]/10">
-                    <BookOpen className="h-4 w-4" />
-                    Continue Lessons
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </Link>
+            </div>
+            <Link href="/modules" className="contents">
+              <Button 
+                variant="outline" 
+                className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
+              >
+                <BookOpen className="h-4 w-4" />
+                Continue Lessons
+              </Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Main Content - Responsive Layout */}
       <main className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full">

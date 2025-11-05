@@ -72,12 +72,14 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
   const nextModule = getModule(nextModuleId);
   const isNextModuleAvailable = nextModule?.available || false;
   
+  // ALWAYS run hooks before any early returns (React Rules of Hooks)
   useEffect(() => {
     // Get all vocabulary learned in this module
     const moduleVocabulary = VocabularyService.getModuleVocabulary(moduleId);
     setVocabularyLearned(moduleVocabulary.map((item: any) => item.finglish));
   }, [moduleId]);
 
+  // Early return AFTER all hooks
   if (!module || !completionData) {
     return null;
   }

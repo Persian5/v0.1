@@ -396,7 +396,20 @@ export function PersianWordRush({
       }))
 
       // Record performance
-      VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+      if (filter && user?.id) {
+        // Review mode: use VocabularyTrackingService (no remediation)
+        VocabularyTrackingService.storeAttempt({
+          userId: user.id,
+          vocabularyId: currentWord.word.id,
+          wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+          gameType: 'review-persian-word-rush',
+          isCorrect: false,
+          contextData: { reviewMode: true }
+        }).catch(console.error)
+      } else {
+        // Regular mode: use legacy tracking
+        VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+      }
 
       // Check game over or shake word red
       const newLives = gameStats.lives - 1
@@ -738,7 +751,7 @@ export function PersianWordRush({
                     ? { backgroundColor: '#22c55e', borderColor: '#16a34a' }
                     : currentWord.animationState === 'shaking-red'
                     ? { backgroundColor: '#ef4444', borderColor: '#dc2626' }
-                    : { backgroundColor: '#ffffff', borderColor: 'var(--primary)' }
+                    : { backgroundColor: '#ffffff', borderColor: '#1e7a5e' } // Iranian green (HSL 152 52% 32% → hex)
                 }
                 transition={{ duration: 0.2 }}
               >

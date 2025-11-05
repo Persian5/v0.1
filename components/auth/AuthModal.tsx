@@ -155,7 +155,7 @@ export function AuthModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-background via-primary/5 to-background border-primary/20">
         {/* X Button in top right */}
         <button
           onClick={handleClose}

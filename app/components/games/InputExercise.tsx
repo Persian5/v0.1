@@ -309,6 +309,7 @@ export function InputExercise({
   const [isCorrect, setIsCorrect] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
+  const [hasTracked, setHasTracked] = useState(false) // CRITICAL: Prevent duplicate onVocabTrack calls
   
   // Time tracking for analytics
   const startTime = useRef(Date.now())
@@ -316,6 +317,7 @@ export function InputExercise({
   // Reset timer when question changes
   useEffect(() => {
     startTime.current = Date.now()
+    setHasTracked(false); // Reset tracking flag for new question
   }, [question, answer])
 
   // Check if this is a grammar lesson (contains hyphen)
@@ -329,6 +331,12 @@ export function InputExercise({
   }
 
   const handleSubmit = async () => {
+    // CRITICAL: Prevent duplicate submissions - check BEFORE any state updates
+    if (hasTracked) {
+      console.log(`⏭️ [INPUT] Skipping duplicate handleSubmit for vocabularyId: ${vocabularyId}`);
+      return;
+    }
+    
     // Normalize both input and answer for comparison
     const normalizeForComparison = (text: string): string => {
       return text.toLowerCase().trim().replace(/[^a-z]/g, '');
@@ -340,11 +348,12 @@ export function InputExercise({
     
     setIsCorrect(isAnswerCorrect)
     setShowFeedback(true)
+    setHasTracked(true); // Mark as tracked IMMEDIATELY to prevent duplicate calls
 
     // Calculate time spent on this input
     const timeSpentMs = Date.now() - startTime.current;
 
-    // Track vocabulary performance to Supabase
+    // Track vocabulary performance to Supabase - hasTracked already set above
     if (vocabularyId && onVocabTrack) {
       onVocabTrack(vocabularyId, question, isAnswerCorrect, timeSpentMs);
     }
@@ -368,6 +377,7 @@ export function InputExercise({
       // If incorrect, show feedback briefly and allow retry
       setTimeout(() => {
         setShowFeedback(false);
+        setHasTracked(false); // Reset for retry (only after timeout completes)
         // Don't clear input - let user see their mistakes and correct them
       }, 1500); // Reset feedback after 1.5 seconds
     }

@@ -350,6 +350,13 @@ export class XpService {
       return { granted: false, reason: 'cached' }
     }
     
+    // CRITICAL FIX: Set cache IMMEDIATELY after check (before optimistic update)
+    // This prevents race conditions - if two tabs/requests try simultaneously,
+    // the second one will see cache and skip. Only remove cache on actual errors.
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(cacheKey, '1')
+    }
+    
     // Optimistic UI update - show XP immediately (only for new awards)
     try {
       const { SmartAuthService } = await import('./smart-auth-service')
@@ -376,11 +383,15 @@ export class XpService {
       
       if (error) {
         console.error('❌ Error awarding XP:', error)
-        // Rollback optimistic update
+        // Rollback optimistic update AND remove cache (actual error)
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
           SmartAuthService.addXpOptimistic(-amount, 'rollback')
         } catch (e) {}
+        // Remove cache on error so user can retry
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(cacheKey)
+        }
         return { granted: false, reason: 'error', error }
       }
       
@@ -389,25 +400,29 @@ export class XpService {
       const newXp = data?.new_xp
       
       if (granted) {
-        // XP awarded successfully - cache locally for instant future checks
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(cacheKey, '1')
-        }
+        // XP awarded successfully - cache already set above
         console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
         
         // No reconciliation needed - optimistic update is already correct
         // The RPC confirmed the award, so our optimistic +amount is accurate
       } else {
-        // XP already awarded - cache it and reconcile to DB value
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(cacheKey, '1')
-        }
+        // XP already awarded (race condition - cache was empty but DB had it)
+        // Cache already set above (correct - prevents future attempts)
         
-        // Reconcile to DB value (this will undo the optimistic update)
+        // SMOOTH RECONCILIATION: Only reconcile if DB value differs from optimistic
+        // This prevents flicker if DB value matches our optimistic update
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
           if (newXp !== undefined) {
-            SmartAuthService.setXpDirectly(newXp)
+            // Get current optimistic XP
+            const currentXp = SmartAuthService.getUserXp() || 0
+            // Only reconcile if different (prevents unnecessary UI updates)
+            if (currentXp !== newXp) {
+              SmartAuthService.setXpDirectly(newXp)
+            } else {
+              // Already correct - no reconciliation needed (no flicker)
+              console.log(`⏭️ XP already awarded, but UI already correct: ${idempotencyKey}`)
+            }
           }
         } catch (error) {
           console.warn('Failed to reconcile XP:', error)

@@ -14,6 +14,7 @@ import { X, TrendingUp, TrendingDown, Star, Heart, RotateCcw, Home, BookOpen } f
 import { motion, AnimatePresence } from "framer-motion"
 import { useSmartXp } from "@/hooks/use-smart-xp"
 import Link from "next/link"
+import { shuffle } from "@/lib/utils"
 
 interface ReviewAudioDefinitionsProps {
   filter: ReviewFilter
@@ -67,7 +68,8 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
         }
 
         // Shuffle vocabulary for variety - ensure never same word twice in a row
-        const shuffled = [...vocabItems].sort(() => Math.random() - 0.5)
+        // Use proper Fisher-Yates shuffle algorithm (not broken .sort())
+        const shuffled = shuffle([...vocabItems])
         
         // If we have a previous vocab, ensure first word is different
         if (lastVocabId && shuffled.length > 1 && shuffled[0].id === lastVocabId) {
@@ -222,8 +224,8 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
   
   // Handle restart game
   const handleRestart = () => {
-    // Reshuffle vocabulary
-    const shuffled = [...vocabulary].sort(() => Math.random() - 0.5)
+    // Reshuffle vocabulary using proper Fisher-Yates shuffle
+    const shuffled = shuffle([...vocabulary])
     
     // Ensure first word is different from last (if we had one)
     if (lastVocabId && shuffled.length > 1 && shuffled[0].id === lastVocabId) {
@@ -261,7 +263,8 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
       setCurrentIndex(nextIndex)
     } else {
       // Reached end - shuffle and start over, but skip last vocab
-      const shuffled = [...vocabulary].sort(() => Math.random() - 0.5)
+      // Use proper Fisher-Yates shuffle algorithm (not broken .sort())
+      const shuffled = shuffle([...vocabulary])
       
       // Ensure first word is different from last
       if (shuffled.length > 1 && shuffled[0].id === currentVocabId) {

@@ -19,10 +19,12 @@ export function PremiumLockModal({ isOpen, onClose, moduleTitle }: PremiumLockMo
             <Lock className="h-8 w-8 text-white" />
           </div>
           <DialogTitle className="text-center text-2xl font-bold">
-            Unlock {moduleTitle || "Premium Modules"}
+            {moduleTitle ? `Unlock ${moduleTitle}` : "Unlock Premium Modules"}
           </DialogTitle>
           <DialogDescription className="text-center">
-            Get unlimited access to all Persian lessons and features with a Premium subscription.
+            {moduleTitle 
+              ? `Get access to ${moduleTitle} and unlock all premium Persian lessons.`
+              : "Get unlimited access to all Persian lessons and features with a Premium subscription."}
           </DialogDescription>
         </DialogHeader>
 

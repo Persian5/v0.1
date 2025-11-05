@@ -51,15 +51,38 @@ export class ReviewSessionService {
   /**
    * Detect browser timezone
    * Returns IANA timezone string (e.g., "America/Los_Angeles")
+   * 
+   * Uses sessionStorage cache to avoid repeated API calls within same session
    */
   static detectBrowserTimezone(): string {
+    // Check sessionStorage cache first (per-session cache)
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('browser_timezone')
+      if (cached) {
+        return cached
+      }
+    }
+
     try {
       // Use Intl API to detect browser timezone
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-      return timezone || 'America/Los_Angeles' // Fallback to PST
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Los_Angeles'
+      
+      // Cache in sessionStorage for this browser session
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('browser_timezone', timezone)
+      }
+      
+      return timezone
     } catch (error) {
       console.warn('Failed to detect browser timezone, using fallback:', error)
-      return 'America/Los_Angeles'
+      const fallback = 'America/Los_Angeles'
+      
+      // Cache fallback too
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('browser_timezone', fallback)
+      }
+      
+      return fallback
     }
   }
 
@@ -253,6 +276,17 @@ export class ReviewSessionService {
 
       const newTotalXp = (currentProfile?.total_xp || 0) + xpToAward
 
+      // CRITICAL: Update SmartAuthService cache optimistically BEFORE database update
+      // This gives instant UI feedback and prevents "reconciled" messages
+      try {
+        const { SmartAuthService } = await import('./smart-auth-service')
+        // Optimistic update: increment cache immediately
+        SmartAuthService.addXpOptimistic(xpToAward, 'review-game')
+      } catch (cacheError) {
+        console.warn('Failed to update SmartAuthService cache optimistically (non-critical):', cacheError)
+        // Non-critical - we'll sync after DB update
+      }
+
       const { data, error } = await supabase
         .from('user_profiles')
         .update({
@@ -266,11 +300,22 @@ export class ReviewSessionService {
 
       if (error) {
         console.error('Error awarding review XP:', error)
+        // Rollback optimistic update on error
+        try {
+          const { SmartAuthService } = await import('./smart-auth-service')
+          SmartAuthService.addXpOptimistic(-xpToAward, 'review-game-rollback')
+        } catch (rollbackError) {
+          console.warn('Failed to rollback optimistic XP update:', rollbackError)
+        }
         return {
           awarded: false,
           reason: 'Database error'
         }
       }
+
+      // Optimistic update already set cache correctly, no need to reconcile
+      // Cache is now in sync with database
+      console.log(`✅ Review XP awarded: ${xpToAward} XP. Total XP: ${newTotalXp}`)
 
       return {
         awarded: true,
@@ -353,32 +398,40 @@ export class ReviewSessionService {
   /**
    * Initialize user timezone (call on first review game play)
    * Updates user profile with browser timezone if not already set
+   * 
+   * Optimization: Checks profile FIRST before detecting browser timezone
+   * to avoid unnecessary API calls when timezone already exists
    */
   static async initializeUserTimezone(userId: string): Promise<void> {
     try {
-      const browserTimezone = this.detectBrowserTimezone()
-
-      // Check if user already has a timezone set (not default)
+      // STEP 1: Check profile FIRST (no browser API call if timezone already set)
+      // Use review_xp_reset_at as flag: if NULL, timezone hasn't been initialized yet
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('timezone')
+        .select('timezone, review_xp_reset_at')
         .eq('id', userId)
         .single()
 
-      // If timezone is default or not set, update it
-      if (!profile?.timezone || profile.timezone === 'America/Los_Angeles') {
+      // STEP 2: Only initialize if review_xp_reset_at is NULL (hasn't been initialized yet)
+      // This works even if user's actual timezone is 'America/Los_Angeles'
+      const needsTimezone = !profile?.review_xp_reset_at
+      
+      if (needsTimezone) {
+        // Only call detectBrowserTimezone() if we actually need to detect
+        const browserTimezone = this.detectBrowserTimezone()
         const nextMidnight = this.calculateNextMidnightUTC(browserTimezone)
 
         await supabase
           .from('user_profiles')
           .update({
             timezone: browserTimezone,
-            review_xp_reset_at: nextMidnight // Also initialize reset time
+            review_xp_reset_at: nextMidnight // Set flag that timezone was initialized
           })
           .eq('id', userId)
 
         console.log(`✅ Initialized timezone for user ${userId}: ${browserTimezone}`)
       }
+      // If review_xp_reset_at exists, timezone was already initialized (fast path)
 
     } catch (error) {
       console.error('Exception in initializeUserTimezone:', error)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { MatchingGame } from "@/app/components/games/MatchingGame"
 import { ReviewFilter } from "@/lib/services/review-session-service"
@@ -10,8 +10,10 @@ import { VocabularyItem } from "@/lib/types"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { useAuth } from "@/components/auth/AuthProvider"
-import { X, Heart, Target } from "lucide-react"
+import { X, Heart, Target, Star } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useSmartXp } from "@/hooks/use-smart-xp"
+import { shuffle } from "@/lib/utils"
 
 interface ReviewMatchingMarathonProps {
   filter: ReviewFilter
@@ -20,8 +22,10 @@ interface ReviewMatchingMarathonProps {
 
 export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMarathonProps) {
   const { user } = useAuth()
+  const { xp } = useSmartXp() // Get current XP for display
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([])
   const [currentPairs, setCurrentPairs] = useState<Array<{ words: Array<{ id: string; text: string; slotId: string }>; slots: Array<{ id: string; text: string }> }>>([])
+  const [nextRoundPairs, setNextRoundPairs] = useState<Array<{ words: Array<{ id: string; text: string; slotId: string }>; slots: Array<{ id: string; text: string }> }>>([])
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0)
   const [lives, setLives] = useState(3)
   const [round, setRound] = useState(1)
@@ -30,6 +34,7 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
   const [xpCapReached, setXpCapReached] = useState(false)
   const [xpCapShown, setXpCapShown] = useState(false)
   const roundStartTime = useRef(Date.now())
+  const vocabularyIndexRef = useRef(0) // Track current position in vocabulary array
 
   // Fetch vocabulary based on filter
   useEffect(() => {
@@ -62,12 +67,14 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
           }
         }
 
-        // Shuffle vocabulary
-        const shuffled = [...vocabItems].sort(() => Math.random() - 0.5)
+        // Shuffle vocabulary using proper Fisher-Yates algorithm
+        const shuffled = shuffle(vocabItems)
         setVocabulary(shuffled)
+        vocabularyIndexRef.current = 0 // Reset index when vocabulary loads
         
-        // Generate initial pairs (start with 3 pairs, increase over time)
-        generatePairs(shuffled, 3)
+        // CRITICAL: Pre-generate initial pairs BEFORE setIsLoading(false)
+        // This ensures arrays are ready immediately when component renders MatchingGame
+        generatePairsFromVocab(shuffled, 2)
       } catch (error) {
         console.error('Error loading vocabulary:', error)
       } finally {
@@ -78,37 +85,117 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
     loadVocabulary()
   }, [user?.id, filter])
 
-  // Generate pairs for a round
-  const generatePairs = (vocab: VocabularyItem[], numPairs: number) => {
+  // Internal helper: Generate pairs from specific vocabulary array
+  const generatePairsFromVocab = (vocab: VocabularyItem[], numPairs: number) => {
+    if (vocab.length === 0) return
+    
+    // Ensure minimum 2 pairs
+    const actualNumPairs = Math.max(2, Math.min(numPairs, vocab.length))
     const pairs: Array<{ words: Array<{ id: string; text: string; slotId: string }>; slots: Array<{ id: string; text: string }> }> = []
     
-    // Use vocabulary in batches
-    for (let i = 0; i < numPairs && i * 2 < vocab.length; i++) {
-      const vocabItem = vocab[i % vocab.length]
+    // Check if we need to reshuffle (vocabulary exhausted)
+    if (vocabularyIndexRef.current + actualNumPairs > vocab.length) {
+      // Reshuffle vocabulary and reset index
+      const reshuffled = shuffle([...vocab])
+      setVocabulary(reshuffled)
+      vocabularyIndexRef.current = 0
+      // Use reshuffled vocab for this round
+      return generatePairsFromVocab(reshuffled, numPairs)
+    }
+    
+    // Use vocabulary sequentially from current index
+    for (let i = 0; i < actualNumPairs; i++) {
+      const vocabIndex = (vocabularyIndexRef.current + i) % vocab.length
+      const vocabItem = vocab[vocabIndex]
       
       const words = [{
-        id: `word-${vocabItem.id}-${i}`,
+        id: `word-${vocabItem.id}-${round}-${i}`,
         text: vocabItem.finglish,
-        slotId: `slot-${vocabItem.id}-${i}`
+        slotId: `slot-${vocabItem.id}-${round}-${i}`
       }]
       
       const slots = [{
-        id: `slot-${vocabItem.id}-${i}`,
+        id: `slot-${vocabItem.id}-${round}-${i}`,
         text: WordBankService.normalizeVocabEnglish(vocabItem.en)
       }]
       
       pairs.push({ words, slots })
     }
     
-    setCurrentPairs(pairs)
+    // Advance vocabulary index for next round
+    vocabularyIndexRef.current = (vocabularyIndexRef.current + actualNumPairs) % vocab.length
+    
+    // Pre-shuffle words and slots BEFORE setting state
+    // This prevents visible shuffle in MatchingGame component
+    const allWords = pairs.flatMap(p => p.words)
+    const allSlots = pairs.flatMap(p => p.slots)
+    const shuffledWords = shuffle(allWords)
+    const shuffledSlots = shuffle(allSlots)
+    
+    // Set as single round (not array of rounds) with pre-shuffled arrays
+    setCurrentPairs([{ words: shuffledWords, slots: shuffledSlots }])
+    setCurrentRoundIndex(0) // Reset to first round
   }
 
-  // Get current round's words and slots
+  // Public function: Generate pairs using current vocabulary state
+  const generatePairs = (numPairs: number) => {
+    const currentVocab = vocabulary.length > 0 ? vocabulary : []
+    if (currentVocab.length === 0) return
+    generatePairsFromVocab(currentVocab, numPairs)
+  }
+
+  // Get current round's words and slots - arrays are already pre-shuffled
   const currentRound = currentPairs[currentRoundIndex]
+  const currentWords = currentRound?.words || []
+  const currentSlots = currentRound?.slots || []
   
-  // Combine all words and slots for current round
-  const currentWords = currentRound?.words.flat() || []
-  const currentSlots = currentRound?.slots.flat() || []
+  // Pre-generate next round pairs WHILE user is playing current round
+  // This ensures smooth transition with no loading state
+  useEffect(() => {
+    if (currentRound && vocabulary.length > 0 && !isGameOver) {
+      const nextRound = round + 1
+      const nextNumPairs = Math.min(2 + Math.floor(nextRound / 2), 8)
+      
+      // Pre-generate next round pairs in background (store in nextRoundPairs, don't overwrite current)
+      const timer = setTimeout(() => {
+        const vocab = vocabulary.length > 0 ? vocabulary : []
+        if (vocab.length === 0) return
+        
+        // Generate pairs for next round
+        const actualNumPairs = Math.max(2, Math.min(nextNumPairs, vocab.length))
+        const pairs: Array<{ words: Array<{ id: string; text: string; slotId: string }>; slots: Array<{ id: string; text: string }> }> = []
+        
+        // Use vocabulary sequentially
+        const startIndex = (vocabularyIndexRef.current + actualNumPairs) % vocab.length
+        for (let i = 0; i < actualNumPairs; i++) {
+          const vocabIndex = (startIndex + i) % vocab.length
+          const vocabItem = vocab[vocabIndex]
+          
+          pairs.push({
+            words: [{
+              id: `word-${vocabItem.id}-${nextRound}-${i}`,
+              text: vocabItem.finglish,
+              slotId: `slot-${vocabItem.id}-${nextRound}-${i}`
+            }],
+            slots: [{
+              id: `slot-${vocabItem.id}-${nextRound}-${i}`,
+              text: WordBankService.normalizeVocabEnglish(vocabItem.en)
+            }]
+          })
+        }
+        
+        // Pre-shuffle and store in nextRoundPairs
+        const allWords = pairs.flatMap(p => p.words)
+        const allSlots = pairs.flatMap(p => p.slots)
+        const shuffledWords = shuffle(allWords)
+        const shuffledSlots = shuffle(allSlots)
+        
+        setNextRoundPairs([{ words: shuffledWords, slots: shuffledSlots }])
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [currentRound, round, vocabulary.length, isGameOver])
 
   // Handle vocabulary tracking
   const handleVocabTrack = async (
@@ -148,11 +235,11 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
     return true
   }
 
-  // Handle round completion
+  // Handle round completion - XP awarded per round (not per match)
   const handleComplete = async (allCorrect: boolean) => {
     if (!user?.id || !allCorrect) return
 
-    // Award XP for completing round (1 XP per round)
+    // Award XP for completing round (1 XP per round completion)
     const result = await ReviewSessionService.awardReviewXp(user.id, 1)
     if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
       setXpCapReached(true)
@@ -160,35 +247,26 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
       setTimeout(() => setXpCapReached(false), 5000)
     }
 
-    // Move to next round
-    if (currentRoundIndex < currentPairs.length - 1) {
-      setCurrentRoundIndex(prev => prev + 1)
-      roundStartTime.current = Date.now()
+    // Advance to next round - use pre-generated pairs if available
+    const newRound = round + 1
+    
+    // If next round pairs are ready, use them (instant transition, no loading)
+    if (nextRoundPairs.length > 0) {
+      setCurrentPairs(nextRoundPairs)
+      setNextRoundPairs([]) // Clear for next pre-generation
+      vocabularyIndexRef.current = (vocabularyIndexRef.current + Math.min(2 + Math.floor(round / 2), 8)) % vocabulary.length
     } else {
-      // All rounds in current set complete - generate new set with more pairs
-      const newRound = round + 1
-      setRound(newRound)
-      
-      // Increase difficulty: more pairs per round (cap at 6 pairs)
-      const numPairs = Math.min(3 + Math.floor(newRound / 2), 6)
-      generatePairs(vocabulary, numPairs)
-      setCurrentRoundIndex(0)
-      roundStartTime.current = Date.now()
+      // Fallback: generate synchronously (should be rare, only if pre-generation failed)
+      const nextNumPairs = Math.min(2 + Math.floor(newRound / 2), 8)
+      generatePairs(nextNumPairs)
     }
+    
+    setRound(newRound)
+    roundStartTime.current = Date.now()
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading vocabulary...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (vocabulary.length === 0) {
+  // Only show "no vocabulary" message if vocabulary is truly empty AND we're not loading
+  if (!isLoading && vocabulary.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center max-w-md mx-auto p-6">
@@ -202,8 +280,10 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
     )
   }
 
-  if (!currentRound) {
-    return null
+  // Don't render MatchingGame until arrays are ready (but no loading spinner - arrays generate in background)
+  // If arrays aren't ready yet, render empty (component will auto-update when arrays are ready)
+  if (!currentRound || currentWords.length === 0 || currentSlots.length === 0) {
+    return null // Render nothing, component will update when arrays are ready
   }
 
   return (
@@ -212,6 +292,12 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
+            {/* XP Display */}
+            <div className="flex items-center gap-2 px-3 py-1 bg-accent/10 rounded-lg border border-accent/20">
+              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <span className="text-sm font-semibold text-primary">{xp.toLocaleString()}</span>
+            </div>
+            
             {/* Lives */}
             <div className="flex items-center gap-2">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -282,7 +368,11 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
                     setLives(3)
                     setRound(1)
                     setCurrentRoundIndex(0)
-                    generatePairs(vocabulary, 3)
+                    vocabularyIndexRef.current = 0 // Reset vocabulary index
+                    // Reshuffle vocabulary for fresh start
+                    const reshuffled = shuffle([...vocabulary])
+                    setVocabulary(reshuffled)
+                    generatePairsFromVocab(reshuffled, 2) // Start with 2 pairs
                     setIsGameOver(false)
                     roundStartTime.current = Date.now()
                   }}
@@ -300,6 +390,7 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-4xl">
           <MatchingGame
+            key={`round-${round}`} // Force remount on round change to reset internal state
             words={currentWords}
             slots={currentSlots}
             points={1} // 1 XP per round in review mode
@@ -307,6 +398,7 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
             onXpStart={handleXpStart}
             onComplete={handleComplete}
             onVocabTrack={handleVocabTrack}
+            preShuffled={true} // Arrays already shuffled in generatePairsFromVocab
           />
         </div>
       </main>

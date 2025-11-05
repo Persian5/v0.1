@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { getLesson } from "@/lib/config/curriculum"
 import LessonHeader from "@/app/components/LessonHeader"
+import { LessonRouteGuard } from "@/components/routes/LessonRouteGuard"
 
 interface SummaryPageProps {
   learnedWords: string[];
@@ -16,7 +17,7 @@ interface SummaryPageProps {
   resetLesson?: () => void;
 }
 
-export default function SummaryPage({
+function SummaryPageContent({
   learnedWords,
   xp = 0,
   resetLesson
@@ -169,5 +170,21 @@ export default function SummaryPage({
         </div>
       </main>
     </div>
+  )
+}
+
+export default function SummaryPage(props: SummaryPageProps) {
+  // Check if this is embedded context (props passed from parent) or standalone route
+  // If resetLesson prop is provided, it's embedded in lesson page (already authorized)
+  // If no resetLesson, it's standalone route access (needs guard check)
+  const isEmbedded = typeof props.resetLesson === 'function'
+  
+  return (
+    <LessonRouteGuard
+      requireAccess={true}
+      isEmbedded={isEmbedded}
+    >
+      <SummaryPageContent {...props} />
+    </LessonRouteGuard>
   )
 } 
