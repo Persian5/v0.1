@@ -7,6 +7,7 @@ import { VocabularyItem } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
+import { shuffle } from "@/lib/utils"
 
 interface AudioMeaningProps {
   vocabularyId: string
@@ -171,7 +172,7 @@ export function AudioMeaning({
       
       // Replace duplicates or add missing distractors
       let replacementsNeeded = targetCount - currentCount
-      const shuffledAvailable = [...availableVocab].sort(() => Math.random() - 0.5)
+      const shuffledAvailable = shuffle(availableVocab)
       
       for (const replacement of shuffledAvailable) {
         if (replacementsNeeded <= 0) break
@@ -203,7 +204,8 @@ export function AudioMeaning({
     }
     
     return Array.from(optionsMap.values())
-  }, [shuffledOptions, vocabularyBank, vocabularyId])
+  }, [shuffledOptions, vocabularyId])
+  // Note: vocabularyBank removed from deps to prevent re-shuffle during transitions
 
   const handleAnswerSelect = async (answerIndex: number) => {
     // Block re-clicks while feedback animates

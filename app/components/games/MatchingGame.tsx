@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { playSuccessSound } from "./Flashcard"
 import { VocabularyItem } from "@/lib/types"
 import { WordBankService } from "@/lib/services/word-bank-service"
+import { shuffle } from "@/lib/utils"
 
 interface MatchingGameProps {
   words: { id: string; text: string; slotId: string }[]  // words to match
@@ -28,11 +29,11 @@ export function MatchingGame({
   // SYSTEMATIC RANDOMIZATION: Randomize both words and slots display order once on mount
   // Following same pattern as Quiz component for consistency
   const shuffledWords = useMemo(() => {
-    return [...words].sort(() => Math.random() - 0.5);
+    return shuffle(words);
   }, [words]);
 
   const shuffledSlots = useMemo(() => {
-    return [...slots].sort(() => Math.random() - 0.5);
+    return shuffle(slots);
   }, [slots]);
 
   // Responsive height tweaks based on number of matching pairs
