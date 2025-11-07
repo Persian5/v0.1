@@ -7,6 +7,9 @@ import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 
+// Force dynamic rendering to prevent build errors
+export const dynamic = 'force-dynamic'
+
 function MemoryGameContent() {
   const router = useRouter()
   const searchParams = useSearchParams()

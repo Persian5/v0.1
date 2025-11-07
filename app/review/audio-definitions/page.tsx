@@ -1,13 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ReviewAudioDefinitions } from "@/app/components/review/ReviewAudioDefinitions"
 import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 
-export default function AudioDefinitionsPage() {
+// Force dynamic rendering to prevent build errors
+export const dynamic = 'force-dynamic'
+
+function AudioDefinitionsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [filter, setFilter] = useState<ReviewFilter | null>(null)
@@ -56,6 +59,14 @@ export default function AudioDefinitionsPage() {
     <AuthGuard>
       <ReviewAudioDefinitions filter={filter} onExit={handleExit} />
     </AuthGuard>
+  )
+}
+
+export default function AudioDefinitionsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <AudioDefinitionsContent />
+    </Suspense>
   )
 }
 

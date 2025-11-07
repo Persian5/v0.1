@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -11,7 +11,10 @@ import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 
-export default function WordRushPage() {
+// Force dynamic rendering to prevent build errors
+export const dynamic = 'force-dynamic'
+
+function WordRushContent() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -21,12 +24,16 @@ export default function WordRushPage() {
   useEffect(() => {
     setMounted(true)
     
-    // Prevent scrolling on the page
-    document.body.style.overflow = 'hidden'
+    // Prevent scrolling on the page (only in browser)
+    if (typeof window !== 'undefined') {
+      document.body.style.overflow = 'hidden'
+    }
     
     return () => {
       // Restore scrolling when leaving the page
-      document.body.style.overflow = 'auto'
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = 'auto'
+      }
     }
   }, [])
 
@@ -100,5 +107,13 @@ export default function WordRushPage() {
         </main>
       </div>
     </AuthGuard>
+  )
+}
+
+export default function WordRushPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <WordRushContent />
+    </Suspense>
   )
 } 

@@ -1,13 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ReviewMatchingMarathon } from "@/app/components/review/ReviewMatchingMarathon"
 import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 
-export default function MatchingMarathonPage() {
+// Force dynamic rendering to prevent build errors
+export const dynamic = 'force-dynamic'
+
+function MatchingMarathonContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [filter, setFilter] = useState<ReviewFilter | null>(null)
@@ -56,6 +59,14 @@ export default function MatchingMarathonPage() {
     <AuthGuard>
       <ReviewMatchingMarathon filter={filter} onExit={handleExit} />
     </AuthGuard>
+  )
+}
+
+export default function MatchingMarathonPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <MatchingMarathonContent />
+    </Suspense>
   )
 }
 
