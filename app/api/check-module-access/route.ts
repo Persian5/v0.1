@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { ModuleAccessService } from "@/lib/services/module-access-service"
 import { withRateLimit, addRateLimitHeaders } from "@/lib/middleware/rate-limit-middleware"
 import { RATE_LIMITS } from "@/lib/services/rate-limiter"
+import { validateModuleId, createValidationErrorResponse } from "@/lib/utils/api-validation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -34,8 +35,14 @@ export async function GET(req: NextRequest) {
       )
     }
     
+    // Validate moduleId format
+    const validation = validateModuleId(moduleId)
+    if (!validation.valid) {
+      return createValidationErrorResponse(validation.error!)
+    }
+    
     // Use the server-side service to check access
-    const accessCheck = await ModuleAccessService.canAccessModule(moduleId)
+    const accessCheck = await ModuleAccessService.canAccessModule(validation.sanitized!)
     
     const response = NextResponse.json(accessCheck, { status: 200 })
     return addRateLimitHeaders(response, rateLimitResult.headers)

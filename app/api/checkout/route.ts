@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { withRateLimit, addRateLimitHeaders } from "@/lib/middleware/rate-limit-middleware";
 import { RATE_LIMITS } from "@/lib/services/rate-limiter";
+import { validatePriceId } from "@/lib/utils/api-validation";
 
 export const runtime = "nodejs";         // required to avoid Edge runtime
 export const dynamic = "force-dynamic";  // don't cache
@@ -69,11 +70,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Validate STRIPE_PRICE_ID format (extra safety check)
+    const priceId = process.env.STRIPE_PRICE_ID!
+    const priceValidation = validatePriceId(priceId)
+    if (!priceValidation.valid) {
+      console.error('Invalid STRIPE_PRICE_ID configuration:', priceValidation.error)
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+
     const origin = new URL(req.url).origin;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+      line_items: [{ price: priceValidation.sanitized!, quantity: 1 }],
       // Keep success/cancel on your domain; no extra env needed:
       success_url: `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/billing/canceled`,
