@@ -95,6 +95,22 @@
 - **current_level** values: `'beginner'`, `'few_words'`, `'basic_conversation'`, `'intermediate'` (nullable, optional during onboarding)
 - **primary_focus** values: `'speaking'`, `'reading'`, `'writing'`, `'all'` (nullable, optional during onboarding)
 
+### Database Triggers
+
+#### `trg_set_display_name` (BEFORE INSERT OR UPDATE)
+- **Function**: `set_display_name()`
+- **Purpose**: Auto-generates `display_name` only if NULL or empty
+- **Logic**: 
+  - If `display_name` is NULL or empty → generates "FirstName LastInitial." format from `first_name` + `last_name`
+  - If `display_name` is already set → leaves it unchanged (allows onboarding custom names to persist)
+- **Security**: Uses `SECURITY DEFINER` (required for trigger functions), RLS policies still enforced
+- **Updated**: 2025-01-03 - Fixed to respect explicit `display_name` values set during onboarding
+
+#### `trg_sync_user_metadata` (AFTER INSERT OR UPDATE)
+- **Function**: `sync_user_metadata()`
+- **Purpose**: Syncs `first_name`, `last_name`, `display_name` from `user_profiles` → `auth.users.raw_user_meta_data`
+- **Security**: Uses `SECURITY DEFINER` (required to update `auth.users` table), RLS policies still enforced
+
 ### user_xp_transactions
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)
 - **UNIQUE**: `(user_id, idempotency_key)` WHERE `idempotency_key IS NOT NULL` - Ensures once-per-step XP awards (format: moduleId:lessonId:stepUid)

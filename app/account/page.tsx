@@ -13,6 +13,7 @@ import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { CountUpXP } from "@/app/components/CountUpXP"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
+import { generateDefaultDisplayName } from "@/lib/utils/display-name"
 
 function AccountContent() {
   const [mounted, setMounted] = useState(false)
@@ -31,7 +32,11 @@ function AccountContent() {
   
   // Get display name from cached profile (database is source of truth)
   const profile = SmartAuthService.getCachedProfile()
-  const displayName = profile?.display_name || null
+  // Account page shows first_name + last_initial format (for UI greeting)
+  // Database display_name is what user selects in onboarding (for leaderboards)
+  const accountDisplayName = profile 
+    ? generateDefaultDisplayName(profile.first_name, profile.last_name) || null
+    : null
 
   useEffect(() => {
     setMounted(true)
@@ -231,7 +236,7 @@ function AccountContent() {
             <div className="flex justify-center items-center gap-3 mb-4">
               <User className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary">
-                {displayName ? `Welcome Back ${displayName}` : 'Your Account'}
+                {accountDisplayName ? `Welcome Back ${accountDisplayName}` : 'Your Account'}
               </h1>
             </div>
             <p className="text-lg sm:text-xl text-muted-foreground">

@@ -276,7 +276,15 @@ export class SmartAuthService {
     }
     
     if (updates.profile) {
-      this.sessionCache.profile = { ...this.sessionCache.profile, ...updates.profile }
+      // IMPORTANT: If profile is a full UserProfile object, replace it entirely
+      // If it's a Partial<UserProfile>, merge it
+      if ('id' in updates.profile && 'onboarding_completed' in updates.profile) {
+        // Full profile object - replace entirely
+        this.sessionCache.profile = updates.profile as UserProfile
+      } else {
+        // Partial profile - merge with existing
+        this.sessionCache.profile = { ...this.sessionCache.profile, ...updates.profile }
+      }
       hasChanges = true
       this.emitEvent('profile-updated', { profile: this.sessionCache.profile })
     }

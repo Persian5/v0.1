@@ -26,7 +26,8 @@ export class AuthService {
   static async signUp({ email, password, firstName, lastName }: SignUpData): Promise<{ user: User | null; error: AuthError | null }> {
     try {
       // Generate display name in correct format: "FirstName LastInitial."
-      const displayName = generateDefaultDisplayName(firstName, lastName) || `${firstName} ${lastName}`.trim()
+      // If generation fails (no first name), use null (will be handled by getOrCreateUserProfile)
+      const displayName = generateDefaultDisplayName(firstName, lastName) || null
 
       const { data, error } = await supabase.auth.signUp({
         email,

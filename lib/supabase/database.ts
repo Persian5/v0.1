@@ -47,6 +47,7 @@ export interface UserXpTransaction {
 export class DatabaseService {
   
   // Get or create user profile
+  // CRITICAL: Once onboarding_completed=true, NEVER overwrite display_name, learning_goal, current_level, or primary_focus
   static async getOrCreateUserProfile(user: User): Promise<UserProfile> {
     return await withAuthRetry(async () => {
       const { data: profile, error } = await supabase
@@ -82,6 +83,25 @@ export class DatabaseService {
           .single()
 
         if (createError) {
+          // Handle foreign key constraint violation (user doesn't exist in auth.users yet)
+          if (createError.code === '23503' || createError.message.includes('foreign key constraint')) {
+            console.warn('User profile creation failed - user may not exist in auth.users yet:', createError.message)
+            // Return a minimal profile object to prevent crashes
+            return {
+              id: user.id,
+              email: user.email,
+              first_name: user.user_metadata?.first_name || null,
+              last_name: user.user_metadata?.last_name || null,
+              display_name: displayName,
+              total_xp: 0,
+              onboarding_completed: false,
+              learning_goal: null,
+              current_level: null,
+              primary_focus: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            } as UserProfile
+          }
           throw new Error(`Failed to create user profile: ${createError.message}`)
         }
 
@@ -92,8 +112,15 @@ export class DatabaseService {
         throw new Error(`Failed to fetch user profile: ${error.message}`)
       }
 
-      // Existing profile: ensure display_name exists, generate if null
-      // This handles existing users who might have null display_name
+      // CRITICAL: If onboarding is complete, NEVER modify display_name or onboarding fields
+      // These are set during onboarding and should never be overwritten
+      if (profile.onboarding_completed) {
+        // Onboarding complete - return profile as-is, never modify display_name or onboarding fields
+        return profile
+      }
+
+      // Only modify display_name if onboarding is NOT complete
+      // This handles existing users who might have null display_name before onboarding
       if (!profile.display_name) {
         const generatedDisplayName = generateDefaultDisplayName(
           profile.first_name,
@@ -101,7 +128,7 @@ export class DatabaseService {
         )
         
         if (generatedDisplayName) {
-          // Update profile with generated display_name
+          // Update profile with generated display_name (only if onboarding not complete)
           const updatedProfile = await this.updateUserProfile(profile.id, {
             display_name: generatedDisplayName
           })
@@ -113,8 +140,58 @@ export class DatabaseService {
     }, 'getOrCreateUserProfile')
   }
 
+  // Get user profile by ID
+  static async getUserProfile(userId: string): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Profile doesn't exist
+      }
+      throw new Error(`Failed to fetch user profile: ${error.message}`)
+    }
+
+    return data
+  }
+
   // Update user profile
+  // CRITICAL: If onboarding_completed=true, this should NEVER be called to modify display_name, learning_goal, etc.
+  // Those fields are set during onboarding and should only be updated through OnboardingService
   static async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+    console.log('DatabaseService.updateUserProfile called with:', { userId, updates })
+    
+    // Fetch current profile to check onboarding status
+    const { data: currentProfile } = await supabase
+      .from('user_profiles')
+      .select('onboarding_completed')
+      .eq('id', userId)
+      .single()
+    
+    // CRITICAL: If onboarding is complete AND we're NOT completing onboarding now, prevent overwriting onboarding fields
+    // Allow updates if onboarding_completed is being set to true (completing onboarding now)
+    const isCompletingOnboarding = updates.onboarding_completed === true
+    const wasAlreadyCompleted = currentProfile?.onboarding_completed === true
+    
+    if (wasAlreadyCompleted && !isCompletingOnboarding) {
+      // Onboarding was already complete - prevent modifying onboarding fields
+      const protectedFields = ['display_name', 'learning_goal', 'current_level', 'primary_focus']
+      const hasProtectedFields = protectedFields.some(field => updates[field as keyof UserProfile] !== undefined)
+      
+      if (hasProtectedFields) {
+        console.warn('Attempted to modify protected onboarding fields after completion. Filtering out:', protectedFields.filter(f => updates[f as keyof UserProfile] !== undefined))
+        // Remove protected fields from updates
+        const safeUpdates = { ...updates }
+        protectedFields.forEach(field => {
+          delete safeUpdates[field as keyof UserProfile]
+        })
+        updates = safeUpdates
+      }
+    }
+    
     const { data, error } = await supabase
       .from('user_profiles')
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -123,9 +200,11 @@ export class DatabaseService {
       .single()
 
     if (error) {
+      console.error('DatabaseService.updateUserProfile error:', error)
       throw new Error(`Failed to update user profile: ${error.message}`)
     }
 
+    console.log('DatabaseService.updateUserProfile success:', data)
     return data
   }
 
@@ -135,13 +214,18 @@ export class DatabaseService {
       .from('user_profiles')
       .select('total_xp')
       .eq('id', userId)
-      .single()
+      .maybeSingle() // Use maybeSingle() instead of single() to handle missing profiles gracefully
 
     if (error) {
+      // If profile doesn't exist, return 0 (new user)
+      if (error.code === 'PGRST116') {
+        return 0
+      }
       throw new Error(`Failed to fetch user XP: ${error.message}`)
     }
 
-    return data.total_xp
+    // If no data found, return 0 (profile doesn't exist yet)
+    return data?.total_xp ?? 0
   }
 
   // Batch update user XP with transactions

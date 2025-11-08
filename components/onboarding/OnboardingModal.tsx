@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Sparkles, User, Target, BookOpen, Zap, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Loader2, Sparkles, User, Target, BookOpen, Zap, CheckCircle2, ArrowRight, ArrowLeft, BookMarked, BarChart3, RotateCcw, Settings } from 'lucide-react'
 import { OnboardingService, OnboardingData } from '@/lib/services/onboarding-service'
 import { SmartAuthService } from '@/lib/services/smart-auth-service'
 import { generateDefaultDisplayName } from '@/lib/utils/display-name'
@@ -107,6 +107,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
   }
 
   // Complete onboarding (final step)
+  // Saves everything at once (no incremental saves)
   const handleComplete = async () => {
     if (!user?.id || !learningGoal) {
       setError('Please complete all required fields')
@@ -117,12 +118,25 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
     setError(null)
 
     try {
+      // Prepare onboarding data - save everything at once
+      // display_name: user's input (or empty string if skipped/cleared - will use default)
       const onboardingData: OnboardingData = {
-        display_name: displayName.trim() || null,
+        display_name: displayName.trim() || undefined, // Empty string becomes undefined
         learning_goal: learningGoal,
         current_level: currentLevel || null,
         primary_focus: primaryFocus || null
       }
+
+      console.log('Completing onboarding with data:', {
+        displayNameState: displayName,
+        trimmedDisplayName: displayName.trim(),
+        onboardingData: {
+          display_name: onboardingData.display_name,
+          learning_goal: onboardingData.learning_goal,
+          current_level: onboardingData.current_level,
+          primary_focus: onboardingData.primary_focus
+        }
+      })
 
       const result = await OnboardingService.completeOnboarding(user.id, onboardingData)
       
@@ -240,14 +254,20 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
   // Step 2: Display Name
   const renderDisplayNameStep = () => {
     const handleContinue = async () => {
+      // Validate if user entered something, but don't save yet (save everything on completion)
       if (displayName.trim()) {
         const validation = validateDisplayName(displayName.trim())
         if (!validation.valid) {
           setError(validation.error || 'Invalid display name')
           return
         }
-        await saveStepData({ display_name: displayName.trim() })
       }
+      goToNextStep()
+    }
+
+    const handleSkip = async () => {
+      // Clear the input (treat as skip) - will use default on completion
+      setDisplayName('')
       goToNextStep()
     }
 
@@ -300,7 +320,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
           </Button>
           <Button
             variant="ghost"
-            onClick={goToNextStep}
+            onClick={handleSkip}
             className="flex-1"
             disabled={isSaving}
           >
@@ -443,6 +463,12 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
       goToNextStep()
     }
 
+    const handleSkip = async () => {
+      // Save current selection (even if null) so Back button preserves it
+      await saveStepData({ current_level: currentLevel || null })
+      goToNextStep()
+    }
+
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -502,7 +528,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
           </Button>
           <Button
             variant="ghost"
-            onClick={goToNextStep}
+            onClick={handleSkip}
             className="flex-1"
             disabled={isSaving}
           >
@@ -543,6 +569,12 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
       if (primaryFocus) {
         await saveStepData({ primary_focus: primaryFocus })
       }
+      goToNextStep()
+    }
+
+    const handleSkip = async () => {
+      // Save current selection (even if null) so Back button preserves it
+      await saveStepData({ primary_focus: primaryFocus || null })
       goToNextStep()
     }
 
@@ -606,7 +638,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
           </Button>
           <Button
             variant="ghost"
-            onClick={goToNextStep}
+            onClick={handleSkip}
             className="flex-1"
             disabled={isSaving}
           >
@@ -635,42 +667,96 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
   }
 
   // Step 6: Quick Tour (Optional)
-  const renderQuickTourStep = () => (
-    <div className="space-y-6 text-center">
-      <div className="text-6xl mb-4">🎯</div>
-      <DialogTitle className="text-xl font-bold">
-        Want a quick tour?
-      </DialogTitle>
-      <DialogDescription className="text-base">
-        We'll show you around (30 seconds)
-      </DialogDescription>
-      
-      <div className="flex gap-3">
-        <Button
-          variant="outline"
-          onClick={goToPreviousStep}
-          className="flex-1"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={goToNextStep}
-          className="flex-1"
-        >
-          Skip tour
-        </Button>
-        <Button
-          onClick={goToNextStep}
-          className="flex-1 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 text-white font-semibold"
-        >
-          Show me around
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  )
+  const renderQuickTourStep = () => {
+    const tourSections = [
+      {
+        icon: BookMarked,
+        title: 'Modules',
+        description: 'Start learning Persian lessons with interactive games and conversations',
+        color: 'text-blue-500'
+      },
+      {
+        icon: BarChart3,
+        title: 'Dashboard',
+        description: 'Track your words learned, mastered, and words you need to practice',
+        color: 'text-green-500'
+      },
+      {
+        icon: RotateCcw,
+        title: 'Review Mode',
+        description: 'Practice words you\'ve learned with fun review games',
+        color: 'text-purple-500'
+      },
+      {
+        icon: Settings,
+        title: 'Account',
+        description: 'Manage your settings, view progress, and reset if needed',
+        color: 'text-orange-500'
+      }
+    ]
+
+    return (
+      <>
+        <div className="text-center mb-6">
+          <div className="text-6xl mb-4">🎯</div>
+          <DialogTitle className="text-xl font-bold">
+            Quick Tour
+          </DialogTitle>
+          <DialogDescription className="text-base mt-2">
+            Here's what you can do in the app
+          </DialogDescription>
+        </div>
+
+        {/* Tour Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+          {tourSections.map((section, index) => {
+            const Icon = section.icon
+            return (
+              <div
+                key={index}
+                className="flex items-start gap-3 p-4 rounded-lg border-2 border-gray-200 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200"
+              >
+                <div className={`flex-shrink-0 ${section.color}`}>
+                  <Icon className="h-6 w-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm mb-1">{section.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {section.description}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <Button
+            variant="outline"
+            onClick={goToPreviousStep}
+            className="flex-1"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={goToNextStep}
+            className="flex-1"
+          >
+            Skip tour
+          </Button>
+          <Button
+            onClick={goToNextStep}
+            className="flex-1 bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 text-white font-semibold"
+          >
+            Got it!
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </>
+    )
+  }
 
   // Step 7: Completion
   const renderCompletionStep = () => (
@@ -723,7 +809,9 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
       case 'primary_focus':
         return renderPrimaryFocusStep()
       case 'quick_tour':
-        return renderQuickTourStep()
+        // Tour step renders its own DialogTitle/Description, so return null here
+        // (it's rendered separately in the JSX)
+        return null
       case 'completion':
         return renderCompletionStep()
       default:
@@ -742,14 +830,21 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
         onClose()
       }
     }}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-background via-primary/5 to-background border-primary/20">
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-background via-primary/5 to-background border-primary/20 max-h-[90vh] overflow-y-auto">
         <WidgetErrorBoundary>
           {/* Progress Dots - Outside DialogHeader for better layout */}
           <ProgressDots />
           
-          <DialogHeader>
-            {renderStep()}
-          </DialogHeader>
+          {/* Render step content - some steps need DialogHeader, tour doesn't */}
+          {currentStep === 'quick_tour' ? (
+            <div className="space-y-6">
+              {renderQuickTourStep()}
+            </div>
+          ) : (
+            <DialogHeader>
+              {renderStep()}
+            </DialogHeader>
+          )}
         </WidgetErrorBoundary>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,6 @@
 import { DatabaseService, UserProfile } from '@/lib/supabase/database'
 import { SmartAuthService } from './smart-auth-service'
-import { validateDisplayName } from '@/lib/utils/display-name'
+import { validateDisplayName, generateUniqueDisplayName, generateDefaultDisplayName } from '@/lib/utils/display-name'
 import { supabase } from '@/lib/supabase/client'
 
 /**
@@ -91,7 +91,7 @@ export class OnboardingService {
       if (data.display_name !== undefined && data.display_name !== null) {
         const validation = validateDisplayName(data.display_name)
         if (!validation.valid) {
-          return { profile: null, error: validation.error || 'Invalid display name' }
+          return { profile: null, error: validation.error || 'Please enter a valid display name' }
         }
       }
 
@@ -99,7 +99,7 @@ export class OnboardingService {
       if (data.learning_goal !== undefined) {
         const validGoals: OnboardingData['learning_goal'][] = ['heritage', 'travel', 'family', 'academic', 'fun']
         if (!validGoals.includes(data.learning_goal)) {
-          return { profile: null, error: 'Invalid learning goal' }
+          return { profile: null, error: 'Please select a valid learning goal' }
         }
       }
 
@@ -107,7 +107,7 @@ export class OnboardingService {
       if (data.current_level !== undefined && data.current_level !== null) {
         const validLevels: NonNullable<OnboardingData['current_level']>[] = ['beginner', 'few_words', 'basic_conversation', 'intermediate']
         if (!validLevels.includes(data.current_level)) {
-          return { profile: null, error: 'Invalid current level' }
+          return { profile: null, error: 'Please select a valid level' }
         }
       }
 
@@ -115,7 +115,7 @@ export class OnboardingService {
       if (data.primary_focus !== undefined && data.primary_focus !== null) {
         const validFocuses: NonNullable<OnboardingData['primary_focus']>[] = ['speaking', 'reading', 'writing', 'all']
         if (!validFocuses.includes(data.primary_focus)) {
-          return { profile: null, error: 'Invalid primary focus' }
+          return { profile: null, error: 'Please select a valid focus' }
         }
       }
 
@@ -127,7 +127,13 @@ export class OnboardingService {
       if (data.primary_focus !== undefined) updates.primary_focus = data.primary_focus
 
       // Update profile in database
-      const updatedProfile = await DatabaseService.updateUserProfile(userId, updates)
+      let updatedProfile: UserProfile
+      try {
+        updatedProfile = await DatabaseService.updateUserProfile(userId, updates)
+      } catch (err) {
+        console.error('Failed to save onboarding data:', err)
+        return { profile: null, error: 'Unable to save. Please try again.' }
+      }
 
       // Update SmartAuthService cache for instant UI updates
       SmartAuthService.updateUserData({ profile: updatedProfile })
@@ -135,9 +141,10 @@ export class OnboardingService {
       return { profile: updatedProfile, error: null }
     } catch (error) {
       console.error('Failed to save onboarding data:', error)
+      // NEVER expose technical error messages to users
       return {
         profile: null,
-        error: error instanceof Error ? error.message : 'Failed to save onboarding data'
+        error: 'Something went wrong. Please try again.'
       }
     }
   }
@@ -158,36 +165,129 @@ export class OnboardingService {
     try {
       // Validate required field
       if (!data.learning_goal) {
-        return { profile: null, error: 'Learning goal is required' }
+        return { profile: null, error: 'Please select a learning goal' }
       }
 
-      // Validate display_name if provided
-      if (data.display_name !== undefined && data.display_name !== null) {
-        const validation = validateDisplayName(data.display_name)
-        if (!validation.valid) {
-          return { profile: null, error: validation.error || 'Invalid display name' }
+      // Get current profile from cache (fast) or fetch if needed
+      // CRITICAL: Don't call getOrCreateUserProfile here - it might overwrite display_name!
+      // Instead, fetch profile directly without any auto-generation logic
+      let currentProfile = SmartAuthService.getCachedProfile()
+      
+      // If cache miss, fetch directly from database (don't use getOrCreateUserProfile)
+      if (!currentProfile) {
+        try {
+          const { data: user } = await supabase.auth.getUser()
+          if (user.user) {
+            // Fetch profile directly - don't use getOrCreateUserProfile which might overwrite
+            const { data: profile, error } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', user.user.id)
+              .single()
+            
+            if (!error && profile) {
+              currentProfile = profile
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch user profile:', err)
+          // Continue with null check below
         }
       }
 
-      // Prepare update object
+      if (!currentProfile) {
+        return { profile: null, error: 'Unable to load your profile. Please try again.' }
+      }
+
+      // Determine final display_name:
+      // 1. If user entered something CUSTOM, use it (make it unique if needed)
+      // 2. If user skipped/cleared, use default (first_name + last_initial) - NO uniqueness check (can have duplicates)
+      // Display name should NEVER be null
+      let finalDisplayName: string
+      
+      try {
+        if (data.display_name && data.display_name.trim()) {
+          // User entered a CUSTOM display name - validate and make unique
+          const trimmed = data.display_name.trim()
+          const validation = validateDisplayName(trimmed)
+          if (!validation.valid) {
+            return { profile: null, error: validation.error || 'Please enter a valid display name' }
+          }
+          
+          // Make custom names unique (will append number if needed)
+          // This prevents 1000 "Koobideh23"s but allows many "Sara A."s
+          finalDisplayName = await generateUniqueDisplayName(trimmed, userId)
+        } else {
+          // User skipped/cleared - use default (first_name + last_initial)
+          // Default names CAN be duplicated (many "Sara A."s is fine)
+          const defaultName = generateDefaultDisplayName(
+            currentProfile.first_name,
+            currentProfile.last_name
+          )
+          
+          if (!defaultName) {
+            return { profile: null, error: 'Please provide your first name in your account settings' }
+          }
+          
+          // Use default name as-is (no uniqueness check - duplicates allowed)
+          finalDisplayName = defaultName
+        }
+      } catch (err) {
+        console.error('Error generating display name:', err)
+        return { profile: null, error: 'Unable to set display name. Please try again.' }
+      }
+
+      // Prepare update object - ALWAYS include display_name (never null)
+      // CRITICAL: Update display_name FIRST, then set onboarding_completed
+      // This prevents the protection logic from blocking the retry if display_name fails
       const updates: Partial<UserProfile> = {
+        display_name: finalDisplayName, // Always set (never null) - UPDATE FIRST
         learning_goal: data.learning_goal,
-        onboarding_completed: true // Mark as completed
+        current_level: data.current_level || null,
+        primary_focus: data.primary_focus || null
+        // Don't set onboarding_completed yet - we'll do it in a second update
       }
 
-      // Add optional fields if provided
-      if (data.display_name !== undefined) {
-        updates.display_name = data.display_name
-      }
-      if (data.current_level !== undefined) {
-        updates.current_level = data.current_level
-      }
-      if (data.primary_focus !== undefined) {
-        updates.primary_focus = data.primary_focus
+      console.log('Updating user profile with:', updates)
+      console.log('Current profile before update:', currentProfile)
+
+      // Update profile in database - FIRST update: display_name and onboarding fields (but NOT onboarding_completed)
+      let updatedProfile: UserProfile
+      try {
+        updatedProfile = await DatabaseService.updateUserProfile(userId, updates)
+        console.log('Updated profile returned from database:', updatedProfile)
+        
+        // VERIFY the update actually saved display_name correctly
+        if (updatedProfile.display_name !== finalDisplayName) {
+          console.error('CRITICAL: display_name mismatch after first update!', {
+            expected: finalDisplayName,
+            actual: updatedProfile.display_name,
+            updates
+          })
+          // Retry with just display_name (onboarding_completed still false, so protection won't block)
+          const retryUpdate = await DatabaseService.updateUserProfile(userId, {
+            display_name: finalDisplayName
+          })
+          console.log('Retry update result:', retryUpdate)
+          updatedProfile = retryUpdate
+        }
+        
+        // SECOND update: Mark onboarding as completed (now that display_name is saved)
+        const completionUpdate = await DatabaseService.updateUserProfile(userId, {
+          onboarding_completed: true
+        })
+        console.log('Completion update result:', completionUpdate)
+        updatedProfile = completionUpdate
+      } catch (err) {
+        console.error('Failed to update profile:', err)
+        return { profile: null, error: 'Unable to save your information. Please try again.' }
       }
 
-      // Update profile in database
-      const updatedProfile = await DatabaseService.updateUserProfile(userId, updates)
+      console.log('Final updated profile:', updatedProfile)
+
+      // Note: Auth metadata (display_name, first_name, last_name) is automatically synced
+      // from user_profiles to auth.users via the trg_sync_user_metadata trigger
+      // No manual update needed here
 
       // Update SmartAuthService cache for instant UI updates
       SmartAuthService.updateUserData({ profile: updatedProfile })
@@ -195,9 +295,10 @@ export class OnboardingService {
       return { profile: updatedProfile, error: null }
     } catch (error) {
       console.error('Failed to complete onboarding:', error)
+      // NEVER expose technical error messages to users
       return {
         profile: null,
-        error: error instanceof Error ? error.message : 'Failed to complete onboarding'
+        error: 'Something went wrong. Please try again or contact support if the problem persists.'
       }
     }
   }

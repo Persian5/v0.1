@@ -91,6 +91,32 @@ export function AuthModal({
     
     // ✅ SECURITY: Client-side validation (UX only - server still validates)
     if (mode === 'signup') {
+      // Validate all required fields
+      if (!firstName.trim()) {
+        setError('First name is required')
+        setIsLoading(false)
+        return
+      }
+      if (!lastName.trim()) {
+        setError('Last name is required')
+        setIsLoading(false)
+        return
+      }
+      if (!email.trim()) {
+        setError('Email is required')
+        setIsLoading(false)
+        return
+      }
+      if (!password) {
+        setError('Password is required')
+        setIsLoading(false)
+        return
+      }
+      if (!confirmPassword) {
+        setError('Please confirm your password')
+        setIsLoading(false)
+        return
+      }
       if (password !== confirmPassword) {
         setError('Passwords do not match')
         setIsLoading(false)
@@ -98,6 +124,17 @@ export function AuthModal({
       }
       if (!passwordValid) {
         setError('Password must be at least 6 characters and include a number')
+        setIsLoading(false)
+        return
+      }
+    } else if (mode === 'signin') {
+      if (!email.trim()) {
+        setError('Email is required')
+        setIsLoading(false)
+        return
+      }
+      if (!password) {
+        setError('Password is required')
         setIsLoading(false)
         return
       }
