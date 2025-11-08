@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { withRateLimit, addRateLimitHeaders } from '@/lib/middleware/rate-limit-middleware'
+import { RATE_LIMITS } from '@/lib/services/rate-limiter'
 
 /**
  * GET /api/user-stats
@@ -7,6 +9,17 @@ import { createClient } from '@/lib/supabase/server'
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit dashboard stats (10 requests per minute)
+    const rateLimitResult = await withRateLimit(request, {
+      config: RATE_LIMITS.USER_STATS,
+      keyPrefix: 'user-stats',
+      useIpFallback: false
+    });
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
+
     // Get Supabase client with server-side auth
     const supabaseServer = createClient()
 
@@ -72,7 +85,8 @@ export async function GET(request: NextRequest) {
       hardWords: hardWordsWithErrorRate
     }
 
-    return NextResponse.json(stats)
+    const response = NextResponse.json(stats)
+    return addRateLimitHeaders(response, rateLimitResult.headers)
 
   } catch (error) {
     console.error('Error fetching user stats:', error)

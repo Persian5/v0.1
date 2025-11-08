@@ -1,8 +1,10 @@
 // app/api/checkout/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { withRateLimit, addRateLimitHeaders } from "@/lib/middleware/rate-limit-middleware";
+import { RATE_LIMITS } from "@/lib/services/rate-limiter";
 
 export const runtime = "nodejs";         // required to avoid Edge runtime
 export const dynamic = "force-dynamic";  // don't cache
@@ -47,8 +49,19 @@ function makeSupabaseServer() {
   );
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // CRITICAL: Rate limit checkout to prevent abuse (3 requests per 5 minutes)
+    const rateLimitResult = await withRateLimit(req, {
+      config: RATE_LIMITS.CHECKOUT,
+      keyPrefix: 'checkout',
+      useIpFallback: true
+    });
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
+
     const supabase = makeSupabaseServer();
     const { data: { user }, error } = await supabase.auth.getUser();
 
@@ -73,7 +86,8 @@ export async function POST(req: Request) {
       metadata: { supabase_user_id: user.id },
     });
 
-    return NextResponse.json({ url: session.url }, { status: 200 });
+    const response = NextResponse.json({ url: session.url }, { status: 200 });
+    return addRateLimitHeaders(response, rateLimitResult.headers);
   } catch (err: any) {
     console.error("Checkout error:", err);
     return NextResponse.json({ error: err.message ?? "Checkout failed" }, { status: 500 });

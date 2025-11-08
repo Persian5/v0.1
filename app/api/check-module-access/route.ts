@@ -1,6 +1,8 @@
 // app/api/check-module-access/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { ModuleAccessService } from "@/lib/services/module-access-service"
+import { withRateLimit, addRateLimitHeaders } from "@/lib/middleware/rate-limit-middleware"
+import { RATE_LIMITS } from "@/lib/services/rate-limiter"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -11,6 +13,17 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(req: NextRequest) {
   try {
+    // Rate limit module access checks (30 requests per minute)
+    const rateLimitResult = await withRateLimit(req, {
+      config: RATE_LIMITS.MODULE_ACCESS,
+      keyPrefix: 'module-access',
+      useIpFallback: false // Only rate limit authenticated users
+    });
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
+
     const { searchParams } = new URL(req.url)
     const moduleId = searchParams.get('moduleId')
     
@@ -24,7 +37,8 @@ export async function GET(req: NextRequest) {
     // Use the server-side service to check access
     const accessCheck = await ModuleAccessService.canAccessModule(moduleId)
     
-    return NextResponse.json(accessCheck, { status: 200 })
+    const response = NextResponse.json(accessCheck, { status: 200 })
+    return addRateLimitHeaders(response, rateLimitResult.headers)
   } catch (error) {
     console.error("Error checking module access:", error)
     return NextResponse.json(
