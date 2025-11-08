@@ -7,6 +7,9 @@ import { Medal, Star, Sparkles, Home, RotateCcw, ArrowRight } from "lucide-react
 import { motion } from "framer-motion"
 import { getModule } from "@/lib/config/curriculum"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
+import { PremiumLockModal } from "@/components/PremiumLockModal"
+import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
+import { SmartAuthService } from "@/lib/services/smart-auth-service"
 
 interface ModuleCompletionProps {
   moduleId: string;
@@ -63,12 +66,13 @@ const MODULE_COMPLETION_DATA: Record<string, ModuleCompletionData> = {
 export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionProps) {
   const router = useRouter();
   const [vocabularyLearned, setVocabularyLearned] = useState<string[]>([]);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   
   const module = getModule(moduleId);
   const completionData = MODULE_COMPLETION_DATA[moduleId];
   
   // Get next module info
-  const nextModuleId = moduleId === "module1" ? "module2" : moduleId === "module2" ? "module3" : "module4"; // Updated logic
+  const nextModuleId = moduleId === "module1" ? "module2" : moduleId === "module2" ? "module3" : "module4";
   const nextModule = getModule(nextModuleId);
   const isNextModuleAvailable = nextModule?.available || false;
   
@@ -84,10 +88,43 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
     return null;
   }
 
-  const handleNextModule = () => {
-    if (isNextModuleAvailable) {
-      router.push(`/modules/${nextModuleId}`);
+  const handleNextModule = async () => {
+    if (!isNextModuleAvailable) return;
+    
+    // ✅ FIX: Check premium access BEFORE navigating
+    if (nextModule?.requiresPremium) {
+      const { user } = SmartAuthService.getSessionState()
+      if (user) {
+        try {
+          // Check cache first
+          const cachedAccess = getCachedModuleAccess(nextModuleId, user.id)
+          let accessData
+          
+          if (cachedAccess) {
+            accessData = cachedAccess
+          } else {
+            // Cache miss - fetch from API
+            const accessResponse = await fetch(`/api/check-module-access?moduleId=${nextModuleId}`)
+            if (accessResponse.ok) {
+              accessData = await accessResponse.json()
+              setCachedModuleAccess(nextModuleId, user.id, accessData)
+            }
+          }
+          
+          // If user doesn't have premium access, show modal instead of navigating
+          if (accessData && !accessData.canAccess && accessData.reason === 'no_premium') {
+            setShowPremiumModal(true)
+            return
+          }
+        } catch (error) {
+          console.error('Failed to check premium access:', error)
+          // On error, still try to navigate (fail open)
+        }
+      }
     }
+    
+    // User has access (or module doesn't require premium) - navigate
+    router.push(`/modules/${nextModuleId}`);
   };
 
   const handleRepracticeModule = () => {
@@ -231,6 +268,13 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
           </Button>
         </div>
       </motion.div>
+      
+      {/* Premium Lock Modal */}
+      <PremiumLockModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        moduleTitle={nextModule?.title}
+      />
     </div>
   );
 } 

@@ -88,10 +88,15 @@ function VerifyEmailContent() {
           setStatus('success')
           setUserEmail(data.user.email || '')
           
-          // Redirect to lessons after celebration
+          // ✅ Auto-login: The verifyOtp call already creates a session
+          // The session is now active - user is automatically logged in
+          // Redirect to lessons after 2.6 second celebration
+          // The SmartAuthProvider will pick up the session automatically on next page load
           setTimeout(() => {
-            router.push('/modules')
-          }, 3000)
+            // Use window.location.href instead of router.push to ensure
+            // full page reload so auth context picks up the new session
+            window.location.href = '/modules'
+          }, 2600)
         } else {
           setError('Verification failed - no user returned')
           setStatus('invalid')
@@ -288,7 +293,7 @@ function VerifyEmailContent() {
             <div className="text-center space-y-4">
               <div className="text-4xl mb-2">🎉</div>
               <p className="text-sm text-muted-foreground">
-                Welcome to Persian learning! Redirecting to lessons in 3 seconds...
+                Email verified! You're now signed in. Redirecting to lessons...
               </p>
               <Button onClick={handleGoToLessons} className="w-full">
                 Start Learning Now

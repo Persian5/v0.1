@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronRight, ChevronLeft, Star, Loader2 } from "lucide-react"
+import { ModulePreviewContent } from "@/components/previews/ModulePreviewContent"
+import { BlurredPreviewContainer } from "@/components/previews/BlurredPreviewContainer"
 import { getModule } from "@/lib/config/curriculum"
 import { useParams, useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
@@ -13,6 +15,8 @@ import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
+import { PremiumLockModal } from "@/components/PremiumLockModal"
+import { LockScreen } from "@/components/LockScreen"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
 
@@ -20,6 +24,11 @@ export default function ModulePage() {
   const { moduleId } = useParams()
   const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
+  const [showLockScreen, setShowLockScreen] = useState(false)
+  const [lockType, setLockType] = useState<'sequential' | 'prerequisites' | null>(null)
+  const [lockMessage, setLockMessage] = useState('')
+  const [missingPrerequisites, setMissingPrerequisites] = useState<string[]>([])
   const [pendingLessonPath, setPendingLessonPath] = useState<string | null>(null)
   const [allProgress, setAllProgress] = useState<UserLessonProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -67,11 +76,29 @@ export default function ModulePage() {
               }
             }
             
-            // If user cannot access this module, redirect to /modules
+            // ✅ FIX: Show overlay instead of redirecting
             if (accessData && !accessData.canAccess) {
-              console.warn(`Access denied to module ${moduleId}:`, accessData.reason)
-              router.push('/modules')
-              return
+              if (accessData.reason === 'no_premium') {
+                // Show premium modal overlay
+                setShowPremiumModal(true)
+                setIsLoading(false)
+                return
+              } else if (accessData.reason === 'incomplete_prerequisites') {
+                // Show prerequisites lock screen
+                const missingModules = accessData.missingPrerequisites || []
+                const { getModule } = await import('@/lib/config/curriculum')
+                const firstMissingModule = missingModules[0] ? getModule(missingModules[0]) : null
+                const message = firstMissingModule
+                  ? `Complete ${firstMissingModule.title} first to unlock this module.`
+                  : 'Complete previous modules first to unlock this module.'
+                
+                setShowLockScreen(true)
+                setLockType('prerequisites')
+                setLockMessage(message)
+                setMissingPrerequisites(missingModules)
+                setIsLoading(false)
+                return
+              }
             }
           } catch (accessError) {
             console.error('Failed to check module access:', accessError)
@@ -198,6 +225,116 @@ export default function ModulePage() {
           </Button>
         </div>
       </div>
+    )
+  }
+
+  // For non-auth users: show full lesson list with auth modal overlay (cannot be dismissed)
+  if (!isAuthenticated && !isLoading) {
+    return (
+      <>
+        <BlurredPreviewContainer
+          header={
+            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                <Link href="/modules" className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary">
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline">Back to Modules</span>
+                  <span className="sm:hidden">Back</span>
+                </Link>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
+                  </div>
+                  <AccountNavButton />
+                </div>
+              </div>
+            </header>
+          }
+        >
+          <ModulePreviewContent
+            module={module}
+            lessons={lessons}
+            accessibilityCache={accessibilityCache}
+            badgeText="Sign up to unlock"
+            buttonText="Sign up to start"
+            showStats={true}
+          />
+        </BlurredPreviewContainer>
+        
+        {/* Auth Modal Overlay - Cannot be dismissed, only navigation allowed */}
+        <AuthModal
+          isOpen={true}
+          onClose={() => {
+            router.push('/modules')
+          }}
+          onSuccess={async () => {
+            window.location.reload()
+          }}
+          title="Sign up to continue learning Persian"
+          description="Join thousands learning to reconnect with their roots"
+        />
+      </>
+    )
+  }
+
+  // For authenticated users with premium/prerequisites issues: show overlay
+  if (isAuthenticated && !isLoading && (showPremiumModal || showLockScreen)) {
+    return (
+      <>
+        <BlurredPreviewContainer
+          header={
+            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                <Link href="/modules" className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary">
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline">Back to Modules</span>
+                  <span className="sm:hidden">Back</span>
+                </Link>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
+                  </div>
+                  <AccountNavButton />
+                </div>
+              </div>
+            </header>
+          }
+        >
+          <ModulePreviewContent
+            module={module}
+            lessons={lessons}
+            accessibilityCache={{}}
+            badgeText={showPremiumModal ? 'Premium Required' : 'Locked'}
+            buttonText={showPremiumModal ? 'Unlock Premium' : 'Complete Previous'}
+            showStats={true}
+          />
+        </BlurredPreviewContainer>
+        
+        {/* Premium Modal Overlay */}
+        {showPremiumModal && (
+          <PremiumLockModal
+            isOpen={true}
+            onClose={() => {
+              setShowPremiumModal(false)
+              router.push('/modules')
+            }}
+            moduleTitle={module?.title}
+          />
+        )}
+
+        {/* Lock Screen Overlay */}
+        {showLockScreen && lockType && (
+          <LockScreen
+            isOpen={true}
+            type={lockType}
+            message={lockMessage}
+            currentModuleId={moduleId as string}
+            missingPrerequisites={missingPrerequisites}
+          />
+        )}
+      </>
     )
   }
 
@@ -331,7 +468,7 @@ export default function ModulePage() {
         </section>
       </main>
 
-      {/* Auth modal overlay */}
+      {/* Auth modal overlay (for authenticated users clicking locked lessons) */}
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => {

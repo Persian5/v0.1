@@ -12,6 +12,9 @@ import LessonHeader from "@/app/components/LessonHeader"
 import { CountUpXP } from "@/app/components/CountUpXP"
 import { getModule } from "@/lib/config/curriculum"
 import { LessonRouteGuard } from "@/components/routes/LessonRouteGuard"
+import { PremiumLockModal } from "@/components/PremiumLockModal"
+import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
+import { SmartAuthService } from "@/lib/services/smart-auth-service"
 
 interface CompletionPageProps {
   xp?: number;
@@ -31,6 +34,8 @@ function CompletionPageContent({
   const initialXp = Number.isFinite(parsed) ? parsed : null;
   const router = useRouter();
   const { xp: totalXp, isLoading } = useXp();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumModuleTitle, setPremiumModuleTitle] = useState<string | undefined>(undefined);
   
   // Default handlers if not provided via props
   const handleReset = () => {
@@ -57,13 +62,81 @@ function CompletionPageContent({
   const navigateForward = async () => {
     try {
       if (isLastLessonInModule) {
-        // Go to module completion view within lesson page
+        // Check if next module requires premium BEFORE showing module completion
+        const nextModuleId = moduleId === "module1" ? "module2" : moduleId === "module2" ? "module3" : "module4";
+        const nextModule = getModule(nextModuleId);
+        
+        // ✅ FIX: Check premium access for next module
+        if (nextModule?.requiresPremium) {
+          const { user } = SmartAuthService.getSessionState()
+          if (user) {
+            try {
+              const cachedAccess = getCachedModuleAccess(nextModuleId, user.id)
+              let accessData
+              
+              if (cachedAccess) {
+                accessData = cachedAccess
+              } else {
+                const accessResponse = await fetch(`/api/check-module-access?moduleId=${nextModuleId}`)
+                if (accessResponse.ok) {
+                  accessData = await accessResponse.json()
+                  setCachedModuleAccess(nextModuleId, user.id, accessData)
+                }
+              }
+              
+              // If user doesn't have premium, show modal instead of navigating
+              if (accessData && !accessData.canAccess && accessData.reason === 'no_premium') {
+                setPremiumModuleTitle(nextModule.title)
+                setShowPremiumModal(true)
+                return
+              }
+            } catch (error) {
+              console.error('Failed to check premium access:', error)
+            }
+          }
+        }
+        
+        // User has access - go to module completion view
         router.push(`/modules/${moduleId}/${lessonId}?view=module-completion`);
       } else {
+        // Get next lesson
         const nextLesson = await LessonProgressService.getNextSequentialLesson(
           moduleId as string,
           lessonId as string
         );
+        
+        // ✅ FIX: Check premium access for next lesson's module
+        const nextLessonModule = getModule(nextLesson.moduleId);
+        if (nextLessonModule?.requiresPremium) {
+          const { user } = SmartAuthService.getSessionState()
+          if (user) {
+            try {
+              const cachedAccess = getCachedModuleAccess(nextLesson.moduleId, user.id)
+              let accessData
+              
+              if (cachedAccess) {
+                accessData = cachedAccess
+              } else {
+                const accessResponse = await fetch(`/api/check-module-access?moduleId=${nextLesson.moduleId}`)
+                if (accessResponse.ok) {
+                  accessData = await accessResponse.json()
+                  setCachedModuleAccess(nextLesson.moduleId, user.id, accessData)
+                }
+              }
+              
+              // If user doesn't have premium, show modal instead of navigating
+              if (accessData && !accessData.canAccess && accessData.reason === 'no_premium') {
+                setPremiumModuleTitle(nextLessonModule.title)
+                setShowPremiumModal(true)
+                return
+              }
+            } catch (error) {
+              console.error('Failed to check premium access:', error)
+            }
+          }
+        }
+        
+        // User has access - navigate to next lesson
         router.push(`/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`);
       }
     } catch (error) {
@@ -130,6 +203,13 @@ function CompletionPageContent({
           </div>
         </div>
       </main>
+      
+      {/* Premium Lock Modal */}
+      <PremiumLockModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        moduleTitle={premiumModuleTitle}
+      />
     </div>
   )
 }

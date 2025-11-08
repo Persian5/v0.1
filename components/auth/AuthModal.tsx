@@ -34,13 +34,16 @@ export function AuthModal({
   const [mode, setMode] = useState<AuthMode>('signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
   const [passwordValid, setPasswordValid] = useState(false)
+  const [passwordsMatch, setPasswordsMatch] = useState(true)
 
   // Auto-switch to verify mode if user exists but email not verified
   useEffect(() => {
@@ -49,6 +52,34 @@ export function AuthModal({
       setEmail(user.email || '')
     }
   }, [user, isEmailVerified])
+
+  // Auto-poll for email verification when in verify mode (every 3 seconds)
+  useEffect(() => {
+    if (mode === 'verify' && user && !isEmailVerified && isOpen) {
+      const pollInterval = setInterval(async () => {
+        try {
+          // Refresh session to check if email was verified
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          if (session?.user?.email_confirmed_at) {
+            // Email verified! Switch to success mode
+            setMode('success')
+            clearInterval(pollInterval)
+            
+            // Refresh the page to ensure auth context picks up the verified session
+            // This ensures all components get the updated auth state
+            setTimeout(() => {
+              window.location.reload()
+            }, 1500)
+          }
+        } catch (error) {
+          console.error('Error polling for email verification:', error)
+        }
+      }, 3000) // Poll every 3 seconds
+
+      return () => clearInterval(pollInterval)
+    }
+  }, [mode, user, isEmailVerified, isOpen])
 
   // Freeze background scroll when modal open
   useEffect(() => {
@@ -65,14 +96,32 @@ export function AuthModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    
+    // ✅ SECURITY: Client-side validation (UX only - server still validates)
+    if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match')
+        setIsLoading(false)
+        return
+      }
+      if (!passwordValid) {
+        setError('Password must be at least 6 characters and include a number')
+        setIsLoading(false)
+        return
+      }
+    }
+    
     setIsLoading(true)
 
     try {
       if (mode === 'signup') {
+        // ✅ SECURITY: Only send password to server, NEVER send confirmPassword
         const { error } = await signUp(email, password, firstName, lastName)
         if (error) {
           setError(error)
         } else {
+          // Clear confirmPassword from memory after successful signup
+          setConfirmPassword('')
           // Keep user in modal and switch to verify mode instead of redirecting
           setMode('verify')
           // Don't close modal - keep them in the verification flow
@@ -129,11 +178,14 @@ export function AuthModal({
   const resetForm = () => {
     setEmail('')
     setPassword('')
+    setConfirmPassword('')
     setFirstName('')
     setLastName('')
     setError(null)
     setShowPassword(false)
+    setShowConfirmPassword(false)
     setPasswordValid(false)
+    setPasswordsMatch(true)
   }
 
   const switchMode = (newMode: AuthMode) => {
@@ -152,6 +204,20 @@ export function AuthModal({
   const handlePasswordChange = (value: string) => {
     setPassword(value)
     setPasswordValid(passwordRegex.test(value))
+    // Check if passwords match when password changes
+    if (confirmPassword) {
+      setPasswordsMatch(value === confirmPassword)
+    }
+  }
+
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value)
+    // Check if passwords match
+    setPasswordsMatch(password === value)
+    // Clear error if passwords now match
+    if (password === value && error === 'Passwords do not match') {
+      setError(null)
+    }
   }
 
   return (
@@ -192,6 +258,9 @@ export function AuthModal({
                 Verification email sent to:
               </p>
               <p className="font-medium">{email}</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                We'll automatically detect when you verify your email...
+              </p>
             </div>
             <div className="space-y-2">
               <Button
@@ -219,7 +288,7 @@ export function AuthModal({
                   switchMode('signup')
                 }}
               >
-                Use a different email
+                Try a different email
               </Button>
             </div>
           </div>
@@ -290,6 +359,7 @@ export function AuthModal({
                   required
                   disabled={isLoading}
                   minLength={6}
+                  aria-describedby={mode === 'signup' ? 'password-requirements' : undefined}
                 />
                 <Button
                   type="button"
@@ -298,6 +368,7 @@ export function AuthModal({
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -308,9 +379,58 @@ export function AuthModal({
               </div>
             </div>
 
+            {/* Confirm Password Field - Only for Signup */}
+            {mode === 'signup' && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    aria-invalid={!passwordsMatch && confirmPassword.length > 0}
+                    aria-describedby={confirmPassword.length > 0 ? 'password-match-status' : undefined}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isLoading}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {/* Password match status */}
+                {confirmPassword.length > 0 && (
+                  <p 
+                    id="password-match-status"
+                    className={`text-xs ${passwordsMatch ? 'text-green-600' : 'text-red-600'}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Password strength validation message */}
             {mode === 'signup' && password.length > 0 && (
-              <p className={`text-xs ${passwordValid ? 'text-green-600' : 'text-red-600'}`}>
+              <p 
+                id="password-requirements"
+                className={`text-xs ${passwordValid ? 'text-green-600' : 'text-red-600'}`}
+              >
                 Password must be at least 6 characters and include a number.
               </p>
             )}
@@ -321,7 +441,14 @@ export function AuthModal({
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading || (mode === 'signup' && !passwordValid)}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={
+                isLoading || 
+                (mode === 'signup' && (!passwordValid || !passwordsMatch || !confirmPassword))
+              }
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
