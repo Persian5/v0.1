@@ -24,6 +24,7 @@ import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
+import PageErrorBoundary from "@/components/errors/PageErrorBoundary"
 
 function LessonPageContent() {
   const params = useParams()
@@ -375,74 +376,76 @@ function LessonPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <Link 
-            href={`/modules/${moduleId}`} 
-            className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary"
-          >
-            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Module {moduleId.replace('module', '')}</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
+    <PageErrorBoundary>
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header */}
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <Link 
+              href={`/modules/${moduleId}`} 
+              className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary"
+            >
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>Module {moduleId.replace('module', '')}</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
+              </div>
+              <AccountNavButton />
             </div>
-            <AccountNavButton />
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main content area */}
-      <main className="flex-1 flex flex-col">
-        {/* Progress bar - only show if not on completion view */}
-        {currentView !== 'completion' && currentView !== 'module-completion' && currentView !== 'summary' && (
-          <Progress value={progress} className="w-full h-2 mb-4" />
-        )}
-        <div className="flex-1 flex flex-col w-full">
-          {/* Content Area - takes remaining space */}
-          <div className="flex-1 flex flex-col items-center justify-start min-h-0 w-full">
-            {/* Render the appropriate content based on currentView */}
-            {currentView === 'completion' ? (
-              <CompletionPage 
-                xp={xp} 
-                resetLesson={resetLesson}
-                handleViewSummary={handleViewSummary}
-              />
-            ) : currentView === 'module-completion' ? (
-              <ModuleCompletion 
-                moduleId={moduleId}
-                totalXpEarned={ModuleProgressService.getModuleCompletion(moduleId)?.totalXpEarned || 0}
-              />
-            ) : currentView === 'summary' ? (
-              <SummaryPage 
-                xp={xp}
-                resetLesson={resetLesson}
-                learnedWords={getLearnedWords()}
-              />
-            ) : (
-              /* Always drive from config */
-              <LessonRunner 
-                steps={getLessonSteps(moduleId, lessonId)} 
-                moduleId={moduleId}
-                lessonId={lessonId}
-                lessonData={lesson}
-                xp={xp}
-                addXp={addXp}
-                progress={progress}
-                onProgressChange={setProgress}
-                currentView={currentView}
-                onViewChange={setCurrentView}
-                onSaveState={(state) => setPreviousStates(prev => [...prev, state])}
-              />
-            )}
+        {/* Main content area */}
+        <main className="flex-1 flex flex-col">
+          {/* Progress bar - only show if not on completion view */}
+          {currentView !== 'completion' && currentView !== 'module-completion' && currentView !== 'summary' && (
+            <Progress value={progress} className="w-full h-2 mb-4" />
+          )}
+          <div className="flex-1 flex flex-col w-full">
+            {/* Content Area - takes remaining space */}
+            <div className="flex-1 flex flex-col items-center justify-start min-h-0 w-full">
+              {/* Render the appropriate content based on currentView */}
+              {currentView === 'completion' ? (
+                <CompletionPage 
+                  xp={xp} 
+                  resetLesson={resetLesson}
+                  handleViewSummary={handleViewSummary}
+                />
+              ) : currentView === 'module-completion' ? (
+                <ModuleCompletion 
+                  moduleId={moduleId}
+                  totalXpEarned={ModuleProgressService.getModuleCompletion(moduleId)?.totalXpEarned || 0}
+                />
+              ) : currentView === 'summary' ? (
+                <SummaryPage 
+                  xp={xp}
+                  resetLesson={resetLesson}
+                  learnedWords={getLearnedWords()}
+                />
+              ) : (
+                /* Always drive from config */
+                <LessonRunner 
+                  steps={getLessonSteps(moduleId, lessonId)} 
+                  moduleId={moduleId}
+                  lessonId={lessonId}
+                  lessonData={lesson}
+                  xp={xp}
+                  addXp={addXp}
+                  progress={progress}
+                  onProgressChange={setProgress}
+                  currentView={currentView}
+                  onViewChange={setCurrentView}
+                  onSaveState={(state) => setPreviousStates(prev => [...prev, state])}
+                />
+              )}
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </PageErrorBoundary>
   );
 }
 

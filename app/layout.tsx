@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from "@vercel/analytics/next"
 import { SmartAuthProvider } from "@/components/auth/SmartAuthProvider"
 import { XpCacheInitializer } from "@/components/XpCacheInitializer"
+import ClientRootBoundary from "@/components/ClientRootBoundary"
+import { CrashTestButton } from "@/components/CrashTestButton"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -44,7 +46,10 @@ export default function RootLayout({
         >
           <XpCacheInitializer />
           <SmartAuthProvider>
-            {children}
+            <ClientRootBoundary>
+              {children}
+              <CrashTestButton />
+            </ClientRootBoundary>
           </SmartAuthProvider>
         </ThemeProvider>
         <Analytics />

@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SubscribeButton } from "@/components/SubscribeButton"
 import { Lock, Sparkles, Zap, Trophy, BookOpen } from "lucide-react"
+import WidgetErrorBoundary from "@/components/errors/WidgetErrorBoundary"
 
 interface PremiumLockModalProps {
   isOpen: boolean
@@ -14,19 +15,20 @@ export function PremiumLockModal({ isOpen, onClose, moduleTitle }: PremiumLockMo
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500">
-            <Lock className="h-8 w-8 text-white" />
-          </div>
-          <DialogTitle className="text-center text-2xl font-bold">
-            {moduleTitle ? `Unlock ${moduleTitle}` : "Unlock Premium Modules"}
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            {moduleTitle 
-              ? `Get access to ${moduleTitle} and unlock all premium Persian lessons.`
-              : "Get unlimited access to all Persian lessons and features with a Premium subscription."}
-          </DialogDescription>
-        </DialogHeader>
+        <WidgetErrorBoundary>
+          <DialogHeader>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500">
+              <Lock className="h-8 w-8 text-white" />
+            </div>
+            <DialogTitle className="text-center text-2xl font-bold">
+              {moduleTitle ? `Unlock ${moduleTitle}` : "Unlock Premium Modules"}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {moduleTitle 
+                ? `Get access to ${moduleTitle} and unlock all premium Persian lessons.`
+                : "Get unlimited access to all Persian lessons and features with a Premium subscription."}
+            </DialogDescription>
+          </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Benefits List */}
@@ -88,6 +90,7 @@ export function PremiumLockModal({ isOpen, onClose, moduleTitle }: PremiumLockMo
             Start learning Persian today. No commitment required.
           </p>
         </div>
+        </WidgetErrorBoundary>
       </DialogContent>
     </Dialog>
   )

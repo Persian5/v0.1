@@ -6,6 +6,7 @@ import { ReviewAudioDefinitions } from "@/app/components/review/ReviewAudioDefin
 import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
+import GameErrorBoundary from "@/components/errors/GameErrorBoundary"
 
 // Force dynamic rendering to prevent build errors
 export const dynamic = 'force-dynamic'
@@ -64,9 +65,11 @@ function AudioDefinitionsContent() {
 
 export default function AudioDefinitionsPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
-      <AudioDefinitionsContent />
-    </Suspense>
+    <GameErrorBoundary>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+        <AudioDefinitionsContent />
+      </Suspense>
+    </GameErrorBoundary>
   )
 }
 

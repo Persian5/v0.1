@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
+import WidgetErrorBoundary from "@/components/errors/WidgetErrorBoundary"
 
 interface DashboardStats {
   wordsLearned: number
@@ -203,24 +204,30 @@ function DashboardContent() {
           {/* Widgets Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Words Learned */}
-            <WordsLearnedWidget 
-              wordsLearned={stats?.wordsLearned || 0} 
-              isLoading={isLoading} 
-            />
+            <WidgetErrorBoundary>
+              <WordsLearnedWidget 
+                wordsLearned={stats?.wordsLearned || 0} 
+                isLoading={isLoading} 
+              />
+            </WidgetErrorBoundary>
 
             {/* Mastered Words */}
-            <MasteredWordsWidget 
-              masteredWords={stats?.masteredWords || 0} 
-              isLoading={isLoading} 
-            />
+            <WidgetErrorBoundary>
+              <MasteredWordsWidget 
+                masteredWords={stats?.masteredWords || 0} 
+                isLoading={isLoading} 
+              />
+            </WidgetErrorBoundary>
           </div>
 
           {/* Hard Words (Full Width) */}
           <div className="mb-8">
-            <HardWordsWidget 
-              hardWords={stats?.hardWords || []} 
-              isLoading={isLoading} 
-            />
+            <WidgetErrorBoundary>
+              <HardWordsWidget 
+                hardWords={stats?.hardWords || []} 
+                isLoading={isLoading} 
+              />
+            </WidgetErrorBoundary>
           </div>
 
           {/* CTA Section */}

@@ -6,6 +6,7 @@ import { ReviewMemoryGame } from "@/app/components/review/ReviewMemoryGame"
 import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"
+import GameErrorBoundary from "@/components/errors/GameErrorBoundary"
 
 // Force dynamic rendering to prevent build errors
 export const dynamic = 'force-dynamic'
@@ -64,16 +65,18 @@ function MemoryGameContent() {
 
 export default function MemoryGamePage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-[#FAF8F3]">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#10B981] border-t-transparent mx-auto mb-4" />
-          <p className="text-[#1E293B]">Loading...</p>
+    <GameErrorBoundary>
+      <Suspense fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#FAF8F3]">
+          <div className="text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#10B981] border-t-transparent mx-auto mb-4" />
+            <p className="text-[#1E293B]">Loading...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <MemoryGameContent />
-    </Suspense>
+      }>
+        <MemoryGameContent />
+      </Suspense>
+    </GameErrorBoundary>
   )
 }
 

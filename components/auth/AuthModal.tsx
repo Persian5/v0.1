@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, Mail, Eye, EyeOff, X } from 'lucide-react'
 import { useAuth } from './AuthProvider'
 import { supabase } from '@/lib/supabase/client'
+import WidgetErrorBoundary from '@/components/errors/WidgetErrorBoundary'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -156,29 +157,30 @@ export function AuthModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-background via-primary/5 to-background border-primary/20">
-        {/* X Button in top right */}
-        <button
-          onClick={handleClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
+        <WidgetErrorBoundary>
+          {/* X Button in top right */}
+          <button
+            onClick={handleClose}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
 
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl font-bold">
-            {mode === 'signup' && title}
-            {mode === 'signin' && 'Welcome back!'}
-            {mode === 'verify' && 'Check your email'}
-            {mode === 'success' && 'Welcome to Persian Learning!'}
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            {mode === 'signup' && description}
-            {mode === 'signin' && 'Sign in to continue your Persian learning journey'}
-            {mode === 'verify' && 'We sent you a verification link. Please check your email and click the link to continue.'}
-            {mode === 'success' && 'Your account is ready. Starting your lesson...'}
-          </DialogDescription>
-        </DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold">
+              {mode === 'signup' && title}
+              {mode === 'signin' && 'Welcome back!'}
+              {mode === 'verify' && 'Check your email'}
+              {mode === 'success' && 'Welcome to Persian Learning!'}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {mode === 'signup' && description}
+              {mode === 'signin' && 'Sign in to continue your Persian learning journey'}
+              {mode === 'verify' && 'We sent you a verification link. Please check your email and click the link to continue.'}
+              {mode === 'success' && 'Your account is ready. Starting your lesson...'}
+            </DialogDescription>
+          </DialogHeader>
 
         {mode === 'verify' && (
           <div className="space-y-4">
@@ -365,6 +367,7 @@ export function AuthModal({
             </div>
           </form>
         )}
+        </WidgetErrorBoundary>
       </DialogContent>
     </Dialog>
   )
