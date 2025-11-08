@@ -130,7 +130,7 @@ export { rateLimiter, type RateLimitConfig }
  */
 export const RATE_LIMITS = {
   CHECKOUT: { maxRequests: 3, windowMs: 5 * 60 * 1000 },        // 3 req per 5 minutes
-  MODULE_ACCESS: { maxRequests: 30, windowMs: 60 * 1000 },      // 30 req per minute
+  MODULE_ACCESS: { maxRequests: 50, windowMs: 60 * 1000 },      // 50 req per minute (increased for safety)
   USER_STATS: { maxRequests: 10, windowMs: 60 * 1000 },         // 10 req per minute
   CHECK_PREMIUM: { maxRequests: 20, windowMs: 60 * 1000 },      // 20 req per minute
 } as const

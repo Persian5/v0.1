@@ -25,6 +25,7 @@ import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import PageErrorBoundary from "@/components/errors/PageErrorBoundary"
+import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
 
 function LessonPageContent() {
   const params = useParams()
@@ -96,21 +97,33 @@ function LessonPageContent() {
         // STEP: Check premium access FIRST (CRITICAL - prevents free users accessing premium lessons)
         if (module?.requiresPremium) {
           try {
-            const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
-            if (accessResponse.ok) {
-              const accessData = await accessResponse.json()
-              if (!accessData.canAccess && accessData.reason === 'no_premium') {
-                // User doesn't have premium → show premium modal
-                setAppState({
-                  isLoading: false,
-                  isAuthenticated: true,
-                  isAccessible: false,
-                  showAuthModal: false,
-                  showPremiumModal: true,
-                  error: null
-                })
-                return
+            // Check cache first (30-second cache to prevent duplicate API calls)
+            const cachedAccess = getCachedModuleAccess(moduleId, user.id)
+            let accessData
+            
+            if (cachedAccess) {
+              accessData = cachedAccess
+            } else {
+              // Cache miss - fetch from API
+              const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+              if (accessResponse.ok) {
+                accessData = await accessResponse.json()
+                // Cache the result
+                setCachedModuleAccess(moduleId, user.id, accessData)
               }
+            }
+            
+            if (accessData && !accessData.canAccess && accessData.reason === 'no_premium') {
+              // User doesn't have premium → show premium modal
+              setAppState({
+                isLoading: false,
+                isAuthenticated: true,
+                isAccessible: false,
+                showAuthModal: false,
+                showPremiumModal: true,
+                error: null
+              })
+              return
             }
           } catch (error) {
             console.error('Failed to check premium access:', error)
@@ -184,10 +197,23 @@ function LessonPageContent() {
     // After auth success, check premium access FIRST
     if (module?.requiresPremium) {
       try {
-        const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
-        if (accessResponse.ok) {
-          const accessData = await accessResponse.json()
-          if (!accessData.canAccess && accessData.reason === 'no_premium') {
+        // Check cache first
+        const { user } = SmartAuthService.getSessionState()
+        if (user) {
+          const cachedAccess = getCachedModuleAccess(moduleId, user.id)
+          let accessData
+          
+          if (cachedAccess) {
+            accessData = cachedAccess
+          } else {
+            const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+            if (accessResponse.ok) {
+              accessData = await accessResponse.json()
+              setCachedModuleAccess(moduleId, user.id, accessData)
+            }
+          }
+          
+          if (accessData && !accessData.canAccess && accessData.reason === 'no_premium') {
             // User signed in but doesn't have premium → show premium modal
             setAppState(prev => ({
               ...prev,

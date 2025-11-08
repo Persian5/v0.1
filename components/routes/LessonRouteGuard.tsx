@@ -8,6 +8,7 @@ import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { getLesson, getModule } from '@/lib/config/curriculum'
 import { PremiumLockModal } from '@/components/PremiumLockModal'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { getCachedModuleAccess, setCachedModuleAccess } from '@/lib/utils/module-access-cache'
 
 interface LessonRouteGuardProps {
   children: React.ReactNode
@@ -132,13 +133,25 @@ export function LessonRouteGuard({
         // This applies to BOTH completion and summary routes
         if (module.requiresPremium) {
           try {
-            const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+            // Check cache first (30-second cache to prevent duplicate API calls)
+            const cachedAccess = getCachedModuleAccess(moduleId, user.id)
+            let accessData
             
-            if (!accessResponse.ok) {
-              throw new Error('Failed to check module access')
-            }
+            if (cachedAccess) {
+              accessData = cachedAccess
+            } else {
+              // Cache miss - fetch from API
+              const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+              
+              if (!accessResponse.ok) {
+                throw new Error('Failed to check module access')
+              }
 
-            const accessData = await accessResponse.json()
+              accessData = await accessResponse.json()
+              
+              // Cache the result
+              setCachedModuleAccess(moduleId, user.id, accessData)
+            }
             
             // If module requires premium and user doesn't have it, show premium modal
             if (!accessData.canAccess && accessData.reason === 'no_premium') {

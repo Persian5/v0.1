@@ -8,7 +8,7 @@ import { MasteredWordsWidget } from "@/app/components/dashboard/MasteredWordsWid
 import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Button } from "@/components/ui/button"
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import WidgetErrorBoundary from "@/components/errors/WidgetErrorBoundary"
@@ -33,55 +33,30 @@ function DashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [lastRefreshTime, setLastRefreshTime] = useState(0)
-  const [refreshCooldown, setRefreshCooldown] = useState(0)
 
-  const fetchStats = async (forceRefresh: boolean = false) => {
+  const fetchStats = async () => {
     if (!user?.id) {
       setIsLoading(false)
       return
     }
 
-    if (forceRefresh) {
-      setIsRefreshing(true)
-      // Invalidate cache when manually refreshing
-      SmartAuthService.invalidateDashboardStats()
-    } else {
-      setIsLoading(true)
-    }
-    
+    setIsLoading(true)
     setError(null)
 
     try {
-      // Check cache first (unless force refresh)
-      if (!forceRefresh) {
-        const cached = SmartAuthService.getCachedDashboardStats()
-        if (cached) {
-          setStats({
-            wordsLearned: cached.wordsLearned,
-            masteredWords: cached.masteredWords,
-            hardWords: cached.hardWords
-          })
-          setIsLoading(false)
-          // Refresh in background
-          fetchFreshStats()
-          return
-        }
+      // Check cache first for instant display
+      const cached = SmartAuthService.getCachedDashboardStats()
+      if (cached) {
+        setStats({
+          wordsLearned: cached.wordsLearned,
+          masteredWords: cached.masteredWords,
+          hardWords: cached.hardWords
+        })
+        setIsLoading(false)
+        return
       }
 
-      // Fetch fresh data
-      await fetchFreshStats()
-    } catch (err) {
-      console.error('Error fetching dashboard stats:', err)
-      setError('Failed to load dashboard stats. Please refresh the page.')
-      setIsLoading(false)
-      setIsRefreshing(false)
-    }
-  }
-
-  const fetchFreshStats = async () => {
-    try {
+      // No cache - fetch fresh data
       const response = await fetch('/api/user-stats')
       
       if (!response.ok) {
@@ -95,56 +70,16 @@ function DashboardContent() {
       
       setStats(data)
       setIsLoading(false)
-      setIsRefreshing(false)
     } catch (err) {
-      // If fresh fetch fails but we have cached data, use cache
-      const cached = SmartAuthService.getCachedDashboardStats()
-      if (cached) {
-        setStats({
-          wordsLearned: cached.wordsLearned,
-          masteredWords: cached.masteredWords,
-          hardWords: cached.hardWords
-        })
-        setIsLoading(false)
-        setIsRefreshing(false)
-        setError('Using cached data. Some information may be outdated.')
-      } else {
-        throw err
-      }
+      console.error('Error fetching dashboard stats:', err)
+      setError('Failed to load dashboard stats. Please refresh the page.')
+      setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchStats(false)
+    fetchStats()
   }, [user?.id])
-
-  // Cooldown countdown timer for refresh button
-  useEffect(() => {
-    if (refreshCooldown > 0) {
-      const timer = setTimeout(() => {
-        setRefreshCooldown(refreshCooldown - 1)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [refreshCooldown])
-
-  const handleRefresh = () => {
-    const now = Date.now()
-    const COOLDOWN_MS = 10000 // 10 seconds cooldown
-    const timeSinceLastRefresh = now - lastRefreshTime
-
-    // Check if user is on cooldown
-    if (timeSinceLastRefresh < COOLDOWN_MS) {
-      const remainingSeconds = Math.ceil((COOLDOWN_MS - timeSinceLastRefresh) / 1000)
-      setRefreshCooldown(remainingSeconds)
-      return
-    }
-
-    // Allow refresh
-    setLastRefreshTime(now)
-    setRefreshCooldown(10) // Set cooldown countdown
-    fetchStats(true)
-  }
 
   if (isLoading && !stats) {
     return (
@@ -164,21 +99,6 @@ function DashboardContent() {
             Dashboard
           </Link>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing || isLoading || refreshCooldown > 0}
-              className="hover:bg-primary/10 relative"
-              title={refreshCooldown > 0 ? `Please wait ${refreshCooldown}s` : 'Refresh dashboard stats'}
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {refreshCooldown > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[10px] font-bold bg-yellow-500 text-white rounded-full">
-                  {refreshCooldown}
-                </span>
-              )}
-            </Button>
             <Link href="/modules">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
                 Modules
