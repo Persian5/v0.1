@@ -6,6 +6,7 @@ import { AuthService } from '@/lib/services/auth-service'
 import type { User } from '@supabase/supabase-js'
 import { XpContext, ProgressContext } from "./XpContext"
 import { UserLessonProgress } from '@/lib/supabase/database'
+import { OnboardingGuard } from '@/components/onboarding/OnboardingGuard'
 
 interface AuthContextType {
   user: User | null
@@ -205,7 +206,9 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
             // Note: setProgressState will be called via event listener, no need to call it here
           }
         }}>
-          {children}
+          <OnboardingGuard>
+            {children}
+          </OnboardingGuard>
         </ProgressContext.Provider>
       </XpContext.Provider>
     </AuthContext.Provider>

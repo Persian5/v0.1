@@ -8,6 +8,7 @@ import { CheckCircle2, XCircle, Loader2, Mail, Sparkles, RefreshCw } from 'lucid
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { OnboardingService } from '@/lib/services/onboarding-service'
 
 type VerificationStatus = 
   | 'welcome'           // Post-signup, no token - HAPPY STATE
@@ -90,8 +91,22 @@ function VerifyEmailContent() {
           
           // ✅ Auto-login: The verifyOtp call already creates a session
           // The session is now active - user is automatically logged in
-          // Redirect to lessons after 2.6 second celebration
-          // The SmartAuthProvider will pick up the session automatically on next page load
+          // Check onboarding status before redirecting
+          // OnboardingGuard will show modal if needed, but we can also check here
+          // to avoid redirecting if onboarding is needed (smoother UX)
+          try {
+            const needsOnboarding = await OnboardingService.checkNeedsOnboarding(data.user.id)
+            if (needsOnboarding) {
+              // Don't redirect - OnboardingGuard will show modal on this page
+              // User can complete onboarding and stay here, or navigate freely
+              return
+            }
+          } catch (error) {
+            console.error('Failed to check onboarding status:', error)
+            // If check fails, proceed with redirect (guard will catch it)
+          }
+          
+          // Onboarding complete (or check failed) - redirect to lessons
           setTimeout(() => {
             // Use window.location.href instead of router.push to ensure
             // full page reload so auth context picks up the new session

@@ -10,6 +10,7 @@ import { Loader2, Mail, Eye, EyeOff, X } from 'lucide-react'
 import { useAuth } from './AuthProvider'
 import { supabase } from '@/lib/supabase/client'
 import WidgetErrorBoundary from '@/components/errors/WidgetErrorBoundary'
+import { useModalScrollLock } from '@/hooks/use-modal-scroll-lock'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -82,16 +83,7 @@ export function AuthModal({
   }, [mode, user, isEmailVerified, isOpen])
 
   // Freeze background scroll when modal open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen])
+  useModalScrollLock(isOpen)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

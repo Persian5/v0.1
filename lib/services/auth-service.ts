@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { DatabaseService } from '@/lib/supabase/database'
 import type { User } from '@supabase/supabase-js'
+import { generateDefaultDisplayName } from '@/lib/utils/display-name'
 
 export interface AuthError {
   message: string
@@ -24,7 +25,8 @@ export class AuthService {
   // Sign up a new user
   static async signUp({ email, password, firstName, lastName }: SignUpData): Promise<{ user: User | null; error: AuthError | null }> {
     try {
-      const displayName = `${firstName} ${lastName}`.trim()
+      // Generate display name in correct format: "FirstName LastInitial."
+      const displayName = generateDefaultDisplayName(firstName, lastName) || `${firstName} ${lastName}`.trim()
 
       const { data, error } = await supabase.auth.signUp({
         email,

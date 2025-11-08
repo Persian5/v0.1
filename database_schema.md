@@ -31,6 +31,9 @@
 | user_profiles        | review_xp_earned_today | integer                 | NO          | 0                  |
 | user_profiles        | review_xp_reset_at     | timestamp with time zone | YES         | null               |
 | user_profiles        | timezone               | text                     | NO          | 'America/Los_Angeles' |
+| user_profiles        | learning_goal          | text                     | YES         | null               |
+| user_profiles        | current_level          | text                     | YES         | null               |
+| user_profiles        | primary_focus          | text                     | YES         | null               |
 | user_sessions        | id                     | uuid                     | NO          | gen_random_uuid()  |
 | user_sessions        | user_id                | uuid                     | NO          | null               |
 | user_sessions        | session_start          | timestamp with time zone | NO          | now()              |
@@ -88,6 +91,9 @@
 
 ### user_profiles
 - **CHECK**: `review_xp_earned_today >= 0` - Ensures review XP cannot be negative
+- **learning_goal** values: `'heritage'`, `'travel'`, `'family'`, `'academic'`, `'fun'` (nullable, set during onboarding)
+- **current_level** values: `'beginner'`, `'few_words'`, `'basic_conversation'`, `'intermediate'` (nullable, optional during onboarding)
+- **primary_focus** values: `'speaking'`, `'reading'`, `'writing'`, `'all'` (nullable, optional during onboarding)
 
 ### user_xp_transactions
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)

@@ -213,6 +213,13 @@ export class SmartAuthService {
   }
   
   /**
+   * Get cached user profile - public accessor for session cache
+   */
+  static getCachedProfile(): UserProfile | null {
+    return this.sessionCache?.profile || null
+  }
+
+  /**
    * Get cached progress data - public accessor for session cache
    */
   static getCachedProgress(): UserLessonProgress[] {

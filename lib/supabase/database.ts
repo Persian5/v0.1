@@ -2,6 +2,7 @@ import { supabase } from './client'
 import { createClient } from './server'
 import type { User } from '@supabase/supabase-js'
 import { withAuthRetry } from '../utils/with-auth-retry'
+import { generateDefaultDisplayName } from '../utils/display-name'
 
 // Types for our database tables
 export interface UserProfile {
@@ -12,6 +13,9 @@ export interface UserProfile {
   email: string | null
   total_xp: number
   onboarding_completed: boolean
+  learning_goal: string | null // 'heritage' | 'travel' | 'family' | 'academic' | 'fun'
+  current_level: string | null // 'beginner' | 'few_words' | 'basic_conversation' | 'intermediate'
+  primary_focus: string | null // 'speaking' | 'reading' | 'writing' | 'all'
   created_at: string
   updated_at: string
 }
@@ -53,12 +57,20 @@ export class DatabaseService {
 
       if (error && error.code === 'PGRST116') {
         // Profile doesn't exist, create it
+        // Generate display_name if not provided in user_metadata
+        const metadataDisplayName = user.user_metadata?.display_name || null
+        const generatedDisplayName = generateDefaultDisplayName(
+          user.user_metadata?.first_name,
+          user.user_metadata?.last_name
+        )
+        const displayName = metadataDisplayName || generatedDisplayName || null
+
         const newProfile = {
           id: user.id,
           email: user.email,
           first_name: user.user_metadata?.first_name || null,
           last_name: user.user_metadata?.last_name || null,
-          display_name: user.user_metadata?.display_name || null,
+          display_name: displayName,
           total_xp: 0,
           onboarding_completed: false
         }
@@ -78,6 +90,23 @@ export class DatabaseService {
 
       if (error) {
         throw new Error(`Failed to fetch user profile: ${error.message}`)
+      }
+
+      // Existing profile: ensure display_name exists, generate if null
+      // This handles existing users who might have null display_name
+      if (!profile.display_name) {
+        const generatedDisplayName = generateDefaultDisplayName(
+          profile.first_name,
+          profile.last_name
+        )
+        
+        if (generatedDisplayName) {
+          // Update profile with generated display_name
+          const updatedProfile = await this.updateUserProfile(profile.id, {
+            display_name: generatedDisplayName
+          })
+          return updatedProfile
+        }
       }
 
       return profile

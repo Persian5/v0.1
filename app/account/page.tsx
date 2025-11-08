@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { CountUpXP } from "@/app/components/CountUpXP"
+import { SmartAuthService } from "@/lib/services/smart-auth-service"
 
 function AccountContent() {
   const [mounted, setMounted] = useState(false)
@@ -27,9 +28,10 @@ function AccountContent() {
   const [pwError, setPwError] = useState<string | null>(null)
   const [pwSuccess, setPwSuccess] = useState(false)
   const [pwLoading, setPwLoading] = useState(false)
-  const first = user?.user_metadata?.first_name as string | undefined
-  const last = user?.user_metadata?.last_name as string | undefined
-  const displayName = first ? `${first} ${last ? last.charAt(0).toUpperCase() + '.' : ''}` : (user?.user_metadata?.display_name as string | undefined)
+  
+  // Get display name from cached profile (database is source of truth)
+  const profile = SmartAuthService.getCachedProfile()
+  const displayName = profile?.display_name || null
 
   useEffect(() => {
     setMounted(true)
