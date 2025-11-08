@@ -94,8 +94,40 @@ export function LessonRunner({
   // This ensures that any vocabulary word mentioned in any quiz can be properly identified
   // and remediated, regardless of lesson boundaries (following DEVELOPMENT_RULES.md)
   const allCurriculumVocab = VocabularyService.getAllCurriculumVocabulary();
-  const allVocab = [...currentLessonVocab, ...reviewVocab]; // For lesson content
-  const allVocabForExtraction = allCurriculumVocab; // For vocabulary extraction
+  
+  // ✅ FIX: Get vocabulary taught up to current step (prevents future vocab in word banks)
+  // This ensures word banks only show vocab the user has learned so far
+  const getVocabTaughtUpToStep = useCallback((stepIndex: number): VocabularyItem[] => {
+    const taughtVocabIds = new Set<string>();
+    
+    // Collect vocab IDs from all steps up to and including currentStepIndex
+    for (let i = 0; i <= stepIndex && i < steps.length; i++) {
+      const step = steps[i];
+      
+      // Extract vocab IDs introduced in this step
+      if (step.type === 'flashcard' && step.data.vocabularyId) {
+        taughtVocabIds.add(step.data.vocabularyId);
+      } else if (step.type === 'audio-sequence' && step.data.sequence) {
+        step.data.sequence.forEach((id: string) => taughtVocabIds.add(id));
+      } else if (step.type === 'audio-meaning' && step.data.vocabularyId) {
+        taughtVocabIds.add(step.data.vocabularyId);
+      } else if (step.type === 'matching' && step.data.words) {
+        step.data.words.forEach((word: any) => {
+          if (word.id) taughtVocabIds.add(word.id);
+        });
+      }
+      // Note: text-sequence, quiz, input, story don't introduce new vocab via IDs
+      // Text-sequence relies on vocabularyBank matching, not explicit IDs
+    }
+    
+    // Return vocab items for collected IDs
+    return currentLessonVocab.filter(v => taughtVocabIds.has(v.id));
+  }, [currentLessonVocab, steps]);
+  
+  // Get vocab taught up to current step + review vocab
+  const vocabTaughtSoFar = getVocabTaughtUpToStep(idx);
+  const allVocab = [...vocabTaughtSoFar, ...reviewVocab]; // For lesson content (word banks)
+  const allVocabForExtraction = allCurriculumVocab; // For vocabulary extraction (quizzes)
 
   // CRITICAL: Generate remediation quiz with MEMOIZED options (stable order per vocabulary ID)
   // MUST be before any early returns to maintain consistent hook count

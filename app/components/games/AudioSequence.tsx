@@ -118,28 +118,16 @@ export function AudioSequence({
     // Check if this is a display key (from WordBankService)
     if (wordBankData.displayKeyToWordText.has(id)) {
       const wordText = wordBankData.displayKeyToWordText.get(id)!
-      const vocabId = wordBankData.displayKeyToVocabId.get(id)
       
-      // If we have a vocabulary ID, lookup from vocabularyBank
-      if (vocabId) {
-        const vocab = vocabularyBank.find(v => v.id === vocabId)
-        if (vocab) {
-          // Normalize display text (handle slash-separated translations)
-          return {
-            ...vocab,
-            en: WordBankService.normalizeVocabEnglish(vocab.en)
-          }
-        }
-      }
-      
-      // Fallback: create a minimal vocab item from wordText
+      // ✅ FIX: Always return the DISPLAY TEXT that user clicked, not vocab lookup
+      // This prevents "I" from switching to "Me" after submission
       return {
         id: id,
-        en: wordText,
+        en: wordText, // Use what was clicked, not vocab.en
         fa: '',
         finglish: wordText,
         phonetic: '',
-        lessonId: 'generated'
+        lessonId: 'display'
       } as VocabularyItem
     }
 

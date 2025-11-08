@@ -176,20 +176,17 @@ export class WordBankService {
   static getSemanticUnits(options: WordBankOptions): number {
     const { expectedTranslation, vocabularyBank, sequenceIds } = options;
 
+    // ✅ SYSTEMATIC FIX: Always use expectedTranslation if provided
+    // Count semantic units in the expected answer, NOT vocab IDs
+    // Example: 5 vocab IDs can map to 6 semantic units if one vocab is a phrase
     if (expectedTranslation) {
-      // TextSequence: Extract semantic units directly from expectedTranslation
-      const semanticUnits = this.extractSemanticUnitsFromExpected(expectedTranslation, vocabularyBank);
+      // Extract semantic units directly from expectedTranslation (phrase-aware)
+      const semanticUnits = this.extractSemanticUnitsFromExpected(expectedTranslation, vocabularyBank, sequenceIds);
       return semanticUnits.length;
     } else if (sequenceIds && sequenceIds.length > 0) {
-      // AudioSequence: Get English translations from vocabularyBank
-      const correctWords = sequenceIds
-        .map(id => vocabularyBank.find(v => v.id === id))
-        .filter((v): v is VocabularyItem => v !== undefined)
-        .map(v => this.normalizeVocabEnglish(v.en));
-      
-      // Match words to vocabularyBank items (smart phrase detection)
-      const correctWordBankItems = this.matchWordsToVocabulary(correctWords, vocabularyBank, expectedTranslation);
-      return correctWordBankItems.length;
+      // Fallback: If no expectedTranslation, count vocab IDs (old behavior)
+      // This is less accurate but prevents breaking existing audio-sequences without expectedTranslation
+      return sequenceIds.length;
     }
     
     return 0;
@@ -204,26 +201,32 @@ export class WordBankService {
   static generateWordBank(options: WordBankOptions): WordBankResult {
     const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic' } = options;
 
+    // ✅ FIX: Filter vocabularyBank to ONLY vocab in sequence (current step)
+    // This prevents future vocab (like "esmet" from Module 2) appearing in Module 1
+    const availableVocab = sequenceIds && sequenceIds.length > 0
+      ? vocabularyBank.filter(v => sequenceIds.includes(v.id))
+      : vocabularyBank;
+
     // Step 1: Extract semantic units from expectedTranslation (PRIMARY source)
     // This ensures all expected words/phrases appear in word bank even if vocabulary matching fails
     let correctWordBankItems: WordBankItem[] = [];
     
     if (expectedTranslation) {
       // TextSequence: Extract semantic units directly from expectedTranslation
-      correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, vocabularyBank, sequenceIds).map(item => ({
+      correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, availableVocab, sequenceIds).map(item => ({
         ...item,
         isCorrect: true
       }));
     } else if (sequenceIds && sequenceIds.length > 0) {
-      // AudioSequence: Get English translations from vocabularyBank
+      // AudioSequence: Get English translations from availableVocab
       // Normalize slash-separated translations (use first part)
       const correctWords = sequenceIds
-        .map(id => vocabularyBank.find(v => v.id === id))
+        .map(id => availableVocab.find(v => v.id === id))
         .filter((v): v is VocabularyItem => v !== undefined)
         .map(v => this.normalizeVocabEnglish(v.en));
       
       // Match words to vocabularyBank items (smart phrase detection)
-      correctWordBankItems = this.matchWordsToVocabulary(correctWords, vocabularyBank, expectedTranslation).map(item => ({
+      correctWordBankItems = this.matchWordsToVocabulary(correctWords, availableVocab, expectedTranslation).map(item => ({
         ...item,
         isCorrect: true
       }));
@@ -248,6 +251,8 @@ export class WordBankService {
     const targetSize = maxSize || this.calculateWordBankSize(correctWordBankItems.length);
 
     // Step 4: Generate distractors
+    // ✅ Use vocabularyBank (all lesson vocab) for distractors, NOT availableVocab
+    // This allows distractors from vocab taught in previous steps
     let distractorItems = distractorStrategy === 'semantic'
       ? this.generateSemanticDistractors(correctWordBankItems, vocabularyBank, targetSize - correctWordBankItems.length)
       : this.generateRandomDistractors(correctWordBankItems, vocabularyBank, targetSize - correctWordBankItems.length);
@@ -373,6 +378,8 @@ export class WordBankService {
     // Step 6: Deduplicate TRUE synonyms (e.g., "Hi" and "Hello", NOT "Hello" and "How are you")
     // CRITICAL: Only deduplicate if they're actual synonyms (same meaning), not just same semantic group
     // "Hello" and "How are you" are DIFFERENT phrases - keep both!
+    // ✅ FIX: Also NEVER deduplicate if words are legitimately needed multiple times
+    // Example: "your mother and your father" needs "your" twice
     
     const deduplicatedCorrectItems: WordBankItem[] = [];
     const seenSynonyms = new Map<string, WordBankItem>(); // Maps normalized synonym text -> item
@@ -416,8 +423,11 @@ export class WordBankService {
       if (!isDuplicate) {
         // Not a duplicate - keep it
         deduplicatedCorrectItems.push(item);
-        // Track it for future synonym checks
+        // Track it for future synonym checks (but only true synonyms, not all words)
+        // This prevents "your" from being flagged as duplicate when needed twice
+        if ((normalizedText === 'hi' || normalizedText === 'hello' || normalizedText === 'salam')) {
         seenSynonyms.set(normalizedText, item);
+        }
       }
     });
     
@@ -483,29 +493,24 @@ export class WordBankService {
       return true;
     });
 
-    // Step 7: Deduplicate ALL items (correct + distractors) by normalized text to prevent duplicates
-    // This ensures no duplicate word bank items appear (e.g., "I/me" twice, "name of" twice)
-    const allItemsForDedup: WordBankItem[] = [...deduplicatedCorrectItems, ...filteredDistractorItems];
-    const deduplicatedAllItems: WordBankItem[] = [];
-    const seenNormalizedTexts = new Set<string>();
+    // Step 7: DON'T deduplicate correct items (they may legitimately repeat)
+    // Example: "your mother and your father" needs "your" twice
+    // ONLY deduplicate distractors to avoid UI clutter
+    const finalCorrectItems = deduplicatedCorrectItems; // Keep ALL correct items (duplicates allowed)
     
-    allItemsForDedup.forEach(item => {
-      // Normalize text for comparison (expand contractions, lowercase, remove punctuation)
+    // Deduplicate distractors only
+    const seenDistractorTexts = new Set<string>();
+    const finalDistractorItems: WordBankItem[] = [];
+    
+    filteredDistractorItems.forEach(item => {
       const normalizedText = this.expandContractions(item.wordText.toLowerCase().replace(/[?.,!]/g, '').trim());
       
-      // Skip if we've already seen this normalized text
-      if (seenNormalizedTexts.has(normalizedText)) {
-        return;
+      // Only add if we haven't seen this distractor text before
+      if (!seenDistractorTexts.has(normalizedText)) {
+        seenDistractorTexts.add(normalizedText);
+        finalDistractorItems.push(item);
       }
-      
-      // Track this normalized text
-      seenNormalizedTexts.add(normalizedText);
-      deduplicatedAllItems.push(item);
     });
-    
-    // Split back into correct and distractors
-    const finalCorrectItems = deduplicatedAllItems.filter(item => item.isCorrect);
-    const finalDistractorItems = deduplicatedAllItems.filter(item => !item.isCorrect);
 
     // Step 8: Normalize for display (sentence case)
     const normalizedCorrect = finalCorrectItems.map(item => this.normalizeCase(item.wordText));
@@ -548,8 +553,8 @@ export class WordBankService {
     const words = expectedTranslation.split(' ').filter(w => w.length > 0);
     const matchedIndices = new Set<number>();
 
-    // Step 1: Detect phrases from expectedTranslation FIRST (3-word, then 2-word)
-    // This ensures phrases like "How are you" are detected before individual words
+    // Step 1: Detect phrases from expectedTranslation FIRST (4-word, 3-word, 2-word)
+    // This ensures phrases like "Nice to Meet You" and "How are you" are detected before individual words
     const phraseMatches = this.detectPhrases(expectedTranslation, vocabularyBank, usedVocabIds);
     phraseMatches.matchedVocabIds.forEach(id => usedVocabIds.add(id));
     phraseMatches.matchedIndices.forEach(idx => matchedIndices.add(idx));
@@ -559,45 +564,53 @@ export class WordBankService {
     let i = 0;
     while (i < words.length) {
       if (matchedIndices.has(i)) {
-        // This index is part of a phrase - find which phrase and add it
-        // Check if this starts a 3-word phrase first (longer phrases take priority)
-        if (i <= words.length - 3 && 
-            matchedIndices.has(i) && matchedIndices.has(i + 1) && matchedIndices.has(i + 2)) {
-          const threeWordPhrase = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
-          // Find the matching vocab from phraseMatches results
-          const phraseItem = phraseMatches.matchedItems.find(item => {
-            const vocab = vocabularyBank.find(v => v.id === item.vocabularyId);
-            if (!vocab) return false;
-            const vocabEnNormalized = this.expandContractions(vocab.en.toLowerCase().replace(/[?.,!]/g, '').trim().replace(/\s+/g, ' '));
-            const phraseNormalized = this.expandContractions(threeWordPhrase.toLowerCase().trim().replace(/\s+/g, ' '));
-            return vocabEnNormalized === phraseNormalized;
-          });
-          if (phraseItem) {
-            semanticUnits.push(phraseItem);
-            i += 3;
-            continue;
+        // This index is part of a phrase - find which phrase from phraseMatches
+        // Try progressively shorter phrases (4-word, 3-word, 2-word) to find the match
+        let phraseFound = false;
+        
+        // Try all possible phrase lengths (from longest to shortest)
+        for (let phraseLen = 4; phraseLen >= 2; phraseLen--) {
+          if (i <= words.length - phraseLen) {
+            // Check if all indices for this phrase length are matched
+            let allIndicesMatched = true;
+            for (let j = 0; j < phraseLen; j++) {
+              if (!matchedIndices.has(i + j)) {
+                allIndicesMatched = false;
+                break;
+              }
+            }
+            
+            if (allIndicesMatched) {
+              // Build phrase text
+              const phraseWords = [];
+              for (let j = 0; j < phraseLen; j++) {
+                phraseWords.push(words[i + j]);
+              }
+              const phraseText = phraseWords.join(' ');
+              
+              // Find matching item from phraseMatches
+              const phraseItem = phraseMatches.matchedItems.find(item => {
+                const vocab = vocabularyBank.find(v => v.id === item.vocabularyId);
+                if (!vocab) return false;
+                const vocabEnNormalized = this.expandContractions(vocab.en.toLowerCase().replace(/[?.,!]/g, '').trim().replace(/\s+/g, ' '));
+                const phraseNormalized = this.expandContractions(phraseText.toLowerCase().trim().replace(/\s+/g, ' '));
+                return vocabEnNormalized === phraseNormalized;
+              });
+              
+              if (phraseItem) {
+                semanticUnits.push(phraseItem);
+                i += phraseLen;
+                phraseFound = true;
+                break;
+              }
+            }
           }
         }
-        // Check if this starts a 2-word phrase
-        if (i <= words.length - 2 && 
-            matchedIndices.has(i) && matchedIndices.has(i + 1)) {
-          const twoWordPhrase = `${words[i]} ${words[i + 1]}`;
-          // Find the matching vocab from phraseMatches results
-          const phraseItem = phraseMatches.matchedItems.find(item => {
-            const vocab = vocabularyBank.find(v => v.id === item.vocabularyId);
-            if (!vocab) return false;
-            const vocabEnNormalized = this.expandContractions(vocab.en.toLowerCase().replace(/[?.,!]/g, '').trim().replace(/\s+/g, ' '));
-            const phraseNormalized = this.expandContractions(twoWordPhrase.toLowerCase().trim().replace(/\s+/g, ' '));
-            return vocabEnNormalized === phraseNormalized;
-          });
-          if (phraseItem) {
-            semanticUnits.push(phraseItem);
-            i += 2;
-            continue;
-          }
+        
+        // If no phrase found (shouldn't happen), skip this index
+        if (!phraseFound) {
+          i++;
         }
-        // Shouldn't reach here, but skip if already matched
-        i++;
         continue;
       }
 
@@ -887,14 +900,44 @@ export class WordBankService {
     const words = expectedTranslation.split(' ').filter(w => w.length > 0);
     const matchedIndices = new Set<number>();
 
-    // CRITICAL: Try 3-word phrases FIRST (before 2-word) to catch phrases like "How are you"
+    // CRITICAL: Try 4-word phrases FIRST (for "Nice to Meet You")
+    for (let i = 0; i < words.length - 3; i++) {
+      if (matchedIndices.has(i) || matchedIndices.has(i + 1) || matchedIndices.has(i + 2) || matchedIndices.has(i + 3)) continue;
+
+      const fourWordPhrase = `${words[i]} ${words[i + 1]} ${words[i + 2]} ${words[i + 3]}`;
+      const vocabMatch = vocabularyBank.find(v => {
+        // ✅ SYSTEMATIC FIX: Case-insensitive phrase matching
+        // Normalize both: lowercase, remove punctuation, normalize spacing, expand contractions
+        const vocabEnNormalized = this.expandContractions(v.en.toLowerCase().replace(/[?.,!]/g, '').trim().replace(/\s+/g, ' '));
+        const phraseNormalized = this.expandContractions(fourWordPhrase.toLowerCase().trim().replace(/\s+/g, ' '));
+        return vocabEnNormalized === phraseNormalized && !usedVocabIds.has(v.id);
+      });
+
+      if (vocabMatch) {
+        matchedItems.push({
+          vocabularyId: vocabMatch.id,
+          wordText: this.normalizeVocabEnglish(vocabMatch.en), // Store normalized (no punctuation)
+          isPhrase: true,
+          semanticGroup: vocabMatch.semanticGroup || getSemanticGroup(vocabMatch.id),
+          isCorrect: true
+        });
+        matchedVocabIds.push(vocabMatch.id);
+        usedVocabIds.add(vocabMatch.id);
+        matchedIndices.add(i);
+        matchedIndices.add(i + 1);
+        matchedIndices.add(i + 2);
+        matchedIndices.add(i + 3);
+      }
+    }
+
+    // Try 3-word phrases SECOND (before 2-word) to catch phrases like "How are you"
     // This prevents "How are" from matching before "How are you" is detected
     for (let i = 0; i < words.length - 2; i++) {
       if (matchedIndices.has(i) || matchedIndices.has(i + 1) || matchedIndices.has(i + 2)) continue;
 
       const threeWordPhrase = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
       const vocabMatch = vocabularyBank.find(v => {
-        // Normalize both: lowercase, remove punctuation, normalize spacing, expand contractions
+        // ✅ SYSTEMATIC FIX: Case-insensitive phrase matching (already lowercase)
         const vocabEnNormalized = this.expandContractions(v.en.toLowerCase().replace(/[?.,!]/g, '').trim().replace(/\s+/g, ' '));
         const phraseNormalized = this.expandContractions(threeWordPhrase.toLowerCase().trim().replace(/\s+/g, ' '));
         return vocabEnNormalized === phraseNormalized && !usedVocabIds.has(v.id);
@@ -916,13 +959,13 @@ export class WordBankService {
       }
     }
 
-    // Try 2-word phrases second (after 3-word to avoid partial matches)
+    // Try 2-word phrases THIRD (after 4-word and 3-word to avoid partial matches)
     for (let i = 0; i < words.length - 1; i++) {
       if (matchedIndices.has(i) || matchedIndices.has(i + 1)) continue;
 
       const twoWordPhrase = `${words[i]} ${words[i + 1]}`;
       const vocabMatch = vocabularyBank.find(v => {
-        // Normalize both: lowercase, remove punctuation, normalize spacing, expand contractions
+        // ✅ SYSTEMATIC FIX: Case-insensitive phrase matching (already lowercase)
         const vocabEnNormalized = this.expandContractions(v.en.toLowerCase().replace(/[?.,!]/g, '').trim().replace(/\s+/g, ' '));
         const phraseNormalized = this.expandContractions(twoWordPhrase.toLowerCase().trim().replace(/\s+/g, ' '));
         return vocabEnNormalized === phraseNormalized && !usedVocabIds.has(v.id);

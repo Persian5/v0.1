@@ -204,16 +204,16 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
     setIsGameOver(false)
     
     // Reset state synchronously to prevent flash
-    setCurrentRound(1)
-    setRoundPairs(2)
-    setCorrectCount(0)
-    setWrongCount(0)
-    setFlippedCards([])
-    setMatches(new Set())
-    setLives(3)
+      setCurrentRound(1)
+      setRoundPairs(2)
+      setCorrectCount(0)
+      setWrongCount(0)
+      setFlippedCards([])
+      setMatches(new Set())
+      setLives(3)
     setIsPreviewPhase(true)
     setIsGameActive(false)
-    startTime.current = Date.now()
+      startTime.current = Date.now()
     
     // Initialize new round immediately (prevents empty card grid flash)
     // Don't clear cards first - let initializeRound replace them
@@ -453,51 +453,51 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl sm:text-3xl font-bold text-center">
-              Game Over
+                Game Over
             </DialogTitle>
             <DialogDescription className="text-center text-base">
-              You reached Round {currentRound}!<br />
-              Correct: {correctCount} | Wrong: {wrongCount}
+                You reached Round {currentRound}!<br />
+                Correct: {correctCount} | Wrong: {wrongCount}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-3 pt-4">
-            <Button
-              onClick={handleRestart}
+                <Button
+                  onClick={handleRestart}
               className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Play Again
-            </Button>
-            <div className="grid grid-cols-2 gap-2">
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Play Again
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
               <Button 
                 variant="outline" 
                 onClick={onExit} 
                 className="gap-2 border-primary text-primary hover:bg-primary/10"
               >
-                <BookOpen className="h-4 w-4" />
-                Review Games
-              </Button>
-              <Link href="/" className="contents">
+                    <BookOpen className="h-4 w-4" />
+                    Review Games
+                  </Button>
+                  <Link href="/" className="contents">
                 <Button 
                   variant="outline" 
                   className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
                 >
-                  <Home className="h-4 w-4" />
-                  Home
-                </Button>
-              </Link>
-            </div>
-            <Link href="/modules" className="contents">
+                      <Home className="h-4 w-4" />
+                      Home
+                    </Button>
+                  </Link>
+                </div>
+                <Link href="/modules" className="contents">
               <Button 
                 variant="outline" 
                 className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
               >
-                <BookOpen className="h-4 w-4" />
-                Continue Lessons
-              </Button>
-            </Link>
-          </div>
+                    <BookOpen className="h-4 w-4" />
+                    Continue Lessons
+                  </Button>
+                </Link>
+              </div>
         </DialogContent>
       </Dialog>
 

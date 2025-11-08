@@ -632,7 +632,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "man", "khoobam"],
-              expectedTranslation: "Hi I am good"
+              expectedTranslation: "Hello I am good"
             }
           },
           {
@@ -868,8 +868,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "man", "chiye"],
-              expectedTranslation: "What is my name",
-              targetWordCount: 4
+              expectedTranslation: "What is my name"
             }
           },
           {
@@ -2988,8 +2987,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["salam", "chetori"],
-              expectedTranslation: "hello how are you",
-              targetWordCount: 4
+              expectedTranslation: "hello how are you"
             }
           },
           {
@@ -2997,8 +2995,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "chetori", "man", "khoobam", "merci"],
-              expectedTranslation: "hello how are you I am good thank you",
-              targetWordCount: 9
+              expectedTranslation: "hello how are you I am good thank you"
             }
           },
           {
@@ -3181,8 +3178,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "man", "khoob", "neestam", "shoma", "khodafez"],
-              expectedTranslation: "hello I am not good what about you goodbye",
-              targetWordCount: 9
+              expectedTranslation: "hello I am not good what about you goodbye"
             }
           }
         ]
@@ -3384,8 +3380,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["esmam"],
-              expectedTranslation: "my name",
-              targetWordCount: 2
+              expectedTranslation: "my name"
             }
           },
           {
@@ -3393,8 +3388,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["esmet"],
-              expectedTranslation: "your name",
-              targetWordCount: 2
+              expectedTranslation: "your name"
             }
           },
           {
@@ -3402,8 +3396,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "esme", "shoma", "chiye", "khoshbakhtam"],
-              expectedTranslation: "hello what is your name nice to meet you",
-              targetWordCount: 9
+              expectedTranslation: "hello what is your name nice to meet you"
             }
           }
         ]
@@ -3663,8 +3656,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "va", "pedar"],
-              expectedTranslation: "mother and father",
-              targetWordCount: 3
+              expectedTranslation: "mother and father"
             }
           },
           {
@@ -3730,8 +3722,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "ahle", "iran", "hast"],
-              expectedTranslation: "mother is from Iran",
-              targetWordCount: 4
+              expectedTranslation: "mother is from Iran"
             }
           },
           {
@@ -3765,8 +3756,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["pedar", "ahle", "amrika", "hast"],
-              expectedTranslation: "father is from America",
-              targetWordCount: 4
+              expectedTranslation: "father is from America"
             }
           },
           {
@@ -3774,8 +3764,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "ahle", "amrika", "hast", "vali", "pedar", "ahle", "iran", "hast"],
-              expectedTranslation: "mother is from America but father is from Iran",
-              targetWordCount: 9
+              expectedTranslation: "mother is from America but father is from Iran"
             }
           },
           {
@@ -3897,8 +3886,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["pedar", "va", "baradar"],
-              expectedTranslation: "father and brother",
-              targetWordCount: 3
+              expectedTranslation: "father and brother"
             }
           },
           {
@@ -3940,8 +3928,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "baradar", "Amir-e"],
-              expectedTranslation: "my brother's name is Amir",
-              targetWordCount: 5
+              expectedTranslation: "my brother's name is Amir"
             }
           },
           {
@@ -3957,8 +3944,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["khahar", "khoob", "hast"],
-              expectedTranslation: "sister is good",
-              targetWordCount: 3
+              expectedTranslation: "sister is good"
             }
           },
           {
@@ -4092,8 +4078,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "madar", "Sara-e", "vali", "esme", "pedar", "Bob-e"],
-              expectedTranslation: "my mother's name is Sara but my father's name is Bob",
-              targetWordCount: 11
+              expectedTranslation: "my mother's name is Sara but my father's name is Bob"
             }
           },
           {
@@ -4204,8 +4189,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "in", "pedar", "man", "hast"],
-              expectedTranslation: "hello this is my father",
-              targetWordCount: 5
+              expectedTranslation: "hello this is my father"
             }
           },
           {
