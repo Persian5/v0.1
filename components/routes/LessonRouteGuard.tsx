@@ -218,13 +218,22 @@ export function LessonRouteGuard({
         // Only runs if premium check passed (or module doesn't require premium)
         if (requireAccess) {
           try {
-            const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+            // Check cache first
+            const cachedAccess = getCachedModuleAccess(moduleId, user.id)
+            let accessData
             
-            if (!accessResponse.ok) {
-              throw new Error('Failed to check module access')
-            }
+            if (cachedAccess) {
+              accessData = cachedAccess
+            } else {
+              const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+              
+              if (!accessResponse.ok) {
+                throw new Error('Failed to check module access')
+              }
 
-            const accessData = await accessResponse.json()
+              accessData = await accessResponse.json()
+              setCachedModuleAccess(moduleId, user.id, accessData)
+            }
             
             if (!accessData.canAccess) {
               // Premium already checked above, so this is likely prerequisites
@@ -374,19 +383,28 @@ export function LessonRouteGuard({
             // This prevents free users from accessing premium content after sign-in
             if (!isEmbedded && module?.requiresPremium) {
               try {
-                const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
-                if (accessResponse.ok) {
-                  const accessData = await accessResponse.json()
-                  if (!accessData.canAccess && accessData.reason === 'no_premium') {
-                    // User signed in but doesn't have premium → show premium modal
-                    setGuardState(prev => ({ 
-                      ...prev, 
-                      showAuthModal: false, 
-                      showPremiumModal: true,
-                      isLoading: false
-                    }))
-                    return
+                const cachedAccess = getCachedModuleAccess(moduleId, user.id)
+                let accessData
+                
+                if (cachedAccess) {
+                  accessData = cachedAccess
+                } else {
+                  const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+                  if (accessResponse.ok) {
+                    accessData = await accessResponse.json()
+                    setCachedModuleAccess(moduleId, user.id, accessData)
                   }
+                }
+                
+                if (accessData && !accessData.canAccess && accessData.reason === 'no_premium') {
+                  // User signed in but doesn't have premium → show premium modal
+                  setGuardState(prev => ({ 
+                    ...prev, 
+                    showAuthModal: false, 
+                    showPremiumModal: true,
+                    isLoading: false
+                  }))
+                  return
                 }
               } catch (error) {
                 console.error('Failed to check premium after auth:', error)
