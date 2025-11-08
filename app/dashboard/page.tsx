@@ -34,6 +34,8 @@ function DashboardContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastRefreshTime, setLastRefreshTime] = useState(0)
+  const [refreshCooldown, setRefreshCooldown] = useState(0)
 
   const fetchStats = async (forceRefresh: boolean = false) => {
     if (!user?.id) {
@@ -116,25 +118,31 @@ function DashboardContent() {
     fetchStats(false)
   }, [user?.id])
 
-  // Auto-refresh when window gains focus (user returns to tab)
+  // Cooldown countdown timer for refresh button
   useEffect(() => {
-    const handleFocus = () => {
-      // Only refresh if cache might be stale (older than 2 minutes)
-      const cached = SmartAuthService.getCachedDashboardStats()
-      if (cached) {
-        const cacheAge = Date.now() - cached.timestamp
-        const TWO_MINUTES = 2 * 60 * 1000
-        if (cacheAge > TWO_MINUTES) {
-          fetchStats(true)
-        }
-      }
+    if (refreshCooldown > 0) {
+      const timer = setTimeout(() => {
+        setRefreshCooldown(refreshCooldown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
     }
-
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [user?.id])
+  }, [refreshCooldown])
 
   const handleRefresh = () => {
+    const now = Date.now()
+    const COOLDOWN_MS = 10000 // 10 seconds cooldown
+    const timeSinceLastRefresh = now - lastRefreshTime
+
+    // Check if user is on cooldown
+    if (timeSinceLastRefresh < COOLDOWN_MS) {
+      const remainingSeconds = Math.ceil((COOLDOWN_MS - timeSinceLastRefresh) / 1000)
+      setRefreshCooldown(remainingSeconds)
+      return
+    }
+
+    // Allow refresh
+    setLastRefreshTime(now)
+    setRefreshCooldown(10) // Set cooldown countdown
     fetchStats(true)
   }
 
@@ -160,10 +168,16 @@ function DashboardContent() {
               variant="ghost"
               size="sm"
               onClick={handleRefresh}
-              disabled={isRefreshing || isLoading}
-              className="hover:bg-primary/10"
+              disabled={isRefreshing || isLoading || refreshCooldown > 0}
+              className="hover:bg-primary/10 relative"
+              title={refreshCooldown > 0 ? `Please wait ${refreshCooldown}s` : 'Refresh dashboard stats'}
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {refreshCooldown > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-[10px] font-bold bg-yellow-500 text-white rounded-full">
+                  {refreshCooldown}
+                </span>
+              )}
             </Button>
             <Link href="/modules">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
