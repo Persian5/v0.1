@@ -32,8 +32,8 @@ export function NotFound({ type, moduleId, lessonId }: NotFoundProps) {
           </h1>
           <p className="text-muted-foreground">
             {type === 'module' 
-              ? `The module "${moduleId || 'unknown'}" doesn't exist.`
-              : `The lesson "${lessonId || 'unknown'}" in module "${moduleId || 'unknown'}" doesn't exist.`
+              ? "The module you're looking for doesn't exist."
+              : "The lesson you're looking for doesn't exist."
             }
           </p>
         </div>
