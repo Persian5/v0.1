@@ -14,6 +14,7 @@ import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
+import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
 
 export default function ModulePage() {
   const { moduleId } = useParams()
@@ -37,24 +38,6 @@ export default function ModulePage() {
         setIsLoading(true)
         setError(null)
         
-        // Check module access FIRST (security guard) - client-side check via API
-        try {
-          const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
-          const accessData = await accessResponse.json()
-          
-          // If user cannot access this module, redirect to /modules
-          if (!accessData.canAccess) {
-            console.warn(`Access denied to module ${moduleId}:`, accessData.reason)
-            router.push('/modules')
-            return
-          }
-        } catch (accessError) {
-          console.error('Failed to check module access:', accessError)
-          // On error, redirect to modules page for safety
-          router.push('/modules')
-          return
-        }
-        
         // Use SmartAuthService for instant auth state (cached)
         const { user, isEmailVerified, isReady } = await SmartAuthService.initializeSession()
         
@@ -65,6 +48,36 @@ export default function ModulePage() {
         
         const authenticated = !!(user && isEmailVerified)
         setIsAuthenticated(authenticated)
+        
+        // Check module access with caching (only if authenticated and module requires it)
+        if (authenticated && module?.requiresPremium && user) {
+          try {
+            // Check cache first (30-second cache)
+            const cachedAccess = getCachedModuleAccess(moduleId as string, user.id)
+            let accessData
+            
+            if (cachedAccess) {
+              accessData = cachedAccess
+            } else {
+              // Cache miss - fetch from API
+              const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
+              if (accessResponse.ok) {
+                accessData = await accessResponse.json()
+                setCachedModuleAccess(moduleId as string, user.id, accessData)
+              }
+            }
+            
+            // If user cannot access this module, redirect to /modules
+            if (accessData && !accessData.canAccess) {
+              console.warn(`Access denied to module ${moduleId}:`, accessData.reason)
+              router.push('/modules')
+              return
+            }
+          } catch (accessError) {
+            console.error('Failed to check module access:', accessError)
+            // On error, continue to allow access (fail open for better UX)
+          }
+        }
         
         if (authenticated) {
           // Use cached progress data if available, otherwise load

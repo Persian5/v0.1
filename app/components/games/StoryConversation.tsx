@@ -7,6 +7,7 @@ import { TypingIndicator } from './TypingIndicator';
 import { playSuccessSound } from './Flashcard';
 import { motion } from 'framer-motion';
 import { useAuth } from "@/components/auth/AuthProvider";
+import { shuffle } from '@/lib/utils';
 
 interface StoryConversationProps {
   step: StoryConversationStep;
@@ -312,11 +313,10 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
 
   const currentExchange = getCurrentExchange();
 
-  // Shuffle choices for current exchange (like Quiz component)
+  // Shuffle choices for current exchange (proper Fisher-Yates shuffle)
   const shuffledChoices = useMemo(() => {
     if (!currentExchange?.choices) return [];
-    // Shuffle choices once per exchange to randomize answer position
-    return [...currentExchange.choices].sort(() => Math.random() - 0.5);
+    return shuffle([...currentExchange.choices]);
   }, [currentExchange?.id, currentExchange?.choices]);
 
   return (
