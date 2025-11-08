@@ -112,6 +112,16 @@ export class SmartAuthService {
     isEmailVerified: boolean
     isReady: boolean
   }> {
+    // OPTIMIZATION: Return cached session if still valid
+    // This prevents re-fetching DB data on every page navigation
+    if (this.sessionCache && Date.now() < this.sessionCache.expiresAt) {
+      return {
+        user: this.sessionCache.user,
+        isEmailVerified: this.sessionCache.isEmailVerified,
+        isReady: true
+      }
+    }
+    
     if (this.isInitializing) {
       // Prevent multiple simultaneous initialization calls
       await this.waitForInitialization()
