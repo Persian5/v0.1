@@ -7,11 +7,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ChevronRight, ChevronLeft, Star, Loader2 } from "lucide-react"
 import { ModulePreviewContent } from "@/components/previews/ModulePreviewContent"
 import { BlurredPreviewContainer } from "@/components/previews/BlurredPreviewContainer"
+import { NotFound } from "@/components/NotFound"
 import { getModule } from "@/lib/config/curriculum"
-import { useParams, useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
-import { UserLessonProgress } from "@/lib/supabase/database"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
+import { useParams, useRouter } from "next/navigation"
+import { UserLessonProgress } from "@/lib/supabase/database"
 import { useXp } from "@/hooks/use-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
@@ -206,11 +207,7 @@ export default function ModulePage() {
   }
 
   if (!module) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-lg text-muted-foreground">Module not found</p>
-      </div>
-    )
+    return <NotFound type="module" moduleId={moduleId as string} />
   }
 
   const lessons = module.lessons

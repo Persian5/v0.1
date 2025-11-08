@@ -13,6 +13,7 @@ import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { getLesson, getModule, getLessonSteps, getLessonVocabulary } from "@/lib/config/curriculum"
 import { LessonPreviewContent } from "@/components/previews/LessonPreviewContent"
 import { BlurredPreviewContainer } from "@/components/previews/BlurredPreviewContainer"
+import { NotFound } from "@/components/NotFound"
 import { LessonRunner } from "@/app/components/LessonRunner"
 import CompletionPage from "./completion/page"
 import SummaryPage from "./summary/page"
@@ -75,6 +76,11 @@ function LessonPageContent() {
   // Get data from config
   const lesson = getLesson(moduleId, lessonId)
   const module = getModule(moduleId);
+  
+  // Early check: If lesson or module isn't found, show NotFound immediately
+  if (!lesson || !module) {
+    return <NotFound type="lesson" moduleId={moduleId} lessonId={lessonId} />
+  }
   
   // UNIFIED AUTH + ACCESSIBILITY CHECK using SmartAuthService cached data
   useEffect(() => {
@@ -350,21 +356,6 @@ function LessonPageContent() {
       }
     }
     checkAuthAndAccessibility()
-  }
-  
-  // If lesson or module isn't found, handle gracefully
-  if (!lesson || !module) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold">Lesson Not Found</h2>
-          <p className="text-muted-foreground">The requested lesson could not be found.</p>
-          <Button onClick={() => router.push('/modules')}>
-            Back to Modules
-          </Button>
-        </div>
-      </div>
-    );
   }
   
   // Show single loading state for everything
