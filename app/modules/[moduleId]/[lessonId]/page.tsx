@@ -81,13 +81,12 @@ function LessonPageContent() {
         const isAuthenticated = !!(user && isEmailVerified)
         
         if (!isAuthenticated) {
-          // Show auth modal for unauthenticated users (except Module 1 Lesson 1)
-          const shouldShowModal = !(moduleId === 'module1' && lessonId === 'lesson1')
+          // All lessons require authentication (even free Module 1)
           setAppState({
             isLoading: false,
             isAuthenticated: false,
-            isAccessible: moduleId === 'module1' && lessonId === 'lesson1',
-            showAuthModal: shouldShowModal,
+            isAccessible: false,
+            showAuthModal: true,
             showPremiumModal: false,
             error: null
           })

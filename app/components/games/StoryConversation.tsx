@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { StoryConversationStep, StoryChoice as StoryChoiceType, StoryExchange } from '@/lib/types';
 import { StoryProgressService } from '@/lib/services/story-progress-service';
 import { ChatBubble } from './ChatBubble';
-import { NameInput } from './NameInput';
 import { XpAnimation } from './XpAnimation';
 import { TypingIndicator } from './TypingIndicator';
 import { playSuccessSound } from './Flashcard';
@@ -24,9 +23,8 @@ interface ChatMessage {
 }
 
 export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryConversationProps) {
-  const [needsName, setNeedsName] = useState(false);
   const { user } = useAuth();
-  const authFirstName = user?.user_metadata?.first_name || '';
+  const authFirstName = user?.user_metadata?.first_name || 'Friend';
   const [userName, setUserName] = useState<string>(authFirstName);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [currentExchangeIndex, setCurrentExchangeIndex] = useState(0);
@@ -48,40 +46,24 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   
   // Initialize story
   useEffect(() => {
-    // Check if user needs to input name
-    if (storyData.requiresPersonalization) {
-      const existingName = StoryProgressService.getUserName();
-      if (existingName === 'Friend') {
-        if (authFirstName) {
-          setUserName(authFirstName);
-          StoryProgressService.setUserName(authFirstName);
-        } else {
-          setNeedsName(true);
-          return;
-        }
-      } else {
-        setUserName(existingName);
-      }
+    // Since all users are authenticated, always use auth first name
+    if (authFirstName && authFirstName !== 'Friend') {
+      setUserName(authFirstName);
     }
     
     // Cleanup function to reset story on unmount
     return () => {
       StoryProgressService.resetStoryProgress(storyData.storyId);
     };
-  }, []);
+  }, [authFirstName]);
 
   // Initialize story when ready
   useEffect(() => {
-    // Only initialize if we have a name (or don't need one) and haven't initialized yet
-    if (!needsName && !hasInitialized.current) {
-      // Ensure we have userName if personalization is required
-      if (storyData.requiresPersonalization && !userName) {
-        return; // Wait for userName to be set
-      }
+    if (!hasInitialized.current && userName) {
       initializeStory();
       hasInitialized.current = true;
     }
-  }, [needsName, userName]); // userName needed to trigger when name becomes available
+  }, [userName]);
 
   const initializeStory = () => {
     // Always start fresh - reset any existing progress
@@ -131,9 +113,8 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   };
 
   const handleNameSubmit = (name: string) => {
+    // This function is no longer used since all users are authenticated
     setUserName(name);
-    StoryProgressService.setUserName(name);
-    setNeedsName(false);
   };
 
   const getCurrentExchange = (): StoryExchange | null => {
@@ -142,7 +123,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
 
   const personalizeText = (text: string): string => {
     return text
-      .replace(/{name}/g, userName || authFirstName || 'Friend')
+      .replace(/{name}/g, userName || 'Friend')
       .replace(/{characterName}/g, storyData.characterName);
   };
 
@@ -328,15 +309,6 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
       }, 100);
     }
   }, [isUserTyping, currentExchangeIndex]);
-
-  // Show name input if needed
-  if (needsName) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <NameInput onNameSubmit={handleNameSubmit} />
-      </div>
-    );
-  }
 
   const currentExchange = getCurrentExchange();
 
