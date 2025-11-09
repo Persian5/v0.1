@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Trophy, Medal, ChevronDown, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { AccountNavButton } from '@/app/components/AccountNavButton'
+import { useAuth } from '@/components/auth/AuthProvider'
 
 interface LeaderboardEntry {
   rank: number
+  userId: string
   displayName: string
   xp: number
-  isYou: boolean
 }
 
 interface LeaderboardResponse {
@@ -28,6 +29,7 @@ interface LeaderboardResponse {
 }
 
 export default function LeaderboardPage() {
+  const { user } = useAuth() // Get current user
   const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -119,13 +121,13 @@ export default function LeaderboardPage() {
               transition={{ delay: 0.2 }}
               className="flex flex-col items-center"
             >
-              <Card className={`p-6 bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 ${second.isYou ? 'ring-2 ring-primary' : ''}`}>
+              <Card className={`p-6 bg-gradient-to-br from-slate-100 to-slate-200 border-slate-300 ${second.userId === user?.id ? 'ring-4 ring-primary shadow-lg' : ''}`}>
                 <div className="text-center">
                   <Medal className="w-12 h-12 mx-auto mb-2 text-slate-400" />
                   <div className="text-4xl font-bold mb-1">2</div>
                   <div className="text-lg font-semibold mb-1 max-w-[120px] truncate">
                     {second.displayName}
-                    {second.isYou && <span className="text-primary ml-1">(You)</span>}
+                    {second.userId === user?.id && <span className="text-primary ml-1">(You)</span>}
                   </div>
                   <div className="text-sm text-muted-foreground">{second.xp.toLocaleString()} XP</div>
                 </div>
@@ -142,13 +144,13 @@ export default function LeaderboardPage() {
               transition={{ delay: 0.1 }}
               className="flex flex-col items-center"
             >
-              <Card className={`p-6 bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 ${first.isYou ? 'ring-2 ring-primary' : ''}`}>
+              <Card className={`p-6 bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 ${first.userId === user?.id ? 'ring-4 ring-primary shadow-lg' : ''}`}>
                 <div className="text-center">
                   <Trophy className="w-16 h-16 mx-auto mb-2 text-yellow-500" />
                   <div className="text-5xl font-bold mb-1">1</div>
                   <div className="text-xl font-bold mb-1 max-w-[140px] truncate">
                     {first.displayName}
-                    {first.isYou && <span className="text-primary ml-1">(You)</span>}
+                    {first.userId === user?.id && <span className="text-primary ml-1">(You)</span>}
                   </div>
                   <div className="text-sm text-muted-foreground">{first.xp.toLocaleString()} XP</div>
                 </div>
@@ -165,13 +167,13 @@ export default function LeaderboardPage() {
               transition={{ delay: 0.3 }}
               className="flex flex-col items-center"
             >
-              <Card className={`p-6 bg-gradient-to-br from-orange-100 to-orange-200 border-orange-300 ${third.isYou ? 'ring-2 ring-primary' : ''}`}>
+              <Card className={`p-6 bg-gradient-to-br from-orange-100 to-orange-200 border-orange-300 ${third.userId === user?.id ? 'ring-4 ring-primary shadow-lg' : ''}`}>
                 <div className="text-center">
                   <Medal className="w-12 h-12 mx-auto mb-2 text-orange-400" />
                   <div className="text-4xl font-bold mb-1">3</div>
                   <div className="text-lg font-semibold mb-1 max-w-[120px] truncate">
                     {third.displayName}
-                    {third.isYou && <span className="text-primary ml-1">(You)</span>}
+                    {third.userId === user?.id && <span className="text-primary ml-1">(You)</span>}
                   </div>
                   <div className="text-sm text-muted-foreground">{third.xp.toLocaleString()} XP</div>
                 </div>
@@ -200,7 +202,7 @@ export default function LeaderboardPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Card className={`p-4 hover:bg-accent/50 transition-colors ${entry.isYou ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
+            <Card className={`p-4 hover:bg-accent/50 transition-colors ${entry.userId === user?.id ? 'ring-4 ring-primary bg-primary/10 shadow-lg' : ''}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="text-2xl font-bold text-muted-foreground w-12 text-center">
@@ -209,7 +211,7 @@ export default function LeaderboardPage() {
                   <div>
                     <div className="font-semibold">
                       {entry.displayName}
-                      {entry.isYou && <span className="text-primary ml-2">(You)</span>}
+                      {entry.userId === user?.id && <span className="text-primary ml-2 font-bold">(You)</span>}
                     </div>
                   </div>
                 </div>

@@ -184,7 +184,7 @@ export function LeaderboardWidget() {
         {/* View Full Leaderboard Button */}
         <Link href="/leaderboard">
           <Button variant="outline" size="sm" className="w-full mt-4">
-            View Full Leaderboard
+            View Your Ranking
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </Link>
