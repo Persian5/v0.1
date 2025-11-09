@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { LeaderboardQuerySchema, safeValidate } from '@/lib/utils/api-schemas'
 
+export const dynamic = 'force-dynamic' // Required for request.headers
+
 // In-memory cache for leaderboard data
 // TTL: 2 minutes (120000ms)
 // Reduces database load for frequently accessed leaderboard
