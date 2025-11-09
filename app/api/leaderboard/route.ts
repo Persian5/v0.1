@@ -111,10 +111,14 @@ export async function GET(request: NextRequest) {
     }
     
     // 4. Initialize Supabase client with auth
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
     // 5. Get authenticated user (optional, for "You are here" feature)
     const { data: { user } } = await supabase.auth.getUser()
+    
+    // DEBUG: Log query details
+    console.log('Leaderboard API called:', { limit, offset, hasUser: !!user })
     
     // 6. Query top N users (public data only)
     const { data: topUsers, error: topError } = await supabase
@@ -132,6 +136,12 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
+    
+    // DEBUG: Log what we got from DB
+    console.log('Leaderboard query returned:', { 
+      count: topUsers?.length || 0, 
+      users: topUsers?.map(u => ({ name: u.display_name, xp: u.total_xp })) 
+    })
     
     // 7. Calculate ranks and sanitize
     const top = (topUsers || []).map((user, index) => ({
@@ -218,6 +228,13 @@ export async function GET(request: NextRequest) {
       data: response,
       timestamp: now
     }
+    
+    // DEBUG: Log final response
+    console.log('Leaderboard API response:', { 
+      topCount: response.top.length, 
+      hasYou: !!response.you,
+      youRank: response.you?.rank 
+    })
     
     // 11. Return sanitized data
     return NextResponse.json(response)
