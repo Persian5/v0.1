@@ -59,11 +59,18 @@ export function AuthModal({
     if (mode === 'verify' && user && !isEmailVerified && isOpen) {
       const pollInterval = setInterval(async () => {
         try {
-          // Refresh session to check if email was verified
-          const { data: { session } } = await supabase.auth.getSession()
+          // CRITICAL: Force refresh session from server (not cached)
+          // This ensures we get the latest verification status
+          const { data: { session }, error } = await supabase.auth.refreshSession()
+          
+          if (error) {
+            console.error('Error refreshing session during polling:', error)
+            return
+          }
           
           if (session?.user?.email_confirmed_at) {
             // Email verified! Switch to success mode
+            console.log('Email verified - refreshing auth context')
             setMode('success')
             clearInterval(pollInterval)
             

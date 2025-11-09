@@ -208,26 +208,39 @@ export function LessonRunner({
         // Track lesson completion for analytics
         console.log(`Lesson completed: ${moduleId}/${lessonId}`);
 
-        // Mark lesson as completed in the background (fire-and-forget)
+        // CRITICAL: Mark lesson as completed - MUST succeed before navigation
         try {
           await LessonProgressService.markLessonCompleted(moduleId, lessonId);
+          console.log('Lesson marked as completed successfully');
         } catch (error) {
-          console.error('Failed to mark lesson as completed:', error);
-        } finally {
-          // DON'T call onProgressChange here - it triggers parent re-render during render phase
-          // Progress is already at 100% from the previous useEffect (line 120-131)
+          console.error('Failed to mark lesson as completed (first attempt):', error);
           
-          // Flush XP; failure here should not block navigation
+          // Retry once after 1 second
           try {
-            await SyncService.forceSyncNow();
-          } catch (err) {
-            console.warn('XP force sync failed (continuing anyway):', err);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await LessonProgressService.markLessonCompleted(moduleId, lessonId);
+            console.log('Lesson marked as completed on retry');
+          } catch (retryError) {
+            console.error('Failed to mark lesson as completed (retry failed):', retryError);
+            // Show user-friendly error
+            alert('Failed to save your progress. Please check your internet connection and try completing the lesson again.');
+            // Don't navigate - let user retry the lesson
+            return;
           }
-
-          startTransition(() => {
-            router.push(`/modules/${moduleId}/${lessonId}/completion?xp=${xp}`);
-          });
         }
+
+        // Flush XP after successful save
+        try {
+          await SyncService.forceSyncNow();
+        } catch (err) {
+          console.warn('XP force sync failed (continuing anyway):', err);
+          // Non-critical - lesson is already saved, XP will sync on next opportunity
+        }
+
+        // Only navigate if lesson was successfully marked complete
+        startTransition(() => {
+          router.push(`/modules/${moduleId}/${lessonId}/completion?xp=${xp}`);
+        });
       })();
     }
   }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, router, xp]);

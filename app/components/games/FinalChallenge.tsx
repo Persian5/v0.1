@@ -50,17 +50,6 @@ export function FinalChallenge({
   onComplete,
   onXpStart
 }: FinalChallengeProps) {
-  // Get user name for personalization
-  const { user } = useAuth()
-  const authFirstName = user?.user_metadata?.first_name || ''
-  const userName = StoryProgressService.getUserName()
-  const displayName = userName !== 'Friend' ? userName : authFirstName || 'Friend'
-  
-  // Function to personalize text with user's name
-  const personalizeText = (text: string): string => {
-    return text.replace(/{name}/g, displayName)
-  }
-
   // ENHANCED WORD BANK: Handle conversation flow patterns
   const enhancedWords = useMemo(() => {
     if (!conversationFlow) {
@@ -80,18 +69,6 @@ export function FinalChallenge({
       }
     });
     
-    // Only add user's name if it's actually needed in the target sequence
-    // This prevents unwanted personalization in lessons that don't require it
-    if (displayName && displayName !== 'Friend' && targetWords.includes("user-name")) {
-      const nameWord: WordItem = {
-        id: "user-name",
-        text: `${displayName}-e`,
-        translation: displayName
-      };
-      conversationWords.push(nameWord);
-      usedWordIds.add("user-name");
-    }
-    
     // Add remaining words as distractors (avoiding duplicates)
     words.forEach(word => {
       if (!usedWordIds.has(word.id)) {
@@ -101,7 +78,7 @@ export function FinalChallenge({
     });
     
     return conversationWords;
-  }, [words, conversationFlow, displayName, targetWords]);
+  }, [words, conversationFlow, targetWords]);
 
   // SYSTEMATIC RANDOMIZATION: Randomize word bank display order once on mount
   // Following same pattern as Quiz component for consistency
