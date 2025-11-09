@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { LeaderboardQuerySchema, safeValidate } from '@/lib/utils/api-schemas'
 
 // In-memory cache for leaderboard data
 // TTL: 2 minutes (120000ms)
@@ -92,13 +93,21 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // 2. Input validation
+    // 2. Input validation with Zod
     const { searchParams } = new URL(request.url)
-    const limit = Math.min(
-      Math.max(parseInt(searchParams.get('limit') || '10', 10), 1),
-      100
-    )
-    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0)
+    const validationResult = safeValidate(LeaderboardQuerySchema, {
+      limit: searchParams.get('limit'),
+      offset: searchParams.get('offset'),
+    })
+    
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: `Invalid query parameters: ${validationResult.error}` },
+        { status: 400 }
+      )
+    }
+    
+    const { limit, offset } = validationResult.data
     
     // 3. Cache check
     const cacheKey = `leaderboard:${limit}:${offset}`

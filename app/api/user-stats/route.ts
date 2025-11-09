@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { withRateLimit, addRateLimitHeaders } from '@/lib/middleware/rate-limit-middleware'
-import { RATE_LIMITS } from '@/lib/services/rate-limiter'
+import { rateLimiters, getClientIdentifier } from '@/lib/utils/rate-limit'
 
 /**
  * GET /api/user-stats
@@ -9,17 +8,6 @@ import { RATE_LIMITS } from '@/lib/services/rate-limiter'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Rate limit dashboard stats (10 requests per minute)
-    const rateLimitResult = await withRateLimit(request, {
-      config: RATE_LIMITS.USER_STATS,
-      keyPrefix: 'user-stats',
-      useIpFallback: false
-    });
-
-    if (!rateLimitResult.allowed) {
-      return rateLimitResult.response!;
-    }
-
     // Get Supabase client with server-side auth
     const supabaseServer = createClient()
 
@@ -30,6 +18,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    // Rate limit dashboard stats (10 requests per minute per user)
+    const identifier = getClientIdentifier(request, user.id);
+    const { success } = await rateLimiters.userStats.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
       )
     }
 
@@ -85,8 +84,7 @@ export async function GET(request: NextRequest) {
       hardWords: hardWordsWithErrorRate
     }
 
-    const response = NextResponse.json(stats)
-    return addRateLimitHeaders(response, rateLimitResult.headers)
+    return NextResponse.json(stats)
 
   } catch (error) {
     console.error('Error fetching user stats:', error)
