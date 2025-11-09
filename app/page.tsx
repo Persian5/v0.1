@@ -121,6 +121,9 @@ export default function HomePage() {
             <Link href="/dashboard" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
               Dashboard
             </Link>
+            <Link href="/leaderboard" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
+              Leaderboard
+            </Link>
             <Link href="/review" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
               Review Mode
             </Link>
@@ -142,6 +145,11 @@ export default function HomePage() {
             <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="hover:bg-primary/10">
                 Dashboard
+              </Button>
+            </Link>
+            <Link href="/leaderboard">
+              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                Leaderboard
               </Button>
             </Link>
             <Link href="/review">
