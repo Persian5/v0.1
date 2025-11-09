@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic' // Required for cookies/auth
+
 /**
  * GET /api/user-stats
  * Returns dashboard statistics for authenticated user
