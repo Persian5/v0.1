@@ -6,6 +6,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard"
 import { WordsLearnedWidget } from "@/app/components/dashboard/WordsLearnedWidget"
 import { MasteredWordsWidget } from "@/app/components/dashboard/MasteredWordsWidget"
 import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
+import { LeaderboardWidget } from "@/components/widgets/LeaderboardWidget"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle } from "lucide-react"
@@ -109,6 +110,11 @@ function DashboardContent() {
                 Review Mode
               </Button>
             </Link>
+            <Link href="/leaderboard">
+              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                Leaderboard
+              </Button>
+            </Link>
             <AccountNavButton />
           </div>
         </div>
@@ -136,7 +142,7 @@ function DashboardContent() {
           )}
 
           {/* Widgets Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {/* Words Learned */}
             <WidgetErrorBoundary>
               <WordsLearnedWidget 
@@ -151,6 +157,11 @@ function DashboardContent() {
                 masteredWords={stats?.masteredWords || 0} 
                 isLoading={isLoading} 
               />
+            </WidgetErrorBoundary>
+
+            {/* Leaderboard */}
+            <WidgetErrorBoundary>
+              <LeaderboardWidget />
             </WidgetErrorBoundary>
           </div>
 

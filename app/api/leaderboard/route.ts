@@ -1,0 +1,235 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+
+// In-memory cache for leaderboard data
+// TTL: 2 minutes (120000ms)
+// Reduces database load for frequently accessed leaderboard
+interface CacheEntry {
+  data: any
+  timestamp: number
+}
+
+const cache: Record<string, CacheEntry> = {}
+const CACHE_TTL = 120000 // 2 minutes
+
+// Rate limiting: Simple in-memory tracker (upgrade to Redis for production)
+const rateLimit: Record<string, { count: number; resetTime: number }> = {}
+const RATE_LIMIT_WINDOW = 60000 // 1 minute
+const RATE_LIMIT_MAX = 60 // 60 requests per minute
+
+/**
+ * Rate limiting check
+ * Returns true if request should be allowed, false if rate limited
+ */
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  
+  if (!rateLimit[ip] || now > rateLimit[ip].resetTime) {
+    // Reset rate limit window
+    rateLimit[ip] = {
+      count: 1,
+      resetTime: now + RATE_LIMIT_WINDOW
+    }
+    return true
+  }
+  
+  if (rateLimit[ip].count >= RATE_LIMIT_MAX) {
+    return false
+  }
+  
+  rateLimit[ip].count++
+  return true
+}
+
+/**
+ * Sanitize display name to prevent XSS
+ * Escapes HTML special characters
+ */
+function sanitizeDisplayName(name: string | null): string {
+  if (!name) return 'Anonymous'
+  
+  return name
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .trim()
+    .substring(0, 50) // Max 50 characters
+}
+
+/**
+ * GET /api/leaderboard
+ * 
+ * Query params:
+ *  - limit: number (default 10, max 100)
+ *  - offset: number (default 0, min 0)
+ * 
+ * Returns:
+ *  - top: Array of top N users
+ *  - you: Current user's rank (if authenticated)
+ *  - youContext: 5-user window around current user (2 above, you, 2 below)
+ *  - pagination: { limit, offset, nextOffset, hasMore }
+ * 
+ * Security:
+ *  - Rate limited (60 req/min per IP)
+ *  - Cached (2 min TTL)
+ *  - Sanitized output (XSS prevention)
+ *  - RLS enforced
+ *  - No PII exposed
+ */
+export async function GET(request: NextRequest) {
+  try {
+    // 1. Rate limiting
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               'unknown'
+    
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+    
+    // 2. Input validation
+    const { searchParams } = new URL(request.url)
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get('limit') || '10', 10), 1),
+      100
+    )
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0)
+    
+    // 3. Cache check
+    const cacheKey = `leaderboard:${limit}:${offset}`
+    const now = Date.now()
+    
+    if (cache[cacheKey] && (now - cache[cacheKey].timestamp < CACHE_TTL)) {
+      // Cache hit
+      return NextResponse.json(cache[cacheKey].data)
+    }
+    
+    // 4. Initialize Supabase client with auth
+    const supabase = createRouteHandlerClient({ cookies })
+    
+    // 5. Get authenticated user (optional, for "You are here" feature)
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    // 6. Query top N users (public data only)
+    const { data: topUsers, error: topError } = await supabase
+      .from('user_profiles')
+      .select('id, display_name, total_xp, created_at')
+      .gt('total_xp', 0) // Only users with XP > 0
+      .order('total_xp', { ascending: false })
+      .order('created_at', { ascending: true }) // Tie-breaker: earlier user wins
+      .range(offset, offset + limit - 1)
+    
+    if (topError) {
+      console.error('Leaderboard query error:', topError)
+      return NextResponse.json(
+        { error: 'Failed to fetch leaderboard. Please try again later.' },
+        { status: 500 }
+      )
+    }
+    
+    // 7. Calculate ranks and sanitize
+    const top = (topUsers || []).map((user, index) => ({
+      rank: offset + index + 1,
+      displayName: sanitizeDisplayName(user.display_name),
+      xp: user.total_xp,
+      isYou: !!user && user.id === user?.id
+    }))
+    
+    // 8. Get current user's rank (if authenticated)
+    let you = null
+    let youContext: any[] = []
+    
+    if (user) {
+      // Get user's profile
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('id, display_name, total_xp, created_at')
+        .eq('id', user.id)
+        .single()
+      
+      if (userProfile && userProfile.total_xp > 0) {
+        // Calculate user's rank
+        const { count: higherRankedCount } = await supabase
+          .from('user_profiles')
+          .select('id', { count: 'exact', head: true })
+          .gt('total_xp', userProfile.total_xp)
+        
+        // Users with same XP but earlier created_at
+        const { count: sameXpEarlierCount } = await supabase
+          .from('user_profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('total_xp', userProfile.total_xp)
+          .lt('created_at', userProfile.created_at)
+        
+        const userRank = (higherRankedCount || 0) + (sameXpEarlierCount || 0) + 1
+        
+        you = {
+          rank: userRank,
+          displayName: sanitizeDisplayName(userProfile.display_name),
+          xp: userProfile.total_xp,
+          isYou: true
+        }
+        
+        // Get context window (2 above, you, 2 below)
+        if (userRank > 10) {
+          // User is outside top 10, fetch context
+          const contextStart = Math.max(userRank - 2, 1)
+          const contextEnd = userRank + 2
+          
+          const { data: contextUsers } = await supabase
+            .from('user_profiles')
+            .select('id, display_name, total_xp')
+            .gt('total_xp', 0)
+            .order('total_xp', { ascending: false })
+            .order('created_at', { ascending: true })
+            .range(contextStart - 1, contextEnd - 1)
+          
+          youContext = (contextUsers || []).map((u, index) => ({
+            rank: contextStart + index,
+            displayName: sanitizeDisplayName(u.display_name),
+            xp: u.total_xp,
+            isYou: u.id === user.id
+          }))
+        }
+      }
+    }
+    
+    // 9. Prepare response
+    const response = {
+      top,
+      you,
+      youContext,
+      pagination: {
+        limit,
+        offset,
+        nextOffset: offset + limit,
+        hasMore: top.length === limit
+      }
+    }
+    
+    // 10. Cache response
+    cache[cacheKey] = {
+      data: response,
+      timestamp: now
+    }
+    
+    // 11. Return sanitized data
+    return NextResponse.json(response)
+    
+  } catch (error) {
+    console.error('Leaderboard API error:', error)
+    
+    // NEVER expose stack traces or sensitive errors to client
+    return NextResponse.json(
+      { error: 'An unexpected error occurred. Please try again later.' },
+      { status: 500 }
+    )
+  }
+}
+

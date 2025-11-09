@@ -94,6 +94,7 @@
 - **learning_goal** values: `'heritage'`, `'travel'`, `'family'`, `'academic'`, `'fun'` (nullable, set during onboarding)
 - **current_level** values: `'beginner'`, `'few_words'`, `'basic_conversation'`, `'intermediate'` (nullable, optional during onboarding)
 - **primary_focus** values: `'speaking'`, `'reading'`, `'writing'`, `'all'` (nullable, optional during onboarding)
+- **INDEX**: `idx_user_profiles_leaderboard` on `(total_xp DESC, created_at ASC)` - Leaderboard performance optimization (added 2025-01-04)
 
 ### Database Triggers
 
