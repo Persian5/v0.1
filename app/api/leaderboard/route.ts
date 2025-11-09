@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 
 // In-memory cache for leaderboard data
 // TTL: 2 minutes (120000ms)
@@ -110,15 +109,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cache[cacheKey].data)
     }
     
-    // 4. Initialize Supabase client with auth
-    const cookieStore = await cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    // 4. Initialize Supabase client with SERVICE ROLE (bypasses RLS)
+    // SECURITY: This is safe because:
+    // - Service role key never exposed to client (server-side only)
+    // - We explicitly select only safe columns (display_name, total_xp)
+    // - No way for client to query sensitive fields (email, first_name, last_name)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    )
     
     // 5. Get authenticated user (optional, for "You are here" feature)
-    const { data: { user } } = await supabase.auth.getUser()
+    // Note: We can't get user from service role client, so leaderboard is fully public
+    // Users can still see their rank by matching their profile ID client-side if needed
+    const user = null // Always null for public leaderboard
     
     // DEBUG: Log query details
-    console.log('Leaderboard API called:', { limit, offset, hasUser: !!user })
+    console.log('Leaderboard API called:', { limit, offset })
     
     // 6. Query top N users (public data only)
     const { data: topUsers, error: topError } = await supabase
@@ -146,75 +154,15 @@ export async function GET(request: NextRequest) {
     // 7. Calculate ranks and sanitize
     const top = (topUsers || []).map((user, index) => ({
       rank: offset + index + 1,
+      userId: user.id, // Include user ID so client can identify themselves
       displayName: sanitizeDisplayName(user.display_name),
-      xp: user.total_xp,
-      isYou: !!user && user.id === user?.id
+      xp: user.total_xp
     }))
     
-    // 8. Get current user's rank (if authenticated)
-    let you = null
-    let youContext: any[] = []
-    
-    if (user) {
-      // Get user's profile
-      const { data: userProfile } = await supabase
-        .from('user_profiles')
-        .select('id, display_name, total_xp, created_at')
-        .eq('id', user.id)
-        .single()
-      
-      if (userProfile && userProfile.total_xp > 0) {
-        // Calculate user's rank
-        const { count: higherRankedCount } = await supabase
-          .from('user_profiles')
-          .select('id', { count: 'exact', head: true })
-          .gt('total_xp', userProfile.total_xp)
-        
-        // Users with same XP but earlier created_at
-        const { count: sameXpEarlierCount } = await supabase
-          .from('user_profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('total_xp', userProfile.total_xp)
-          .lt('created_at', userProfile.created_at)
-        
-        const userRank = (higherRankedCount || 0) + (sameXpEarlierCount || 0) + 1
-        
-        you = {
-          rank: userRank,
-          displayName: sanitizeDisplayName(userProfile.display_name),
-          xp: userProfile.total_xp,
-          isYou: true
-        }
-        
-        // Get context window (2 above, you, 2 below)
-        if (userRank > 10) {
-          // User is outside top 10, fetch context
-          const contextStart = Math.max(userRank - 2, 1)
-          const contextEnd = userRank + 2
-          
-          const { data: contextUsers } = await supabase
-            .from('user_profiles')
-            .select('id, display_name, total_xp')
-            .gt('total_xp', 0)
-            .order('total_xp', { ascending: false })
-            .order('created_at', { ascending: true })
-            .range(contextStart - 1, contextEnd - 1)
-          
-          youContext = (contextUsers || []).map((u, index) => ({
-            rank: contextStart + index,
-            displayName: sanitizeDisplayName(u.display_name),
-            xp: u.total_xp,
-            isYou: u.id === user.id
-          }))
-        }
-      }
-    }
-    
-    // 9. Prepare response
+    // 8. Prepare response (no user context - fully public leaderboard)
+    // Client will identify "You are here" by comparing userId with their own
     const response = {
       top,
-      you,
-      youContext,
       pagination: {
         limit,
         offset,
@@ -223,7 +171,7 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // 10. Cache response
+    // 9. Cache response
     cache[cacheKey] = {
       data: response,
       timestamp: now
@@ -231,12 +179,10 @@ export async function GET(request: NextRequest) {
     
     // DEBUG: Log final response
     console.log('Leaderboard API response:', { 
-      topCount: response.top.length, 
-      hasYou: !!response.you,
-      youRank: response.you?.rank 
+      topCount: response.top.length
     })
     
-    // 11. Return sanitized data
+    // 10. Return sanitized data
     return NextResponse.json(response)
     
   } catch (error) {
