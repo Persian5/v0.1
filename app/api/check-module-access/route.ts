@@ -1,9 +1,7 @@
 // app/api/check-module-access/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { ModuleAccessService } from "@/lib/services/module-access-service"
-import { withRateLimit, addRateLimitHeaders } from "@/lib/middleware/rate-limit-middleware"
-import { RATE_LIMITS } from "@/lib/services/rate-limiter"
-import { validateModuleId, createValidationErrorResponse } from "@/lib/utils/api-validation"
+import { ModuleAccessQuerySchema, safeValidate } from "@/lib/utils/api-schemas"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -14,38 +12,25 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(req: NextRequest) {
   try {
-    // Rate limit module access checks (30 requests per minute)
-    const rateLimitResult = await withRateLimit(req, {
-      config: RATE_LIMITS.MODULE_ACCESS,
-      keyPrefix: 'module-access',
-      useIpFallback: false // Only rate limit authenticated users
-    });
-
-    if (!rateLimitResult.allowed) {
-      return rateLimitResult.response!;
-    }
-
+    // Input validation with Zod
     const { searchParams } = new URL(req.url)
-    const moduleId = searchParams.get('moduleId')
+    const validationResult = safeValidate(ModuleAccessQuerySchema, {
+      moduleId: searchParams.get('moduleId'),
+    })
     
-    if (!moduleId) {
+    if (!validationResult.success) {
       return NextResponse.json(
-        { canAccess: false, reason: 'missing_module_id' },
+        { canAccess: false, reason: 'invalid_module_id', error: validationResult.error },
         { status: 400 }
       )
     }
     
-    // Validate moduleId format
-    const validation = validateModuleId(moduleId)
-    if (!validation.valid) {
-      return createValidationErrorResponse(validation.error!)
-    }
+    const { moduleId } = validationResult.data
     
     // Use the server-side service to check access
-    const accessCheck = await ModuleAccessService.canAccessModule(validation.sanitized!)
+    const accessCheck = await ModuleAccessService.canAccessModule(moduleId)
     
-    const response = NextResponse.json(accessCheck, { status: 200 })
-    return addRateLimitHeaders(response, rateLimitResult.headers)
+    return NextResponse.json(accessCheck, { status: 200 })
   } catch (error) {
     console.error("Error checking module access:", error)
     return NextResponse.json(
