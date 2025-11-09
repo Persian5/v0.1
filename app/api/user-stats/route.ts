@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { rateLimiters, getClientIdentifier } from '@/lib/utils/rate-limit'
 
 /**
  * GET /api/user-stats
@@ -18,17 +17,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
-      )
-    }
-
-    // Rate limit dashboard stats (10 requests per minute per user)
-    const identifier = getClientIdentifier(request, user.id);
-    const { success } = await rateLimiters.userStats.limit(identifier);
-    
-    if (!success) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        { status: 429 }
       )
     }
 

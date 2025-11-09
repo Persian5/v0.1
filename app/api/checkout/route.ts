@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { rateLimiters, getClientIdentifier } from "@/lib/utils/rate-limit";
 import { validatePriceId } from "@/lib/utils/api-validation";
 
 export const runtime = "nodejs";         // required to avoid Edge runtime
@@ -56,29 +55,6 @@ export async function POST(req: NextRequest) {
 
     if (error || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // CRITICAL: Rate limit checkout to prevent payment fraud (3 requests per 5 minutes)
-    const identifier = getClientIdentifier(req, user.id);
-    const { success, reset } = await rateLimiters.checkout.limit(identifier);
-    
-    if (!success) {
-      const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
-      return NextResponse.json(
-        { 
-          error: "Too many checkout attempts. Please try again later.",
-          retryAfter: retryAfterSeconds 
-        },
-        { 
-          status: 429,
-          headers: {
-            'Retry-After': String(retryAfterSeconds),
-            'X-RateLimit-Limit': '3',
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': new Date(reset).toISOString(),
-          }
-        }
-      );
     }
 
     // Validate STRIPE_PRICE_ID format (extra safety check)

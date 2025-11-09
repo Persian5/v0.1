@@ -1,7 +1,6 @@
 // app/api/check-module-access/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { ModuleAccessService } from "@/lib/services/module-access-service"
-import { rateLimiters, getClientIdentifier } from "@/lib/utils/rate-limit"
 import { ModuleAccessQuerySchema, safeValidate } from "@/lib/utils/api-schemas"
 
 export const runtime = "nodejs"
@@ -27,17 +26,6 @@ export async function GET(req: NextRequest) {
     }
     
     const { moduleId } = validationResult.data
-    
-    // Rate limit module access checks (20 requests per minute)
-    const identifier = getClientIdentifier(req);
-    const { success } = await rateLimiters.checkPremium.limit(identifier);
-    
-    if (!success) {
-      return NextResponse.json(
-        { canAccess: false, reason: 'rate_limit_exceeded' },
-        { status: 429 }
-      )
-    }
     
     // Use the server-side service to check access
     const accessCheck = await ModuleAccessService.canAccessModule(moduleId)
