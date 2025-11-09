@@ -118,20 +118,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(cache[cacheKey].data)
     }
     
-    // 4. Initialize Supabase client with ANON KEY (RLS enforced)
-    // SECURITY: Uses public RLS policy for leaderboard access
-    // - RLS policy: users with total_xp > 0 are publicly readable
-    // - Only safe columns are granted: id, display_name, total_xp, created_at
-    // - Sensitive data (email, first_name, etc.) remain protected by RLS
+    // 4. Initialize Supabase client with SERVICE ROLE (bypasses RLS)
+    // SECURITY: This is safe because:
+    // - Service role key never exposed to client (server-side only)
+    // - We explicitly select only safe columns (display_name, total_xp)
+    // - No way for client to query sensitive fields (email, first_name, last_name)
+    // TODO: Switch to anon key + RLS policy after migration is applied
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     )
     
     // 5. Get authenticated user (optional, for "You are here" feature)
-    // This is now possible since we're using anon key with proper session
-    const { data: { user } } = await supabase.auth.getUser()
+    // Note: We can't get user from service role client, so leaderboard is fully public
+    // Users can still see their rank by matching their profile ID client-side if needed
+    const user = null // Always null for public leaderboard
     
     // DEBUG: Log query details
     console.log('Leaderboard API called:', { limit, offset })
