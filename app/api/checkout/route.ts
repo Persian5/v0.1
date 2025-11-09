@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { withRateLimit, addRateLimitHeaders } from "@/lib/middleware/rate-limit-middleware";
-import { RATE_LIMITS } from "@/lib/services/rate-limiter";
+import { rateLimiters, getClientIdentifier } from "@/lib/utils/rate-limit";
 import { validatePriceId } from "@/lib/utils/api-validation";
 
 export const runtime = "nodejs";         // required to avoid Edge runtime
@@ -52,22 +51,34 @@ function makeSupabaseServer() {
 
 export async function POST(req: NextRequest) {
   try {
-    // CRITICAL: Rate limit checkout to prevent abuse (3 requests per 5 minutes)
-    const rateLimitResult = await withRateLimit(req, {
-      config: RATE_LIMITS.CHECKOUT,
-      keyPrefix: 'checkout',
-      useIpFallback: true
-    });
-
-    if (!rateLimitResult.allowed) {
-      return rateLimitResult.response!;
-    }
-
     const supabase = makeSupabaseServer();
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // CRITICAL: Rate limit checkout to prevent payment fraud (3 requests per 5 minutes)
+    const identifier = getClientIdentifier(req, user.id);
+    const { success, reset } = await rateLimiters.checkout.limit(identifier);
+    
+    if (!success) {
+      const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
+      return NextResponse.json(
+        { 
+          error: "Too many checkout attempts. Please try again later.",
+          retryAfter: retryAfterSeconds 
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(retryAfterSeconds),
+            'X-RateLimit-Limit': '3',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(reset).toISOString(),
+          }
+        }
+      );
     }
 
     // Validate STRIPE_PRICE_ID format (extra safety check)
@@ -83,20 +94,14 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceValidation.sanitized!, quantity: 1 }],
-      // Keep success/cancel on your domain; no extra env needed:
       success_url: `${origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/billing/canceled`,
       allow_promotion_codes: true,
-
-      // IMPORTANT: pass ONLY ONE of `customer` or `customer_email`.
       customer_email: user.email ?? undefined,
-
-      // Carry the supabase user id so the webhook can update your row.
       metadata: { supabase_user_id: user.id },
     });
 
-    const response = NextResponse.json({ url: session.url }, { status: 200 });
-    return addRateLimitHeaders(response, rateLimitResult.headers);
+    return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err: any) {
     console.error("Checkout error:", err);
     return NextResponse.json({ error: err.message ?? "Checkout failed" }, { status: 500 });
