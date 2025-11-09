@@ -14,6 +14,7 @@ interface LeaderboardEntry {
   userId: string
   displayName: string
   xp: number
+  isYou?: boolean
 }
 
 interface LeaderboardResponse {

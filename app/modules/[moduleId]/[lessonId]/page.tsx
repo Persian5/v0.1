@@ -15,8 +15,8 @@ import { LessonPreviewContent } from "@/components/previews/LessonPreviewContent
 import { BlurredPreviewContainer } from "@/components/previews/BlurredPreviewContainer"
 import { NotFound } from "@/components/NotFound"
 import { LessonRunner } from "@/app/components/LessonRunner"
-import CompletionPage from "./completion/page"
-import SummaryPage from "./summary/page"
+import CompletionView from "@/components/lesson/CompletionView"
+import SummaryView from "@/components/lesson/SummaryView"
 import { ModuleCompletion } from "@/app/components/ModuleCompletion"
 import { ModuleProgressService } from "@/lib/services/module-progress-service"
 import { motion, AnimatePresence } from "framer-motion"
@@ -77,14 +77,14 @@ function LessonPageContent() {
   const lesson = getLesson(moduleId, lessonId)
   const module = getModule(moduleId);
   
-  // Early check: If lesson or module isn't found, show NotFound immediately
-  if (!lesson || !module) {
-    return <NotFound type="lesson" moduleId={moduleId} lessonId={lessonId} />
-  }
-  
   // UNIFIED AUTH + ACCESSIBILITY CHECK using SmartAuthService cached data
   useEffect(() => {
     const checkAuthAndAccessibility = async () => {
+      // Early exit if lesson or module not found
+      if (!lesson || !module) {
+        return
+      }
+      
       try {
         setAppState(prev => ({ ...prev, isLoading: true, error: null }))
         
@@ -601,6 +601,10 @@ function LessonPageContent() {
 
   return (
     <PageErrorBoundary>
+    {/* Early check: If lesson or module isn't found, show NotFound */}
+    {!lesson || !module ? (
+      <NotFound type="lesson" moduleId={moduleId} lessonId={lessonId} />
+    ) : (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -633,8 +637,10 @@ function LessonPageContent() {
           <div className="flex-1 flex flex-col items-center justify-start min-h-0 w-full">
             {/* Render the appropriate content based on currentView */}
             {currentView === 'completion' ? (
-              <CompletionPage 
-                xp={xp} 
+              <CompletionView 
+                moduleId={moduleId}
+                lessonId={lessonId}
+                xpGained={xp}
                 resetLesson={resetLesson}
                 handleViewSummary={handleViewSummary}
               />
@@ -644,10 +650,10 @@ function LessonPageContent() {
                 totalXpEarned={ModuleProgressService.getModuleCompletion(moduleId)?.totalXpEarned || 0}
               />
             ) : currentView === 'summary' ? (
-              <SummaryPage 
-                xp={xp}
+              <SummaryView 
+                moduleId={moduleId}
+                lessonId={lessonId}
                 resetLesson={resetLesson}
-                learnedWords={getLearnedWords()}
               />
             ) : (
               /* Always drive from config */
@@ -669,6 +675,7 @@ function LessonPageContent() {
         </div>
       </main>
     </div>
+    )}
     </PageErrorBoundary>
   );
 }

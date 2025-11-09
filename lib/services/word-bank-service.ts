@@ -997,7 +997,7 @@ export class WordBankService {
    * @param maxDistractors - Maximum number of distractors to generate
    * @returns Array of distractor word bank items
    */
-  private static generateSemanticDistractors(
+  public static generateSemanticDistractors(
     correctItems: WordBankItem[],
     vocabularyBank: VocabularyItem[],
     maxDistractors: number

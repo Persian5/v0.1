@@ -68,7 +68,7 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
   const [vocabularyLearned, setVocabularyLearned] = useState<string[]>([]);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   
-  const module = getModule(moduleId);
+  const currentModule = getModule(moduleId);
   const completionData = MODULE_COMPLETION_DATA[moduleId];
   
   // Get next module info
@@ -255,7 +255,7 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
             onClick={handleRepracticeModule}
           >
             <RotateCcw className="h-4 w-4 mr-2" />
-            Re-Practice {module.title}
+            Re-Practice {currentModule?.title || 'Module'}
           </Button>
           
           <Button 

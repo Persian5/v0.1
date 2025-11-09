@@ -383,7 +383,11 @@ export function LessonRouteGuard({
             // This prevents free users from accessing premium content after sign-in
             if (!isEmbedded && module?.requiresPremium) {
               try {
-                const cachedAccess = getCachedModuleAccess(moduleId, user.id)
+                // Get user after auth success
+                const { user: currentUser } = await SmartAuthService.initializeSession()
+                if (!currentUser) return
+                
+                const cachedAccess = getCachedModuleAccess(moduleId, currentUser.id)
                 let accessData
                 
                 if (cachedAccess) {
@@ -392,7 +396,7 @@ export function LessonRouteGuard({
                   const accessResponse = await fetch(`/api/check-module-access?moduleId=${moduleId}`)
                   if (accessResponse.ok) {
                     accessData = await accessResponse.json()
-                    setCachedModuleAccess(moduleId, user.id, accessData)
+                    setCachedModuleAccess(moduleId, currentUser.id, accessData)
                   }
                 }
                 
