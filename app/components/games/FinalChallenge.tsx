@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { X } from "lucide-react"
 import { playSuccessSound } from "./Flashcard"
-import { useAuth } from "@/components/auth/AuthProvider"
-import { StoryProgressService } from "@/lib/services/story-progress-service"
 
 interface WordItem {
   id: string;
@@ -88,10 +86,10 @@ export function FinalChallenge({
 
   // Generate dynamic description if none provided
   const getDynamicDescription = () => {
-    if (description) return personalizeText(description);
+    if (description) return description;
     
     if (conversationFlow) {
-      return `Build this sentence: "${personalizeText(conversationFlow.expectedPhrase)}"`;
+      return `Build this sentence: "${conversationFlow.expectedPhrase}"`;
     }
     
     // For final challenges without conversationFlow, we need to create proper sentences
