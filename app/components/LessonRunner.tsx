@@ -198,7 +198,9 @@ export function LessonRunner({
     
     // NEW: Notify parent of step change
     if (onStepChange && !isInRemediation) {
-      onStepChange(idx + 1, steps.length); // 1-indexed for display
+      // Cap display at total steps (don't show "21 of 20" on completion)
+      const displayStep = Math.min(idx + 1, steps.length);
+      onStepChange(displayStep, steps.length); // 1-indexed for display
     }
     
     // SIMPLIFIED: Clear currentStepTrackedRef when step changes (allows new tracking on new step)

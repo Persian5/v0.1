@@ -13,7 +13,7 @@ interface XpAnimationProps {
  * 
  * Design Philosophy:
  * - Fixed viewport positioning (always visible, scroll-independent)
- * - Center-aligned below header (natural eye position)
+ * - Aligned with heading, positioned to the right with spacing
  * - Self-contained (no wrapper divs needed)
  * - Subtle celebration (professional, not cartoonish)
  * 
@@ -25,9 +25,9 @@ export function XpAnimation({ amount, show, isAlreadyCompleted = false, onStart,
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, y: 10, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          initial={{ opacity: 0, x: 20, scale: 0.9 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 20, scale: 0.9 }}
           transition={{ 
             duration: 0.5,
             ease: "easeOut"
@@ -35,7 +35,7 @@ export function XpAnimation({ amount, show, isAlreadyCompleted = false, onStart,
           onAnimationStart={onStart}
           onAnimationComplete={onComplete}
           className={`
-            fixed top-24 left-1/2 -translate-x-1/2
+            fixed top-[8.5rem] right-[20px] sm:top-[9rem] sm:right-[20px]
             rounded-full px-5 py-2.5
             text-base font-semibold shadow-md
             z-50
