@@ -260,9 +260,7 @@ export default function ModulePage() {
   if (isAuthenticated && !isLoading && (showPremiumModal || showLockScreen)) {
     return (
       <>
-        <BlurredPreviewContainer
-          header={          }
-        >
+        <BlurredPreviewContainer>
           <ModulePreviewContent
             module={module}
             lessons={lessons}
