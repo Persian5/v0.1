@@ -64,20 +64,29 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                 className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span className="text-sm font-medium">Back</span>
+                <span className="text-sm font-medium hidden sm:inline">Back</span>
               </button>
 
               <div className="flex items-center gap-3">
                 {/* XP Badge */}
                 {isLoggedIn && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
+                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                     <span>{xp.toLocaleString()}</span>
                   </div>
                 )}
 
-                {/* Account Dropdown */}
-                {isLoggedIn && <AccountDropdown />}
+                {/* Account Dropdown - Desktop only */}
+                {isLoggedIn && <div className="hidden md:block"><AccountDropdown /></div>}
+
+                {/* Mobile Menu Toggle */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
+                  aria-label="Toggle menu"
+                >
+                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
               </div>
             </>
           )}
