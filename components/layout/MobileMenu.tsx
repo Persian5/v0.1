@@ -73,7 +73,7 @@ export function MobileMenu({ isOpen, onClose, variant = 'default' }: MobileMenuP
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            className="fixed inset-0 bg-black/50 z-[60] md:hidden"
           />
 
           {/* Drawer */}
@@ -82,7 +82,7 @@ export function MobileMenu({ isOpen, onClose, variant = 'default' }: MobileMenuP
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 bottom-0 w-[80%] max-w-sm bg-white z-50 md:hidden overflow-y-auto shadow-2xl"
+            className="fixed top-0 right-0 bottom-0 w-[80%] max-w-sm bg-white z-[70] md:hidden overflow-y-auto shadow-2xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
