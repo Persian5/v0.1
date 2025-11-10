@@ -6,7 +6,6 @@ import { Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { getLesson } from "@/lib/config/curriculum"
-import LessonHeader from "@/app/components/LessonHeader"
 
 interface SummaryViewProps {
   moduleId: string
@@ -52,8 +51,6 @@ export default function SummaryView({
   
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <LessonHeader moduleId={moduleId} />
-      
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto text-center animate-fade-in w-full sm:w-auto py-8">
       <Card className="w-full">

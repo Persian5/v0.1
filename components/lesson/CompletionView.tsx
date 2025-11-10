@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Medal, Star, Sparkles, ArrowRight } from "lucide-react"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useXp } from "@/hooks/use-xp"
-import LessonHeader from "@/app/components/LessonHeader"
 import { CountUpXP } from "@/app/components/CountUpXP"
 import { getModule } from "@/lib/config/curriculum"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
@@ -130,8 +129,6 @@ export default function CompletionView({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <LessonHeader moduleId={moduleId} />
-
       <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto text-center animate-fade-in w-full sm:w-auto py-8">
           <div className="relative mx-auto w-24 h-24 mb-6">
