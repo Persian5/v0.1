@@ -229,9 +229,7 @@ export default function ModulePage() {
   if (!isAuthenticated && !isLoading) {
     return (
       <>
-        <BlurredPreviewContainer
-          header={          }
-        >
+        <BlurredPreviewContainer>
           <ModulePreviewContent
             module={module}
             lessons={lessons}
