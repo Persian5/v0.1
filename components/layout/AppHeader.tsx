@@ -90,7 +90,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                 href={isLoggedIn ? "/dashboard" : "/"} 
                 className="text-xl font-bold text-primary hover:opacity-80 transition-opacity"
               >
-                Finglish
+                Home
               </Link>
 
               {/* Desktop Navigation - Default Variant */}
