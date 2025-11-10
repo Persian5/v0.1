@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock, CheckCircle, PlayCircle, Clock, Crown, AlertCircle } from "lucide-react"
@@ -10,8 +9,6 @@ import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
 import { useXp } from "@/hooks/use-xp"
 import { useProgress } from "@/hooks/use-progress"
-import { Star } from "lucide-react"
-import { XpService } from "@/lib/services/xp-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
@@ -169,29 +166,6 @@ export default function ModulesPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary">
-            Home
-          </Link>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
-              <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
-            </div>
-            {!user && (
-              <Link href="/pricing">
-                <Button variant="ghost" size="sm" className="hover:bg-primary/10 whitespace-nowrap">
-                  Pricing + FAQ
-                </Button>
-              </Link>
-            )}
-            <AccountNavButton />
-          </div>
-        </div>
-      </header>
-
       <main className="flex-1 bg-primary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           {/* Page Header */}
