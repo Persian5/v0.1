@@ -8,6 +8,7 @@ import { SmartAuthProvider } from "@/components/auth/SmartAuthProvider"
 import { XpCacheInitializer } from "@/components/XpCacheInitializer"
 import ClientRootBoundary from "@/components/ClientRootBoundary"
 import { CrashTestButton } from "@/components/CrashTestButton"
+import { ConditionalHeader } from "@/components/layout/ConditionalHeader"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -47,6 +48,7 @@ export default function RootLayout({
           <XpCacheInitializer />
           <SmartAuthProvider>
             <ClientRootBoundary>
+              <ConditionalHeader />
               {children}
               <CrashTestButton />
             </ClientRootBoundary>

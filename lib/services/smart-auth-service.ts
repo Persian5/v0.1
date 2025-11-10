@@ -7,6 +7,7 @@ import type { UserProfile, UserLessonProgress } from '@/lib/supabase/database'
 interface SessionCache {
   user: User
   isEmailVerified: boolean  // Cached once per session
+  hasPremium: boolean  // Cached premium subscription status
   profile: UserProfile
   progress: UserLessonProgress[]
   totalXp: number
@@ -36,7 +37,7 @@ interface BackgroundSyncOperation {
 }
 
 // Event types for reactive updates
-type SmartAuthEventType = 'xp-updated' | 'progress-updated' | 'profile-updated' | 'session-changed'
+type SmartAuthEventType = 'xp-updated' | 'progress-updated' | 'profile-updated' | 'session-changed' | 'premium-updated'
 
 interface SmartAuthEventListener {
   (eventType: SmartAuthEventType, data: any): void
@@ -139,17 +140,19 @@ export class SmartAuthService {
         return { user: null, isEmailVerified: false, isReady: true }
       }
       
-      // Load complete user data bundle in parallel
-      const [profile, progress, totalXp] = await Promise.all([
+      // Load complete user data bundle in parallel (including premium status)
+      const [profile, progress, totalXp, hasPremium] = await Promise.all([
         DatabaseService.getOrCreateUserProfile(session.user),
         DatabaseService.getUserLessonProgress(session.user.id),
-        DatabaseService.getUserTotalXp(session.user.id)
+        DatabaseService.getUserTotalXp(session.user.id),
+        this.fetchPremiumStatus()  // Fetch premium status on initialization
       ])
       
       // Cache session data
       this.sessionCache = {
         user: session.user,
         isEmailVerified: !!session.user.email_confirmed_at, // Cache verification status
+        hasPremium,  // Cache premium status
         profile,
         progress,
         totalXp,
@@ -161,6 +164,7 @@ export class SmartAuthService {
       this.emitEvent('xp-updated', { newXp: totalXp, oldXp: 0 })
       this.emitEvent('progress-updated', { progress })
       this.emitEvent('session-changed', { user: session.user, isEmailVerified: !!session.user.email_confirmed_at })
+      this.emitEvent('premium-updated', { hasPremium })  // Emit premium status
       
       // Initialize sync service for XP persistence
       try {
@@ -814,5 +818,51 @@ export class SmartAuthService {
     if (!this.sessionCache) return
     
     delete this.sessionCache.dashboardStats
+  }
+
+  /**
+   * Fetch premium subscription status from API
+   * Private helper method called during session initialization
+   */
+  private static async fetchPremiumStatus(): Promise<boolean> {
+    try {
+      const response = await fetch('/api/check-premium')
+      if (!response.ok) {
+        console.warn('Premium status check failed, defaulting to false')
+        return false
+      }
+      const data = await response.json()
+      return data.hasPremium || false
+    } catch (error) {
+      console.error('Error fetching premium status:', error)
+      return false
+    }
+  }
+
+  /**
+   * Get cached premium status
+   * Returns false if not authenticated or cache not initialized
+   */
+  static getHasPremium(): boolean {
+    if (!this.sessionCache) return false
+    return this.sessionCache.hasPremium
+  }
+
+  /**
+   * Update premium status (call after successful subscription purchase)
+   * Triggers reactive UI updates via premium-updated event
+   */
+  static async refreshPremiumStatus(): Promise<void> {
+    if (!this.sessionCache) return
+    
+    const hasPremium = await this.fetchPremiumStatus()
+    const oldStatus = this.sessionCache.hasPremium
+    
+    this.sessionCache.hasPremium = hasPremium
+    
+    // Emit event if status changed
+    if (oldStatus !== hasPremium) {
+      this.emitEvent('premium-updated', { hasPremium, wasUpgrade: !oldStatus && hasPremium })
+    }
   }
 } 
