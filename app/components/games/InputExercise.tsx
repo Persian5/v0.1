@@ -182,9 +182,13 @@ function ValidatedLetterInput({
     return normalizedInput[index] === normalizedTarget[index] ? 'correct' : 'incorrect';
   };
 
-  // Handle input changes
+  // Handle input changes with max length enforcement
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    // Prevent typing more than target length - strict limit
+    if (normalizeAnswer(newValue).length > normalizedTarget.length) {
+      return; // Don't update if exceeds target length
+    }
     onChange(newValue);
     
     // Remove auto-submit - let user click "Check Answer" button instead
@@ -217,78 +221,79 @@ function ValidatedLetterInput({
       
       {/* Visual letter display */}
       <div 
-        className="w-full px-4 py-3 text-base sm:text-lg bg-gray-100 rounded-full shadow-sm border-2 border-transparent focus-within:border-primary/50 transition-all min-h-[48px] flex items-center cursor-text"
+        className="w-full px-4 py-4 text-base sm:text-lg bg-white rounded-xl shadow-sm border-2 border-primary/20 focus-within:border-primary focus-within:shadow-md transition-all min-h-[56px] flex items-center cursor-text hover:border-primary/40"
         onClick={() => inputRef.current?.focus()}
       >
-        <div className="flex flex-wrap gap-1 w-full justify-center">
+        <div className="flex flex-wrap gap-1.5 w-full justify-center">
           {/* Show target letters with validation colors */}
           {normalizedTarget.split('').map((targetChar, index) => {
             const status = validateCharacter(targetChar, index);
             const userChar = index < normalizedInput.length ? normalizedInput[index] : '';
             
             return (
-              <motion.span
+              <span
                 key={index}
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
                 className={`
-                  inline-flex items-center justify-center min-w-[24px] h-[28px] rounded text-sm font-medium transition-all duration-200
+                  inline-flex items-center justify-center min-w-[28px] h-[36px] rounded-lg text-base font-semibold transition-all duration-200
                   ${status === 'correct' 
-                    ? 'bg-green-100 text-green-700 border border-green-300' 
+                    ? 'bg-green-100 text-green-700 border-2 border-green-300' 
                     : status === 'incorrect'
-                    ? 'bg-red-100 text-red-700 border border-red-300'
-                    : 'bg-gray-50 text-gray-400 border border-gray-200'
+                    ? 'bg-red-100 text-red-700 border-2 border-red-300'
+                    : 'bg-gray-50 text-gray-400 border-2 border-gray-200'
                   }
                 `}
               >
                 {status === 'pending' ? (
-                  <span className="text-gray-300">_</span>
-                ) : status === 'correct' ? (
-                  userChar
+                  <span className="text-gray-300 font-normal">_</span>
                 ) : (
-                  userChar
+                  userChar.toUpperCase()
                 )}
-              </motion.span>
+              </span>
             );
           })}
           
           {/* Show extra characters (beyond target length) in red */}
           {normalizedInput.length > normalizedTarget.length && (
             normalizedInput.slice(normalizedTarget.length).split('').map((char, index) => (
-              <motion.span
+              <span
                 key={`extra-${index}`}
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                className="inline-flex items-center justify-center min-w-[24px] h-[28px] rounded text-sm font-medium bg-red-100 text-red-700 border border-red-300"
+                className="inline-flex items-center justify-center min-w-[28px] h-[36px] rounded-lg text-base font-semibold bg-red-100 text-red-700 border-2 border-red-300"
               >
-                {char}
-              </motion.span>
+                {char.toUpperCase()}
+              </span>
             ))
           )}
           
           {/* Typing cursor */}
           {!disabled && (
             <motion.span
-              animate={{ opacity: [1, 0, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-              className="inline-flex items-center justify-center w-[2px] h-[28px] bg-primary ml-1"
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+              className="inline-flex items-center justify-center w-[3px] h-[36px] bg-primary rounded-full ml-0.5"
             />
           )}
         </div>
       </div>
       
-      {/* Placeholder text - centered below character boxes, disappears when typing starts */}
-      {value.length === 0 && (
-        <div className="text-center mt-2">
-          <span className="text-sm text-gray-400">
-            {placeholder}
-          </span>
+      {/* Progress indicator - more subtle */}
+      <div className="mt-2 flex items-center justify-center gap-2">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: normalizedTarget.length }).map((_, i) => (
+            <div
+              key={i}
+              className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                i < normalizedInput.length 
+                  ? validateCharacter('', i) === 'correct'
+                    ? 'bg-green-500'
+                    : 'bg-red-500'
+                  : 'bg-gray-200'
+              }`}
+            />
+          ))}
         </div>
-      )}
-      
-      {/* Progress indicator */}
-      <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-        <span>{Math.min(normalizedInput.length, normalizedTarget.length)}/{normalizedTarget.length} letters</span>
+        <span className="text-xs text-gray-500 font-medium">
+          {Math.min(normalizedInput.length, normalizedTarget.length)}/{normalizedTarget.length}
+        </span>
       </div>
     </div>
   );
@@ -310,6 +315,7 @@ export function InputExercise({
   const [showHint, setShowHint] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   const [hasTracked, setHasTracked] = useState(false) // CRITICAL: Prevent duplicate onVocabTrack calls
+  const [isSubmitting, setIsSubmitting] = useState(false) // Prevent double-submit
   
   // Time tracking for analytics
   const startTime = useRef(Date.now())
@@ -331,11 +337,13 @@ export function InputExercise({
   }
 
   const handleSubmit = async () => {
-    // CRITICAL: Prevent duplicate submissions - check BEFORE any state updates
-    if (hasTracked) {
+    // CRITICAL: Prevent duplicate submissions
+    if (hasTracked || isSubmitting) {
       console.log(`⏭️ [INPUT] Skipping duplicate handleSubmit for vocabularyId: ${vocabularyId}`);
       return;
     }
+    
+    setIsSubmitting(true); // Lock submission
     
     // Normalize both input and answer for comparison
     const normalizeForComparison = (text: string): string => {
@@ -373,11 +381,13 @@ export function InputExercise({
       
       // Trigger XP animation for visual feedback
       setShowXp(true)
+      setIsSubmitting(false); // Unlock for next step
     } else {
       // If incorrect, show feedback briefly and allow retry
       setTimeout(() => {
         setShowFeedback(false);
         setHasTracked(false); // Reset for retry (only after timeout completes)
+        setIsSubmitting(false); // Unlock for retry
         // Don't clear input - let user see their mistakes and correct them
       }, 1500); // Reset feedback after 1.5 seconds
     }
@@ -400,122 +410,121 @@ export function InputExercise({
   };
 
   return (
-    <div className="w-full max-w-[90vw] sm:max-w-[80vw] mx-auto py-4">
-      <div className="text-center mb-4">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-1 text-primary">Practice</h2>
-        <p className="text-muted-foreground">
-          {hasHyphen ? "Fill in both parts with the hyphen connecting them!" : "Type the correct word - watch the letters turn green!"}
-        </p>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-lg p-4 relative">
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+      {/* XP Animation positioned absolutely */}
+      <div className="absolute top-8 left-0 right-0 z-10">
         <XpAnimation 
           amount={points} 
           show={showXp}
           isAlreadyCompleted={isAlreadyCompleted}
           onStart={undefined}
           onComplete={() => {
-            setShowXp(false)  // reset for next use
+            setShowXp(false)
             onComplete(isCorrect)
           }}
         />
-        
-        <div className="space-y-4">
-          <div className="text-center">
-            <p className="text-lg sm:text-xl">
-              {question}
-            </p>
-          </div>
+      </div>
 
-          <div className="space-y-4">
+      {/* Main Content - Centered and scrollable */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
+        <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
+          {/* Question + Input Zone - Grouped together */}
+          <div className="mb-6 sm:mb-8">
+            {/* Label */}
+            <div className="text-center mb-3">
+              <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-4">
+                Type the answer
+              </p>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 text-primary">
+                Type in Finglish
+              </h2>
+              <p className="text-base sm:text-lg md:text-xl text-gray-700 font-medium px-4">
+                {question}
+              </p>
+            </div>
+
+            {/* Input Area - Enhanced as hero element */}
             <motion.div
               initial={false}
               animate={showFeedback && !isCorrect ? { x: [0, -5, 5, -5, 5, 0] } : {}}
               transition={{ duration: 0.5 }}
-              className="relative"
+              className="w-full"
             >
-              {hasHyphen ? (
-                <GrammarHyphenInput
-                  value={input}
-                  targetAnswer={answer}
-                  onChange={handleInputChange}
-                  onSubmit={handleSubmit}
-                  placeholder="Start typing..."
-                  disabled={showFeedback && isCorrect}
-                  className="w-full"
-                />
-              ) : (
-                <ValidatedLetterInput
-                  value={input}
-                  targetAnswer={answer}
-                  onChange={handleInputChange}
-                  onSubmit={handleSubmit}
-                  placeholder="Start typing..."
-                  disabled={showFeedback && isCorrect}
-                  className="w-full"
-                />
-              )}
-            </motion.div>
-
-            {/* Hint Toggle (Collapsible Pill) */}
-            <div className="mt-3 mb-4 sm:mb-6">
-              <div className="bg-gray-100 rounded-full">
-                <button 
-                  type="button"
-                  onClick={toggleHint}
-                  className="w-full flex items-center justify-center p-2 text-sm text-gray-600 hover:bg-gray-200 transition-colors duration-200"
-                >
-                  <span className="mr-1">🔍</span>
-                  <span>Need a hint?</span>
-                  {showHint ? 
-                    <ChevronUp className="ml-1 h-4 w-4" /> : 
-                    <ChevronDown className="ml-1 h-4 w-4" />
-                  }
-                </button>
-                
-                {showHint && (
-                  <div className="px-4 pb-3 pt-1">
-                    <p className="text-center text-green-700 font-medium">
-                      <span className="mr-1">📣</span> Starts with: {generateHint(answer)}
-                    </p>
-                  </div>
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-primary/10">
+                {hasHyphen ? (
+                  <GrammarHyphenInput
+                    value={input}
+                    targetAnswer={answer}
+                    onChange={handleInputChange}
+                    onSubmit={handleSubmit}
+                    placeholder="Start typing..."
+                    disabled={showFeedback && isCorrect}
+                    className="w-full"
+                  />
+                ) : (
+                  <ValidatedLetterInput
+                    value={input}
+                    targetAnswer={answer}
+                    onChange={handleInputChange}
+                    onSubmit={handleSubmit}
+                    placeholder="Start typing..."
+                    disabled={showFeedback && isCorrect}
+                    className="w-full"
+                  />
                 )}
+                
+                {/* Helper Text - Inside input zone */}
+                <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
+                  {hasHyphen ? "Each part turns green when correct" : "Watch letters turn green as you type!"}
+                </p>
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          <AnimatePresence>
-            {showFeedback && !isCorrect && (
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-center text-red-500 mt-3 text-sm"
+          {/* Hint Display - When shown */}
+          {showHint && (
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-3"
               >
-                Not quite right. Try again!
-              </motion.p>
-            )}
-          </AnimatePresence>
+                <div className="bg-blue-50 border-2 border-blue-200 border-l-4 border-l-blue-500 rounded-xl p-4 text-center">
+                  <p className="text-blue-900 font-medium text-sm sm:text-base">
+                    Starts with: <span className="font-bold text-blue-700">{generateHint(answer)}</span>
+                  </p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          )}
+
+          {/* Action Buttons - Mobile: positioned below content, Desktop: in flow */}
+          <div className="sm:mt-4 lg:mt-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center">
+              <Button
+                onClick={handleSubmit}
+                className="w-full sm:w-auto sm:min-w-[280px] lg:min-w-[320px] text-base sm:text-lg py-6 sm:py-7 font-bold shadow-lg hover:shadow-xl transition-all order-2 sm:order-1"
+                disabled={showFeedback && isCorrect || isSubmitting}
+              >
+                {isSubmitting ? 'Checking...' : showFeedback && isCorrect ? 'Correct!' : 'Check Answer'}
+              </Button>
+              
+              <button 
+                type="button"
+                onClick={toggleHint}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 bg-transparent hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-xl transition-all text-sm font-medium border border-gray-300 hover:border-gray-400 order-1 sm:order-2 whitespace-nowrap"
+              >
+                <span>{showHint ? 'Hide hint' : 'Need a hint?'}</span>
+                {showHint ? 
+                  <ChevronUp className="h-4 w-4" /> : 
+                  <ChevronDown className="h-4 w-4" />
+                }
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-      
-      {/* Motivation Bubble */}
-      <div className="mt-5 mb-4 sm:mt-6 sm:mb-5">
-        <div className="bg-primary/5 p-3 rounded-xl text-center">
-          <p className="text-sm text-gray-600 font-normal">
-            {hasHyphen ? "💡 Each part turns green when correct!" : "💡 Green letters are correct, red letters need fixing!"}
-          </p>
-        </div>
-      </div>
-      
-      {/* Submit button */}
-      <Button
-        onClick={handleSubmit}
-        className="w-full text-base sm:text-lg py-3 mt-2"
-        disabled={showFeedback && isCorrect}
-      >
-        Check Answer
-      </Button>
     </div>
   )
 }

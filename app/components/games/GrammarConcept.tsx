@@ -28,6 +28,7 @@ export function GrammarConcept({
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false)
   const [useItInput, setUseItInput] = useState('')
   const [useItQuizAnswer, setUseItQuizAnswer] = useState<number | null>(null)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
 
   const concept = getGrammarConcept(conceptId)
   
@@ -91,10 +92,12 @@ export function GrammarConcept({
   }
 
   // Play audio for a word
-  const playExampleAudio = (word: string) => {
+  const playExampleAudio = async (word: string) => {
     // Remove hyphens before playing audio
     const audioId = word.replace(/-/g, '')
-    AudioService.playAudio(`/audio/${audioId}.mp3`)
+    setIsPlayingAudio(true)
+    await AudioService.playAudio(`/audio/${audioId}.mp3`)
+    setIsPlayingAudio(false)
   }
 
   // Handle Practice transformation button
@@ -346,9 +349,34 @@ export function GrammarConcept({
                         onClick={() => playExampleAudio(phase.transformedWord.replace(/-/g, '').replace('?', ''))}
                   variant="outline"
                   size="sm"
-                        className="gap-2 border-blue-300 text-blue-700"
+                        className="gap-2 border-blue-300 text-blue-700 relative"
                     >
-                      <Volume2 className="h-3 w-3" />
+                      <div className="relative flex items-center justify-center">
+                        <Volume2 className={`h-3 w-3 transition-opacity ${
+                          isPlayingAudio ? 'opacity-100' : 'opacity-70'
+                        }`} />
+                        
+                        {/* Waveform bars - mini size for small button */}
+                        {isPlayingAudio && (
+                          <div className="absolute -right-3 flex items-end gap-0.5 h-3">
+                            <motion.div
+                              className="w-0.5 bg-blue-600 rounded-full"
+                              animate={{ height: ['4px', '10px', '4px'] }}
+                              transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                            <motion.div
+                              className="w-0.5 bg-blue-600 rounded-full"
+                              animate={{ height: ['6px', '12px', '6px'] }}
+                              transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                            />
+                            <motion.div
+                              className="w-0.5 bg-blue-600 rounded-full"
+                              animate={{ height: ['4px', '10px', '4px'] }}
+                              transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </Button>
                   </motion.div>
                   )

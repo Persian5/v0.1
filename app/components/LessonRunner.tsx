@@ -39,6 +39,7 @@ interface LessonRunnerProps {
   currentView?: string;
   onViewChange?: (view: string) => void;
   onSaveState?: (state: { progress: number, currentStep: number }) => void;
+  onStepChange?: (currentStep: number, totalSteps: number) => void; // NEW: Track current step
 }
 
 export function LessonRunner({ 
@@ -52,7 +53,8 @@ export function LessonRunner({
   onProgressChange,
   currentView,
   onViewChange,
-  onSaveState
+  onSaveState,
+  onStepChange // NEW: Callback for step changes
 }: LessonRunnerProps) {
   const [idx, setIdx] = useState(0)
   const [remediationQueue, setRemediationQueue] = useState<string[]>([]) // Words needing remediation
@@ -193,9 +195,14 @@ export function LessonRunner({
       onViewChange(steps[idx].type);
     }
     
+    // NEW: Notify parent of step change
+    if (onStepChange && !isInRemediation) {
+      onStepChange(idx + 1, steps.length); // 1-indexed for display
+    }
+    
     // SIMPLIFIED: Clear currentStepTrackedRef when step changes (allows new tracking on new step)
     currentStepTrackedRef.current.clear();
-  }, [idx, steps.length, onProgressChange, onViewChange, steps, isInRemediation]);
+  }, [idx, steps.length, onProgressChange, onViewChange, onStepChange, steps, isInRemediation]);
 
   // Handle lesson completion when reaching end of steps
   useEffect(() => {

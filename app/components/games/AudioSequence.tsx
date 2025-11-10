@@ -34,6 +34,7 @@ export function AudioSequence({
   onVocabTrack
 }: AudioSequenceProps) {
   const [hasPlayedAudio, setHasPlayedAudio] = useState(false)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const [userOrder, setUserOrder] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
   const [showXp, setShowXp] = useState(false)
@@ -145,20 +146,23 @@ export function AudioSequence({
   }
 
   const playAudioSequence = async () => {
+    setIsPlayingAudio(true)
     try {
       for (let i = 0; i < sequence.length; i++) {
         const vocabularyId = sequence[i]
         await AudioService.playVocabularyAudio(vocabularyId)
         
-        // Medium pause between words
+        // Short pause between words
         if (i < sequence.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500))
+          await new Promise(resolve => setTimeout(resolve, 200))
         }
       }
       setHasPlayedAudio(true)
     } catch (error) {
       console.log('Error playing audio sequence:', error)
       setHasPlayedAudio(true) // Still mark as played to enable interaction
+    } finally {
+      setIsPlayingAudio(false)
     }
   }
 
@@ -324,9 +328,33 @@ export function AudioSequence({
       {/* Audio Player Section */}
       <div className="bg-primary/5 rounded-xl p-3 sm:p-4 mb-3 text-center">
         <div className="flex items-center justify-center gap-3 mb-3">
-          <Volume2 className="h-8 w-8 text-primary" />
+          {/* Audio icon / waveform indicator - replace icon when playing */}
+          <div className="flex items-center justify-center">
+            {isPlayingAudio ? (
+              <div className="flex items-end gap-0.5 h-8">
+                <motion.div
+                  className="w-1 bg-primary rounded-full"
+                  animate={{ height: ['10px', '24px', '10px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                  className="w-1 bg-primary rounded-full"
+                  animate={{ height: ['14px', '28px', '14px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                />
+                <motion.div
+                  className="w-1 bg-primary rounded-full"
+                  animate={{ height: ['10px', '24px', '10px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                />
+              </div>
+            ) : (
+              <Volume2 className="h-8 w-8 text-primary/60" />
+            )}
+          </div>
+          
           <p className="text-lg font-medium text-primary">
-            {hasPlayedAudio ? "Now click the meanings in order:" : "Click to hear the sequence..."}
+            {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Now click the meanings in order:" : "Click to hear the sequence..."}
           </p>
         </div>
         

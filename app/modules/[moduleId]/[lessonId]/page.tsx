@@ -47,6 +47,8 @@ function LessonPageContent() {
   const [progress, setProgress] = useState(0);
   const [currentView, setCurrentView] = useState(initialViewParam === 'module-completion' ? 'module-completion' : 'welcome');
   const [previousStates, setPreviousStates] = useState<any[]>([]);
+  const [currentStep, setCurrentStep] = useState(0); // NEW: Track current step number
+  const [totalSteps, setTotalSteps] = useState(0); // NEW: Track total steps
   
   // Unified state for auth + accessibility + premium + locks
   const [appState, setAppState] = useState<{
@@ -628,9 +630,20 @@ function LessonPageContent() {
 
       {/* Main content area */}
       <main className="flex-1 flex flex-col">
-        {/* Progress bar - only show if not on completion view */}
-        {currentView !== 'completion' && currentView !== 'module-completion' && currentView !== 'summary' && (
-          <Progress value={progress} className="w-full h-2 mb-4" />
+        {/* Progress bar with step count overlay */}
+        {currentView !== 'completion' && currentView !== 'module-completion' && currentView !== 'summary' && currentView !== 'welcome' && (
+          <div className="w-full bg-background border-b relative">
+            {/* Progress bar */}
+            <Progress value={progress} className="w-full h-6" />
+            {/* Step counter overlayed on progress bar */}
+            {totalSteps > 0 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <p className="text-xs uppercase tracking-wide text-gray-600 font-semibold">
+                  Question {currentStep} of {totalSteps}
+                </p>
+              </div>
+            )}
+          </div>
         )}
         <div className="flex-1 flex flex-col w-full">
           {/* Content Area - takes remaining space */}
@@ -669,6 +682,10 @@ function LessonPageContent() {
                 currentView={currentView}
                 onViewChange={setCurrentView}
                 onSaveState={(state) => setPreviousStates(prev => [...prev, state])}
+                onStepChange={(current, total) => {
+                  setCurrentStep(current);
+                  setTotalSteps(total);
+                }}
               />
             )}
           </div>

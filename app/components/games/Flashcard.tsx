@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
+import { motion } from "framer-motion"
 import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
 
@@ -91,6 +92,7 @@ export function Flashcard({
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   const [lastFlipState, setLastFlipState] = useState(false)
   const [hasBeenFlipped, setHasBeenFlipped] = useState(false)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const componentMountedRef = useRef(false)
   
   // Time tracking for analytics
@@ -108,12 +110,18 @@ export function Flashcard({
       // Only play Persian audio if we're already showing the Persian side (isFlipped = true)
       // This prevents playing Persian audio when English side is shown initially
       if (isFlipped && vocabularyItem?.id) {
-        AudioService.playVocabularyAudio(vocabularyItem.id);
+        setIsPlayingAudio(true);
+        AudioService.playVocabularyAudio(vocabularyItem.id).then(() => {
+          setIsPlayingAudio(false);
+        });
       } else if (isFlipped && front) {
         // Fallback for legacy flashcard format
         const audioFile = getAudioFilename(front);
         if (audioFile) {
-          AudioService.playAudio(`/audio/${audioFile}`);
+          setIsPlayingAudio(true);
+          AudioService.playAudio(`/audio/${audioFile}`).then(() => {
+            setIsPlayingAudio(false);
+          });
         }
       }
     }
@@ -128,7 +136,10 @@ export function Flashcard({
         // Use AudioService for vocabulary-based flashcards (Persian only)
         if (isFlipped) {
           // Persian audio when showing finglish side
-          AudioService.playVocabularyAudio(vocabularyItem.id);
+          setIsPlayingAudio(true);
+          AudioService.playVocabularyAudio(vocabularyItem.id).then(() => {
+            setIsPlayingAudio(false);
+          });
         }
         // No audio when showing English side (front) - user can read English
       } else {
@@ -138,7 +149,10 @@ export function Flashcard({
           : getAudioFilename(front || "");
         
         if (audioFile) {
-          AudioService.playAudio(`/audio/${audioFile}`);
+          setIsPlayingAudio(true);
+          AudioService.playAudio(`/audio/${audioFile}`).then(() => {
+            setIsPlayingAudio(false);
+          });
         }
       }
       
@@ -198,28 +212,32 @@ export function Flashcard({
   }
 
   return (
-    <div className="w-full">
-      <div className="text-center mb-2 sm:mb-4">
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+      <XpAnimation
+        amount={points}
+        show={showXp}
+        isAlreadyCompleted={isAlreadyCompleted}
+        onStart={undefined}
+        onComplete={handleXpComplete}
+      />
+
+      {/* Content container */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full">
+        
+        {/* Label */}
         <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-primary">
           NEW WORD
         </h2>
-        <p className="text-sm xs:text-base text-muted-foreground">
+
+        {/* Instruction text */}
+        <p className="text-sm xs:text-base text-muted-foreground mb-6">
           Click the card to see the Finglish translation
         </p>
-      </div>
 
-      <div className="relative p-3 sm:p-6 w-full sm:mt-[-30px]">
-        <XpAnimation
-          amount={points}
-          show={showXp}
-          isAlreadyCompleted={isAlreadyCompleted}
-          onStart={undefined}
-          onComplete={handleXpComplete}
-        />
-
-        <div className="w-full max-w-[600px] mx-auto">
+        {/* Flashcard */}
+        <div className="w-full flex-1 flex items-center justify-center mb-6">
           <div
-            className="relative w-full aspect-[4/3] xs:aspect-[3/2] sm:aspect-[5/3] cursor-pointer touch-manipulation"
+            className="relative w-full max-w-[90%] sm:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] lg:max-h-[45vh] aspect-[4/3] xs:aspect-[3/2] sm:aspect-[5/3] cursor-pointer touch-manipulation"
             onClick={handleFlip}
             role="button"
             tabIndex={0}
@@ -249,43 +267,68 @@ export function Flashcard({
                 {back || vocabularyItem?.finglish}
               </h2>
               <p className="text-xs xs:text-sm text-muted-foreground mt-1 sm:mt-2">Click to flip back</p>
+              
+              {/* Audio waveform indicator - centered at bottom of card */}
+              {isPlayingAudio && (
+                <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 flex items-center justify-center gap-0.5">
+                  <div className="flex items-end gap-0.5 h-5">
+                    <motion.div
+                      className="w-0.5 bg-primary rounded-full"
+                      animate={{ height: ['6px', '16px', '6px'] }}
+                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                      className="w-0.5 bg-primary rounded-full"
+                      animate={{ height: ['10px', '20px', '10px'] }}
+                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                    />
+                    <motion.div
+                      className="w-0.5 bg-primary rounded-full"
+                      animate={{ height: ['6px', '16px', '6px'] }}
+                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
           
-          {/* Pronunciation guide */}
-          <div className="mt-3 sm:mt-4 mx-auto w-full sm:w-[calc(100%-2px)] max-w-[600px]">
-            {isFlipped ? (
-              /* After flip - single-row layout */
-              <div className="bg-primary/5 rounded-lg p-2 sm:p-3 text-center shadow-sm min-h-[48px] flex items-center justify-center gap-2">
-                <span className="text-xs sm:text-sm text-muted-foreground font-medium">How to say it:</span>
-                <span role="img" aria-label="pronunciation" className="text-base sm:text-lg">🗣️</span>
-                <span className="text-sm sm:text-base text-primary/90 font-semibold">
-                  {vocabularyItem?.phonetic || getPronunciation(back || "")}
-                </span>
-              </div>
-            ) : (
-              /* Before flip */
-              <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 shadow-sm min-h-[48px] flex items-center justify-center gap-2">
-                <span role="img" aria-label="locked" className="text-base sm:text-lg">🔒</span>
-                <span className="text-sm sm:text-base text-muted-foreground">Flip the card to see pronunciation</span>
-              </div>
-            )}
-          </div>
+        {/* Pronunciation guide */}
+        <div className="w-full max-w-[90%] sm:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] mb-6">
+          {isFlipped ? (
+            /* After flip - single-row layout */
+            <div className="bg-primary/5 rounded-lg p-2 sm:p-3 text-center shadow-sm min-h-[48px] flex items-center justify-center gap-2">
+              <span className="text-xs sm:text-sm text-muted-foreground font-medium">How to say it:</span>
+              
+              <span role="img" aria-label="pronunciation" className={`text-base sm:text-lg transition-opacity ${
+                isPlayingAudio ? 'opacity-100' : 'opacity-60'
+              }`}>🗣️</span>
+              
+              <span className="text-sm sm:text-base text-primary/90 font-semibold">
+                {vocabularyItem?.phonetic || getPronunciation(back || "")}
+              </span>
+            </div>
+          ) : (
+            /* Before flip */
+            <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 shadow-sm min-h-[48px] flex items-center justify-center gap-2">
+              <span role="img" aria-label="locked" className="text-base sm:text-lg">🔒</span>
+              <span className="text-sm sm:text-base text-muted-foreground">Flip the card to see pronunciation</span>
+            </div>
+          )}
         </div>
 
-        {/* Continue Button - Always visible but conditionally disabled */}
-        <div className="mt-3 sm:mt-4 text-center">
-          <div className="mx-auto w-full sm:max-w-[600px]">
-            <Button
-              className={`gap-2 w-full text-sm xs:text-base transition-colors duration-300 ${
-                hasBeenFlipped ? 'bg-primary hover:bg-primary/90 text-white' : 'bg-muted text-muted-foreground'
-              }`}
-              onClick={handleContinueClick}
-              disabled={!hasBeenFlipped || showXp}
-            >
-              Continue <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
+        {/* Continue Button */}
+        <div className="w-full max-w-[90%] sm:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px]">
+          <Button
+            className={`gap-2 w-full text-sm xs:text-base transition-colors duration-300 ${
+              hasBeenFlipped ? 'bg-primary hover:bg-primary/90 text-white' : 'bg-muted text-muted-foreground'
+            }`}
+            onClick={handleContinueClick}
+            disabled={!hasBeenFlipped || showXp}
+          >
+            Continue <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>

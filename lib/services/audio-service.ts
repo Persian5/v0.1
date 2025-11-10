@@ -19,13 +19,21 @@ export class AudioService {
     }
   }
 
-  // Play audio with error handling
+  // Play audio with error handling (waits for audio to finish playing)
   static async playAudio(audioPath: string): Promise<boolean> {
     if (!audioPath) return false;
     
     try {
       const audio = new Audio(audioPath);
-      await audio.play();
+      
+      // Wait for both play start AND completion
+      await new Promise<void>((resolve, reject) => {
+        audio.onended = () => resolve();
+        audio.onerror = () => reject(new Error('Audio playback error'));
+        
+        audio.play().catch(reject);
+      });
+      
       return true;
     } catch (error) {
       console.log(`Audio not available: ${audioPath}`);

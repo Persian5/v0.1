@@ -154,3 +154,4 @@ The final `/planning/discovery.md` will contain:
 4. ⏳ Create comprehensive `/planning/discovery.md`
 5. ⏳ Identify MCP integration opportunities
 
+

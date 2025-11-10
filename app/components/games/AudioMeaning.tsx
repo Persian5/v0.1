@@ -35,6 +35,7 @@ export function AudioMeaning({
   const [showXp, setShowXp] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [hasPlayedAudio, setHasPlayedAudio] = useState(false)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const [shuffledOptions, setShuffledOptions] = useState<string[]>([])
   const [correctAnswerIndex, setCorrectAnswerIndex] = useState<number>(0)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
@@ -63,7 +64,9 @@ export function AudioMeaning({
   // Define playTargetAudio callback before useEffects that use it
   const playTargetAudio = useCallback(async () => {
     if (targetVocabularyWithFallback) {
+      setIsPlayingAudio(true)
       const success = await AudioService.playVocabularyAudio(targetVocabularyWithFallback.id)
+      setIsPlayingAudio(false)
       if (success) {
         setHasPlayedAudio(true)
       }
@@ -101,6 +104,7 @@ export function AudioMeaning({
     setShowXp(false)
     setIsCorrect(false)
     setHasPlayedAudio(false)
+    setIsPlayingAudio(false)
     setIsAlreadyCompleted(false)
     setHasTracked(false) // Reset tracking flag when vocabulary changes
     startTime.current = Date.now()
@@ -299,9 +303,33 @@ export function AudioMeaning({
       {/* Audio Player Section - Compact on mobile */}
       <div className="bg-white rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-center border-2 border-[#10B981]/20 shadow-sm">
         <div className="flex items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-          <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-[#10B981]" />
+          {/* Audio icon / waveform indicator - replace icon when playing */}
+          <div className="flex items-center justify-center">
+            {isPlayingAudio ? (
+              <div className="flex items-end gap-0.5 h-6 sm:h-8">
+                <motion.div
+                  className="w-1 bg-[#10B981] rounded-full"
+                  animate={{ height: ['8px', '20px', '8px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                  className="w-1 bg-[#10B981] rounded-full"
+                  animate={{ height: ['12px', '24px', '12px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                />
+                <motion.div
+                  className="w-1 bg-[#10B981] rounded-full"
+                  animate={{ height: ['8px', '20px', '8px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                />
+              </div>
+            ) : (
+              <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-[#10B981]/60" />
+            )}
+          </div>
+          
           <p className="text-base sm:text-lg font-medium text-[#1E293B]">
-            {hasPlayedAudio ? "Ready to answer?" : "Click to hear the word..."}
+            {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Ready to answer?" : "Click to hear the word..."}
           </p>
         </div>
         

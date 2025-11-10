@@ -235,3 +235,4 @@ The `/planning/vision-usecase.md` document will include:
 5. ⏳ Write comprehensive vision document
 6. ⏳ Review and validate with stakeholder (founder)
 
+
