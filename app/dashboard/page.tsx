@@ -92,35 +92,7 @@ function DashboardContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background relative">
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20"></div>
-        <div className="flex h-16 items-center justify-between px-3 sm:px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-base sm:text-lg text-primary">
-            Dashboard
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/modules">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Modules
-              </Button>
-            </Link>
-            <Link href="/review">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Review Mode
-              </Button>
-            </Link>
-            <Link href="/leaderboard">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Leaderboard
-              </Button>
-            </Link>
-            <AccountNavButton />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
+      {/* Header */}      {/* Main Content */}
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8 sm:py-12 max-w-6xl">
           {/* Page Header */}

@@ -304,57 +304,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background relative">
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20"></div>
-        <div className="flex h-16 items-center justify-between px-3 sm:px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-base sm:text-lg text-primary">
-            Leaderboard
-          </Link>
-          {/* Mobile nav (≤639px) */}
-          <div className="flex items-center gap-1 sm:hidden">
-            <Link href="/" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
-              Home
-            </Link>
-            <Link href="/modules" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
-              Modules
-            </Link>
-            <Link href="/dashboard" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
-              Dashboard
-            </Link>
-            <Link href="/review" className="text-sm font-medium px-2 py-1 rounded hover:bg-primary/10">
-              Review
-            </Link>
-            <AccountNavButton />
-          </div>
-          {/* Desktop nav (≥640px) */}
-          <div className="hidden sm:flex items-center gap-2">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Home
-              </Button>
-            </Link>
-            <Link href="/modules">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Modules
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Dashboard
-              </Button>
-            </Link>
-            <Link href="/review">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Review Mode
-              </Button>
-            </Link>
-            <AccountNavButton />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
+      {/* Navbar */}      {/* Main Content */}
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}

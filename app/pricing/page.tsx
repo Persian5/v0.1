@@ -23,18 +23,7 @@ export default function PricingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       
-      {/* Navbar from Landing Page */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative">
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20"></div>
-        <div className="flex h-16 items-center justify-between px-3 sm:px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-base sm:text-lg text-primary">
-            Home
-          </Link>
-          <AccountNavButton />
-        </div>
-      </header>
-
-      {/* Hero Section - Minimized top padding */}
+      {/* Navbar from Landing Page */}      {/* Hero Section - Minimized top padding */}
       <section className="flex flex-col items-center justify-center px-6 pt-4 pb-6 bg-primary/5">
         {/* Title Outside Card - Reduced bottom margin MORE */}
         <div className="w-full max-w-6xl mx-auto">

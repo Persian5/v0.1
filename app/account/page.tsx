@@ -207,28 +207,7 @@ function AccountContent() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-3 sm:px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-base sm:text-lg text-primary hover:text-primary/80 transition-colors">
-            Home
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/pricing">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10 transition-colors">
-                Pricing + FAQ
-              </Button>
-            </Link>
-            <Link href="/modules">
-              <Button size="sm" className="bg-accent hover:bg-accent/90 text-white transition-all duration-200 hover:scale-105">
-                Start Learning
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1">
+      {/* Header */}      <main className="flex-1">
         <div className="container mx-auto px-4 py-8 sm:py-12 max-w-4xl">
           {/* Page Header */}
           <div className="text-center mb-8 sm:mb-12">

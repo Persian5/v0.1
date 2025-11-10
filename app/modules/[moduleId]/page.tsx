@@ -230,24 +230,7 @@ export default function ModulePage() {
     return (
       <>
         <BlurredPreviewContainer
-          header={
-            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-                <Link href="/modules" className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary">
-                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden sm:inline">Back to Modules</span>
-                  <span className="sm:hidden">Back</span>
-                </Link>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
-                  </div>
-                  <AccountNavButton />
-                </div>
-              </div>
-            </header>
-          }
+          header={          }
         >
           <ModulePreviewContent
             module={module}
@@ -280,24 +263,7 @@ export default function ModulePage() {
     return (
       <>
         <BlurredPreviewContainer
-          header={
-            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-                <Link href="/modules" className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary">
-                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden sm:inline">Back to Modules</span>
-                  <span className="sm:hidden">Back</span>
-                </Link>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
-                  </div>
-                  <AccountNavButton />
-                </div>
-              </div>
-            </header>
-          }
+          header={          }
         >
           <ModulePreviewContent
             module={module}
@@ -337,25 +303,7 @@ export default function ModulePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header - Much more compact on mobile */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <Link href="/modules" className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary">
-            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="hidden sm:inline">Back to Modules</span>
-            <span className="sm:hidden">Back</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
-            </div>
-            <AccountNavButton />
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1">
+      {/* Header - Much more compact on mobile */}      <main className="flex-1">
         {/* Module Overview - Much more compact on mobile */}
         <section className="py-4 sm:py-8 lg:py-12 px-3 sm:px-6 lg:px-8 bg-primary/5">
           <div className="max-w-4xl mx-auto text-center">

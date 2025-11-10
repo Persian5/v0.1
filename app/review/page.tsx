@@ -135,29 +135,7 @@ export default function ReviewPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary">
-            Home
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/modules">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Modules
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                Pricing + FAQ
-              </Button>
-            </Link>
-            <AccountNavButton />
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 bg-primary/5">
+      {/* Header */}      <main className="flex-1 bg-primary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           {/* Page Header */}
           <div className="text-center mb-8 sm:mb-12">
