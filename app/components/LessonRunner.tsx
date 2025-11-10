@@ -60,6 +60,7 @@ export function LessonRunner({
   const [remediationQueue, setRemediationQueue] = useState<string[]>([]) // Words needing remediation
   const [isInRemediation, setIsInRemediation] = useState(false) // Are we in remediation mode?
   const [remediationStep, setRemediationStep] = useState<'flashcard' | 'quiz'>('flashcard') // Current remediation step
+  const [remediationStartIdx, setRemediationStartIdx] = useState<number | null>(null) // Track which step triggered remediation
   const [pendingRemediation, setPendingRemediation] = useState<string[]>([]) // Words that need remediation after current step
   const [incorrectAttempts, setIncorrectAttempts] = useState<Record<string, number>>({}) // Track incorrect attempts per vocabulary ID (2+ trigger threshold)
   const [quizAttemptCounter, setQuizAttemptCounter] = useState(0) // Track quiz attempts for unique keys
@@ -517,6 +518,7 @@ export function LessonRunner({
       setPendingRemediation([]);
       setIsInRemediation(true);
       setRemediationStep('flashcard');
+      setRemediationStartIdx(idx); // Track current step before starting remediation
       return; // Don't advance step, start remediation
     }
     
@@ -556,7 +558,15 @@ export function LessonRunner({
           // No more words to remediate, advance to next lesson step
           setIsInRemediation(false);
           setRemediationStep('flashcard');
-          setIdx(i => i + 1);
+          // Return to the step AFTER the one that triggered remediation
+          // remediationStartIdx was saved when remediation started
+          if (remediationStartIdx !== null) {
+            setIdx(remediationStartIdx + 1);
+            setRemediationStartIdx(null); // Reset
+          } else {
+            // Fallback: just increment (shouldn't happen in normal flow)
+            setIdx(i => i + 1);
+          }
         } else {
           // More words to remediate, start with next word
           setRemediationStep('flashcard');
@@ -735,15 +745,13 @@ export function LessonRunner({
       return (
         <>
           <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
-          <div className="mb-4 text-center">
-            <p className="text-sm text-orange-600 font-medium">📚 Quick Review</p>
-          </div>
           <Flashcard
             vocabularyItem={vocabItem}
             points={1}
             onContinue={() => completeRemediation()}
             onXpStart={createStepXpHandler()}
             onVocabTrack={createVocabularyTracker()}
+            label="QUICK REVIEW"
           />
         </>
       );
@@ -759,9 +767,6 @@ export function LessonRunner({
       return (
         <>
           <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
-          <div className="mb-4 text-center">
-            <p className="text-sm text-orange-600 font-medium">🎯 Practice Again</p>
-          </div>
           <Quiz
             key={`remediation-quiz-${currentWord}-${quizAttemptCounter}`}
             prompt={remediationQuizData.prompt}
@@ -772,6 +777,8 @@ export function LessonRunner({
             onXpStart={createStepXpHandler()}
             vocabularyId={currentWord}
             onVocabTrack={createVocabularyTracker()}
+            label="PRACTICE AGAIN"
+            subtitle="Review this word one more time"
           />
         </>
       );

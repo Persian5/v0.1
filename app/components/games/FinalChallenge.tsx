@@ -301,38 +301,43 @@ export function FinalChallenge({
   }
 
   return (
-    <div className="w-full pt-1 pb-0 -mt-4 sm:-mt-6">
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+      {/* Confetti Canvas */}
       <div ref={confettiCanvasRef} className="fixed inset-0 pointer-events-none z-50"></div>
       
-      <div className="text-center mb-3 sm:mb-4">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-1 text-primary">{title}</h2>
-        <p className="text-muted-foreground text-sm sm:text-base mb-2">
-          {getDynamicDescription()}
-        </p>
-        {conversationFlow && (
-          <p className="text-xs text-blue-600 italic mb-2">
-            Build this conversation in Persian word order
-          </p>
-        )}
-      </div>
+      {/* XP Animation - self-positioning */}
+      <XpAnimation 
+        amount={points} 
+        show={showXp}
+        isAlreadyCompleted={isAlreadyCompleted}
+        onStart={undefined}
+        onComplete={() => {
+          setShowXp(false)
+          onComplete(true)
+        }}
+      />
 
-      <Card className="mb-4 w-full">
-        <CardContent className="pt-4">
-          <XpAnimation 
-            amount={points} 
-            show={showXp}
-            isAlreadyCompleted={isAlreadyCompleted}
-            onStart={undefined}
-            onComplete={() => {
-              // Just hide animation - don't call onComplete again
-              setShowXp(false)  // reset for next use
-              // Now call onComplete only after animation is done
-              onComplete(true)
-            }}
-          />
-          {/* 2-column grid left→right; last odd slot spans both columns */}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
+        <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
+          {/* Header */}
+          <div className="text-center mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 text-primary">
+              FINAL CHALLENGE
+            </h2>
+            <p className="text-sm xs:text-base text-muted-foreground mb-2">
+              {getDynamicDescription()}
+            </p>
+            {conversationFlow && (
+              <p className="text-xs text-blue-600 italic mb-2">
+                Build this conversation in Persian word order
+              </p>
+            )}
+          </div>
+
+          {/* Slots Grid */}
           <div
-            className={`grid grid-cols-2 gap-3 mb-4 grid-flow-row dense ${
+            className={`grid grid-cols-2 gap-2 sm:gap-3 mb-3 grid-flow-row dense ${
               showFeedback && !isCorrect ? 'animate-shake' : ''
             }`}
           >
@@ -343,22 +348,21 @@ export function FinalChallenge({
                 <div 
                   key={slot.id}
                   className={`
-                      relative flex items-center justify-center h-10 sm:h-11 rounded-lg border-2 border-dashed transition-all
-                      ${item ? 'border-primary bg-primary/5' : 'border-gray-300'}
-                      ${showFeedback && isCorrect ? 'border-green-500 bg-green-50' : ''}
-                      ${showFeedback && !isCorrect ? 'border-red-500 bg-red-50' : ''}
-                      ${idx === slots.length - 1 && slots.length % 2 === 1 ? 'col-span-2' : ''}
-                      p-2 md:p-2.5
-                    `}
-                 >
-                   {/* Badge on left edge */}
-                   <div className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-primary font-semibold text-sm">{slot.id}</span>
-                   </div>
+                    relative flex items-center justify-center h-10 sm:h-11 rounded-lg border-2 border-dashed transition-all
+                    ${item ? 'border-primary bg-primary/5' : 'border-gray-300 bg-[#F8FAF8]'}
+                    ${showFeedback && isCorrect ? 'border-green-500 bg-green-50' : ''}
+                    ${showFeedback && !isCorrect ? 'border-red-500 bg-red-50' : ''}
+                    ${idx === slots.length - 1 && slots.length % 2 === 1 ? 'col-span-2' : ''}
+                    p-2 md:p-2.5
+                  `}
+                >
+                  {/* Badge on left edge */}
+                  <div className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-semibold text-sm">{slot.id}</span>
+                  </div>
                   
                   {item ? (
                     <div className="flex-1 min-w-0 text-center">
-                      {/* Ensure long words wrap inside the slot without overflow */}
                       <span className="text-sm sm:text-base truncate">
                         {item.text}
                       </span>
@@ -372,48 +376,57 @@ export function FinalChallenge({
                       </button>
                     </div>
                   ) : (
-                    <div className="w-full text-center text-gray-400 italic text-xs sm:text-sm truncate pl-8 pr-8 sm:pl-0 sm:pr-0">Click a phrase below</div>
+                    <div className="w-full text-center text-gray-400 italic text-xs sm:text-sm truncate pl-8 pr-8">
+                      Click a phrase below
+                    </div>
                   )}
                 </div>
               )
             })}
           </div>
           
-          {/* Clickable phrases */}
-          <div className="flex flex-wrap gap-2 justify-center mb-4">
-            {items.filter(item => item.order === null).map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handlePhraseClick(item.id)}
-                disabled={showFeedback && isCorrect}
-                className="
-                  px-3 py-1.5 bg-accent text-white rounded-lg
-                  shadow-sm hover:shadow-md active:scale-95 transition-all text-sm sm:text-base
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                "
-              >
-                {item.text}
-              </button>
-            ))}
+          {/* Word Bank */}
+          <div className="mb-3">
+            <h3 className="text-lg font-semibold mb-2 text-center">Word Bank:</h3>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {items.filter(item => item.order === null).map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handlePhraseClick(item.id)}
+                  disabled={showFeedback && isCorrect}
+                  className="
+                    px-3 py-2 rounded-lg border-2 transition-all shadow-sm
+                    border-primary/30 bg-white hover:border-green-400 hover:bg-green-50 hover:shadow-md active:scale-95 cursor-pointer
+                    disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium
+                  "
+                >
+                  {item.text}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Click words to add them to the slots above
+            </p>
           </div>
           
-          {/* Submit button */}
-          <div className="text-center mt-3">
+          {/* Submit Button */}
+          <div className="w-full mt-2">
             {showFeedback && !isCorrect ? (
               <Button
-                className="px-4 py-2 rounded-lg font-semibold transition-all w-full sm:w-auto text-base"
+                className="gap-2 w-full"
+                size="lg"
                 onClick={resetChallenge}
               >
                 Retry
               </Button>
             ) : (
               <Button
-                className={`
-                  px-4 py-2 rounded-lg font-semibold transition-all w-full sm:w-auto text-base
-                  ${allSlotsFilled 
-                    ? 'bg-primary text-white hover:bg-primary/90'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
-                `}
+                className={`gap-2 w-full ${
+                  !allSlotsFilled || (showFeedback && isCorrect)
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : ''
+                }`}
+                size="lg"
                 disabled={!allSlotsFilled || (showFeedback && isCorrect)}
                 onClick={checkOrder}
               >
@@ -421,10 +434,8 @@ export function FinalChallenge({
               </Button>
             )}
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Feedback popup removed – XP animation handles success; shake effect shows incorrect */}
+        </div>
+      </div>
     </div>
   )
 } 

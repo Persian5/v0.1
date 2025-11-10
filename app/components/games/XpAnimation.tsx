@@ -8,22 +8,43 @@ interface XpAnimationProps {
   onComplete?: () => void  // Called at animation end
 }
 
+/**
+ * XpAnimation - Professional, consistent XP feedback component
+ * 
+ * Design Philosophy:
+ * - Fixed viewport positioning (always visible, scroll-independent)
+ * - Center-aligned below header (natural eye position)
+ * - Self-contained (no wrapper divs needed)
+ * - Subtle celebration (professional, not cartoonish)
+ * 
+ * Usage: Simply render <XpAnimation /> anywhere in your component.
+ * The component handles all positioning automatically.
+ */
 export function XpAnimation({ amount, show, isAlreadyCompleted = false, onStart, onComplete }: XpAnimationProps) {
   return (
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, y: 0, scale: 0 }}
-          animate={{ opacity: 1, y: -20, scale: 1 }}
-          exit={{ opacity: 0, y: -40, scale: 0 }}
-          transition={{ duration: 0.8 }}
+          initial={{ opacity: 0, y: 10, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          transition={{ 
+            duration: 0.5,
+            ease: "easeOut"
+          }}
           onAnimationStart={onStart}
           onAnimationComplete={onComplete}
-          className={`absolute top-0 right-0 -mt-5 -mr-5 rounded-full px-4 py-2 text-base font-bold shadow-md z-[1000] ${
-            isAlreadyCompleted 
+          className={`
+            fixed top-24 left-1/2 -translate-x-1/2
+            rounded-full px-5 py-2.5
+            text-base font-semibold shadow-md
+            z-50
+            pointer-events-none
+            ${isAlreadyCompleted 
               ? 'bg-blue-100 text-blue-700' 
               : 'bg-green-100 text-green-700'
-          }`}
+            }
+          `}
         >
           {isAlreadyCompleted ? 'Step Already Completed' : `+${amount} XP`}
         </motion.div>

@@ -21,6 +21,8 @@ export interface QuizProps {
   onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
+  label?: string; // Optional custom label (e.g., "PRACTICE AGAIN" for remediation)
+  subtitle?: string; // Optional custom subtitle
 }
 
 export function Quiz({ 
@@ -31,7 +33,9 @@ export function Quiz({
   onComplete,
   onXpStart,
   vocabularyId,
-  onVocabTrack
+  onVocabTrack,
+  label = "QUICK QUIZ",
+  subtitle = "Test what you've learned"
 }: QuizProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
@@ -188,18 +192,16 @@ export function Quiz({
 
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
-      {/* XP Animation positioned absolutely */}
-      <div className="absolute top-8 left-0 right-0 z-10">
-        {quizState === 'showing-result' && isCorrectAnswer && (
-          <XpAnimation 
-            amount={points} 
-            show={true}
-            isAlreadyCompleted={isAlreadyCompleted}
-            onStart={undefined}
-            onComplete={() => {}} // Handle completion in handleSelect instead
-          />
-        )}
-      </div>
+      {/* XP Animation - self-positioning */}
+      {quizState === 'showing-result' && isCorrectAnswer && (
+        <XpAnimation 
+          amount={points} 
+          show={true}
+          isAlreadyCompleted={isAlreadyCompleted}
+          onStart={undefined}
+          onComplete={() => {}} // Handle completion in handleSelect instead
+        />
+      )}
 
       {/* Main Content - Centered */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
@@ -207,28 +209,28 @@ export function Quiz({
           {/* Heading and Prompt */}
           <div className="text-center mb-8 sm:mb-10">
             <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-primary">
-              QUICK QUIZ
+              {label}
             </h2>
             <p className="text-sm xs:text-base text-muted-foreground mb-6">
-              Test what you've learned
+              {subtitle}
             </p>
             <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 px-4">
-              {prompt}
+          {prompt}
             </p>
           </div>
 
           {/* Options Grid */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-            {shuffledOptions.map((option, index) => (
+          {shuffledOptions.map((option, index) => (
               <motion.button
                 key={`option-${index}-${option.text}-${instanceId}`}
-                initial={false}
-                animate={getAnimation(option, index)}
-                transition={{
-                  x: { duration: 0.4, ease: "easeInOut" },
-                  scale: { duration: 0.3, ease: "easeInOut" },
-                  boxShadow: { duration: 0.2 }
-                }}
+              initial={false}
+              animate={getAnimation(option, index)}
+              transition={{
+                x: { duration: 0.4, ease: "easeInOut" },
+                scale: { duration: 0.3, ease: "easeInOut" },
+                boxShadow: { duration: 0.2 }
+              }}
                 className={`relative rounded-2xl min-h-[120px] sm:min-h-[140px] p-4 sm:p-6
                   ${getButtonStyle(option, index)}
                   shadow-sm hover:shadow-md transition-all duration-200
@@ -260,7 +262,7 @@ export function Quiz({
                   )}
                 </AnimatePresence>
               </motion.button>
-            ))}
+          ))}
           </div>
         </div>
       </div>

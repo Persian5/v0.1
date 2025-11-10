@@ -630,15 +630,15 @@ function LessonPageContent() {
 
       {/* Main content area */}
       <main className="flex-1 flex flex-col">
-        {/* Progress bar with step count overlay */}
+        {/* Progress bar with step count overlay - Sticky */}
         {currentView !== 'completion' && currentView !== 'module-completion' && currentView !== 'summary' && currentView !== 'welcome' && (
-          <div className="w-full bg-background border-b relative">
+          <div className="w-full bg-background border-b relative sticky top-16 z-40">
             {/* Progress bar */}
             <Progress value={progress} className="w-full h-6" />
             {/* Step counter overlayed on progress bar */}
             {totalSteps > 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="text-xs uppercase tracking-wide text-gray-600 font-semibold">
+                <p className="text-xs uppercase tracking-wide text-black font-semibold">
                   Question {currentStep} of {totalSteps}
                 </p>
               </div>

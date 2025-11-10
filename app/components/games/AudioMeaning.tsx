@@ -278,8 +278,8 @@ export function AudioMeaning({
   }
 
   return (
-    <div className="w-full mx-auto p-2 sm:p-4 relative">
-      {/* XP Animation - positioned like other games */}
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+      {/* XP Animation - self-positioning */}
       {showResult && isCorrect && (
         <XpAnimation
           amount={points}
@@ -290,107 +290,112 @@ export function AudioMeaning({
         />
       )}
 
-      {/* Header - Compact on mobile */}
-      <div className="text-center mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 text-[#1E293B]">
-          LISTENING CHALLENGE
-        </h2>
-        <p className="text-xs sm:text-sm md:text-base text-gray-600">
-          Listen to the Persian word and select its English meaning
-        </p>
-      </div>
-
-      {/* Audio Player Section - Compact on mobile */}
-      <div className="bg-white rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-center border-2 border-[#10B981]/20 shadow-sm">
-        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-          {/* Audio icon / waveform indicator - replace icon when playing */}
-          <div className="flex items-center justify-center">
-            {isPlayingAudio ? (
-              <div className="flex items-end gap-0.5 h-6 sm:h-8">
-                <motion.div
-                  className="w-1 bg-[#10B981] rounded-full"
-                  animate={{ height: ['8px', '20px', '8px'] }}
-                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                  className="w-1 bg-[#10B981] rounded-full"
-                  animate={{ height: ['12px', '24px', '12px'] }}
-                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-                />
-                <motion.div
-                  className="w-1 bg-[#10B981] rounded-full"
-                  animate={{ height: ['8px', '20px', '8px'] }}
-                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-                />
-              </div>
-            ) : (
-              <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-[#10B981]/60" />
-            )}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
+        <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
+          {/* Header */}
+          <div className="text-center mb-2 sm:mb-3">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 text-primary">
+              LISTENING CHALLENGE
+            </h2>
+            <p className="text-sm xs:text-base text-muted-foreground mb-3">
+              Listen to the Persian word and select its English meaning
+            </p>
           </div>
-          
-          <p className="text-base sm:text-lg font-medium text-[#1E293B]">
-            {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Ready to answer?" : "Click to hear the word..."}
-          </p>
-        </div>
-        
-        <Button
-          onClick={playTargetAudio}
-          variant="outline"
-          size="lg"
-          className="gap-2 border-2 border-[#10B981] text-[#10B981] hover:bg-[#10B981] hover:text-white"
-        >
-          <Volume2 className="h-5 w-5" />
-          {hasPlayedAudio ? 'Play Again' : 'Play Audio'}
-        </Button>
-      </div>
 
-      {/* Answer Options - Card Grid (2x2) */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-        {answerOptionsWithIndices.map((optionData, displayIndex) => {
-          const actualIndex = optionData.originalIndex
-          
-          // Card styling with Iran flag colors
-          let cardStyle = "bg-white rounded-lg p-4 sm:p-5 border-2 transition-colors duration-200 cursor-pointer shadow-sm ";
-
-          if (showResult) {
-            if (isCorrect && actualIndex === selectedAnswer) {
-              // Correct selection - green border
-              cardStyle += "border-[#10B981] bg-[#10B981]/5 "
-            } else if (!isCorrect && actualIndex === selectedAnswer) {
-              // Incorrect selection - red border
-              cardStyle += "border-[#E63946] bg-[#E63946]/5 "
-            } else {
-              // Other options stay neutral
-              cardStyle += "border-gray-200 bg-gray-50/50 "
-            }
-          } else {
-            if (selectedAnswer === actualIndex) {
-              cardStyle += "border-[#10B981] bg-[#10B981]/5 "
-            } else {
-              cardStyle += "border-gray-200 hover:border-[#10B981]/50 hover:bg-[#10B981]/5 "
-            }
-          }
-
-          const shakeKeyframes = { x: [0, -10, 10, -10, 10, 0] };
-          const isShaking = showResult && !isCorrect && actualIndex === selectedAnswer;
-
-          return (
-            <motion.button
-              key={`${optionData.text}-${optionData.originalIndex}`}
-              type="button"
-              onClick={() => handleAnswerSelect(actualIndex)}
-              disabled={showResult}
-              initial={false}
-              animate={isShaking ? shakeKeyframes : {}}
-              transition={isShaking ? { duration: 0.6, ease: "easeInOut" } : {}}
-              className={cardStyle}
+          {/* Audio Player Section */}
+          <div className="bg-white rounded-xl p-3 sm:p-4 mb-3 text-center border-2 border-primary/20 shadow-sm">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+              {/* Audio icon / waveform indicator - replace icon when playing */}
+              <div className="flex items-center justify-center">
+                {isPlayingAudio ? (
+                  <div className="flex items-end gap-0.5 h-6 sm:h-8">
+                    <motion.div
+                      className="w-1 bg-primary rounded-full"
+                      animate={{ height: ['8px', '20px', '8px'] }}
+                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                      className="w-1 bg-primary rounded-full"
+                      animate={{ height: ['12px', '24px', '12px'] }}
+                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                    />
+                    <motion.div
+                      className="w-1 bg-primary rounded-full"
+                      animate={{ height: ['8px', '20px', '8px'] }}
+                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                    />
+                  </div>
+                ) : (
+                  <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-primary/60" />
+                )}
+              </div>
+              
+              <p className="text-base sm:text-lg font-medium text-gray-900">
+                {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Ready to answer?" : "Click to hear the word..."}
+              </p>
+            </div>
+            
+            <Button
+              onClick={playTargetAudio}
+              variant="outline"
+              size="lg"
+              className="gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white"
             >
-              <span className="text-sm sm:text-base md:text-lg font-medium text-[#1E293B] block text-center">
-                {optionData.text}
-              </span>
-            </motion.button>
-          );
-        })}
+              <Volume2 className="h-5 w-5" />
+              {hasPlayedAudio ? 'Play Again' : 'Play Audio'}
+            </Button>
+          </div>
+
+          {/* Answer Options - Card Grid (2x2) */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-2">
+            {answerOptionsWithIndices.map((optionData, displayIndex) => {
+              const actualIndex = optionData.originalIndex
+              
+              // Card styling
+              let cardStyle = "bg-white rounded-lg p-6 sm:p-8 border-2 transition-all duration-200 cursor-pointer shadow-sm min-h-[140px] sm:min-h-[160px] flex items-center justify-center ";
+
+              if (showResult) {
+                if (isCorrect && actualIndex === selectedAnswer) {
+                  // Correct selection - green border
+                  cardStyle += "border-green-500 bg-green-50 "
+                } else if (!isCorrect && actualIndex === selectedAnswer) {
+                  // Incorrect selection - red border
+                  cardStyle += "border-red-500 bg-red-50 "
+                } else {
+                  // Other options stay neutral
+                  cardStyle += "border-gray-200 bg-gray-50/50 opacity-50 "
+                }
+              } else {
+                if (selectedAnswer === actualIndex) {
+                  cardStyle += "border-primary bg-primary/5 "
+                } else {
+                  cardStyle += "border-gray-200 hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] "
+                }
+              }
+
+              const shakeKeyframes = { x: [0, -10, 10, -10, 10, 0] };
+              const isShaking = showResult && !isCorrect && actualIndex === selectedAnswer;
+
+              return (
+                <motion.button
+                  key={`${optionData.text}-${optionData.originalIndex}`}
+                  type="button"
+                  onClick={() => handleAnswerSelect(actualIndex)}
+                  disabled={showResult}
+                  initial={false}
+                  animate={isShaking ? shakeKeyframes : {}}
+                  transition={isShaking ? { duration: 0.6, ease: "easeInOut" } : {}}
+                  className={cardStyle}
+                >
+                  <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 block text-center leading-tight">
+                    {optionData.text}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -411,75 +411,74 @@ export function InputExercise({
 
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
-      {/* XP Animation positioned absolutely */}
-      <div className="absolute top-8 left-0 right-0 z-10">
-        <XpAnimation 
-          amount={points} 
-          show={showXp}
-          isAlreadyCompleted={isAlreadyCompleted}
-          onStart={undefined}
-          onComplete={() => {
-            setShowXp(false)
-            onComplete(isCorrect)
-          }}
-        />
-      </div>
+      {/* XP Animation - self-positioning */}
+      <XpAnimation 
+        amount={points} 
+        show={showXp}
+        isAlreadyCompleted={isAlreadyCompleted}
+        onStart={undefined}
+        onComplete={() => {
+          setShowXp(false)
+          onComplete(isCorrect)
+        }}
+      />
 
       {/* Main Content - Centered and scrollable */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
         <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
-          {/* Question + Input Zone - Grouped together */}
-          <div className="mb-6 sm:mb-8">
-            {/* Label */}
-            <div className="text-center mb-3">
-              <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-4">
-                Type the answer
-              </p>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 text-primary">
-                Type in Finglish
-              </h2>
-              <p className="text-base sm:text-lg md:text-xl text-gray-700 font-medium px-4">
-                {question}
+          {/* Header */}
+          <div className="text-center mb-3 sm:mb-4">
+            <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 text-primary">
+              TYPE THE ANSWER
+            </h2>
+            <p className="text-sm xs:text-base text-muted-foreground mb-4">
+              Type in Finglish
+            </p>
+          </div>
+
+          {/* Question */}
+          <div className="text-center mb-4">
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 px-4">
+              {question}
+            </p>
+          </div>
+
+          {/* Input Area - Enhanced as hero element */}
+          <motion.div
+            initial={false}
+            animate={showFeedback && !isCorrect ? { x: [0, -5, 5, -5, 5, 0] } : {}}
+            transition={{ duration: 0.5 }}
+            className="w-full mb-4"
+          >
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-primary/10">
+              {hasHyphen ? (
+                <GrammarHyphenInput
+                  value={input}
+                  targetAnswer={answer}
+                  onChange={handleInputChange}
+                  onSubmit={handleSubmit}
+                  placeholder="Start typing..."
+                  disabled={showFeedback && isCorrect}
+                  className="w-full"
+                />
+              ) : (
+                <ValidatedLetterInput
+                  value={input}
+                  targetAnswer={answer}
+                  onChange={handleInputChange}
+                  onSubmit={handleSubmit}
+                  placeholder="Start typing..."
+                  disabled={showFeedback && isCorrect}
+                  className="w-full"
+                />
+              )}
+              
+              {/* Helper Text - Inside input zone */}
+              <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
+                {hasHyphen ? "Each part turns green when correct" : "Watch letters turn green as you type!"}
               </p>
             </div>
-
-            {/* Input Area - Enhanced as hero element */}
-            <motion.div
-              initial={false}
-              animate={showFeedback && !isCorrect ? { x: [0, -5, 5, -5, 5, 0] } : {}}
-              transition={{ duration: 0.5 }}
-              className="w-full"
-            >
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-primary/10">
-                {hasHyphen ? (
-                  <GrammarHyphenInput
-                    value={input}
-                    targetAnswer={answer}
-                    onChange={handleInputChange}
-                    onSubmit={handleSubmit}
-                    placeholder="Start typing..."
-                    disabled={showFeedback && isCorrect}
-                    className="w-full"
-                  />
-                ) : (
-                  <ValidatedLetterInput
-                    value={input}
-                    targetAnswer={answer}
-                    onChange={handleInputChange}
-                    onSubmit={handleSubmit}
-                    placeholder="Start typing..."
-                    disabled={showFeedback && isCorrect}
-                    className="w-full"
-                  />
-                )}
-                
-                {/* Helper Text - Inside input zone */}
-                <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
-                  {hasHyphen ? "Each part turns green when correct" : "Watch letters turn green as you type!"}
-                </p>
-              </div>
-            </motion.div>
-          </div>
+          </motion.div>
 
           {/* Hint Display - When shown */}
           {showHint && (

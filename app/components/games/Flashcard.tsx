@@ -36,6 +36,8 @@ interface FlashcardProps {
   onFlip?: () => void
   showContinueButton?: boolean
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
+  label?: string // Optional custom label (e.g., "QUICK REVIEW" for remediation)
+  subtitle?: string // Optional custom subtitle
 }
 
 // Helper function to convert card text to audio filename - DEPRECATED
@@ -84,7 +86,9 @@ export function Flashcard({
   isFlipped: extFlipped,
   onFlip: extFlip,
   showContinueButton,
-  onVocabTrack
+  onVocabTrack,
+  label = "NEW WORD",
+  subtitle
 }: FlashcardProps) {
   const [localFlip, setLocalFlip] = useState(false)
   const [localShowNext, setLocalShowNext] = useState(false)
@@ -213,6 +217,7 @@ export function Flashcard({
 
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+      {/* XP Animation - self-positioning */}
       <XpAnimation
         amount={points}
         show={showXp}
@@ -226,12 +231,12 @@ export function Flashcard({
         
         {/* Label */}
         <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 sm:mb-2 text-primary">
-          NEW WORD
+          {label}
         </h2>
 
-        {/* Instruction text */}
+        {/* Subtitle (optional) or default instruction */}
         <p className="text-sm xs:text-base text-muted-foreground mb-6">
-          Click the card to see the Finglish translation
+          {subtitle || "Click the card to see the Finglish translation"}
         </p>
 
         {/* Flashcard */}
@@ -269,25 +274,25 @@ export function Flashcard({
               <p className="text-xs xs:text-sm text-muted-foreground mt-1 sm:mt-2">Click to flip back</p>
               
               {/* Audio waveform indicator - centered at bottom of card */}
-              {isPlayingAudio && (
+                  {isPlayingAudio && (
                 <div className="absolute bottom-3 sm:bottom-4 left-0 right-0 flex items-center justify-center gap-0.5">
                   <div className="flex items-end gap-0.5 h-5">
-                    <motion.div
-                      className="w-0.5 bg-primary rounded-full"
-                      animate={{ height: ['6px', '16px', '6px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
-                      className="w-0.5 bg-primary rounded-full"
-                      animate={{ height: ['10px', '20px', '10px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-                    />
-                    <motion.div
-                      className="w-0.5 bg-primary rounded-full"
-                      animate={{ height: ['6px', '16px', '6px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-                    />
-                  </div>
+                      <motion.div
+                        className="w-0.5 bg-primary rounded-full"
+                        animate={{ height: ['6px', '16px', '6px'] }}
+                        transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                      <motion.div
+                        className="w-0.5 bg-primary rounded-full"
+                        animate={{ height: ['10px', '20px', '10px'] }}
+                        transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                      />
+                      <motion.div
+                        className="w-0.5 bg-primary rounded-full"
+                        animate={{ height: ['6px', '16px', '6px'] }}
+                        transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                      />
+                    </div>
                 </div>
               )}
             </div>
@@ -304,31 +309,31 @@ export function Flashcard({
               <span role="img" aria-label="pronunciation" className={`text-base sm:text-lg transition-opacity ${
                 isPlayingAudio ? 'opacity-100' : 'opacity-60'
               }`}>🗣️</span>
-              
-              <span className="text-sm sm:text-base text-primary/90 font-semibold">
-                {vocabularyItem?.phonetic || getPronunciation(back || "")}
-              </span>
-            </div>
-          ) : (
-            /* Before flip */
-            <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 shadow-sm min-h-[48px] flex items-center justify-center gap-2">
-              <span role="img" aria-label="locked" className="text-base sm:text-lg">🔒</span>
-              <span className="text-sm sm:text-base text-muted-foreground">Flip the card to see pronunciation</span>
-            </div>
-          )}
+                
+                <span className="text-sm sm:text-base text-primary/90 font-semibold">
+                  {vocabularyItem?.phonetic || getPronunciation(back || "")}
+                </span>
+              </div>
+            ) : (
+              /* Before flip */
+              <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 shadow-sm min-h-[48px] flex items-center justify-center gap-2">
+                <span role="img" aria-label="locked" className="text-base sm:text-lg">🔒</span>
+                <span className="text-sm sm:text-base text-muted-foreground">Flip the card to see pronunciation</span>
+              </div>
+            )}
         </div>
 
         {/* Continue Button */}
         <div className="w-full max-w-[90%] sm:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px]">
-          <Button
-            className={`gap-2 w-full text-sm xs:text-base transition-colors duration-300 ${
-              hasBeenFlipped ? 'bg-primary hover:bg-primary/90 text-white' : 'bg-muted text-muted-foreground'
-            }`}
-            onClick={handleContinueClick}
-            disabled={!hasBeenFlipped || showXp}
-          >
-            Continue <ArrowRight className="h-4 w-4" />
-          </Button>
+            <Button
+              className={`gap-2 w-full text-sm xs:text-base transition-colors duration-300 ${
+                hasBeenFlipped ? 'bg-primary hover:bg-primary/90 text-white' : 'bg-muted text-muted-foreground'
+              }`}
+              onClick={handleContinueClick}
+              disabled={!hasBeenFlipped || showXp}
+            >
+              Continue <ArrowRight className="h-4 w-4" />
+            </Button>
         </div>
       </div>
     </div>
