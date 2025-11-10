@@ -6,9 +6,8 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Star, ChevronLeft, Loader2 } from "lucide-react"
+import { Star, Loader2 } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
-import { XpService } from "@/lib/services/xp-service"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { getLesson, getModule, getLessonSteps, getLessonVocabulary } from "@/lib/config/curriculum"
 import { LessonPreviewContent } from "@/components/previews/LessonPreviewContent"
@@ -23,7 +22,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useAuth } from "@/components/auth/AuthProvider"
-import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
@@ -608,26 +606,6 @@ function LessonPageContent() {
       <NotFound type="lesson" moduleId={moduleId} lessonId={lessonId} />
     ) : (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <Link 
-            href={`/modules/${moduleId}`} 
-            className="flex items-center gap-1 sm:gap-2 font-bold text-sm sm:text-lg text-primary"
-          >
-            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Module {moduleId.replace('module', '')}</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">{XpService.formatXp(xp)}</span>
-            </div>
-            <AccountNavButton />
-          </div>
-        </div>
-      </header>
-
       {/* Main content area */}
       <main className="flex-1 flex flex-col">
         {/* Progress bar with step count overlay - Sticky */}

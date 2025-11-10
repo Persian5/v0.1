@@ -7,7 +7,6 @@ import { WordsLearnedWidget } from "@/app/components/dashboard/WordsLearnedWidge
 import { MasteredWordsWidget } from "@/app/components/dashboard/MasteredWordsWidget"
 import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
 import { LeaderboardWidget } from "@/components/widgets/LeaderboardWidget"
-import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle } from "lucide-react"
 import Link from "next/link"

@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trophy, Medal, ChevronDown, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { AccountNavButton } from '@/app/components/AccountNavButton'
 import { useAuth } from '@/components/auth/AuthProvider'
 
 interface LeaderboardEntry {

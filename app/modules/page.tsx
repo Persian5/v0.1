@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock, CheckCircle, PlayCircle, Clock, Crown, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"

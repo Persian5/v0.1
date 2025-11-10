@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { AccountNavButton } from "@/app/components/AccountNavButton";
 import { SubscribeButton } from "@/components/SubscribeButton";
 
 export default function PricingPage() {

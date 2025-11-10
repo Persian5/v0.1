@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Zap, Trophy, Target, BookOpen, Brain, Headphones } from "lucide-react"
 import { useRouter } from "next/navigation"
