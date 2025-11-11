@@ -47,13 +47,21 @@ export default function LeaderboardPage() {
       }
       setError(null)
 
-      const response = await fetch(`/api/leaderboard?limit=10&offset=${newOffset}`)
+      const apiUrl = `/api/leaderboard?limit=10&offset=${newOffset}`
+      console.log('🔍 Fetching leaderboard:', apiUrl)
+      
+      const response = await fetch(apiUrl)
       
       if (!response.ok) {
+        console.error('❌ Leaderboard API error:', response.status, response.statusText)
         throw new Error('Failed to fetch leaderboard')
       }
 
       const newData: LeaderboardResponse = await response.json()
+      console.log('✅ Leaderboard data received:', {
+        userCount: newData.top?.length || 0,
+        users: newData.top?.map(u => ({ name: u.displayName, xp: u.xp, rank: u.rank }))
+      })
 
       if (append && data) {
         // Append new data to existing
