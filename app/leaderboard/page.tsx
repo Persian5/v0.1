@@ -39,6 +39,7 @@ export default function LeaderboardPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
+  const [hasRecalculated, setHasRecalculated] = useState(false) // Prevent infinite loop
 
   // Fetch leaderboard data
   const fetchLeaderboard = async (newOffset: number = 0, append: boolean = false) => {
@@ -88,7 +89,7 @@ export default function LeaderboardPage() {
             mismatch: xpMismatch ? `⚠️ MISMATCH: Leaderboard shows ${currentUserEntry.xp} but you have ${userXp}` : '✅ Match'
           })
           
-          if (xpMismatch) {
+          if (xpMismatch && !hasRecalculated) {
             console.warn('⚠️ XP MISMATCH DETECTED:', {
               yourCacheXp: userXp,
               leaderboardDbXp: currentUserEntry.xp,
@@ -96,19 +97,21 @@ export default function LeaderboardPage() {
               issue: 'Database has stale XP - RPC might not be updating user_profiles.total_xp'
             })
             
-            // Automatically fix: Recalculate XP from transactions
+            // Only recalculate once per page load to prevent infinite loop
+            setHasRecalculated(true)
             console.log('🔧 Attempting to fix XP mismatch by recalculating from transactions...')
             DatabaseService.recalculateUserXpFromTransactions(user.id)
               .then(newXp => {
                 console.log('✅ XP recalculated:', { oldXp: currentUserEntry.xp, newXp })
-                // Refresh leaderboard after sync
-                setTimeout(() => {
-                  fetchLeaderboard(0, false)
-                }, 1000)
+                console.log('ℹ️ Please refresh the page to see updated leaderboard')
+                // Don't auto-refresh - let user manually refresh to avoid infinite loop
               })
               .catch(error => {
                 console.error('❌ Failed to recalculate XP:', error)
+                setHasRecalculated(false) // Allow retry on error
               })
+          } else if (xpMismatch && hasRecalculated) {
+            console.log('ℹ️ XP mismatch still exists after recalculation. Please refresh the page.')
           }
         } else {
           console.log('ℹ️ You are not in the top leaderboard entries')
