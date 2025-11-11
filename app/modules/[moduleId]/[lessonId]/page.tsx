@@ -404,26 +404,7 @@ function LessonPageContent() {
     
     return (
       <>
-        <BlurredPreviewContainer
-          header={
-            <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="container flex h-14 items-center justify-between px-4">
-                <div className="flex items-center gap-4">
-                  <Link 
-                    href={`/modules/${moduleId}`}
-                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Back to Module
-                  </Link>
-                </div>
-                <div className="flex items-center gap-4">
-                  <AccountNavButton />
-                </div>
-              </div>
-            </header>
-          }
-        >
+        <BlurredPreviewContainer>
           <main className="flex flex-col items-center justify-start p-8 max-w-4xl mx-auto w-full overflow-y-auto">
             <LessonPreviewContent
               moduleId={moduleId}
@@ -464,26 +445,7 @@ function LessonPageContent() {
     
     return (
       <>
-        <BlurredPreviewContainer
-          header={
-            <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="container flex h-14 items-center justify-between px-4">
-                <div className="flex items-center gap-4">
-                  <Link 
-                    href={`/modules/${moduleId}`}
-                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Back to Module
-                  </Link>
-                </div>
-                <div className="flex items-center gap-4">
-                  <AccountNavButton />
-                </div>
-              </div>
-            </header>
-          }
-        >
+        <BlurredPreviewContainer>
           <main className="flex flex-col items-center justify-start p-8 max-w-4xl mx-auto w-full">
             <LessonPreviewContent
               moduleId={moduleId}
@@ -525,26 +487,7 @@ function LessonPageContent() {
     
     return (
       <>
-        <BlurredPreviewContainer
-          header={
-            <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="container flex h-14 items-center justify-between px-4">
-                <div className="flex items-center gap-4">
-                  <Link 
-                    href={`/modules/${moduleId}`}
-                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Back to Module
-                  </Link>
-                </div>
-                <div className="flex items-center gap-4">
-                  <AccountNavButton />
-                </div>
-              </div>
-            </header>
-          }
-        >
+        <BlurredPreviewContainer>
           <main className="flex flex-col items-center justify-start p-8 max-w-4xl mx-auto w-full overflow-y-auto">
             <LessonPreviewContent
               moduleId={moduleId}
