@@ -13,7 +13,7 @@ interface CacheEntry {
 }
 
 const cache: Record<string, CacheEntry> = {}
-const CACHE_TTL = 120000 // 2 minutes
+const CACHE_TTL = 5000 // 5 seconds - fresh data on each page visit
 
 // Rate limiting: Simple in-memory tracker (upgrade to Redis for production)
 const rateLimit: Record<string, { count: number; resetTime: number }> = {}
@@ -168,18 +168,18 @@ export async function GET(request: NextRequest) {
       rank: offset + index + 1,
       userId: user.id, // Include user ID so client can identify themselves
       displayName: sanitizeDisplayName(user.display_name),
-      xp: user.total_xp
+      xp: user.total_xp || 0 // Fallback to 0 if null/undefined
     }))
     
     // 8. Prepare response (no user context - fully public leaderboard)
     // Client will identify "You are here" by comparing userId with their own
     const response = {
-      top,
+      top: top || [], // Never return null/undefined array
       pagination: {
         limit,
         offset,
         nextOffset: offset + limit,
-        hasMore: top.length === limit
+        hasMore: (top?.length || 0) === limit // Null-safe length check
       }
     }
     
