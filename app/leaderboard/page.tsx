@@ -171,7 +171,7 @@ export default function LeaderboardPage() {
               transition={{ delay: 0.2 }}
               className="flex flex-col items-center"
             >
-              <Card className={`p-4 sm:p-6 bg-gradient-to-br from-slate-200 to-slate-300 border-slate-400 ${second.userId === user?.id ? 'ring-4 ring-primary shadow-lg' : ''}`}>
+              <Card className={`p-4 sm:p-6 bg-gradient-to-br from-slate-200 to-slate-300 border-slate-400 rounded-b-none ${second.userId === user?.id ? 'ring-4 ring-primary shadow-lg' : ''}`}>
                 <div className="text-center">
                   <Medal className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-slate-500" />
                   <div className="text-3xl sm:text-4xl font-bold mb-1">2</div>
@@ -182,7 +182,7 @@ export default function LeaderboardPage() {
                   <div className="text-xs sm:text-sm text-muted-foreground">{second.xp.toLocaleString()} XP</div>
                 </div>
               </Card>
-              <div className="h-16 sm:h-24 w-24 sm:w-32 bg-gradient-to-t from-slate-400 to-slate-300 rounded-t-lg -mt-1" />
+              <div className="h-16 sm:h-24 w-24 sm:w-32 bg-gradient-to-t from-slate-500 to-slate-300" />
             </motion.div>
           )}
 
@@ -195,7 +195,7 @@ export default function LeaderboardPage() {
               className="flex flex-col items-center"
             >
               <Card 
-                className={`p-4 sm:p-6 bg-gradient-to-br from-yellow-200 via-yellow-300 to-yellow-400 border-yellow-500 animate-shimmer shadow-[0_0_30px_rgba(255,215,0,0.6)] ${first.userId === user?.id ? 'ring-4 ring-primary' : ''}`}
+                className={`p-4 sm:p-6 bg-gradient-to-br from-yellow-200 via-yellow-300 to-yellow-400 border-yellow-500 animate-shimmer shadow-[0_0_30px_rgba(255,215,0,0.6)] rounded-b-none ${first.userId === user?.id ? 'ring-4 ring-primary' : ''}`}
                 style={{
                   backgroundImage: 'linear-gradient(110deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%)'
                 }}
@@ -213,7 +213,7 @@ export default function LeaderboardPage() {
                   <div className="text-xs sm:text-sm text-yellow-800 font-semibold">{first.xp.toLocaleString()} XP</div>
                 </div>
               </Card>
-              <div className="h-24 sm:h-32 w-28 sm:w-36 bg-gradient-to-t from-yellow-500 to-yellow-400 rounded-t-lg -mt-1 shadow-lg" />
+              <div className="h-24 sm:h-32 w-28 sm:w-36 bg-gradient-to-t from-yellow-600 to-yellow-400 shadow-lg" />
             </motion.div>
           )}
 
@@ -225,7 +225,7 @@ export default function LeaderboardPage() {
               transition={{ delay: 0.3 }}
               className="flex flex-col items-center"
             >
-              <Card className={`p-4 sm:p-6 bg-gradient-to-br from-orange-100 to-orange-200 border-orange-300 ${third.userId === user?.id ? 'ring-4 ring-primary shadow-lg' : ''}`}>
+              <Card className={`p-4 sm:p-6 bg-gradient-to-br from-orange-100 to-orange-200 border-orange-300 rounded-b-none ${third.userId === user?.id ? 'ring-4 ring-primary shadow-lg' : ''}`}>
                 <div className="text-center">
                   <Medal className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-orange-400" />
                   <div className="text-3xl sm:text-4xl font-bold mb-1">3</div>
@@ -236,7 +236,7 @@ export default function LeaderboardPage() {
                   <div className="text-xs sm:text-sm text-muted-foreground">{third.xp.toLocaleString()} XP</div>
                 </div>
               </Card>
-              <div className="h-14 sm:h-20 w-24 sm:w-32 bg-gradient-to-t from-orange-400 to-orange-300 rounded-t-lg -mt-1" />
+              <div className="h-14 sm:h-20 w-24 sm:w-32 bg-gradient-to-t from-orange-500 to-orange-300" />
             </motion.div>
           )}
         </div>
@@ -277,7 +277,7 @@ export default function LeaderboardPage() {
                     </div>
                     {entry.userId === user?.id && entry.nextUserXp && (
                       <div className="text-xs text-muted-foreground mt-1">
-                        {entry.nextUserXp - entry.xp} XP to rank {entry.rank - 1}
+                        {entry.nextUserXp - entry.xp + 1} XP to rank {entry.rank - 1}
                       </div>
                     )}
                     {entry.userId === user?.id && xpGainedThisVisit > 0 && (
@@ -311,7 +311,7 @@ export default function LeaderboardPage() {
               <span>Your Position</span>
               {yourEntry.nextUserXp && (
                 <span className="text-primary">
-                  {yourEntry.nextUserXp - yourEntry.xp} XP to next rank
+                  {yourEntry.nextUserXp - yourEntry.xp + 1} XP to next rank
                 </span>
               )}
             </p>
@@ -357,7 +357,7 @@ export default function LeaderboardPage() {
               <div className="mb-4 p-2 bg-primary/10 rounded text-sm">
                 <p className="text-muted-foreground text-xs mb-1">Next rank</p>
                 <p className="font-bold text-primary">
-                  {yourEntry.nextUserXp - yourEntry.xp} XP to go
+                  {yourEntry.nextUserXp - yourEntry.xp + 1} XP to go
                 </p>
               </div>
             )}
