@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Star, Menu, X, ArrowLeft } from 'lucide-react'
+import { Star, Menu, X, ArrowLeft, Crown } from 'lucide-react'
 import { useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { usePremium } from '@/hooks/use-premium'
