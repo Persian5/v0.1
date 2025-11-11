@@ -440,8 +440,46 @@ export default function LeaderboardPage() {
             </p>
           </div>
 
-          {/* Desktop: Grid Layout with Sidebar */}
-          <div className={`${yourEntry && !userIsInTop3 && getContextRanks.length > 0 ? 'hidden md:grid md:grid-cols-[1fr,300px] md:gap-6' : ''}`}>
+          {/* Desktop: Grid Layout with Sidebar (only if user has context to show) */}
+          {yourEntry && !userIsInTop3 && getContextRanks.length > 0 ? (
+            <div className="hidden md:grid md:grid-cols-[1fr,300px] md:gap-6">
+              <div>
+                {/* Podium (Top 3) */}
+                {renderPodium()}
+
+                {/* Rest of rankings */}
+                {renderList()}
+
+                {/* Load More Button */}
+                {data.pagination.hasMore && (
+                  <div className="text-center mt-6">
+                    <Button
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
+                      variant="outline"
+                      size="lg"
+                    >
+                      {isLoadingMore ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 mr-2" />
+                          Load More
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Desktop Context Sidebar */}
+              {renderDesktopContextCard()}
+            </div>
+          ) : (
+            /* No sidebar - standard layout for top 3 or logged out users */
             <div>
               {/* Podium (Top 3) */}
               {renderPodium()}
@@ -473,43 +511,7 @@ export default function LeaderboardPage() {
                 </div>
               )}
             </div>
-            
-            {/* Desktop Context Sidebar */}
-            {renderDesktopContextCard()}
-          </div>
-
-          {/* Mobile: No Sidebar (use sticky card instead) */}
-          <div className={`${yourEntry && !userIsInTop3 && getContextRanks.length > 0 ? 'md:hidden' : ''}`}>
-            {/* Podium (Top 3) */}
-            {renderPodium()}
-
-            {/* Rest of rankings */}
-            {renderList()}
-
-            {/* Load More Button */}
-            {data.pagination.hasMore && (
-              <div className="text-center mt-6">
-                <Button
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  variant="outline"
-                  size="lg"
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-4 h-4 mr-2" />
-                      Load More
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </main>
 
