@@ -187,10 +187,13 @@ export async function GET(request: NextRequest) {
     }
     
     // Filter users with XP > 0 in memory
-    const allUsers = (allUsersUnfiltered || []).filter(u => (u.total_xp || 0) > 0)
+    // CRITICAL: Explicit type annotation required - TypeScript can't infer type from .then() chain
+    // Type includes all fields used: id, display_name, total_xp, created_at
+    const allUsers = (allUsersUnfiltered || []).filter((u: { id: string; display_name: string | null; total_xp?: number | null; created_at: string }) => (u.total_xp || 0) > 0)
     
     // Sort in memory: by total_xp DESC, then created_at ASC (tie-breaker)
-    const sortedUsers = allUsers.sort((a, b) => {
+    // CRITICAL: Explicit type annotation for sort callback parameters
+    const sortedUsers = allUsers.sort((a: { total_xp?: number | null; created_at: string }, b: { total_xp?: number | null; created_at: string }) => {
       if (b.total_xp !== a.total_xp) {
         return b.total_xp - a.total_xp // DESC by XP
       }
