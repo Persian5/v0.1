@@ -145,7 +145,6 @@ export function BottomNav() {
       <AuthModal 
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        defaultMode="signup"
       />
     </>
   )
