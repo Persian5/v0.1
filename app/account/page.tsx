@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star, User, Trophy, Target, Loader2, RotateCcw, AlertTriangle, Check } from "lucide-react"
+import { Star, User, Trophy, Target, Loader2, RotateCcw, AlertTriangle, Check, Crown, CreditCard } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useRouter } from "next/navigation"
@@ -13,6 +13,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard"
 import { CountUpXP } from "@/app/components/CountUpXP"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { generateDefaultDisplayName } from "@/lib/utils/display-name"
+import { usePremium } from "@/hooks/use-premium"
 
 function AccountContent() {
   const [mounted, setMounted] = useState(false)
@@ -23,6 +24,7 @@ function AccountContent() {
   const [completedLessons, setCompletedLessons] = useState(0)
   const { xp, resetXp } = useXp()
   const { user, signOut, changePassword } = useAuth()
+  const { hasPremium } = usePremium()
   const router = useRouter()
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwError, setPwError] = useState<string | null>(null)
@@ -367,6 +369,59 @@ function AccountContent() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Subscription Management - Premium Users Only */}
+          {hasPremium && (
+            <Card className="mt-6 sm:mt-8 mb-6 sm:mb-8 hover:shadow-md transition-shadow duration-300 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl text-purple-700">
+                  <Crown className="h-5 w-5" />
+                  Premium Subscription
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-purple-200">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <CreditCard className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">Premium Plan Active</p>
+                        <p className="text-sm text-gray-600">Full access to all features</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-purple-600 font-semibold">
+                      <Check className="h-5 w-5" />
+                      Active
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                      onClick={() => window.open(process.env.NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_URL || '/pricing', '_blank')}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Manage Billing
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                      onClick={() => router.push('/pricing#faq')}
+                    >
+                      View Benefits
+                    </Button>
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 text-center pt-2">
+                    Manage your subscription, update payment methods, or view billing history
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Security Section */}
           <Card className="mt-10 hover:shadow-md transition-shadow duration-300">
