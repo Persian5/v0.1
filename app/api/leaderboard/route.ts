@@ -158,11 +158,17 @@ export async function GET(request: NextRequest) {
         // If RPC doesn't exist, fall back to direct query with session variable
         if (result.error?.code === '42883') {
           // Set session variable to prefer primary
-          await supabase.rpc('set_config', {
-            setting_name: 'transaction_read_only',
-            new_value: 'off',
-            is_local: true
-          }).catch(() => {})
+          // CRITICAL: Use try/catch instead of .catch() - Supabase RPC returns PostgrestFilterBuilder, not Promise
+          try {
+            await supabase.rpc('set_config', {
+              setting_name: 'transaction_read_only',
+              new_value: 'off',
+              is_local: true
+            })
+          } catch {
+            // Ignore errors - this is a fallback mechanism anyway
+            // If set_config doesn't work, we'll proceed with direct query
+          }
           
           // Now query - this should hit primary
           return await supabase
@@ -232,9 +238,19 @@ export async function GET(request: NextRequest) {
         .single()
       
       // Also try a raw SQL query to see if there's a difference
-      const { data: rawQueryResult, error: rawError } = await supabase
-        .rpc('get_user_xp_direct', { p_user_id: debugUserId })
-        .catch(() => ({ data: null, error: { message: 'RPC function does not exist' } }))
+      // CRITICAL: Use try/catch instead of .catch() - Supabase RPC returns PostgrestFilterBuilder, not Promise
+      let rawQueryResult = null
+      let rawError: { message: string } | null = null
+      
+      try {
+        const result = await supabase.rpc('get_user_xp_direct', { p_user_id: debugUserId })
+        rawQueryResult = result.data
+        rawError = result.error
+      } catch {
+        // RPC function doesn't exist or failed
+        rawQueryResult = null
+        rawError = { message: 'RPC function does not exist' }
+      }
       
       console.log('🔍 Direct user XP query (debug):', {
         userId: debugUserId,
