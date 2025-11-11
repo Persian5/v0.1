@@ -107,7 +107,7 @@ export function BottomNav() {
                   item.active ? 'fill-primary' : ''
                 }`} 
               />
-              <span className="text-[10px] font-medium leading-tight">
+              <span className="text-xs font-medium leading-tight">
                 {item.label}
               </span>
             </Link>

@@ -61,7 +61,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md relative">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
+        <div className="container mx-auto max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6">
           {/* Minimal Variant - Back Button + XP + Account */}
           {variant === 'minimal' && (
             <>
@@ -74,10 +74,10 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               </button>
 
               <div className="flex items-center gap-3">
-                {/* XP Badge */}
+                {/* XP Badge - Always visible on all screen sizes */}
                 {isLoggedIn && (
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
                     <span>{xp.toLocaleString()}</span>
                   </div>
                 )}
@@ -104,46 +104,51 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
           {/* Default & Logged-Out Variants */}
           {variant !== 'minimal' && (
             <>
-              {/* Logo / Home Link */}
+              {/* Logo / Home Link - Always goes to homepage */}
               <Link 
                 href="/" 
                 className="text-xl font-bold text-primary hover:opacity-80 transition-opacity"
+                aria-label="Finglish Home"
               >
                 Finglish
               </Link>
 
               {/* Desktop Navigation - Default Variant */}
               {variant === 'default' && isLoggedIn && (
-                <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
+                <nav className="hidden md:flex items-center gap-6 flex-1 justify-center" aria-label="Main navigation">
                   <Link
                     href="/modules"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
                       isActive('/modules') ? 'text-primary' : 'text-gray-600'
                     }`}
+                    aria-current={isActive('/modules') ? 'page' : undefined}
                   >
                     Learn
                   </Link>
                   <Link
                     href="/review"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
                       isActive('/review') ? 'text-primary' : 'text-gray-600'
                     }`}
+                    aria-current={isActive('/review') ? 'page' : undefined}
                   >
                     Review
                   </Link>
                   <Link
                     href="/leaderboard"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
                       isActive('/leaderboard') ? 'text-primary' : 'text-gray-600'
                     }`}
+                    aria-current={isActive('/leaderboard') ? 'page' : undefined}
                   >
                     Leaderboard
                   </Link>
                   <Link
                     href="/dashboard"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
                       isActive('/dashboard') ? 'text-primary' : 'text-gray-600'
                     }`}
+                    aria-current={isActive('/dashboard') ? 'page' : undefined}
                   >
                     Dashboard
                   </Link>
@@ -195,10 +200,11 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                 ) : (
                   <Button 
                     size="sm" 
-                    className="hidden md:flex"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold"
                     onClick={() => setAuthModalOpen(true)}
+                    aria-label="Sign up for Finglish"
                   >
-                    Sign Up / Log In
+                    Sign Up
                   </Button>
                 )}
 

@@ -42,8 +42,8 @@ export function ConditionalHeader() {
   return (
     <>
       <AppHeader variant={variant as any} />
-      {/* Show bottom nav for all users (logged-in and logged-out) */}
-      <BottomNav />
+      {/* Show bottom nav for all users EXCEPT on lesson pages (minimal variant) */}
+      {variant !== 'minimal' && <BottomNav />}
     </>
   )
 }
