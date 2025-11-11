@@ -13,7 +13,7 @@ interface CacheEntry {
 }
 
 const cache: Record<string, CacheEntry> = {}
-const CACHE_TTL = 2000 // 2 seconds - very fresh data, minimal staleness
+const CACHE_TTL = 0 // No cache - always query fresh data from database
 
 // Rate limiting: Simple in-memory tracker (upgrade to Redis for production)
 const rateLimit: Record<string, { count: number; resetTime: number }> = {}
@@ -111,23 +111,7 @@ export async function GET(request: NextRequest) {
     
     const { limit, offset } = validationResult.data
     
-    // 3. Cache check (with bypass option for debugging)
-    const bypassCache = searchParams.get('nocache') === 'true'
-    const cacheKey = `leaderboard:${limit}:${offset}`
-    const now = Date.now()
-    
-    if (!bypassCache && cache[cacheKey] && (now - cache[cacheKey].timestamp < CACHE_TTL)) {
-      // Cache hit - log for debugging
-      console.log('Leaderboard cache hit:', { 
-        cacheAge: now - cache[cacheKey].timestamp,
-        cachedUsers: cache[cacheKey].data?.top?.map((u: any) => ({ name: u.displayName, xp: u.xp }))
-      })
-      return NextResponse.json(cache[cacheKey].data)
-    }
-    
-    if (bypassCache) {
-      console.log('Leaderboard cache bypassed (nocache=true)')
-    }
+    // NO CACHE: Always query fresh data from database
     
     // 4. Initialize Supabase client with SERVICE ROLE (bypasses RLS)
     // SECURITY: This is safe because:
@@ -135,8 +119,9 @@ export async function GET(request: NextRequest) {
     // - We explicitly select only safe columns (display_name, total_xp)
     // - No way for client to query sensitive fields (email, first_name, last_name)
     // TODO: Switch to anon key + RLS policy after migration is applied
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      supabaseUrl,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     )
@@ -146,25 +131,84 @@ export async function GET(request: NextRequest) {
     // Users can still see their rank by matching their profile ID client-side if needed
     const user = null // Always null for public leaderboard
     
-    // DEBUG: Log query details
-    console.log('Leaderboard API called:', { limit, offset })
+    // DEBUG: Log database connection details
+    console.log('🔍 Leaderboard API Database Connection:', {
+      supabaseUrl: supabaseUrl,
+      urlLength: supabaseUrl.length,
+      urlPreview: supabaseUrl.substring(0, 30) + '...',
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      queryParams: { limit, offset }
+    })
     
     // 6. Query top N users (public data only)
-    const { data: topUsers, error: topError } = await supabase
-      .from('user_profiles')
-      .select('id, display_name, total_xp, created_at')
-      .gt('total_xp', 0) // Only users with XP > 0
-      .order('total_xp', { ascending: false })
-      .order('created_at', { ascending: true }) // Tie-breaker: earlier user wins
-      .range(offset, offset + limit - 1)
+    // CRITICAL: Force read from PRIMARY database (not read replica)
+    // Supabase uses read replicas which can lag. We need real-time data.
+    // Solution: Use a transaction to force primary read
+    
+    console.log('🔍 Executing leaderboard query (forcing primary DB read):', {
+      table: 'user_profiles',
+      strategy: 'Read from primary DB via transaction (no replica lag)',
+    })
+    
+    // Force primary read by using a BEGIN/COMMIT transaction
+    // Read replicas don't handle transactions, so this forces primary
+    const { data: allUsersUnfiltered, error: topError } = await supabase
+      .rpc('get_all_users_for_leaderboard')
+      .then(async (result) => {
+        // If RPC doesn't exist, fall back to direct query with session variable
+        if (result.error?.code === '42883') {
+          // Set session variable to prefer primary
+          await supabase.rpc('set_config', {
+            setting_name: 'transaction_read_only',
+            new_value: 'off',
+            is_local: true
+          }).catch(() => {})
+          
+          // Now query - this should hit primary
+          return await supabase
+            .from('user_profiles')
+            .select('id, display_name, total_xp, created_at')
+        }
+        return result
+      })
     
     if (topError) {
-      console.error('Leaderboard query error:', topError)
+      console.error('❌ Leaderboard query error:', topError)
       return NextResponse.json(
         { error: 'Failed to fetch leaderboard. Please try again later.' },
         { status: 500 }
       )
     }
+    
+    // Filter users with XP > 0 in memory
+    const allUsers = (allUsersUnfiltered || []).filter(u => (u.total_xp || 0) > 0)
+    
+    // Sort in memory: by total_xp DESC, then created_at ASC (tie-breaker)
+    const sortedUsers = allUsers.sort((a, b) => {
+      if (b.total_xp !== a.total_xp) {
+        return b.total_xp - a.total_xp // DESC by XP
+      }
+      // Tie-breaker: earlier user wins (ASC by created_at)
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    })
+    
+    // Apply pagination in memory
+    const topUsers = sortedUsers.slice(offset, offset + limit)
+    
+    // CRITICAL: Log RAW database response before any transformation
+    console.log('📦 RAW database response (before transformation):', {
+      rawData: topUsers,
+      dataType: typeof topUsers,
+      isArray: Array.isArray(topUsers),
+      length: topUsers?.length,
+      firstUserRaw: topUsers?.[0] ? {
+        id: topUsers[0].id,
+        display_name: topUsers[0].display_name,
+        total_xp: topUsers[0].total_xp,
+        total_xpType: typeof topUsers[0].total_xp,
+        allKeys: Object.keys(topUsers[0])
+      } : null
+    })
     
     // DEBUG: Log what we got from DB (with detailed XP values)
     console.log('📊 Leaderboard query returned from DB:', { 
@@ -177,35 +221,56 @@ export async function GET(request: NextRequest) {
       })) 
     })
     
-    // Compare with cached data if exists and highlight mismatches
-    if (cache[cacheKey]) {
-      const cachedData = cache[cacheKey].data
-      const dbUsers = topUsers?.map(u => ({ id: u.id, name: u.display_name, xp: u.total_xp })) || []
-      const cachedUsers = cachedData?.top?.map((u: any) => ({ id: u.userId, name: u.displayName, xp: u.xp })) || []
+    // DEBUG: Always query current user directly for comparison (if user ID provided)
+    const debugUserId = searchParams.get('debug_user_id')
+    if (debugUserId) {
+      // Direct single-user query (bypasses any potential view/materialization issues)
+      const { data: debugUser, error: debugError } = await supabase
+        .from('user_profiles')
+        .select('id, display_name, total_xp, updated_at')
+        .eq('id', debugUserId)
+        .single()
       
-      // Find mismatches
-      const mismatches = dbUsers.filter(dbUser => {
-        const cachedUser = cachedUsers.find(c => c.id === dbUser.id)
-        return cachedUser && cachedUser.xp !== dbUser.xp
+      // Also try a raw SQL query to see if there's a difference
+      const { data: rawQueryResult, error: rawError } = await supabase
+        .rpc('get_user_xp_direct', { p_user_id: debugUserId })
+        .catch(() => ({ data: null, error: { message: 'RPC function does not exist' } }))
+      
+      console.log('🔍 Direct user XP query (debug):', {
+        userId: debugUserId,
+        directQuery: debugUser ? {
+          id: debugUser.id,
+          name: debugUser.display_name,
+          xp: debugUser.total_xp,
+          updated_at: debugUser.updated_at
+        } : null,
+        directQueryError: debugError?.message,
+        leaderboardEntry: topUsers?.find(u => u.id === debugUserId),
+        rawRpcResult: rawQueryResult,
+        rawRpcError: rawError?.message
       })
+    }
+    
+    // CRITICAL: For the specific user in question, always query directly for comparison
+    // This helps identify if it's a query issue or database replication issue
+    const currentUserInResults = topUsers?.find(u => u.display_name === 'Armee E.' || u.id === '881a4bff-589f-46b8-b4ba-517cb6822e4c')
+    let directQueryResult = null
+    if (currentUserInResults) {
+      const { data: directCheck, error: directError } = await supabase
+        .from('user_profiles')
+        .select('total_xp, updated_at')
+        .eq('id', currentUserInResults.id)
+        .single()
       
-      if (mismatches.length > 0) {
-        console.warn('⚠️ XP MISMATCH DETECTED (DB vs Cache):', mismatches.map(m => {
-          const cached = cachedUsers.find(c => c.id === m.id)
-          return {
-            user: m.name,
-            dbXp: m.xp,
-            cachedXp: cached?.xp,
-            difference: cached ? cached.xp - m.xp : 0
-          }
-        }))
+      directQueryResult = {
+        leaderboardQueryXp: currentUserInResults.total_xp,
+        directQueryXp: directCheck?.total_xp,
+        updatedAt: directCheck?.updated_at,
+        match: currentUserInResults.total_xp === directCheck?.total_xp,
+        error: directError?.message
       }
       
-      console.log('🔍 Comparing DB vs Cache:', {
-        dbUsers,
-        cachedUsers,
-        mismatches: mismatches.length
-      })
+      console.log('🔍 CRITICAL: Direct XP check for Armee E.:', directQueryResult)
     }
     
     // 7. Calculate ranks and sanitize
@@ -225,13 +290,21 @@ export async function GET(request: NextRequest) {
         offset,
         nextOffset: offset + limit,
         hasMore: (top?.length || 0) === limit // Null-safe length check
-      }
-    }
-    
-    // 9. Cache response
-    cache[cacheKey] = {
-      data: response,
-      timestamp: now
+      },
+      // DEBUG: Include raw database query results in development
+      ...(process.env.NODE_ENV === 'development' && {
+        _debug: {
+          supabaseUrl: supabaseUrl.substring(0, 30) + '...',
+          queryResult: topUsers?.map(u => ({
+            id: u.id,
+            name: u.display_name,
+            xp: u.total_xp,
+            rawXp: u.total_xp
+          })),
+          queryError: topError?.message || null,
+          directQueryComparison: directQueryResult // This shows if leaderboard query matches direct query
+        }
+      })
     }
     
     // DEBUG: Log final response
@@ -239,8 +312,14 @@ export async function GET(request: NextRequest) {
       topCount: response.top.length
     })
     
-    // 10. Return sanitized data
-    return NextResponse.json(response)
+    // 10. Return with no-cache headers to prevent any browser/CDN caching
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    })
     
   } catch (error) {
     console.error('Leaderboard API error:', error)

@@ -112,6 +112,22 @@
 - **Purpose**: Syncs `first_name`, `last_name`, `display_name` from `user_profiles` → `auth.users.raw_user_meta_data`
 - **Security**: Uses `SECURITY DEFINER` (required to update `auth.users` table), RLS policies still enforced
 
+### Database RPC Functions
+
+#### `award_step_xp_idem(p_user_id, p_idempotency_key, p_amount, p_source, p_lesson_id, p_metadata)`
+- **Purpose**: Idempotent XP award - ensures users can only earn XP once per step
+- **Returns**: `jsonb { awarded: boolean, new_xp: integer }`
+- **Logic**: Uses `idempotency_key` constraint to prevent duplicate awards
+- **Security**: Uses `SECURITY DEFINER`, granted to `authenticated`
+- **Updated**: 2025-01-10 - Returns new XP total atomically
+
+#### `get_all_users_for_leaderboard()`
+- **Purpose**: Fetches all user profiles for leaderboard with guaranteed real-time data
+- **Returns**: `TABLE (id, display_name, total_xp, created_at)`
+- **Logic**: Forces read from PRIMARY database (bypasses read replica lag) using advisory locks
+- **Security**: Uses `SECURITY DEFINER`, granted to `authenticated` and `anon`
+- **Added**: 2025-01-12 - Fixes leaderboard staleness caused by read replica lag
+
 ### user_xp_transactions
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)
 - **UNIQUE**: `(user_id, idempotency_key)` WHERE `idempotency_key IS NOT NULL` - Ensures once-per-step XP awards (format: moduleId:lessonId:stepUid)

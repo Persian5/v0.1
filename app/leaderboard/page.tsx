@@ -52,7 +52,14 @@ export default function LeaderboardPage() {
       const apiUrl = `/api/leaderboard?limit=10&offset=${newOffset}`
       console.log('🔍 Fetching leaderboard:', apiUrl)
       
-      const response = await fetch(apiUrl)
+      // Force fresh fetch - bypass browser cache entirely
+      const response = await fetch(apiUrl, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
       
       if (!response.ok) {
         console.error('❌ Leaderboard API error:', response.status, response.statusText)
@@ -60,6 +67,11 @@ export default function LeaderboardPage() {
       }
 
       const newData: LeaderboardResponse = await response.json()
+      
+      // Log debug info from API (development only)
+      if ((newData as any)._debug) {
+        console.log('🔍 API Debug Info:', (newData as any)._debug)
+      }
       
       // Detailed logging with XP values to identify stale data
       const usersWithXp = newData.top?.map(u => ({ 
@@ -71,7 +83,8 @@ export default function LeaderboardPage() {
       
       console.log('✅ Leaderboard data received:', {
         userCount: newData.top?.length || 0,
-        users: usersWithXp
+        users: usersWithXp,
+        rawXpValues: newData.top?.map(u => ({ name: u.displayName, xp: u.xp, type: typeof u.xp }))
       })
       
       // Check if current user's XP matches what they see in header
