@@ -26,6 +26,8 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { WordBankService } from '@/lib/services/word-bank-service'
 import { SmartAuthService } from '@/lib/services/smart-auth-service'
+import { verifyLessonCompletionInCache } from '@/lib/utils/cache-verification'
+import { safeTelemetry } from '@/lib/utils/telemetry-safe'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -212,48 +214,88 @@ export function LessonRunner({
     if (idx >= steps.length && !isInRemediation && !storyCompleted) {
       // Lesson is complete – run async logic in an IIFE to avoid lint false-positives
       ;(async () => {
+        const completionStartTime = Date.now()
+        
+        safeTelemetry(() => {
+          console.log(`🎯 [LessonRunner] Lesson completion triggered: ${moduleId}/${lessonId}`)
+        })
+
         // Check if this is a story lesson using the lesson data
         const isStoryLesson = lessonData?.isStoryLesson || false;
         
         // Track lesson completion for analytics
         console.log(`Lesson completed: ${moduleId}/${lessonId}`);
 
-        // CRITICAL: Mark lesson as completed - MUST succeed before navigation
-        try {
-          await LessonProgressService.markLessonCompleted(moduleId, lessonId);
-          console.log('Lesson marked as completed successfully');
-        } catch (error) {
-          console.error('Failed to mark lesson as completed (first attempt):', error);
+        // PHASE 1: Mark lesson as completed (with retry logic built-in)
+        // Returns structured result with db and cache verification flags
+        const completionResult = await LessonProgressService.markLessonCompleted(moduleId, lessonId);
+        
+        safeTelemetry(() => {
+          console.log(`📊 [LessonRunner] Completion result:`, completionResult)
+        })
+
+        // CRITICAL: Check if DB write failed
+        if (!completionResult.success || !completionResult.dbUpdated) {
+          console.error('❌ [LessonRunner] DB write failed:', completionResult.error)
+          alert('Failed to save your progress. Please check your internet connection and try completing the lesson again.');
+          return; // Don't navigate - let user retry
+        }
+
+        // PHASE 2: Navigation Guard - Verify cache consistency before navigating
+        if (!completionResult.cacheUpdated) {
+          safeTelemetry(() => {
+            console.warn(`⚠️ [LessonRunner] Cache not updated, attempting verification...`)
+          })
           
-          // Retry once after 1 second
-          try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await LessonProgressService.markLessonCompleted(moduleId, lessonId);
-            console.log('Lesson marked as completed on retry');
-          } catch (retryError) {
-            console.error('Failed to mark lesson as completed (retry failed):', retryError);
-            // Show user-friendly error
-            alert('Failed to save your progress. Please check your internet connection and try completing the lesson again.');
-            // Don't navigate - let user retry the lesson
-            return;
+          // Try to verify cache manually
+          if (user) {
+            const verification = verifyLessonCompletionInCache(user.id, moduleId, lessonId)
+            
+            if (!verification.isVerified) {
+              safeTelemetry(() => {
+                console.warn(`⚠️ [LessonRunner] Cache verification failed, refreshing from DB...`)
+              })
+              
+              // Force refresh progress from database
+              const refreshSuccess = await SmartAuthService.refreshProgressFromDb()
+              
+              safeTelemetry(() => {
+                if (refreshSuccess) {
+                  console.log(`✅ [LessonRunner] Cache refreshed from DB successfully`)
+                } else {
+                  console.error(`❌ [LessonRunner] Cache refresh failed`)
+                }
+              })
+            }
           }
         }
 
-        // Flush XP after successful save
+        // PHASE 3: Flush XP (non-critical, don't block on failure)
         try {
           await SyncService.forceSyncNow();
+          safeTelemetry(() => {
+            console.log(`✅ [LessonRunner] XP sync completed`)
+          })
         } catch (err) {
-          console.warn('XP force sync failed (continuing anyway):', err);
+          safeTelemetry(() => {
+            console.warn('⚠️ [LessonRunner] XP force sync failed (continuing anyway):', err)
+          })
           // Non-critical - lesson is already saved, XP will sync on next opportunity
         }
 
+        // PHASE 4: Navigate to completion page
+        const completionDuration = Date.now() - completionStartTime
+        safeTelemetry(() => {
+          console.log(`🚀 [LessonRunner] Navigating to completion page (took ${completionDuration}ms)`)
+        })
+        
         // Only navigate if lesson was successfully marked complete
         startTransition(() => {
           router.push(`/modules/${moduleId}/${lessonId}/completion?xp=${xp}`);
         });
       })();
     }
-  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, router, xp]);
+  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, router, xp, user]);
 
   // Prefetch completion route when 80% done to avoid blank screen while chunk loads
   useEffect(() => {
