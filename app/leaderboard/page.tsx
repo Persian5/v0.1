@@ -39,10 +39,6 @@ export default function LeaderboardPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
-  
-  // Track XP at page load for "XP gained this visit" feature
-  const [initialXp] = useState(userXp)
-  const xpGainedThisVisit = userXp - initialXp
 
   // Fetch leaderboard data
   const fetchLeaderboard = async (newOffset: number = 0, append: boolean = false) => {
@@ -280,11 +276,6 @@ export default function LeaderboardPage() {
                         {entry.nextUserXp - entry.xp + 1} XP to rank {entry.rank - 1}
                       </div>
                     )}
-                    {entry.userId === user?.id && xpGainedThisVisit > 0 && (
-                      <div className="text-xs text-green-600 font-semibold mt-1">
-                        +{xpGainedThisVisit} XP this visit
-                      </div>
-                    )}
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
@@ -358,14 +349,6 @@ export default function LeaderboardPage() {
                 <p className="text-muted-foreground text-xs mb-1">Next rank</p>
                 <p className="font-bold text-primary">
                   {yourEntry.nextUserXp - yourEntry.xp + 1} XP to go
-                </p>
-              </div>
-            )}
-            
-            {xpGainedThisVisit > 0 && (
-              <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                <p className="text-green-700 font-semibold">
-                  +{xpGainedThisVisit} XP this visit
                 </p>
               </div>
             )}
