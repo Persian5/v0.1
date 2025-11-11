@@ -274,12 +274,18 @@ export async function GET(request: NextRequest) {
     }
     
     // 7. Calculate ranks and sanitize
-    const top = (topUsers || []).map((user, index) => ({
-      rank: offset + index + 1,
-      userId: user.id, // Include user ID so client can identify themselves
-      displayName: sanitizeDisplayName(user.display_name),
-      xp: user.total_xp || 0 // Fallback to 0 if null/undefined
-    }))
+    const top = (topUsers || []).map((user, index) => {
+      const rank = offset + index + 1
+      const nextUser = sortedUsers[sortedUsers.indexOf(user) - 1] // User above in global ranking
+      
+      return {
+        rank,
+        userId: user.id, // Include user ID so client can identify themselves
+        displayName: sanitizeDisplayName(user.display_name),
+        xp: user.total_xp || 0, // Fallback to 0 if null/undefined
+        nextUserXp: nextUser?.total_xp || null // XP of next rank up (null if #1)
+      }
+    })
     
     // 8. Prepare response (no user context - fully public leaderboard)
     // Client will identify "You are here" by comparing userId with their own
