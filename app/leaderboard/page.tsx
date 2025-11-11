@@ -8,6 +8,7 @@ import { Trophy, Medal, ChevronDown, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { SmartAuthService } from '@/lib/services/smart-auth-service'
+import { useXp } from '@/hooks/use-xp'
 
 interface LeaderboardEntry {
   rank: number
@@ -31,6 +32,7 @@ interface LeaderboardResponse {
 
 export default function LeaderboardPage() {
   const { user } = useAuth() // Get current user
+  const { xp: userXp } = useXp() // Get user's actual XP from cache
   const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -58,10 +60,45 @@ export default function LeaderboardPage() {
       }
 
       const newData: LeaderboardResponse = await response.json()
+      
+      // Detailed logging with XP values to identify stale data
+      const usersWithXp = newData.top?.map(u => ({ 
+        name: u.displayName, 
+        xp: u.xp, 
+        rank: u.rank,
+        userId: u.userId 
+      })) || []
+      
       console.log('✅ Leaderboard data received:', {
         userCount: newData.top?.length || 0,
-        users: newData.top?.map(u => ({ name: u.displayName, xp: u.xp, rank: u.rank }))
+        users: usersWithXp
       })
+      
+      // Check if current user's XP matches what they see in header
+      if (user && newData.top) {
+        const currentUserEntry = newData.top.find(u => u.userId === user.id)
+        if (currentUserEntry) {
+          const xpMismatch = userXp !== currentUserEntry.xp
+          console.log('👤 Your leaderboard entry:', {
+            name: currentUserEntry.displayName,
+            leaderboardXp: currentUserEntry.xp,
+            yourActualXp: userXp,
+            rank: currentUserEntry.rank,
+            mismatch: xpMismatch ? `⚠️ MISMATCH: Leaderboard shows ${currentUserEntry.xp} but you have ${userXp}` : '✅ Match'
+          })
+          
+          if (xpMismatch) {
+            console.warn('⚠️ XP MISMATCH DETECTED:', {
+              yourCacheXp: userXp,
+              leaderboardDbXp: currentUserEntry.xp,
+              difference: userXp - currentUserEntry.xp,
+              issue: 'Database has stale XP - RPC might not be updating user_profiles.total_xp'
+            })
+          }
+        } else {
+          console.log('ℹ️ You are not in the top leaderboard entries')
+        }
+      }
 
       if (append && data) {
         // Append new data to existing
