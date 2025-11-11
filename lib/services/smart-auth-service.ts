@@ -10,6 +10,7 @@ interface SessionCache {
   hasPremium: boolean  // Cached premium subscription status
   profile: UserProfile
   progress: UserLessonProgress[]
+  progressLastUpdated: number  // Timestamp when progress was last updated (for staleness detection)
   totalXp: number
   lastSync: number
   expiresAt: number
@@ -155,6 +156,7 @@ export class SmartAuthService {
         hasPremium,  // Cache premium status
         profile,
         progress,
+        progressLastUpdated: Date.now(),  // Initialize progress timestamp
         totalXp,
         lastSync: Date.now(),
         expiresAt: Date.now() + this.SESSION_DURATION
@@ -863,6 +865,86 @@ export class SmartAuthService {
     // Emit event if status changed
     if (oldStatus !== hasPremium) {
       this.emitEvent('premium-updated', { hasPremium, wasUpgrade: !oldStatus && hasPremium })
+    }
+  }
+
+  // ===== LESSON PROGRESS CACHE MANAGEMENT (for completion bug fix) =====
+
+  /**
+   * Mark progress as updated (sets timestamp for staleness detection)
+   * Called after any progress update to track cache freshness
+   */
+  static markProgressUpdated(): void {
+    if (this.sessionCache) {
+      this.sessionCache.progressLastUpdated = Date.now()
+    }
+  }
+
+  /**
+   * Get age of progress cache in milliseconds
+   * Returns Infinity if no cache exists
+   * 
+   * @returns Age in milliseconds, or Infinity if cache doesn't exist
+   * 
+   * @example
+   * ```typescript
+   * const age = SmartAuthService.getProgressCacheAge()
+   * if (age > 5000) {
+   *   // Cache is stale (>5 seconds old)
+   *   await SmartAuthService.refreshProgressFromDb()
+   * }
+   * ```
+   */
+  static getProgressCacheAge(): number {
+    if (!this.sessionCache || !this.sessionCache.progressLastUpdated) {
+      return Infinity // Cache doesn't exist or was never updated
+    }
+    return Date.now() - this.sessionCache.progressLastUpdated
+  }
+
+  /**
+   * Clear cached progress (forces refresh on next check)
+   * Used when cache might be stale and needs to be invalidated
+   */
+  static clearCachedProgress(): void {
+    if (this.sessionCache) {
+      this.sessionCache.progress = []
+      this.sessionCache.progressLastUpdated = 0
+    }
+  }
+
+  /**
+   * Force refresh progress from database
+   * Fetches fresh data and updates cache with timestamp
+   * 
+   * @returns Promise<boolean> - true if successful, false on error
+   * 
+   * @example
+   * ```typescript
+   * if (!completionResult.cacheUpdated) {
+   *   await SmartAuthService.refreshProgressFromDb()
+   * }
+   * ```
+   */
+  static async refreshProgressFromDb(): Promise<boolean> {
+    try {
+      if (!this.sessionCache) {
+        return false
+      }
+      
+      const user = this.sessionCache.user
+      const freshProgress = await DatabaseService.getUserLessonProgress(user.id)
+      
+      this.sessionCache.progress = freshProgress
+      this.sessionCache.progressLastUpdated = Date.now()
+      
+      // Emit event to update UI
+      this.emitEvent('progress-updated', { progress: freshProgress })
+      
+      return true
+    } catch (error) {
+      console.error('Failed to refresh progress from DB:', error)
+      return false
     }
   }
 } 
