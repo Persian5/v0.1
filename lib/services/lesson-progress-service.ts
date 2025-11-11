@@ -2,11 +2,23 @@ import { getModules, getModule } from '../config/curriculum';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
 import { VocabularyProgressService } from './vocabulary-progress-service';
+import { SmartAuthService } from './smart-auth-service';
+import { verifyLessonCompletionInCache } from '../utils/cache-verification';
+import { withBackoff } from '../utils/retry-helpers';
+import { safeTelemetry } from '../utils/telemetry-safe';
 
 // Return type for first available lesson
 export interface AvailableLesson {
   moduleId: string;
   lessonId: string;
+}
+
+// Return type for markLessonCompleted (includes success flags)
+export interface LessonCompletionResult {
+  success: boolean;
+  dbUpdated: boolean;
+  cacheUpdated: boolean;
+  error?: string;
 }
 
 export class LessonProgressService {
@@ -80,34 +92,181 @@ export class LessonProgressService {
   }
 
   /**
-   * Mark a lesson as completed
+   * Mark a lesson as completed (Production-Grade with Cache Verification)
+   * 
+   * ARCHITECTURE:
+   * 1. Validate user authentication
+   * 2. Write to DB with retry logic (blocking with timeout)
+   * 3. Clear vocabulary cache (non-critical)
+   * 4. Update progress cache with verification (2s timeout)
+   * 5. Prefetch next lesson accessibility (non-blocking)
+   * 6. Return structured result for caller verification
+   * 
+   * @returns LessonCompletionResult - includes success flags for DB and cache
    */
-  static async markLessonCompleted(moduleId: string, lessonId: string): Promise<void> {
+  static async markLessonCompleted(moduleId: string, lessonId: string): Promise<LessonCompletionResult> {
+    safeTelemetry(() => {
+      console.log(`🎯 [LessonProgress] Starting completion for ${moduleId}/${lessonId}`)
+    })
+
     const currentUser = await AuthService.getCurrentUser();
     
     if (!currentUser || !(await AuthService.isEmailVerified(currentUser))) {
-      throw new Error('User must be authenticated and email verified to mark lesson as completed');
+      return {
+        success: false,
+        dbUpdated: false,
+        cacheUpdated: false,
+        error: 'User must be authenticated and email verified'
+      }
     }
 
+    // PHASE 1: Write to database with retry logic
+    let dbWriteSuccess = false
     try {
-      await DatabaseService.markLessonCompleted(currentUser.id, moduleId, lessonId);
+      await withBackoff(
+        async () => {
+          await DatabaseService.markLessonCompleted(currentUser.id, moduleId, lessonId)
+        },
+        {
+          maxRetries: 3,
+          baseDelay: 1000,
+          onRetry: (attempt, error) => {
+            safeTelemetry(() => {
+              console.warn(`⚠️ [LessonProgress] DB write retry ${attempt}/3:`, error.message)
+            })
+          }
+        }
+      )
       
-      // CRITICAL: Clear vocabulary cache so practice games get updated vocabulary
-      VocabularyProgressService.clearCache();
-      
-      // Update progress cache with fresh data
-      try {
-        const updatedProgress = await DatabaseService.getUserLessonProgress(currentUser.id);
-        this.updateProgressCache(updatedProgress);
-      } catch (cacheError) {
-        console.warn('Failed to update progress cache:', cacheError);
-        // Non-critical error - lesson completion still succeeded
-      }
-      
-      console.log(`Lesson ${moduleId}/${lessonId} completed - vocabulary cache cleared, progress cache updated`);
+      dbWriteSuccess = true
+      safeTelemetry(() => {
+        console.log(`✅ [LessonProgress] DB write successful for ${moduleId}/${lessonId}`)
+      })
     } catch (error) {
-      console.error('Failed to mark lesson completed in database:', error);
-      throw error;
+      console.error('❌ [LessonProgress] DB write failed after retries:', error)
+      return {
+        success: false,
+        dbUpdated: false,
+        cacheUpdated: false,
+        error: error instanceof Error ? error.message : 'Database write failed'
+      }
+    }
+
+    // PHASE 2: Clear vocabulary cache (CRITICAL for practice games)
+    VocabularyProgressService.clearCache()
+    safeTelemetry(() => {
+      console.log(`🧹 [LessonProgress] Vocabulary cache cleared`)
+    })
+
+    // PHASE 3: Update progress cache with verification (blocking with timeout)
+    const cacheUpdateSuccess = await this.updateProgressCacheVerified(
+      currentUser.id, 
+      moduleId, 
+      lessonId
+    )
+
+    // PHASE 4: Prefetch next lesson accessibility (non-blocking cache warming)
+    this.prefetchNextLessonAccessibility(moduleId, lessonId).catch(err => {
+      safeTelemetry(() => {
+        console.warn('⚠️ [LessonProgress] Prefetch failed (non-critical):', err)
+      })
+    })
+
+    return {
+      success: true,
+      dbUpdated: dbWriteSuccess,
+      cacheUpdated: cacheUpdateSuccess
+    }
+  }
+
+  /**
+   * Private helper: Update progress cache with verification
+   * 
+   * LOGIC:
+   * 1. Fetch fresh progress from DB
+   * 2. Update SmartAuthService cache
+   * 3. Verify completion exists in cache
+   * 4. Race with 2s timeout to prevent blocking
+   * 
+   * @returns Promise<boolean> - true if cache verified, false if failed/timeout
+   */
+  private static async updateProgressCacheVerified(
+    userId: string,
+    moduleId: string,
+    lessonId: string
+  ): Promise<boolean> {
+    try {
+      // Race: Cache update vs. 2s timeout
+      const result = await Promise.race([
+        (async () => {
+          // Fetch fresh progress from DB
+          const updatedProgress = await DatabaseService.getUserLessonProgress(userId)
+          
+          // Update legacy cache updater (if exists)
+          this.updateProgressCache(updatedProgress)
+          
+          // Update SmartAuthService cache
+          SmartAuthService['sessionCache']!.progress = updatedProgress
+          SmartAuthService.markProgressUpdated()
+          
+          // Verify completion exists in cache
+          const verification = verifyLessonCompletionInCache(userId, moduleId, lessonId)
+          
+          if (verification.isVerified) {
+            safeTelemetry(() => {
+              console.log(`✅ [LessonProgress] Cache verified for ${moduleId}/${lessonId}`)
+            })
+            return true
+          } else {
+            safeTelemetry(() => {
+              console.warn(`⚠️ [LessonProgress] Cache verification failed:`, verification.error)
+            })
+            return false
+          }
+        })(),
+        new Promise<boolean>(resolve => setTimeout(() => {
+          safeTelemetry(() => {
+            console.warn(`⏱️ [LessonProgress] Cache update timeout (2s exceeded)`)
+          })
+          resolve(false)
+        }, 2000))
+      ])
+      
+      return result
+    } catch (error) {
+      safeTelemetry(() => {
+        console.error('❌ [LessonProgress] Cache update error:', error)
+      })
+      return false
+    }
+  }
+
+  /**
+   * Private helper: Prefetch next lesson accessibility (cache warming)
+   * 
+   * Opportunistically checks if next lesson is accessible and updates cache.
+   * This reduces latency when user navigates to next lesson.
+   * Non-blocking - errors are logged but don't affect completion flow.
+   */
+  private static async prefetchNextLessonAccessibility(
+    currentModuleId: string,
+    currentLessonId: string
+  ): Promise<void> {
+    try {
+      safeTelemetry(() => {
+        console.log(`🔄 [LessonProgress] Prefetching next lesson accessibility...`)
+      })
+      
+      const nextLesson = await this.getNextSequentialLesson(currentModuleId, currentLessonId)
+      const isAccessible = await this.isLessonAccessible(nextLesson.moduleId, nextLesson.lessonId)
+      
+      safeTelemetry(() => {
+        console.log(`✅ [LessonProgress] Prefetch complete - Next: ${nextLesson.moduleId}/${nextLesson.lessonId}, Accessible: ${isAccessible}`)
+      })
+    } catch (error) {
+      safeTelemetry(() => {
+        console.warn('⚠️ [LessonProgress] Prefetch error (non-critical):', error)
+      })
     }
   }
 
