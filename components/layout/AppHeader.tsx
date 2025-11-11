@@ -68,6 +68,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               <button
                 onClick={handleBack}
                 className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
+                aria-label="Go back to previous page"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="text-sm font-medium hidden sm:inline">Back</span>
@@ -115,42 +116,46 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
 
               {/* Desktop Navigation - Default Variant */}
               {variant === 'default' && isLoggedIn && (
-                <nav className="hidden md:flex items-center gap-6 flex-1 justify-center" aria-label="Main navigation">
+                <nav className="hidden md:flex items-center gap-8 flex-1 justify-center" aria-label="Main navigation">
                   <Link
                     href="/modules"
-                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
-                      isActive('/modules') ? 'text-primary' : 'text-gray-600'
+                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                      isActive('/modules') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/modules') ? 'page' : undefined}
                   >
                     Learn
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
                   </Link>
                   <Link
                     href="/review"
-                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
-                      isActive('/review') ? 'text-primary' : 'text-gray-600'
+                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                      isActive('/review') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/review') ? 'page' : undefined}
                   >
                     Review
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
                   </Link>
                   <Link
                     href="/leaderboard"
-                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
-                      isActive('/leaderboard') ? 'text-primary' : 'text-gray-600'
+                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                      isActive('/leaderboard') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/leaderboard') ? 'page' : undefined}
                   >
                     Leaderboard
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
                   </Link>
                   <Link
                     href="/dashboard"
-                    className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
-                      isActive('/dashboard') ? 'text-primary' : 'text-gray-600'
+                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                      isActive('/dashboard') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/dashboard') ? 'page' : undefined}
                   >
                     Dashboard
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
                   </Link>
                 </nav>
               )}
@@ -183,10 +188,14 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   </div>
                 )}
 
-                {/* Upgrade Button - Free Users Only */}
+                {/* Upgrade Button - Free Users Only - PROMINENT */}
                 {showUpgradeButton && (
-                  <Link href="/pricing">
-                    <Button size="sm" className="hidden sm:flex bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                  <Link href="/pricing" aria-label="Upgrade to premium">
+                    <Button 
+                      size="sm" 
+                      className="hidden sm:flex bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 text-white font-bold shadow-lg animate-pulse hover:animate-none transition-all"
+                    >
+                      <Crown className="w-4 h-4 mr-1.5" />
                       Upgrade
                     </Button>
                   </Link>
