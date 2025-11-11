@@ -116,10 +116,10 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
 
               {/* Desktop Navigation - Default Variant */}
               {variant === 'default' && isLoggedIn && (
-                <nav className="hidden md:flex items-center gap-8 flex-1 justify-center" aria-label="Main navigation">
+                <nav className="hidden md:flex items-center gap-6 flex-1" aria-label="Main navigation">
                   <Link
                     href="/modules"
-                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                    className={`text-base transition-colors duration-200 hover:text-primary relative group ${
                       isActive('/modules') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/modules') ? 'page' : undefined}
@@ -129,7 +129,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   </Link>
                   <Link
                     href="/review"
-                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                    className={`text-base transition-colors duration-200 hover:text-primary relative group ${
                       isActive('/review') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/review') ? 'page' : undefined}
@@ -139,7 +139,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   </Link>
                   <Link
                     href="/leaderboard"
-                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                    className={`text-base transition-colors duration-200 hover:text-primary relative group ${
                       isActive('/leaderboard') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/leaderboard') ? 'page' : undefined}
@@ -149,7 +149,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   </Link>
                   <Link
                     href="/dashboard"
-                    className={`text-sm transition-colors duration-200 hover:text-primary relative group ${
+                    className={`text-base transition-colors duration-200 hover:text-primary relative group ${
                       isActive('/dashboard') ? 'text-primary font-semibold' : 'text-gray-600 font-medium'
                     }`}
                     aria-current={isActive('/dashboard') ? 'page' : undefined}
@@ -165,13 +165,13 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                 <nav className="hidden md:flex items-center gap-6">
                   <Link
                     href="/modules"
-                    className="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+                    className="text-base font-medium text-gray-600 hover:text-primary transition-colors"
                   >
                     Modules
                   </Link>
                   <Link
                     href="/pricing"
-                    className="text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+                    className="text-base font-medium text-gray-600 hover:text-primary transition-colors"
                   >
                     Pricing
                   </Link>
