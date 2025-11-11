@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname } from 'next/navigation'
+import { useMemo } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { AppHeader } from './AppHeader'
 import { BottomNav } from './BottomNav'
@@ -14,41 +15,32 @@ import { BottomNav } from './BottomNav'
  * - Homepage (/): logged-out variant  
  * - All other pages: default variant
  * - BottomNav: Only for logged-in users on non-auth pages
+ * 
+ * Performance: Calls useAuth once and passes down to prevent re-render loops
  */
 export function ConditionalHeader() {
   const pathname = usePathname()
   const { user } = useAuth()
-  const isLoggedIn = !!user
+  
+  // Memoize isLoggedIn to prevent unnecessary re-renders
+  const isLoggedIn = useMemo(() => !!user, [user])
+
+  // Memoize variant calculation
+  const variant = useMemo(() => {
+    if (pathname?.startsWith('/auth')) return null
+    if (pathname?.match(/^\/modules\/[^/]+\/[^/]+$/)) return 'minimal'
+    if (pathname === '/') return 'logged-out'
+    return 'default'
+  }, [pathname])
 
   // Don't show header on auth pages
-  if (pathname?.startsWith('/auth')) {
+  if (variant === null) {
     return null
   }
 
-  // Minimal variant for lesson pages (only back button, XP, account)
-  if (pathname?.match(/^\/modules\/[^/]+\/[^/]+$/)) {
-    return (
-      <>
-        <AppHeader variant="minimal" />
-        {isLoggedIn && <BottomNav />}
-      </>
-    )
-  }
-
-  // Logged-out variant for homepage
-  if (pathname === '/') {
-    return (
-      <>
-        <AppHeader variant="logged-out" />
-        {isLoggedIn && <BottomNav />}
-      </>
-    )
-  }
-
-  // Default variant for all other pages
   return (
     <>
-      <AppHeader variant="default" />
+      <AppHeader variant={variant as any} />
       {isLoggedIn && <BottomNav />}
     </>
   )

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Star, Menu, X, ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { usePremium } from '@/hooks/use-premium'
 import { useXp } from '@/hooks/use-xp'
@@ -35,24 +35,28 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
 
-  const isLoggedIn = !!user
-  const showUpgradeButton = isLoggedIn && !hasPremium && !premiumLoading
+  // Memoize computed values to prevent unnecessary re-renders
+  const isLoggedIn = useMemo(() => !!user, [user])
+  const showUpgradeButton = useMemo(
+    () => isLoggedIn && !hasPremium && !premiumLoading,
+    [isLoggedIn, hasPremium, premiumLoading]
+  )
 
-  // Determine which links are active
-  const isActive = (path: string) => pathname === path || pathname?.startsWith(path + '/')
+  // Memoize isActive function
+  const isActive = useCallback(
+    (path: string) => pathname === path || pathname?.startsWith(path + '/'),
+    [pathname]
+  )
 
   // Handle back navigation for minimal variant
-  const handleBack = () => {
-    // Smart back navigation
+  const handleBack = useCallback(() => {
     const lessonMatch = pathname?.match(/^\/modules\/([^/]+)\/[^/]+$/)
     if (lessonMatch) {
-      // Go back to module page
       router.push(`/modules/${lessonMatch[1]}`)
     } else {
-      // Fallback to modules list
       router.push('/modules')
     }
-  }
+  }, [pathname, router])
 
   return (
     <>
