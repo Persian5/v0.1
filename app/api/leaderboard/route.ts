@@ -13,7 +13,7 @@ interface CacheEntry {
 }
 
 const cache: Record<string, CacheEntry> = {}
-const CACHE_TTL = 5000 // 5 seconds - fresh data on each page visit
+const CACHE_TTL = 2000 // 2 seconds - very fresh data, minimal staleness
 
 // Rate limiting: Simple in-memory tracker (upgrade to Redis for production)
 const rateLimit: Record<string, { count: number; resetTime: number }> = {}
@@ -111,13 +111,22 @@ export async function GET(request: NextRequest) {
     
     const { limit, offset } = validationResult.data
     
-    // 3. Cache check
+    // 3. Cache check (with bypass option for debugging)
+    const bypassCache = searchParams.get('nocache') === 'true'
     const cacheKey = `leaderboard:${limit}:${offset}`
     const now = Date.now()
     
-    if (cache[cacheKey] && (now - cache[cacheKey].timestamp < CACHE_TTL)) {
-      // Cache hit
+    if (!bypassCache && cache[cacheKey] && (now - cache[cacheKey].timestamp < CACHE_TTL)) {
+      // Cache hit - log for debugging
+      console.log('Leaderboard cache hit:', { 
+        cacheAge: now - cache[cacheKey].timestamp,
+        cachedUsers: cache[cacheKey].data?.top?.map((u: any) => ({ name: u.displayName, xp: u.xp }))
+      })
       return NextResponse.json(cache[cacheKey].data)
+    }
+    
+    if (bypassCache) {
+      console.log('Leaderboard cache bypassed (nocache=true)')
     }
     
     // 4. Initialize Supabase client with SERVICE ROLE (bypasses RLS)
@@ -157,11 +166,25 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // DEBUG: Log what we got from DB
-    console.log('Leaderboard query returned:', { 
+    // DEBUG: Log what we got from DB (with detailed XP values)
+    console.log('Leaderboard query returned from DB:', { 
       count: topUsers?.length || 0, 
-      users: topUsers?.map(u => ({ name: u.display_name, xp: u.total_xp })) 
+      users: topUsers?.map(u => ({ 
+        id: u.id, 
+        name: u.display_name, 
+        xp: u.total_xp,
+        created_at: u.created_at 
+      })) 
     })
+    
+    // Compare with cached data if exists
+    if (cache[cacheKey]) {
+      const cachedData = cache[cacheKey].data
+      console.log('Comparing DB vs Cache:', {
+        dbUsers: topUsers?.map(u => ({ name: u.display_name, xp: u.total_xp })),
+        cachedUsers: cachedData?.top?.map((u: any) => ({ name: u.displayName, xp: u.xp }))
+      })
+    }
     
     // 7. Calculate ranks and sanitize
     const top = (topUsers || []).map((user, index) => ({
