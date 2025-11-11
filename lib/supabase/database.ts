@@ -228,6 +228,40 @@ export class DatabaseService {
     return data?.total_xp ?? 0
   }
 
+  // Recalculate total XP from all transactions (fixes stale database XP)
+  static async recalculateUserXpFromTransactions(userId: string): Promise<number> {
+    return await withAuthRetry(async () => {
+      // Sum all XP transactions for this user
+      const { data: transactions, error: sumError } = await supabase
+        .from('user_xp_transactions')
+        .select('amount')
+        .eq('user_id', userId)
+
+      if (sumError) {
+        throw new Error(`Failed to fetch XP transactions: ${sumError.message}`)
+      }
+
+      // Calculate total XP from all transactions
+      const calculatedXp = (transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0)
+
+      // Update user profile with recalculated XP
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ 
+          total_xp: calculatedXp,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+
+      if (updateError) {
+        throw new Error(`Failed to update user XP: ${updateError.message}`)
+      }
+
+      console.log(`✅ Recalculated XP for user ${userId}: ${calculatedXp} (from ${transactions?.length || 0} transactions)`)
+      return calculatedXp
+    }, 'recalculateUserXpFromTransactions')
+  }
+
   // Batch update user XP with transactions
   static async batchUpdateUserXp(userId: string, transactions: Omit<UserXpTransaction, 'id' | 'user_id' | 'created_at'>[]): Promise<void> {
     return await withAuthRetry(async () => {

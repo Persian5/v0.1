@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { SmartAuthService } from '@/lib/services/smart-auth-service'
 import { useXp } from '@/hooks/use-xp'
+import { DatabaseService } from '@/lib/supabase/database'
 
 interface LeaderboardEntry {
   rank: number
@@ -94,6 +95,20 @@ export default function LeaderboardPage() {
               difference: userXp - currentUserEntry.xp,
               issue: 'Database has stale XP - RPC might not be updating user_profiles.total_xp'
             })
+            
+            // Automatically fix: Recalculate XP from transactions
+            console.log('🔧 Attempting to fix XP mismatch by recalculating from transactions...')
+            DatabaseService.recalculateUserXpFromTransactions(user.id)
+              .then(newXp => {
+                console.log('✅ XP recalculated:', { oldXp: currentUserEntry.xp, newXp })
+                // Refresh leaderboard after sync
+                setTimeout(() => {
+                  fetchLeaderboard(0, false)
+                }, 1000)
+              })
+              .catch(error => {
+                console.error('❌ Failed to recalculate XP:', error)
+              })
           }
         } else {
           console.log('ℹ️ You are not in the top leaderboard entries')
