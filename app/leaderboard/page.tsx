@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Trophy, Medal, ChevronDown, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/components/auth/AuthProvider'
+import { SmartAuthService } from '@/lib/services/smart-auth-service'
 
 interface LeaderboardEntry {
   rank: number
@@ -73,6 +74,17 @@ export default function LeaderboardPage() {
       setIsLoadingMore(false)
     }
   }
+
+  // Sync XP from database on page load to ensure leaderboard shows accurate data
+  useEffect(() => {
+    if (user) {
+      // Force refresh XP from database to sync cache with actual DB value
+      // This ensures leaderboard shows correct XP even if cache was out of sync
+      SmartAuthService.refreshXpFromDb().catch(err => {
+        console.warn('Failed to refresh XP from DB (non-critical):', err)
+      })
+    }
+  }, [user])
 
   // Initial load
   useEffect(() => {
