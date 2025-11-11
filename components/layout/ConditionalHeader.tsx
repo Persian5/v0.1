@@ -29,9 +29,10 @@ export function ConditionalHeader() {
   const variant = useMemo(() => {
     if (pathname?.startsWith('/auth')) return null
     if (pathname?.match(/^\/modules\/[^/]+\/[^/]+$/)) return 'minimal'
-    if (pathname === '/') return 'logged-out'
+    // Homepage: logged-out variant ONLY for non-authenticated users
+    if (pathname === '/' && !isLoggedIn) return 'logged-out'
     return 'default'
-  }, [pathname])
+  }, [pathname, isLoggedIn])
 
   // Don't show header OR bottom nav on auth pages
   if (variant === null) {

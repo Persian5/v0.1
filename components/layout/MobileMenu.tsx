@@ -99,8 +99,8 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
 
             {/* Menu Content */}
             <div className="flex flex-col p-4 gap-2">
-              {/* Logged In Menu Items - Show for both default AND minimal variants */}
-              {isLoggedIn && (variant === 'default' || variant === 'minimal') && (
+              {/* Logged In Menu Items */}
+              {isLoggedIn && (
                 <>
                   <button
                     onClick={() => handleNavigation('/dashboard')}
