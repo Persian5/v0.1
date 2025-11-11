@@ -29,6 +29,10 @@ import { LockScreen } from "@/components/LockScreen"
 import PageErrorBoundary from "@/components/errors/PageErrorBoundary"
 import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
 import { ModuleAccessService } from "@/lib/services/module-access-service"
+import { safeTelemetry } from "@/lib/utils/telemetry-safe"
+
+// Cache staleness threshold (5 seconds)
+const CACHE_STALENESS_THRESHOLD = 5000
 
 function LessonPageContent() {
   const params = useParams()
@@ -179,19 +183,67 @@ function LessonPageContent() {
           }
         }
         
-        // STEP 3: Check sequential access (lesson-level)
+        // STEP 3: Check sequential access (lesson-level) with staleness detection
+        const accessibilityCheckStartTime = Date.now()
         const sessionState = SmartAuthService.getSessionState()
         let isAccessible = false
         let previousLesson: { moduleId: string; lessonId: string } | null = null
         
         if (sessionState.user && SmartAuthService.hasCachedProgress()) {
-          const progressData = SmartAuthService.getCachedProgress()
-          isAccessible = LessonProgressService.isLessonAccessibleFast(
-            moduleId, 
-            lessonId, 
-            progressData,
-            isAuthenticated
-          )
+          // Check cache age to determine if we should trust fast check
+          const cacheAge = SmartAuthService.getProgressCacheAge()
+          const isCacheStale = cacheAge > CACHE_STALENESS_THRESHOLD
+          
+          safeTelemetry(() => {
+            console.log(`📍 [LessonPage] Cache age: ${cacheAge}ms, stale: ${isCacheStale}`)
+          })
+          
+          if (isCacheStale) {
+            // Cache is stale - use DB check instead
+            safeTelemetry(() => {
+              console.warn(`⚠️ [LessonPage] Cache stale (${cacheAge}ms > ${CACHE_STALENESS_THRESHOLD}ms), using DB check`)
+            })
+            
+            isAccessible = await LessonProgressService.isLessonAccessible(moduleId, lessonId)
+          } else {
+            // Cache is fresh - use fast check
+            const progressData = SmartAuthService.getCachedProgress()
+            const cacheResult = LessonProgressService.isLessonAccessibleFast(
+              moduleId, 
+              lessonId, 
+              progressData,
+              isAuthenticated
+            )
+            
+            safeTelemetry(() => {
+              console.log(`✅ [LessonPage] Using cache - accessible: ${cacheResult}`)
+            })
+            
+            // If cache says not accessible but cache is somewhat old, double-check with DB
+            if (!cacheResult && cacheAge > 2000) {
+              safeTelemetry(() => {
+                console.warn(`⚠️ [LessonPage] Cache says not accessible, double-checking with DB (cache age: ${cacheAge}ms)`)
+              })
+              
+              const dbResult = await LessonProgressService.isLessonAccessible(moduleId, lessonId)
+              
+              if (dbResult !== cacheResult) {
+                safeTelemetry(() => {
+                  console.error(`❌ [LessonPage] CACHE MISMATCH: cache=${cacheResult}, DB=${dbResult} - using DB result`)
+                })
+                isAccessible = dbResult
+              } else {
+                isAccessible = cacheResult
+              }
+            } else {
+              isAccessible = cacheResult
+            }
+          }
+          
+          const accessibilityCheckDuration = Date.now() - accessibilityCheckStartTime
+          safeTelemetry(() => {
+            console.log(`⏱️ [LessonPage] Accessibility check took ${accessibilityCheckDuration}ms`)
+          })
           
           // If not accessible, find previous lesson for lock message
           if (!isAccessible) {
@@ -219,6 +271,9 @@ function LessonPageContent() {
           }
         } else {
           // Fallback to regular accessibility check if cache not available
+          safeTelemetry(() => {
+            console.warn(`⚠️ [LessonPage] No cached progress, using DB check`)
+          })
           isAccessible = await LessonProgressService.isLessonAccessible(moduleId, lessonId)
         }
         
