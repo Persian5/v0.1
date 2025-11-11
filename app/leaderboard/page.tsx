@@ -94,24 +94,25 @@ export default function LeaderboardPage() {
               yourCacheXp: userXp,
               leaderboardDbXp: currentUserEntry.xp,
               difference: userXp - currentUserEntry.xp,
-              issue: 'Database has stale XP - RPC might not be updating user_profiles.total_xp'
+              issue: 'Database has stale XP - syncing cache value to database'
             })
             
-            // Only recalculate once per page load to prevent infinite loop
+            // Only sync once per page load to prevent infinite loop
             setHasRecalculated(true)
-            console.log('🔧 Attempting to fix XP mismatch by recalculating from transactions...')
-            DatabaseService.recalculateUserXpFromTransactions(user.id)
-              .then(newXp => {
-                console.log('✅ XP recalculated:', { oldXp: currentUserEntry.xp, newXp })
+            console.log('🔧 Syncing cache XP to database...')
+            
+            // Update database with cache XP value (source of truth)
+            DatabaseService.updateUserProfile(user.id, { total_xp: userXp })
+              .then(() => {
+                console.log('✅ XP synced to database:', { oldXp: currentUserEntry.xp, newXp: userXp })
                 console.log('ℹ️ Please refresh the page to see updated leaderboard')
-                // Don't auto-refresh - let user manually refresh to avoid infinite loop
               })
               .catch(error => {
-                console.error('❌ Failed to recalculate XP:', error)
+                console.error('❌ Failed to sync XP:', error)
                 setHasRecalculated(false) // Allow retry on error
               })
           } else if (xpMismatch && hasRecalculated) {
-            console.log('ℹ️ XP mismatch still exists after recalculation. Please refresh the page.')
+            console.log('ℹ️ XP mismatch still exists after sync. Please refresh the page.')
           }
         } else {
           console.log('ℹ️ You are not in the top leaderboard entries')
