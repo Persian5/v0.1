@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
     }
     
     // DEBUG: Log what we got from DB (with detailed XP values)
-    console.log('Leaderboard query returned from DB:', { 
+    console.log('📊 Leaderboard query returned from DB:', { 
       count: topUsers?.length || 0, 
       users: topUsers?.map(u => ({ 
         id: u.id, 
@@ -177,12 +177,34 @@ export async function GET(request: NextRequest) {
       })) 
     })
     
-    // Compare with cached data if exists
+    // Compare with cached data if exists and highlight mismatches
     if (cache[cacheKey]) {
       const cachedData = cache[cacheKey].data
-      console.log('Comparing DB vs Cache:', {
-        dbUsers: topUsers?.map(u => ({ name: u.display_name, xp: u.total_xp })),
-        cachedUsers: cachedData?.top?.map((u: any) => ({ name: u.displayName, xp: u.xp }))
+      const dbUsers = topUsers?.map(u => ({ id: u.id, name: u.display_name, xp: u.total_xp })) || []
+      const cachedUsers = cachedData?.top?.map((u: any) => ({ id: u.userId, name: u.displayName, xp: u.xp })) || []
+      
+      // Find mismatches
+      const mismatches = dbUsers.filter(dbUser => {
+        const cachedUser = cachedUsers.find(c => c.id === dbUser.id)
+        return cachedUser && cachedUser.xp !== dbUser.xp
+      })
+      
+      if (mismatches.length > 0) {
+        console.warn('⚠️ XP MISMATCH DETECTED (DB vs Cache):', mismatches.map(m => {
+          const cached = cachedUsers.find(c => c.id === m.id)
+          return {
+            user: m.name,
+            dbXp: m.xp,
+            cachedXp: cached?.xp,
+            difference: cached ? cached.xp - m.xp : 0
+          }
+        }))
+      }
+      
+      console.log('🔍 Comparing DB vs Cache:', {
+        dbUsers,
+        cachedUsers,
+        mismatches: mismatches.length
       })
     }
     
