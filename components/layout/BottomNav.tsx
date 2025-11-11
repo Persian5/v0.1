@@ -102,7 +102,7 @@ export function BottomNav() {
                 <button
                   key="sign-up"
                   onClick={() => setShowAuthModal(true)}
-                  className="flex flex-col items-center justify-center flex-1 h-full transition-colors text-gray-500 hover:text-gray-700"
+                  className="flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-95 text-gray-500 hover:text-gray-700"
                   aria-label="Sign up for Finglish"
                 >
                   <Icon 
@@ -120,7 +120,7 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+                className={`flex flex-col items-center justify-center flex-1 h-full transition-all active:scale-95 ${
                   item.active
                     ? 'text-primary'
                     : 'text-gray-500 hover:text-gray-700'

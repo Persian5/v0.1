@@ -182,8 +182,8 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               <div className="flex items-center gap-3">
                 {/* XP Badge - Show for logged in users on all screen sizes */}
                 {isLoggedIn && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
                     <span>{xp.toLocaleString()}</span>
                   </div>
                 )}
