@@ -193,9 +193,13 @@ export async function GET(request: NextRequest) {
     
     // Sort in memory: by total_xp DESC, then created_at ASC (tie-breaker)
     // CRITICAL: Explicit type annotation for sort callback parameters
+    // CRITICAL: Handle null/undefined with nullish coalescing (already filtered for > 0, but TypeScript needs explicit handling)
     const sortedUsers = allUsers.sort((a: { total_xp?: number | null; created_at: string }, b: { total_xp?: number | null; created_at: string }) => {
-      if (b.total_xp !== a.total_xp) {
-        return b.total_xp - a.total_xp // DESC by XP
+      const aXp = a.total_xp ?? 0
+      const bXp = b.total_xp ?? 0
+      
+      if (bXp !== aXp) {
+        return bXp - aXp // DESC by XP
       }
       // Tie-breaker: earlier user wins (ASC by created_at)
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
