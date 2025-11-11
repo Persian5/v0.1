@@ -108,7 +108,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               {/* Logo / Home Link - Always goes to homepage */}
               <Link 
                 href="/" 
-                className="text-xl font-bold text-primary hover:opacity-80 transition-opacity"
+                className="text-xl font-bold text-primary hover:opacity-80 transition-opacity flex-shrink-0"
                 aria-label="Finglish Home"
               >
                 Finglish
@@ -116,7 +116,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
 
               {/* Desktop Navigation - Default Variant */}
               {variant === 'default' && isLoggedIn && (
-                <nav className="hidden md:flex items-center gap-6 flex-1" aria-label="Main navigation">
+                <nav className="hidden md:flex items-center gap-6 flex-1 ml-6 lg:ml-8" aria-label="Main navigation">
                   <Link
                     href="/modules"
                     className={`text-base transition-colors duration-200 hover:text-primary relative group ${
