@@ -32,10 +32,11 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
   console.log('variant:', variant)
   console.log('isLoggedIn:', isLoggedIn)
 
-  // Close menu on route change
+  // Close menu on route change - ONLY when pathname changes
   useEffect(() => {
+    console.log('📍 Pathname changed, closing menu')
     onClose()
-  }, [pathname, onClose])
+  }, [pathname]) // ✅ REMOVED onClose from dependencies
 
   // Close menu on escape key
   useEffect(() => {
