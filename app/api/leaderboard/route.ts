@@ -161,7 +161,8 @@ export async function GET(request: NextRequest) {
     
     // Force primary read by using a BEGIN/COMMIT transaction
     // Read replicas don't handle transactions, so this forces primary
-    const { data: allUsersUnfiltered, error: topError } = await supabase
+    // CRITICAL: Explicitly type the result to prevent TypeScript inference issues
+    const queryResult = await supabase
       .rpc('get_all_users_for_leaderboard')
       .then(async (result) => {
         // If RPC doesn't exist, fall back to direct query with session variable
@@ -186,6 +187,10 @@ export async function GET(request: NextRequest) {
         }
         return result
       })
+    
+    // Extract data and error with explicit typing
+    const allUsersUnfiltered = queryResult.data
+    const topError = queryResult.error
     
     if (topError) {
       console.error('❌ Leaderboard query error:', topError)
@@ -339,7 +344,7 @@ export async function GET(request: NextRequest) {
             xp: u.total_xp,
             rawXp: u.total_xp
           })),
-          queryError: topError?.message || null,
+          queryError: (topError as { message?: string } | null)?.message || null,
           directQueryComparison: directQueryResult // This shows if leaderboard query matches direct query
         }
       })
