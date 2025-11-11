@@ -218,13 +218,13 @@ export function Flashcard({
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
       {/* XP Animation - self-positioning */}
-      <XpAnimation
-        amount={points}
-        show={showXp}
-        isAlreadyCompleted={isAlreadyCompleted}
-        onStart={undefined}
-        onComplete={handleXpComplete}
-      />
+        <XpAnimation
+          amount={points}
+          show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
+          onStart={undefined}
+          onComplete={handleXpComplete}
+        />
 
       {/* Content container */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full">

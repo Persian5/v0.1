@@ -567,7 +567,7 @@ export function LessonRunner({
             setRemediationStartIdx(null); // Reset
           } else {
             // Fallback: just increment (shouldn't happen in normal flow)
-            setIdx(i => i + 1);
+          setIdx(i => i + 1);
           }
         } else {
           // More words to remediate, start with next word

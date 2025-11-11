@@ -11,10 +11,10 @@ import { BottomNav } from './BottomNav'
  * 
  * Logic:
  * - Lesson pages (/modules/[moduleId]/[lessonId]): minimal variant
- * - Auth pages (/auth): no header
+ * - Auth pages (/auth): no header, no bottom nav
  * - Homepage (/): logged-out variant  
  * - All other pages: default variant
- * - BottomNav: Only for logged-in users on non-auth pages
+ * - BottomNav: Shown for ALL users (4th item adapts based on auth)
  * 
  * Performance: Calls useAuth once and passes down to prevent re-render loops
  */
@@ -33,7 +33,7 @@ export function ConditionalHeader() {
     return 'default'
   }, [pathname])
 
-  // Don't show header on auth pages
+  // Don't show header OR bottom nav on auth pages
   if (variant === null) {
     return null
   }
@@ -41,7 +41,8 @@ export function ConditionalHeader() {
   return (
     <>
       <AppHeader variant={variant as any} />
-      {isLoggedIn && <BottomNav />}
+      {/* Show bottom nav for all users (logged-in and logged-out) */}
+      <BottomNav />
     </>
   )
 }

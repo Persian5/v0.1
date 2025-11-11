@@ -289,21 +289,21 @@ export function MatchingGame({
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
       {/* XP Animation - self-positioning */}
-      <XpAnimation 
-        amount={points} 
-        show={showXp}
-        isAlreadyCompleted={isAlreadyCompleted}
-        onStart={undefined}
-        onComplete={() => {
-          // Animation completed - clear fallback timeout and advance
-          if (completionTimeout) {
-            clearTimeout(completionTimeout);
-            setCompletionTimeout(null);
-          }
-          setShowXp(false);
-          onComplete(true);
-        }}
-      />
+        <XpAnimation 
+          amount={points} 
+          show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
+          onStart={undefined}
+          onComplete={() => {
+            // Animation completed - clear fallback timeout and advance
+            if (completionTimeout) {
+              clearTimeout(completionTimeout);
+              setCompletionTimeout(null);
+            }
+            setShowXp(false);
+            onComplete(true);
+          }}
+        />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-2 sm:px-4 py-6 sm:py-8 overflow-y-auto">
@@ -317,103 +317,103 @@ export function MatchingGame({
               Click on a Persian word, then click its English match to connect them
             </p>
           </div>
+        
+        <div className="w-full">
+          {/* Section header for Persian words */}
+          <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">Persian Words</h3>
           
-          <div className="w-full">
-            {/* Section header for Persian words */}
-            <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">Persian Words</h3>
-            
-            {/* Persian words - side by side */}
+          {/* Persian words - side by side */}
             <div className="flex flex-row flex-wrap sm:flex-nowrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-              {shuffledWords.map(w => {
-                const isMatched = isWordMatched(w.id);
-                const isSelected = selectedWordId === w.id;
-                const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.wordId === w.id;
-                
-                return (
-                  <div key={w.id} className="flex-1 min-w-[45%] sm:min-w-0">
-                    <motion.div
-                      className={`p-3 sm:p-4 md:p-6 rounded-lg border-2 select-none touch-action-none ${
-                        isMatched
-                          ? "border-green-500 bg-green-100" // Matched state - green border with light green fill
-                          : isIncorrect
-                            ? "border-red-500 bg-red-100" // Incorrect selection - red border with light red fill
-                            : isSelected 
-                              ? "border-primary bg-blue-100" // Selected state - blue fill to distinguish from match
-                              : "border-primary/20 bg-primary/5 hover:bg-primary/10" // Default state - very light primary bg with darker hover
-                      } shadow-md ${isMatched || isIncorrect ? "cursor-default" : "cursor-pointer"} h-full flex items-center justify-center ${wordHeightClasses} transition-all sm:hover:scale-[1.02] active:scale-[0.98]`}
-                      onClick={() => {
-                        if (!isMatched && !isIncorrect) handleWordClick(w.id);
-                      }}
-                      animate={
-                        isIncorrect
-                          ? { x: [0, -10, 10, -10, 10, 0] }
-                          : {}
-                      }
-                      transition={{ duration: 0.5 }}
-                    >
-                      <span className={`text-lg sm:text-xl md:text-2xl font-semibold text-center ${isIncorrect ? "text-red-600" : ""}`}>
-                        {w.text}
-                      </span>
-                    </motion.div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Section header for English meanings */}
-            <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">English Meanings</h3>
-            
-            {/* English word bank - below */}
-            <div className="flex flex-row flex-wrap justify-center gap-2 sm:gap-3">
-              {shuffledSlots.map(slot => {
-                const matchedWordId = matches[slot.id];
-                const matchedWord = matchedWordId ? shuffledWords.find(w => w.id === matchedWordId) : null;
-                const isCorrect = matchedWord ? matchedWord.slotId === slot.id : false;
-                const isMatched = isSlotMatched(slot.id);
-                const isSelected = selectedSlotId === slot.id;
-                const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.slotId === slot.id;
-                
-                return (
+            {shuffledWords.map(w => {
+              const isMatched = isWordMatched(w.id);
+              const isSelected = selectedWordId === w.id;
+              const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.wordId === w.id;
+              
+              return (
+                <div key={w.id} className="flex-1 min-w-[45%] sm:min-w-0">
                   <motion.div
-                    key={slot.id}
-                    onClick={() => {
-                      if (!isMatched && !showFeedback) handleSlotClick(slot.id);
-                    }}
-                    className={`flex-1 min-w-[45%] sm:min-w-0 p-3 sm:p-4 rounded-lg border-2 transition-all select-none touch-action-none ${
-                      isMatched && isCorrect
-                        ? 'border-green-500 bg-green-100'
+                    className={`p-3 sm:p-4 md:p-6 rounded-lg border-2 select-none touch-action-none ${
+                      isMatched
+                        ? "border-green-500 bg-green-100" // Matched state - green border with light green fill
                         : isIncorrect
-                          ? 'border-red-500 bg-red-100'
-                          : isSelected
-                            ? 'border-primary bg-blue-100'
-                            : 'border-gray-200 hover:border-gray-300 bg-gray-50 hover:bg-gray-100'
-                    } ${!isMatched && !isIncorrect ? 'cursor-pointer' : 'cursor-default'} ${slotHeightClasses} shadow-md flex items-center justify-center sm:hover:scale-[1.02] active:scale-[0.98]`}
+                          ? "border-red-500 bg-red-100" // Incorrect selection - red border with light red fill
+                          : isSelected 
+                            ? "border-primary bg-blue-100" // Selected state - blue fill to distinguish from match
+                              : "border-primary/20 bg-primary/5 hover:bg-primary/10" // Default state - very light primary bg with darker hover
+                    } shadow-md ${isMatched || isIncorrect ? "cursor-default" : "cursor-pointer"} h-full flex items-center justify-center ${wordHeightClasses} transition-all sm:hover:scale-[1.02] active:scale-[0.98]`}
+                    onClick={() => {
+                      if (!isMatched && !isIncorrect) handleWordClick(w.id);
+                    }}
                     animate={
-                      isIncorrect ? { x: [0, -10, 10, -10, 10, 0] } : {}
+                      isIncorrect
+                        ? { x: [0, -10, 10, -10, 10, 0] }
+                        : {}
                     }
                     transition={{ duration: 0.5 }}
                   >
-                    <p className={`text-center text-base sm:text-lg md:text-xl font-medium ${isIncorrect ? "text-red-600" : ""}`}>
-                      {slot.text}
-                    </p>
+                    <span className={`text-lg sm:text-xl md:text-2xl font-semibold text-center ${isIncorrect ? "text-red-600" : ""}`}>
+                      {w.text}
+                    </span>
                   </motion.div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Feedback text */}
-            <AnimatePresence>
-              {showFeedback && !showFeedback.correct && (
-                <motion.p
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center text-red-500 mt-4 text-sm sm:text-base font-medium"
+          {/* Section header for English meanings */}
+          <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">English Meanings</h3>
+          
+          {/* English word bank - below */}
+            <div className="flex flex-row flex-wrap justify-center gap-2 sm:gap-3">
+            {shuffledSlots.map(slot => {
+              const matchedWordId = matches[slot.id];
+              const matchedWord = matchedWordId ? shuffledWords.find(w => w.id === matchedWordId) : null;
+              const isCorrect = matchedWord ? matchedWord.slotId === slot.id : false;
+              const isMatched = isSlotMatched(slot.id);
+              const isSelected = selectedSlotId === slot.id;
+              const isIncorrect = showFeedback && !showFeedback.correct && showFeedback.slotId === slot.id;
+              
+              return (
+                <motion.div
+                  key={slot.id}
+                  onClick={() => {
+                    if (!isMatched && !showFeedback) handleSlotClick(slot.id);
+                  }}
+                  className={`flex-1 min-w-[45%] sm:min-w-0 p-3 sm:p-4 rounded-lg border-2 transition-all select-none touch-action-none ${
+                    isMatched && isCorrect
+                      ? 'border-green-500 bg-green-100'
+                      : isIncorrect
+                        ? 'border-red-500 bg-red-100'
+                        : isSelected
+                          ? 'border-primary bg-blue-100'
+                            : 'border-gray-200 hover:border-gray-300 bg-gray-50 hover:bg-gray-100'
+                  } ${!isMatched && !isIncorrect ? 'cursor-pointer' : 'cursor-default'} ${slotHeightClasses} shadow-md flex items-center justify-center sm:hover:scale-[1.02] active:scale-[0.98]`}
+                  animate={
+                    isIncorrect ? { x: [0, -10, 10, -10, 10, 0] } : {}
+                  }
+                  transition={{ duration: 0.5 }}
                 >
-                  Almost! Try again.
-                </motion.p>
-              )}
-            </AnimatePresence>
+                  <p className={`text-center text-base sm:text-lg md:text-xl font-medium ${isIncorrect ? "text-red-600" : ""}`}>
+                    {slot.text}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Feedback text */}
+          <AnimatePresence>
+            {showFeedback && !showFeedback.correct && (
+              <motion.p
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center text-red-500 mt-4 text-sm sm:text-base font-medium"
+              >
+                Almost! Try again.
+              </motion.p>
+            )}
+          </AnimatePresence>
           </div>
         </div>
       </div>

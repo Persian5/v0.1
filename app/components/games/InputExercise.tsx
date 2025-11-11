@@ -412,17 +412,17 @@ export function InputExercise({
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
       {/* XP Animation - self-positioning */}
-      <XpAnimation 
-        amount={points} 
-        show={showXp}
-        isAlreadyCompleted={isAlreadyCompleted}
-        onStart={undefined}
-        onComplete={() => {
-          setShowXp(false)
-          onComplete(isCorrect)
-        }}
-      />
-
+        <XpAnimation 
+          amount={points} 
+          show={showXp}
+          isAlreadyCompleted={isAlreadyCompleted}
+          onStart={undefined}
+          onComplete={() => {
+            setShowXp(false)
+            onComplete(isCorrect)
+          }}
+        />
+        
       {/* Main Content - Centered and scrollable */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
         <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
@@ -444,41 +444,41 @@ export function InputExercise({
           </div>
 
           {/* Input Area - Enhanced as hero element */}
-          <motion.div
-            initial={false}
-            animate={showFeedback && !isCorrect ? { x: [0, -5, 5, -5, 5, 0] } : {}}
-            transition={{ duration: 0.5 }}
+        <motion.div
+          initial={false}
+          animate={showFeedback && !isCorrect ? { x: [0, -5, 5, -5, 5, 0] } : {}}
+          transition={{ duration: 0.5 }}
             className="w-full mb-4"
-          >
+        >
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-primary/10">
-              {hasHyphen ? (
-                <GrammarHyphenInput
-                  value={input}
-                  targetAnswer={answer}
-                  onChange={handleInputChange}
-                  onSubmit={handleSubmit}
-                  placeholder="Start typing..."
-                  disabled={showFeedback && isCorrect}
-                  className="w-full"
-                />
-              ) : (
-                <ValidatedLetterInput
-                  value={input}
-                  targetAnswer={answer}
-                  onChange={handleInputChange}
-                  onSubmit={handleSubmit}
-                  placeholder="Start typing..."
-                  disabled={showFeedback && isCorrect}
-                  className="w-full"
-                />
-              )}
+          {hasHyphen ? (
+            <GrammarHyphenInput
+              value={input}
+              targetAnswer={answer}
+              onChange={handleInputChange}
+              onSubmit={handleSubmit}
+              placeholder="Start typing..."
+              disabled={showFeedback && isCorrect}
+              className="w-full"
+            />
+          ) : (
+            <ValidatedLetterInput
+              value={input}
+              targetAnswer={answer}
+              onChange={handleInputChange}
+              onSubmit={handleSubmit}
+              placeholder="Start typing..."
+              disabled={showFeedback && isCorrect}
+              className="w-full"
+            />
+          )}
               
               {/* Helper Text - Inside input zone */}
               <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
                 {hasHyphen ? "Each part turns green when correct" : "Watch letters turn green as you type!"}
               </p>
             </div>
-          </motion.div>
+        </motion.div>
 
           {/* Hint Display - When shown */}
           {showHint && (
@@ -509,20 +509,20 @@ export function InputExercise({
                 {isSubmitting ? 'Checking...' : showFeedback && isCorrect ? 'Correct!' : 'Check Answer'}
               </Button>
               
-              <button 
-                type="button"
-                onClick={toggleHint}
+          <button 
+            type="button"
+            onClick={toggleHint}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 bg-transparent hover:bg-gray-50 text-gray-600 hover:text-gray-800 rounded-xl transition-all text-sm font-medium border border-gray-300 hover:border-gray-400 order-1 sm:order-2 whitespace-nowrap"
-              >
-                <span>{showHint ? 'Hide hint' : 'Need a hint?'}</span>
-                {showHint ? 
-                  <ChevronUp className="h-4 w-4" /> : 
-                  <ChevronDown className="h-4 w-4" />
-                }
-              </button>
-            </div>
-          </div>
+          >
+            <span>{showHint ? 'Hide hint' : 'Need a hint?'}</span>
+            {showHint ? 
+              <ChevronUp className="h-4 w-4" /> : 
+              <ChevronDown className="h-4 w-4" />
+            }
+          </button>
         </div>
+              </div>
+              </div>
       </div>
     </div>
   )

@@ -318,65 +318,65 @@ export function AudioSequence({
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
         <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
-          {/* Header */}
+      {/* Header */}
           <div className="text-center mb-3 sm:mb-4">
             <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 text-primary">
               BUILD THE SENTENCE
-            </h2>
+        </h2>
             <p className="text-sm xs:text-base text-muted-foreground mb-2">
-              Listen to the Persian words and click the English meanings in the same order
-            </p>
-          </div>
+          Listen to the Persian words and click the English meanings in the same order
+        </p>
+      </div>
 
-          {/* Audio Player Section */}
+      {/* Audio Player Section */}
           <div className="bg-primary/5 rounded-xl p-2 sm:p-3 mb-3 text-center">
             <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3">
               {/* Audio icon / waveform indicator - replace icon when playing */}
               <div className="flex items-center justify-center">
                 {isPlayingAudio ? (
                   <div className="flex items-end gap-0.5 h-6 sm:h-8">
-                    <motion.div
-                      className="w-1 bg-primary rounded-full"
-                      animate={{ height: ['10px', '24px', '10px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
-                      className="w-1 bg-primary rounded-full"
-                      animate={{ height: ['14px', '28px', '14px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-                    />
-                    <motion.div
-                      className="w-1 bg-primary rounded-full"
-                      animate={{ height: ['10px', '24px', '10px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-                    />
-                  </div>
+                <motion.div
+                  className="w-1 bg-primary rounded-full"
+                  animate={{ height: ['10px', '24px', '10px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                  className="w-1 bg-primary rounded-full"
+                  animate={{ height: ['14px', '28px', '14px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                />
+                <motion.div
+                  className="w-1 bg-primary rounded-full"
+                  animate={{ height: ['10px', '24px', '10px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                />
+              </div>
                 ) : (
                   <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-primary/60" />
-                )}
-              </div>
-              
-              <p className="text-base sm:text-lg font-medium text-gray-900">
-                {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Now click the meanings in order:" : "Click to hear the sequence..."}
-              </p>
-            </div>
-            
-            <Button
-              onClick={playAudioSequence}
-              variant="outline"
-              size="lg"
-              className="gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white"
-              disabled={showResult}
-            >
-              <Volume2 className="h-5 w-5" />
-              {hasPlayedAudio ? 'Play Again' : 'Play Audio Sequence'}
-            </Button>
+            )}
           </div>
+          
+              <p className="text-base sm:text-lg font-medium text-gray-900">
+            {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Now click the meanings in order:" : "Click to hear the sequence..."}
+          </p>
+        </div>
+        
+        <Button
+          onClick={playAudioSequence}
+          variant="outline"
+          size="lg"
+              className="gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white"
+          disabled={showResult}
+        >
+          <Volume2 className="h-5 w-5" />
+          {hasPlayedAudio ? 'Play Again' : 'Play Audio Sequence'}
+        </Button>
+      </div>
 
           {/* User's Sequence */}
-          <div className="mb-3">
-            <h3 className="text-lg font-semibold mb-3 text-center">Your Order:</h3>
-            <motion.div
+      <div className="mb-3">
+        <h3 className="text-lg font-semibold mb-3 text-center">Your Order:</h3>
+        <motion.div
               className={`min-h-[60px] overflow-y-auto rounded-xl border-2 px-2 py-2 flex items-center justify-center transition-colors ${
                 showResult && isCorrect 
                   ? 'bg-green-50 border-green-300'
@@ -384,7 +384,7 @@ export function AudioSequence({
                   ? 'bg-red-50 border-red-300'
                   : 'bg-[#F8FAF8] border-gray-200'
               }`}
-              initial={false}
+          initial={false}
               animate={
                 showIncorrect 
                   ? { x: [0, -6, 6, -6, 6, 0] }
@@ -392,90 +392,90 @@ export function AudioSequence({
                   ? { scale: [1, 1.02, 1], backgroundColor: ['#F8FAF8', '#dcfce7', '#F8FAF8'] }
                   : {}
               }
-              transition={{ duration: 0.6 }}
-            >
-              {userOrder.length === 0 ? (
+          transition={{ duration: 0.6 }}
+        >
+          {userOrder.length === 0 ? (
                 <p className="text-center text-gray-400 italic text-sm">
                   Click words from the bank below
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-1 sm:gap-2 justify-center content-center">
-                  {userOrder.map((id, index) => {
-                    const vocab = getVocabularyById(id)
-                    
-                    return (
-                      <div
-                        key={`${id}-${index}`}
-                        className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border-2 relative transition-all flex items-center justify-between ${
-                          showResult && isCorrect 
-                            ? 'border-green-500 bg-green-50 text-green-700'
-                            : showResult && !isCorrect
-                            ? 'border-red-500 bg-red-50 text-red-700'
-                            : 'border-primary bg-primary/10 text-primary'
-                        }`}
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1 sm:gap-2 justify-center content-center">
+              {userOrder.map((id, index) => {
+                const vocab = getVocabularyById(id)
+                
+                return (
+                  <div
+                    key={`${id}-${index}`}
+                    className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border-2 relative transition-all flex items-center justify-between ${
+                      showResult && isCorrect 
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : showResult && !isCorrect
+                        ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-primary bg-primary/10 text-primary'
+                    }`}
+                  >
+                    <span className="font-medium">{vocab?.en || id}</span>
+                    {!showResult ? (
+                      <button
+                        onClick={() => handleRemoveItem(id)}
+                        className="text-gray-400 hover:text-red-500 flex items-center ml-2"
+                        title="Remove this word"
                       >
-                        <span className="font-medium">{vocab?.en || id}</span>
-                        {!showResult ? (
-                          <button
-                            onClick={() => handleRemoveItem(id)}
-                            className="text-gray-400 hover:text-red-500 flex items-center ml-2"
-                            title="Remove this word"
-                          >
-                            <span className="text-sm">×</span>
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-500 ml-2">#{index + 1}</span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </motion.div>
-          </div>
+                        <span className="text-sm">×</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-500 ml-2">#{index + 1}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </motion.div>
+      </div>
 
           {/* Word Bank */}
           <div className="mb-3">
             <h3 className="text-lg font-semibold mb-2 text-center">Word Bank:</h3>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {wordBankData.wordBankItems.map((wordText: string, index: number) => {
-                const displayKey = `${wordText}-${index}`
-                const isUsed = userOrder.includes(displayKey)
-                
-                return (
-                  <button
-                    key={displayKey}
-                    onClick={() => !isUsed && !showResult && handleItemClick(wordText, index)}
-                    disabled={isUsed || showResult}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {wordBankData.wordBankItems.map((wordText: string, index: number) => {
+            const displayKey = `${wordText}-${index}`
+            const isUsed = userOrder.includes(displayKey)
+            
+            return (
+              <button
+                key={displayKey}
+                onClick={() => !isUsed && !showResult && handleItemClick(wordText, index)}
+                disabled={isUsed || showResult}
                     className={`px-3 py-2 rounded-lg border-2 transition-all shadow-sm ${
-                      isUsed 
+                  isUsed 
                         ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                         : 'border-primary/30 bg-white hover:border-green-400 hover:bg-green-50 hover:shadow-md active:scale-95 cursor-pointer'
-                    } ${showResult ? 'cursor-not-allowed' : ''}`}
-                  >
-                    <span className="font-medium">{wordText}</span>
-                  </button>
-                )
-              })}
-            </div>
-            <p className="text-xs text-gray-500 text-center mt-2">
-              Click words to add them to your sequence above
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          {!showResult && (
-            <div className="w-full mt-2">
-              <Button
-                onClick={handleSubmit}
-                disabled={userOrder.length !== expectedWordCount}
-                className="gap-2 w-full"
-                size="lg"
+                } ${showResult ? 'cursor-not-allowed' : ''}`}
               >
-                Check My Answer ({userOrder.length}/{expectedWordCount})
-              </Button>
-            </div>
-          )}
+                <span className="font-medium">{wordText}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-xs text-gray-500 text-center mt-2">
+          Click words to add them to your sequence above
+        </p>
+      </div>
+
+      {/* Submit Button */}
+      {!showResult && (
+            <div className="w-full mt-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={userOrder.length !== expectedWordCount}
+                className="gap-2 w-full"
+            size="lg"
+          >
+            Check My Answer ({userOrder.length}/{expectedWordCount})
+          </Button>
+        </div>
+      )}
         </div>
       </div>
     </div>

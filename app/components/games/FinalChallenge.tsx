@@ -321,19 +321,19 @@ export function FinalChallenge({
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
         <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
           {/* Header */}
-          <div className="text-center mb-3 sm:mb-4">
+      <div className="text-center mb-3 sm:mb-4">
             <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 text-primary">
               FINAL CHALLENGE
             </h2>
             <p className="text-sm xs:text-base text-muted-foreground mb-2">
-              {getDynamicDescription()}
-            </p>
-            {conversationFlow && (
-              <p className="text-xs text-blue-600 italic mb-2">
-                Build this conversation in Persian word order
-              </p>
-            )}
-          </div>
+          {getDynamicDescription()}
+        </p>
+        {conversationFlow && (
+          <p className="text-xs text-blue-600 italic mb-2">
+            Build this conversation in Persian word order
+          </p>
+        )}
+      </div>
 
           {/* Slots Grid */}
           <div
@@ -348,18 +348,18 @@ export function FinalChallenge({
                 <div 
                   key={slot.id}
                   className={`
-                    relative flex items-center justify-center h-10 sm:h-11 rounded-lg border-2 border-dashed transition-all
+                      relative flex items-center justify-center h-10 sm:h-11 rounded-lg border-2 border-dashed transition-all
                     ${item ? 'border-primary bg-primary/5' : 'border-gray-300 bg-[#F8FAF8]'}
-                    ${showFeedback && isCorrect ? 'border-green-500 bg-green-50' : ''}
-                    ${showFeedback && !isCorrect ? 'border-red-500 bg-red-50' : ''}
-                    ${idx === slots.length - 1 && slots.length % 2 === 1 ? 'col-span-2' : ''}
-                    p-2 md:p-2.5
-                  `}
-                >
-                  {/* Badge on left edge */}
-                  <div className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold text-sm">{slot.id}</span>
-                  </div>
+                      ${showFeedback && isCorrect ? 'border-green-500 bg-green-50' : ''}
+                      ${showFeedback && !isCorrect ? 'border-red-500 bg-red-50' : ''}
+                      ${idx === slots.length - 1 && slots.length % 2 === 1 ? 'col-span-2' : ''}
+                      p-2 md:p-2.5
+                    `}
+                 >
+                   {/* Badge on left edge */}
+                   <div className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-semibold text-sm">{slot.id}</span>
+                   </div>
                   
                   {item ? (
                     <div className="flex-1 min-w-0 text-center">
@@ -389,20 +389,20 @@ export function FinalChallenge({
           <div className="mb-3">
             <h3 className="text-lg font-semibold mb-2 text-center">Word Bank:</h3>
             <div className="flex flex-wrap gap-2 justify-center">
-              {items.filter(item => item.order === null).map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handlePhraseClick(item.id)}
-                  disabled={showFeedback && isCorrect}
-                  className="
+            {items.filter(item => item.order === null).map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handlePhraseClick(item.id)}
+                disabled={showFeedback && isCorrect}
+                className="
                     px-3 py-2 rounded-lg border-2 transition-all shadow-sm
                     border-primary/30 bg-white hover:border-green-400 hover:bg-green-50 hover:shadow-md active:scale-95 cursor-pointer
                     disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium
-                  "
-                >
-                  {item.text}
-                </button>
-              ))}
+                "
+              >
+                {item.text}
+              </button>
+            ))}
             </div>
             <p className="text-xs text-gray-500 text-center mt-2">
               Click words to add them to the slots above

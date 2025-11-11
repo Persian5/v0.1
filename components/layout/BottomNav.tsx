@@ -2,18 +2,23 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, RotateCcw, Trophy, BarChart3 } from 'lucide-react'
+import { BookOpen, RotateCcw, Trophy, BarChart3, UserPlus } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/components/auth/AuthProvider'
 
 /**
  * Mobile bottom navigation bar
  * Only shown for logged-in users on mobile devices
  * Follows iOS/Material Design patterns for thumb-reachable navigation
  * Auto-hides when footer is visible to prevent overlap
+ * 4th item adapts: Progress (logged-in) or Sign Up (logged-out)
  */
 export function BottomNav() {
   const pathname = usePathname()
+  const { user } = useAuth()
+  const isLoggedIn = !!user
   const [isVisible, setIsVisible] = useState(true)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   // Hide bottom nav when scrolled to bottom (footer visible)
   useEffect(() => {
@@ -40,6 +45,7 @@ export function BottomNav() {
     return pathname === path || pathname?.startsWith(path + '/')
   }
 
+  // Define nav items - 4th item changes based on auth state
   const navItems = [
     {
       href: '/modules',
@@ -59,11 +65,17 @@ export function BottomNav() {
       label: 'Leaderboard',
       active: isActive('/leaderboard')
     },
-    {
+    // 4th slot: Progress for logged-in, Sign Up for logged-out
+    isLoggedIn ? {
       href: '/dashboard',
       icon: BarChart3,
       label: 'Progress',
       active: isActive('/dashboard')
+    } : {
+      href: '/auth',
+      icon: UserPlus,
+      label: 'Sign Up',
+      active: false // Auth page won't have active state
     }
   ]
 
@@ -91,8 +103,8 @@ export function BottomNav() {
               }`}
             >
               <Icon 
-                className={`w-5 h-5 mb-0.5 ${
-                  item.active ? 'fill-primary stroke-2' : 'stroke-2'
+                className={`w-6 h-6 mb-0.5 ${
+                  item.active ? 'fill-primary' : ''
                 }`} 
               />
               <span className="text-[10px] font-medium leading-tight">

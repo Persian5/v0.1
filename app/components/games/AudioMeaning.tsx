@@ -296,12 +296,12 @@ export function AudioMeaning({
           {/* Header */}
           <div className="text-center mb-2 sm:mb-3">
             <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 text-primary">
-              LISTENING CHALLENGE
-            </h2>
+          LISTENING CHALLENGE
+        </h2>
             <p className="text-sm xs:text-base text-muted-foreground mb-3">
-              Listen to the Persian word and select its English meaning
-            </p>
-          </div>
+          Listen to the Persian word and select its English meaning
+        </p>
+      </div>
 
           {/* Audio Player Section */}
           <div className="bg-white rounded-xl p-3 sm:p-4 mb-3 text-center border-2 border-primary/20 shadow-sm">
@@ -310,90 +310,90 @@ export function AudioMeaning({
               <div className="flex items-center justify-center">
                 {isPlayingAudio ? (
                   <div className="flex items-end gap-0.5 h-6 sm:h-8">
-                    <motion.div
+                <motion.div
                       className="w-1 bg-primary rounded-full"
-                      animate={{ height: ['8px', '20px', '8px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
+                  animate={{ height: ['8px', '20px', '8px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
                       className="w-1 bg-primary rounded-full"
-                      animate={{ height: ['12px', '24px', '12px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-                    />
-                    <motion.div
+                  animate={{ height: ['12px', '24px', '12px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                />
+                <motion.div
                       className="w-1 bg-primary rounded-full"
-                      animate={{ height: ['8px', '20px', '8px'] }}
-                      transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-                    />
-                  </div>
+                  animate={{ height: ['8px', '20px', '8px'] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                />
+              </div>
                 ) : (
                   <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-primary/60" />
-                )}
-              </div>
-              
-              <p className="text-base sm:text-lg font-medium text-gray-900">
-                {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Ready to answer?" : "Click to hear the word..."}
-              </p>
-            </div>
-            
-            <Button
-              onClick={playTargetAudio}
-              variant="outline"
-              size="lg"
-              className="gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white"
-            >
-              <Volume2 className="h-5 w-5" />
-              {hasPlayedAudio ? 'Play Again' : 'Play Audio'}
-            </Button>
+            )}
           </div>
+          
+              <p className="text-base sm:text-lg font-medium text-gray-900">
+            {isPlayingAudio ? "Listening..." : hasPlayedAudio ? "Ready to answer?" : "Click to hear the word..."}
+          </p>
+        </div>
+        
+        <Button
+          onClick={playTargetAudio}
+          variant="outline"
+          size="lg"
+              className="gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white"
+        >
+          <Volume2 className="h-5 w-5" />
+          {hasPlayedAudio ? 'Play Again' : 'Play Audio'}
+        </Button>
+      </div>
 
-          {/* Answer Options - Card Grid (2x2) */}
+      {/* Answer Options - Card Grid (2x2) */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-2">
-            {answerOptionsWithIndices.map((optionData, displayIndex) => {
-              const actualIndex = optionData.originalIndex
-              
+        {answerOptionsWithIndices.map((optionData, displayIndex) => {
+          const actualIndex = optionData.originalIndex
+          
               // Card styling
               let cardStyle = "bg-white rounded-lg p-6 sm:p-8 border-2 transition-all duration-200 cursor-pointer shadow-sm min-h-[140px] sm:min-h-[160px] flex items-center justify-center ";
 
-              if (showResult) {
-                if (isCorrect && actualIndex === selectedAnswer) {
-                  // Correct selection - green border
+          if (showResult) {
+            if (isCorrect && actualIndex === selectedAnswer) {
+              // Correct selection - green border
                   cardStyle += "border-green-500 bg-green-50 "
-                } else if (!isCorrect && actualIndex === selectedAnswer) {
-                  // Incorrect selection - red border
+            } else if (!isCorrect && actualIndex === selectedAnswer) {
+              // Incorrect selection - red border
                   cardStyle += "border-red-500 bg-red-50 "
-                } else {
-                  // Other options stay neutral
+            } else {
+              // Other options stay neutral
                   cardStyle += "border-gray-200 bg-gray-50/50 opacity-50 "
-                }
-              } else {
-                if (selectedAnswer === actualIndex) {
+            }
+          } else {
+            if (selectedAnswer === actualIndex) {
                   cardStyle += "border-primary bg-primary/5 "
-                } else {
+            } else {
                   cardStyle += "border-gray-200 hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] "
-                }
-              }
+            }
+          }
 
-              const shakeKeyframes = { x: [0, -10, 10, -10, 10, 0] };
-              const isShaking = showResult && !isCorrect && actualIndex === selectedAnswer;
+          const shakeKeyframes = { x: [0, -10, 10, -10, 10, 0] };
+          const isShaking = showResult && !isCorrect && actualIndex === selectedAnswer;
 
-              return (
-                <motion.button
-                  key={`${optionData.text}-${optionData.originalIndex}`}
-                  type="button"
-                  onClick={() => handleAnswerSelect(actualIndex)}
-                  disabled={showResult}
-                  initial={false}
-                  animate={isShaking ? shakeKeyframes : {}}
-                  transition={isShaking ? { duration: 0.6, ease: "easeInOut" } : {}}
-                  className={cardStyle}
-                >
+          return (
+            <motion.button
+              key={`${optionData.text}-${optionData.originalIndex}`}
+              type="button"
+              onClick={() => handleAnswerSelect(actualIndex)}
+              disabled={showResult}
+              initial={false}
+              animate={isShaking ? shakeKeyframes : {}}
+              transition={isShaking ? { duration: 0.6, ease: "easeInOut" } : {}}
+              className={cardStyle}
+            >
                   <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 block text-center leading-tight">
-                    {optionData.text}
-                  </span>
-                </motion.button>
-              );
-            })}
+                {optionData.text}
+              </span>
+            </motion.button>
+          );
+        })}
           </div>
         </div>
       </div>

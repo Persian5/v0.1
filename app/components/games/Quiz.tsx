@@ -193,7 +193,7 @@ export function Quiz({
   return (
     <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
       {/* XP Animation - self-positioning */}
-      {quizState === 'showing-result' && isCorrectAnswer && (
+        {quizState === 'showing-result' && isCorrectAnswer && (
         <XpAnimation 
           amount={points} 
           show={true}
@@ -201,8 +201,8 @@ export function Quiz({
           onStart={undefined}
           onComplete={() => {}} // Handle completion in handleSelect instead
         />
-      )}
-
+        )}
+        
       {/* Main Content - Centered */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8 overflow-y-auto">
         <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex flex-col">
