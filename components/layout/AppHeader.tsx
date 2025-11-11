@@ -10,6 +10,7 @@ import { useXp } from '@/hooks/use-xp'
 import { AccountDropdown } from './AccountDropdown'
 import { MobileMenu } from './MobileMenu'
 import { Button } from '@/components/ui/button'
+import { AuthModal } from '@/components/auth/AuthModal'
 
 type HeaderVariant = 'default' | 'minimal' | 'logged-out'
 
@@ -32,6 +33,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   const { hasPremium, isLoading: premiumLoading } = usePremium()
   const { xp } = useXp()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
 
   const isLoggedIn = !!user
   const showUpgradeButton = isLoggedIn && !hasPremium && !premiumLoading
@@ -54,7 +56,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md relative">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
           {/* Minimal Variant - Back Button + XP + Account */}
           {variant === 'minimal' && (
@@ -79,9 +81,17 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                 {/* Account Dropdown - Desktop only */}
                 {isLoggedIn && <div className="hidden md:block"><AccountDropdown /></div>}
 
-                {/* Mobile Menu Toggle */}
+                {/* Mobile Menu Toggle - MINIMAL VARIANT */}
                 <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('🍔 HAMBURGER CLICKED (MINIMAL)!')
+                    console.log('Current mobileMenuOpen:', mobileMenuOpen)
+                    console.log('Variant:', variant)
+                    console.log('Setting to:', !mobileMenuOpen)
+                    setMobileMenuOpen(!mobileMenuOpen)
+                  }}
                   className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
                   aria-label="Toggle menu"
                 >
@@ -175,16 +185,27 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                     <AccountDropdown />
                   </div>
                 ) : (
-                  <Link href="/auth">
-                    <Button size="sm" className="hidden md:flex">
-                      Sign Up / Log In
-                    </Button>
-                  </Link>
+                  <Button 
+                    size="sm" 
+                    className="hidden md:flex"
+                    onClick={() => setAuthModalOpen(true)}
+                  >
+                    Sign Up / Log In
+                  </Button>
                 )}
 
-                {/* Mobile Menu Toggle */}
+                {/* Mobile Menu Toggle - DEFAULT VARIANT */}
                 <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('🍔 HAMBURGER CLICKED (DEFAULT)!')
+                    console.log('Current mobileMenuOpen:', mobileMenuOpen)
+                    console.log('Variant:', variant)
+                    console.log('isLoggedIn:', isLoggedIn)
+                    console.log('Setting to:', !mobileMenuOpen)
+                    setMobileMenuOpen(!mobileMenuOpen)
+                  }}
                   className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
                   aria-label="Toggle menu"
                 >
@@ -194,6 +215,8 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
             </>
           )}
         </div>
+        {/* Gradient border at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
       </header>
 
       {/* Mobile Menu */}
@@ -201,6 +224,13 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
         isOpen={mobileMenuOpen} 
         onClose={() => setMobileMenuOpen(false)}
         variant={variant}
+        onOpenAuthModal={() => setAuthModalOpen(true)}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)}
       />
     </>
   )

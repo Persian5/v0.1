@@ -12,19 +12,25 @@ interface MobileMenuProps {
   isOpen: boolean
   onClose: () => void
   variant?: 'default' | 'minimal' | 'logged-out'
+  onOpenAuthModal?: () => void
 }
 
 /**
  * Mobile navigation menu with slide-in drawer animation
  * Auto-closes on navigation or escape key
  */
-export function MobileMenu({ isOpen, onClose, variant = 'default' }: MobileMenuProps) {
+export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthModal }: MobileMenuProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const { hasPremium } = usePremium()
 
   const isLoggedIn = !!user
+
+  console.log('🔄 MobileMenu RENDER')
+  console.log('isOpen:', isOpen)
+  console.log('variant:', variant)
+  console.log('isLoggedIn:', isLoggedIn)
 
   // Close menu on route change
   useEffect(() => {
@@ -194,7 +200,10 @@ export function MobileMenu({ isOpen, onClose, variant = 'default' }: MobileMenuP
 
                   {/* Sign Up / Log In */}
                   <button
-                    onClick={() => handleNavigation('/auth')}
+                    onClick={() => {
+                      onClose()
+                      onOpenAuthModal?.()
+                    }}
                     className="px-4 py-3 text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors text-center font-semibold"
                   >
                     Sign Up / Log In
