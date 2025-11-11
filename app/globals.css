@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile bottom navigation spacing */
+@layer utilities {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  /* Add bottom padding for pages with bottom nav (mobile only) */
+  @media (max-width: 768px) {
+    body.has-bottom-nav {
+      padding-bottom: 56px; /* Height of bottom nav */
+    }
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

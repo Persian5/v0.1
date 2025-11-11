@@ -86,10 +86,6 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log('🍔 HAMBURGER CLICKED (MINIMAL)!')
-                    console.log('Current mobileMenuOpen:', mobileMenuOpen)
-                    console.log('Variant:', variant)
-                    console.log('Setting to:', !mobileMenuOpen)
                     setMobileMenuOpen(!mobileMenuOpen)
                   }}
                   className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
@@ -106,15 +102,15 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
             <>
               {/* Logo / Home Link */}
               <Link 
-                href={isLoggedIn ? "/dashboard" : "/"} 
+                href="/" 
                 className="text-xl font-bold text-primary hover:opacity-80 transition-opacity"
               >
-                Home
+                Finglish
               </Link>
 
               {/* Desktop Navigation - Default Variant */}
               {variant === 'default' && isLoggedIn && (
-                <nav className="hidden md:flex items-center gap-6">
+                <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
                   <Link
                     href="/modules"
                     className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -139,6 +135,14 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   >
                     Leaderboard
                   </Link>
+                  <Link
+                    href="/dashboard"
+                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                      isActive('/dashboard') ? 'text-primary' : 'text-gray-600'
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
                 </nav>
               )}
 
@@ -162,9 +166,9 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
 
               {/* Right Side Actions */}
               <div className="flex items-center gap-3">
-                {/* XP Badge - Show for logged in users */}
+                {/* XP Badge - Show for logged in users on all screen sizes */}
                 {isLoggedIn && (
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                     <span>{xp.toLocaleString()}</span>
                   </div>
@@ -199,11 +203,6 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log('🍔 HAMBURGER CLICKED (DEFAULT)!')
-                    console.log('Current mobileMenuOpen:', mobileMenuOpen)
-                    console.log('Variant:', variant)
-                    console.log('isLoggedIn:', isLoggedIn)
-                    console.log('Setting to:', !mobileMenuOpen)
                     setMobileMenuOpen(!mobileMenuOpen)
                   }}
                   className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"

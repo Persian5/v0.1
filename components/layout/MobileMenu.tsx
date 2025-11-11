@@ -27,14 +27,8 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
 
   const isLoggedIn = !!user
 
-  console.log('🔄 MobileMenu RENDER')
-  console.log('isOpen:', isOpen)
-  console.log('variant:', variant)
-  console.log('isLoggedIn:', isLoggedIn)
-
   // Close menu on route change - ONLY when pathname changes
   useEffect(() => {
-    console.log('📍 Pathname changed, closing menu')
     onClose()
   }, [pathname]) // ✅ REMOVED onClose from dependencies
 
