@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, BookOpen, RotateCcw, Trophy, Crown, Settings, LogOut, X, BarChart3, CreditCard } from 'lucide-react'
+import { Home, BookOpen, RotateCcw, Trophy, Crown, Settings, LogOut, X, BarChart3 } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { usePremium } from '@/hooks/use-premium'
 
@@ -163,17 +163,6 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
                     >
                       <Crown className="w-5 h-5" />
                       <span>Upgrade to Premium</span>
-                    </button>
-                  )}
-
-                  {/* Manage Subscription - Premium Users Only */}
-                  {hasPremium && (
-                    <button
-                      onClick={() => handleNavigation('/account#subscription')}
-                      className="flex items-center gap-3 px-4 py-3 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-left font-medium"
-                    >
-                      <CreditCard className="w-5 h-5" />
-                      <span>Manage Subscription</span>
                     </button>
                   )}
 
