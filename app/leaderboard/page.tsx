@@ -9,7 +9,6 @@ import Link from 'next/link'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { SmartAuthService } from '@/lib/services/smart-auth-service'
 import { useXp } from '@/hooks/use-xp'
-import { DatabaseService } from '@/lib/supabase/database'
 
 interface LeaderboardEntry {
   rank: number
@@ -39,7 +38,6 @@ export default function LeaderboardPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
-  const [hasRecalculated, setHasRecalculated] = useState(false) // Prevent infinite loop
 
   // Fetch leaderboard data
   const fetchLeaderboard = async (newOffset: number = 0, append: boolean = false) => {
@@ -89,30 +87,13 @@ export default function LeaderboardPage() {
             mismatch: xpMismatch ? `⚠️ MISMATCH: Leaderboard shows ${currentUserEntry.xp} but you have ${userXp}` : '✅ Match'
           })
           
-          if (xpMismatch && !hasRecalculated) {
+          if (xpMismatch) {
             console.warn('⚠️ XP MISMATCH DETECTED:', {
               yourCacheXp: userXp,
               leaderboardDbXp: currentUserEntry.xp,
               difference: userXp - currentUserEntry.xp,
-              issue: 'Database has stale XP - syncing cache value to database'
+              issue: 'Database has stale XP - RPC might not be updating user_profiles.total_xp. This is a server-side issue that needs to be fixed.'
             })
-            
-            // Only sync once per page load to prevent infinite loop
-            setHasRecalculated(true)
-            console.log('🔧 Syncing cache XP to database...')
-            
-            // Update database with cache XP value (source of truth)
-            DatabaseService.updateUserProfile(user.id, { total_xp: userXp })
-              .then(() => {
-                console.log('✅ XP synced to database:', { oldXp: currentUserEntry.xp, newXp: userXp })
-                console.log('ℹ️ Please refresh the page to see updated leaderboard')
-              })
-              .catch(error => {
-                console.error('❌ Failed to sync XP:', error)
-                setHasRecalculated(false) // Allow retry on error
-              })
-          } else if (xpMismatch && hasRecalculated) {
-            console.log('ℹ️ XP mismatch still exists after sync. Please refresh the page.')
           }
         } else {
           console.log('ℹ️ You are not in the top leaderboard entries')
