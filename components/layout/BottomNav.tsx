@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { BookOpen, RotateCcw, Trophy, BarChart3, UserPlus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
+import { AuthModal } from '@/components/auth/AuthModal'
 
 /**
  * Mobile bottom navigation bar
@@ -80,41 +81,73 @@ export function BottomNav() {
   ]
 
   return (
-    <nav 
-      className={`fixed left-0 right-0 z-40 md:hidden bg-white border-t border-gray-200 transition-transform duration-300 ${
-        isVisible ? 'translate-y-0' : 'translate-y-full'
-      }`}
-      style={{ 
-        bottom: 0,
-        paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' // Account for iPhone notch
-      }}
-    >
-      <div className="flex items-center justify-around" style={{ height: '56px' }}>
-        {navItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                item.active
-                  ? 'text-primary'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Icon 
-                className={`w-6 h-6 mb-0.5 ${
-                  item.active ? 'fill-primary' : ''
-                }`} 
-              />
-              <span className="text-xs font-medium leading-tight">
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+    <>
+      <nav 
+        className={`fixed left-0 right-0 z-40 md:hidden bg-white border-t border-gray-200 transition-transform duration-300 ${
+          isVisible ? 'translate-y-0' : 'translate-y-full'
+        }`}
+        style={{ 
+          bottom: 0,
+          paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' // Account for iPhone notch
+        }}
+        aria-label="Mobile navigation"
+      >
+        <div className="flex items-center justify-around" style={{ height: '56px' }}>
+          {navItems.map((item) => {
+            const Icon = item.icon
+            
+            // Special handling for Sign Up button (logged-out 4th item)
+            if (!isLoggedIn && item.label === 'Sign Up') {
+              return (
+                <button
+                  key="sign-up"
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex flex-col items-center justify-center flex-1 h-full transition-colors text-gray-500 hover:text-gray-700"
+                  aria-label="Sign up for Finglish"
+                >
+                  <Icon 
+                    className="w-6 h-6 mb-0.5 stroke-2" 
+                  />
+                  <span className="text-xs font-medium leading-tight">
+                    {item.label}
+                  </span>
+                </button>
+              )
+            }
+            
+            // Regular nav items
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+                  item.active
+                    ? 'text-primary'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                aria-current={item.active ? 'page' : undefined}
+              >
+                <Icon 
+                  className={`w-6 h-6 mb-0.5 ${
+                    item.active ? 'stroke-[2.5]' : 'stroke-2'
+                  }`} 
+                />
+                <span className="text-xs font-medium leading-tight">
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
+      
+      {/* Auth Modal for Sign Up button */}
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultMode="signup"
+      />
+    </>
   )
 }
 

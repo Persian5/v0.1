@@ -200,7 +200,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                 ) : (
                   <Button 
                     size="sm" 
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold"
+                    className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-semibold shadow-sm"
                     onClick={() => setAuthModalOpen(true)}
                     aria-label="Sign up for Finglish"
                   >
