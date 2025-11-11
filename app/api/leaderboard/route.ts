@@ -4,6 +4,15 @@ import { LeaderboardQuerySchema, safeValidate } from '@/lib/utils/api-schemas'
 
 export const dynamic = 'force-dynamic' // Required for request.headers
 
+// Type definition for leaderboard user data
+// CRITICAL: Explicit type prevents implicit 'any' errors in array methods
+type LeaderboardUser = {
+  id: string
+  display_name: string | null
+  total_xp?: number | null
+  created_at: string
+}
+
 // In-memory cache for leaderboard data
 // TTL: 2 minutes (120000ms)
 // Reduces database load for frequently accessed leaderboard
@@ -189,12 +198,12 @@ export async function GET(request: NextRequest) {
     // Filter users with XP > 0 in memory
     // CRITICAL: Explicit type annotation required - TypeScript can't infer type from .then() chain
     // Type includes all fields used: id, display_name, total_xp, created_at
-    const allUsers = (allUsersUnfiltered || []).filter((u: { id: string; display_name: string | null; total_xp?: number | null; created_at: string }) => (u.total_xp || 0) > 0)
+    const allUsers = (allUsersUnfiltered || []).filter((u: LeaderboardUser) => (u.total_xp || 0) > 0)
     
     // Sort in memory: by total_xp DESC, then created_at ASC (tie-breaker)
     // CRITICAL: Explicit type annotation for sort callback parameters
     // CRITICAL: Handle null/undefined with nullish coalescing (already filtered for > 0, but TypeScript needs explicit handling)
-    const sortedUsers = allUsers.sort((a: { total_xp?: number | null; created_at: string }, b: { total_xp?: number | null; created_at: string }) => {
+    const sortedUsers = allUsers.sort((a: LeaderboardUser, b: LeaderboardUser) => {
       const aXp = a.total_xp ?? 0
       const bXp = b.total_xp ?? 0
       
@@ -226,7 +235,7 @@ export async function GET(request: NextRequest) {
     // DEBUG: Log what we got from DB (with detailed XP values)
     console.log('📊 Leaderboard query returned from DB:', { 
       count: topUsers?.length || 0, 
-      users: topUsers?.map(u => ({ 
+      users: topUsers?.map((u: LeaderboardUser) => ({ 
         id: u.id, 
         name: u.display_name, 
         xp: u.total_xp,
@@ -268,7 +277,7 @@ export async function GET(request: NextRequest) {
           updated_at: debugUser.updated_at
         } : null,
         directQueryError: debugError?.message,
-        leaderboardEntry: topUsers?.find(u => u.id === debugUserId),
+        leaderboardEntry: topUsers?.find((u: LeaderboardUser) => u.id === debugUserId),
         rawRpcResult: rawQueryResult,
         rawRpcError: rawError?.message
       })
@@ -276,7 +285,7 @@ export async function GET(request: NextRequest) {
     
     // CRITICAL: For the specific user in question, always query directly for comparison
     // This helps identify if it's a query issue or database replication issue
-    const currentUserInResults = topUsers?.find(u => u.display_name === 'Armee E.' || u.id === '881a4bff-589f-46b8-b4ba-517cb6822e4c')
+    const currentUserInResults = topUsers?.find((u: LeaderboardUser) => u.display_name === 'Armee E.' || u.id === '881a4bff-589f-46b8-b4ba-517cb6822e4c')
     let directQueryResult = null
     if (currentUserInResults) {
       const { data: directCheck, error: directError } = await supabase
@@ -297,7 +306,7 @@ export async function GET(request: NextRequest) {
     }
     
     // 7. Calculate ranks and sanitize
-    const top = (topUsers || []).map((user, index) => {
+    const top = (topUsers || []).map((user: LeaderboardUser, index: number) => {
       const rank = offset + index + 1
       const nextUser = sortedUsers[sortedUsers.indexOf(user) - 1] // User above in global ranking
       
@@ -324,7 +333,7 @@ export async function GET(request: NextRequest) {
       ...(process.env.NODE_ENV === 'development' && {
         _debug: {
           supabaseUrl: supabaseUrl.substring(0, 30) + '...',
-          queryResult: topUsers?.map(u => ({
+          queryResult: topUsers?.map((u: LeaderboardUser) => ({
             id: u.id,
             name: u.display_name,
             xp: u.total_xp,
