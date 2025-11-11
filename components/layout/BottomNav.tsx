@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, RotateCcw, Trophy, BarChart3 } from 'lucide-react'
+import { BookOpen, RotateCcw, Trophy, BarChart3 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 /**
@@ -43,7 +43,7 @@ export function BottomNav() {
   const navItems = [
     {
       href: '/modules',
-      icon: Home,
+      icon: BookOpen,
       label: 'Learn',
       active: isActive('/modules')
     },
@@ -56,7 +56,7 @@ export function BottomNav() {
     {
       href: '/leaderboard',
       icon: Trophy,
-      label: 'Board',
+      label: 'Leaderboard',
       active: isActive('/leaderboard')
     },
     {
@@ -91,8 +91,8 @@ export function BottomNav() {
               }`}
             >
               <Icon 
-                className={`w-6 h-6 mb-0.5 ${
-                  item.active ? 'fill-primary' : ''
+                className={`w-5 h-5 mb-0.5 ${
+                  item.active ? 'fill-primary stroke-2' : 'stroke-2'
                 }`} 
               />
               <span className="text-[10px] font-medium leading-tight">
