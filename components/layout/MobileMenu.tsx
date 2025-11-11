@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, BookOpen, RotateCcw, Trophy, Crown, Settings, LogOut, X } from 'lucide-react'
+import { Home, BookOpen, RotateCcw, Trophy, Crown, Settings, LogOut, X, BarChart3 } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { usePremium } from '@/hooks/use-premium'
 
@@ -103,16 +103,20 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
               {isLoggedIn && (
                 <>
                   <button
-                    onClick={() => handleNavigation('/dashboard')}
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                    onClick={() => handleNavigation('/')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname === '/' ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <Home className="w-5 h-5" />
-                    <span className="font-medium">Dashboard</span>
+                    <span className="font-medium">Home</span>
                   </button>
 
                   <button
                     onClick={() => handleNavigation('/modules')}
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname?.startsWith('/modules') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <BookOpen className="w-5 h-5" />
                     <span className="font-medium">Learn</span>
@@ -120,7 +124,9 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
 
                   <button
                     onClick={() => handleNavigation('/review')}
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname?.startsWith('/review') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <RotateCcw className="w-5 h-5" />
                     <span className="font-medium">Review Mode</span>
@@ -128,10 +134,22 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
 
                   <button
                     onClick={() => handleNavigation('/leaderboard')}
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname?.startsWith('/leaderboard') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <Trophy className="w-5 h-5" />
                     <span className="font-medium">Leaderboard</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleNavigation('/dashboard')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname?.startsWith('/dashboard') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <BarChart3 className="w-5 h-5" />
+                    <span className="font-medium">Progress</span>
                   </button>
 
                   {/* Divider */}
@@ -175,8 +193,20 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
               {!isLoggedIn && (
                 <>
                   <button
+                    onClick={() => handleNavigation('/')}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname === '/' ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Home className="w-5 h-5" />
+                    <span className="font-medium">Home</span>
+                  </button>
+
+                  <button
                     onClick={() => handleNavigation('/modules')}
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname?.startsWith('/modules') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <BookOpen className="w-5 h-5" />
                     <span className="font-medium">Modules</span>
@@ -184,7 +214,9 @@ export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthMod
 
                   <button
                     onClick={() => handleNavigation('/pricing')}
-                    className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      pathname === '/pricing' ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <Crown className="w-5 h-5" />
                     <span className="font-medium">Pricing</span>
