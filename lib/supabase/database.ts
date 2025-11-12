@@ -16,6 +16,16 @@ export interface UserProfile {
   learning_goal: string | null // 'heritage' | 'travel' | 'family' | 'academic' | 'fun'
   current_level: string | null // 'beginner' | 'few_words' | 'basic_conversation' | 'intermediate'
   primary_focus: string | null // 'speaking' | 'reading' | 'writing' | 'all'
+  // Streak system fields (DATE type in database, stored as YYYY-MM-DD string in TypeScript)
+  streak_count: number // Consecutive days user earned XP. Resets if no activity for 1 day (timezone-aware). Auto-updated by trigger.
+  last_activity_date: string | null // Last date (user timezone) user earned XP. Stored as DATE in user timezone. Auto-updated by trigger.
+  last_streak_date: string | null // Last date (user timezone) streak was incremented. Prevents double-counting. Stored as DATE in user timezone. Auto-updated by trigger.
+  // Daily goal field
+  daily_goal_xp: number // User's daily XP goal. Default 50, editable in account settings. Range: 1-1000 XP
+  // Review XP tracking (existing)
+  review_xp_earned_today: number
+  review_xp_reset_at: string | null
+  timezone: string
   created_at: string
   updated_at: string
 }
@@ -73,7 +83,17 @@ export class DatabaseService {
           last_name: user.user_metadata?.last_name || null,
           display_name: displayName,
           total_xp: 0,
-          onboarding_completed: false
+          onboarding_completed: false,
+          // Streak system defaults
+          streak_count: 0,
+          last_activity_date: null,
+          last_streak_date: null,
+          // Daily goal default
+          daily_goal_xp: 50,
+          // Review XP tracking defaults (existing)
+          review_xp_earned_today: 0,
+          review_xp_reset_at: null,
+          timezone: 'America/Los_Angeles'
         }
 
         const { data: createdProfile, error: createError } = await supabase
@@ -98,6 +118,16 @@ export class DatabaseService {
               learning_goal: null,
               current_level: null,
               primary_focus: null,
+              // Streak system defaults
+              streak_count: 0,
+              last_activity_date: null,
+              last_streak_date: null,
+              // Daily goal default
+              daily_goal_xp: 50,
+              // Review XP tracking defaults
+              review_xp_earned_today: 0,
+              review_xp_reset_at: null,
+              timezone: 'America/Los_Angeles',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             } as UserProfile

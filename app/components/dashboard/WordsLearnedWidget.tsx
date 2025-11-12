@@ -12,10 +12,10 @@ interface WordsLearnedWidgetProps {
 export function WordsLearnedWidget({ wordsLearned, isLoading }: WordsLearnedWidgetProps) {
   if (isLoading) {
     return (
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-shadow">
+      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
-            <BookOpen className="h-5 w-5" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
             Words Learned
           </CardTitle>
         </CardHeader>
@@ -27,16 +27,16 @@ export function WordsLearnedWidget({ wordsLearned, isLoading }: WordsLearnedWidg
   }
 
   return (
-    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-shadow">
+    <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
-          <BookOpen className="h-5 w-5" />
+        <CardTitle className="text-lg flex items-center gap-2">
+          <BookOpen className="h-5 w-5 text-primary" />
           Words Learned
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-center">
-          <div className="text-5xl font-bold text-blue-600 mb-2">
+          <div className="text-5xl font-bold text-primary mb-2">
             {wordsLearned}
           </div>
           <p className="text-sm text-muted-foreground">

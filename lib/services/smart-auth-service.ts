@@ -12,12 +12,25 @@ interface SessionCache {
   progress: UserLessonProgress[]
   progressLastUpdated: number  // Timestamp when progress was last updated (for staleness detection)
   totalXp: number
+  streakCount: number  // Cached streak count (auto-updated by database trigger)
+  dailyGoalXp: number  // Cached daily goal XP (from user_profiles.daily_goal_xp)
   lastSync: number
   expiresAt: number
   dashboardStats?: {
     wordsLearned: number
     masteredWords: number
     hardWords: Array<{
+      vocabulary_id: string
+      word_text: string
+      consecutive_correct: number
+      total_attempts: number
+      total_correct: number
+      total_incorrect: number
+      accuracy: number
+      last_seen_at: string | null
+    }>
+    unclassifiedWords?: number // Words with <3 attempts (new)
+    wordsToReview?: Array<{ // Words due for review (SRS-based, new)
       vocabulary_id: string
       word_text: string
       consecutive_correct: number
@@ -38,7 +51,7 @@ interface BackgroundSyncOperation {
 }
 
 // Event types for reactive updates
-type SmartAuthEventType = 'xp-updated' | 'progress-updated' | 'profile-updated' | 'session-changed' | 'premium-updated'
+type SmartAuthEventType = 'xp-updated' | 'streak-updated' | 'daily-goal-updated' | 'progress-updated' | 'profile-updated' | 'session-changed' | 'premium-updated'
 
 interface SmartAuthEventListener {
   (eventType: SmartAuthEventType, data: any): void
@@ -158,6 +171,8 @@ export class SmartAuthService {
         progress,
         progressLastUpdated: Date.now(),  // Initialize progress timestamp
         totalXp,
+        streakCount: profile.streak_count ?? 0,  // Cache streak count (auto-updated by trigger)
+        dailyGoalXp: profile.daily_goal_xp ?? 50,  // Cache daily goal XP
         lastSync: Date.now(),
         expiresAt: Date.now() + this.SESSION_DURATION
       }
@@ -254,10 +269,26 @@ export class SmartAuthService {
   }
   
   /**
+   * Get user streak count - from cache (auto-updated by database trigger)
+   */
+  static getUserStreak(): number {
+    return this.sessionCache?.streakCount || 0
+  }
+  
+  /**
+   * Get user daily goal XP - from cache
+   */
+  static getUserDailyGoal(): number {
+    return this.sessionCache?.dailyGoalXp || 50
+  }
+  
+  /**
    * Update user data optimistically - instant UI updates
    */
   static updateUserData(updates: {
     totalXp?: number
+    streakCount?: number
+    dailyGoalXp?: number
     progress?: UserLessonProgress[]
     profile?: Partial<UserProfile>
   }): void {
@@ -275,14 +306,34 @@ export class SmartAuthService {
       }
     }
     
-    if (updates.progress) {
-      this.sessionCache.progress = updates.progress
-      hasChanges = true
-      this.emitEvent('progress-updated', { progress: updates.progress })
+    if (updates.streakCount !== undefined) {
+      const oldStreak = this.sessionCache.streakCount
+      this.sessionCache.streakCount = updates.streakCount
+      if (oldStreak !== updates.streakCount) {
+        hasChanges = true
+        this.emitEvent('streak-updated', { newStreak: updates.streakCount, oldStreak })
+      }
+    }
+    
+    if (updates.dailyGoalXp !== undefined) {
+      const oldGoal = this.sessionCache.dailyGoalXp
+      this.sessionCache.dailyGoalXp = updates.dailyGoalXp
+      if (oldGoal !== updates.dailyGoalXp) {
+        hasChanges = true
+        this.emitEvent('daily-goal-updated', { newGoal: updates.dailyGoalXp, oldGoal })
+      }
     }
     
     if (updates.profile) {
       // IMPORTANT: If profile is a full UserProfile object, replace it entirely
+      // Also sync streak and daily goal from profile if present
+      if (updates.profile.streak_count !== undefined) {
+        this.sessionCache.streakCount = updates.profile.streak_count
+      }
+      if (updates.profile.daily_goal_xp !== undefined) {
+        this.sessionCache.dailyGoalXp = updates.profile.daily_goal_xp
+      }
+      
       // If it's a Partial<UserProfile>, merge it
       if ('id' in updates.profile && 'onboarding_completed' in updates.profile) {
         // Full profile object - replace entirely

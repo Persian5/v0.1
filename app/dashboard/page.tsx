@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
-import { WordsLearnedWidget } from "@/app/components/dashboard/WordsLearnedWidget"
-import { MasteredWordsWidget } from "@/app/components/dashboard/MasteredWordsWidget"
+import { DashboardHero } from "@/app/components/dashboard/DashboardHero"
+import { QuickActions } from "@/app/components/dashboard/QuickActions"
+import { ResumeLearning } from "@/app/components/dashboard/ResumeLearning"
+import { TodaysProgress } from "@/app/components/dashboard/TodaysProgress"
+import { ProgressOverview } from "@/app/components/dashboard/ProgressOverview"
 import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
 import { LeaderboardWidget } from "@/components/widgets/LeaderboardWidget"
-import { Button } from "@/components/ui/button"
 import { Loader2, AlertCircle } from "lucide-react"
-import Link from "next/link"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import WidgetErrorBoundary from "@/components/errors/WidgetErrorBoundary"
 
@@ -17,6 +18,17 @@ interface DashboardStats {
   wordsLearned: number
   masteredWords: number
   hardWords: Array<{
+    vocabulary_id: string
+    word_text: string
+    consecutive_correct: number
+    total_attempts: number
+    total_correct: number
+    total_incorrect: number
+    accuracy: number
+    last_seen_at: string | null
+  }>
+  unclassifiedWords?: number // Words with <3 attempts (new)
+  wordsToReview?: Array<{ // Words due for review (SRS-based, new)
     vocabulary_id: string
     word_text: string
     consecutive_correct: number
@@ -50,7 +62,9 @@ function DashboardContent() {
         setStats({
           wordsLearned: cached.wordsLearned,
           masteredWords: cached.masteredWords,
-          hardWords: cached.hardWords
+          hardWords: cached.hardWords,
+          unclassifiedWords: cached.unclassifiedWords,
+          wordsToReview: cached.wordsToReview
         })
         setIsLoading(false)
         return
@@ -91,16 +105,15 @@ function DashboardContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}      {/* Main Content */}
       <main className="flex-1">
-        <div className="container mx-auto px-4 py-8 sm:py-12 max-w-6xl">
+        <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
           {/* Page Header */}
-          <div className="text-center mb-8 sm:mb-12">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary mb-4">
-              Your Learning Dashboard
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary mb-2">
+              Your Learning Hub
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground">
-              Track your progress and keep improving
+              Track your progress and maximize your potential
             </p>
           </div>
 
@@ -112,32 +125,46 @@ function DashboardContent() {
             </div>
           )}
 
-          {/* Widgets Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {/* Words Learned */}
+          {/* Action-First Layout: Resume Learning (Primary Action) */}
+          <div className="mb-6 md:mb-8">
             <WidgetErrorBoundary>
-              <WordsLearnedWidget 
-                wordsLearned={stats?.wordsLearned || 0} 
-                isLoading={isLoading} 
-              />
-            </WidgetErrorBoundary>
-
-            {/* Mastered Words */}
-            <WidgetErrorBoundary>
-              <MasteredWordsWidget 
-                masteredWords={stats?.masteredWords || 0} 
-                isLoading={isLoading} 
-              />
-            </WidgetErrorBoundary>
-
-            {/* Leaderboard */}
-            <WidgetErrorBoundary>
-              <LeaderboardWidget />
+              <ResumeLearning />
             </WidgetErrorBoundary>
           </div>
 
-          {/* Hard Words (Full Width) */}
-          <div className="mb-8">
+          {/* Today's Progress - Daily Feedback Loop */}
+          <div className="mb-6 md:mb-8">
+            <WidgetErrorBoundary>
+              <TodaysProgress />
+            </WidgetErrorBoundary>
+          </div>
+
+          {/* Hero Section - Level, XP, Streak, Daily Goal */}
+          <div className="mb-6 md:mb-8">
+            <WidgetErrorBoundary>
+              <DashboardHero />
+            </WidgetErrorBoundary>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="mb-6 md:mb-8">
+            <QuickActions />
+          </div>
+
+          {/* Progress Overview - Stats Grid */}
+          <div className="mb-6 md:mb-8">
+            <WidgetErrorBoundary>
+              <ProgressOverview 
+                wordsLearned={stats?.wordsLearned || 0}
+                masteredWords={stats?.masteredWords || 0}
+                wordsToReview={stats?.wordsToReview?.length || 0}
+                isLoading={isLoading}
+              />
+            </WidgetErrorBoundary>
+          </div>
+
+          {/* Hard Words Section */}
+          <div className="mb-6 sm:mb-8">
             <WidgetErrorBoundary>
               <HardWordsWidget 
                 hardWords={stats?.hardWords || []} 
@@ -146,13 +173,11 @@ function DashboardContent() {
             </WidgetErrorBoundary>
           </div>
 
-          {/* CTA Section */}
-          <div className="text-center">
-            <Link href="/modules">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-lg">
-                Continue Learning
-              </Button>
-            </Link>
+          {/* Leaderboard */}
+          <div className="mb-6 sm:mb-8">
+            <WidgetErrorBoundary>
+              <LeaderboardWidget />
+            </WidgetErrorBoundary>
           </div>
         </div>
       </main>

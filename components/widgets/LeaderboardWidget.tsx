@@ -34,14 +34,30 @@ export function LeaderboardWidget() {
         const response = await fetch('/api/leaderboard?limit=3')
         
         if (!response.ok) {
-          throw new Error('Failed to fetch leaderboard')
+          const errorText = await response.text()
+          console.error('Leaderboard API error:', response.status, errorText)
+          throw new Error(`Failed to fetch leaderboard: ${response.status}`)
         }
 
         const leaderboardData: LeaderboardResponse = await response.json()
+        
+        // Validate response structure
+        if (!leaderboardData) {
+          console.error('Invalid leaderboard response: null or undefined')
+          setError('Invalid response format')
+          return
+        }
+        
+        if (!leaderboardData.top || !Array.isArray(leaderboardData.top)) {
+          console.error('Invalid leaderboard response structure:', leaderboardData)
+          setError('Invalid response format')
+          return
+        }
+        
         setData(leaderboardData)
       } catch (err) {
         console.error('Error fetching leaderboard widget:', err)
-        setError('Failed to load')
+        setError(err instanceof Error ? err.message : 'Failed to load')
       } finally {
         setIsLoading(false)
       }
@@ -52,7 +68,7 @@ export function LeaderboardWidget() {
 
   if (isLoading) {
     return (
-      <Card className="bg-gradient-to-br from-background via-primary/5 to-background">
+      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-primary" />
@@ -68,9 +84,9 @@ export function LeaderboardWidget() {
     )
   }
 
-  if (error || !data || data.top.length === 0) {
+  if (error || !data || !data.top || data.top.length === 0) {
     return (
-      <Card className="bg-gradient-to-br from-background via-primary/5 to-background">
+      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-primary" />
@@ -100,7 +116,7 @@ export function LeaderboardWidget() {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-background via-primary/5 to-background">
+    <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="w-5 h-5 text-primary" />

@@ -12,10 +12,10 @@ interface MasteredWordsWidgetProps {
 export function MasteredWordsWidget({ masteredWords, isLoading }: MasteredWordsWidgetProps) {
   if (isLoading) {
     return (
-      <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200 hover:shadow-lg transition-shadow">
+      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2 text-yellow-700">
-            <Trophy className="h-5 w-5" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-green-500" />
             Mastered Words
           </CardTitle>
         </CardHeader>
@@ -27,16 +27,16 @@ export function MasteredWordsWidget({ masteredWords, isLoading }: MasteredWordsW
   }
 
   return (
-    <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200 hover:shadow-lg transition-shadow">
+    <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2 text-yellow-700">
-          <Trophy className="h-5 w-5" />
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-success-500" />
           Mastered Words
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-center">
-          <div className="text-5xl font-bold text-yellow-600 mb-2">
+              <div className="text-5xl font-bold text-green-500 mb-2">
             {masteredWords}
           </div>
           <p className="text-sm text-muted-foreground">

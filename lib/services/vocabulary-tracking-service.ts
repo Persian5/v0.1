@@ -32,6 +32,7 @@ export interface VocabularyPerformance {
   consecutive_correct: number
   mastery_level: number  // 0-5
   last_seen_at: string | null
+  last_correct_at: string | null  // Added for decay system
   next_review_at: string | null
   created_at: string
   updated_at: string
@@ -193,20 +194,27 @@ export class VocabularyTrackingService {
         const newMasteryLevel = isCorrect ? 1 : 0
         const nextReviewAt = this.calculateNextReview(newMasteryLevel)
 
+        const insertData: any = {
+          user_id: userId,
+          vocabulary_id: vocabularyId,
+          word_text: wordText,
+          total_attempts: 1,
+          total_correct: isCorrect ? 1 : 0,
+          total_incorrect: isCorrect ? 0 : 1,
+          consecutive_correct: isCorrect ? 1 : 0,
+          mastery_level: newMasteryLevel,
+          last_seen_at: now,
+          next_review_at: nextReviewAt
+        }
+        
+        // Set last_correct_at if first attempt is correct
+        if (isCorrect) {
+          insertData.last_correct_at = now
+        }
+
         const { error: insertError } = await supabase
           .from('vocabulary_performance')
-          .insert({
-            user_id: userId,
-            vocabulary_id: vocabularyId,
-            word_text: wordText,
-            total_attempts: 1,
-            total_correct: isCorrect ? 1 : 0,
-            total_incorrect: isCorrect ? 0 : 1,
-            consecutive_correct: isCorrect ? 1 : 0,
-            mastery_level: newMasteryLevel,
-            last_seen_at: now,
-            next_review_at: nextReviewAt
-          })
+          .insert(insertData)
 
         if (insertError) {
           console.error('Error inserting performance:', insertError)
@@ -228,18 +236,26 @@ export class VocabularyTrackingService {
       )
       const nextReviewAt = this.calculateNextReview(newMasteryLevel)
 
+      // Update last_correct_at if this is a correct answer
+      const updateData: any = {
+        word_text: wordText, // Keep label fresh
+        total_attempts: current.total_attempts + 1,
+        total_correct: current.total_correct + (isCorrect ? 1 : 0),
+        total_incorrect: current.total_incorrect + (isCorrect ? 0 : 1),
+        consecutive_correct: newConsecutive,
+        mastery_level: newMasteryLevel,
+        last_seen_at: now,
+        next_review_at: nextReviewAt
+      }
+      
+      // Set last_correct_at if answer is correct (for decay system)
+      if (isCorrect) {
+        updateData.last_correct_at = now
+      }
+
       const { error: updateError } = await supabase
         .from('vocabulary_performance')
-        .update({
-          word_text: wordText, // Keep label fresh
-          total_attempts: current.total_attempts + 1,
-          total_correct: current.total_correct + (isCorrect ? 1 : 0),
-          total_incorrect: current.total_incorrect + (isCorrect ? 0 : 1),
-          consecutive_correct: newConsecutive,
-          mastery_level: newMasteryLevel,
-          last_seen_at: now,
-          next_review_at: nextReviewAt
-        })
+        .update(updateData)
         .eq('user_id', userId)
         .eq('vocabulary_id', vocabularyId)
 
@@ -529,26 +545,116 @@ export class VocabularyTrackingService {
 
   /**
    * Get dashboard statistics for user
-   * Returns words learned count, mastered count, and hard words
+   * Uses SQL view (user_word_mastery) for single source of truth
+   * Returns words learned count, mastered count, hard words, and unclassified count
    */
   static async getDashboardStats(userId: string): Promise<{
     wordsLearned: number
     masteredWords: number
     hardWords: WeakWord[]
+    unclassifiedWords: number
+    wordsToReview: WeakWord[]
   }> {
     try {
-      // Get all performance records for this user
+      // Query the SQL view (single source of truth for mastery logic)
+      const { data, error } = await supabase
+        .from('user_word_mastery')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Error fetching dashboard stats from view:', error)
+        // Fallback to old method if view doesn't exist yet
+        return await this.getDashboardStatsFallback(userId)
+      }
+
+      const words = data || []
+
+      // Words Learned: Any word with total_attempts > 0
+      const wordsLearned = words.filter(w => w.total_attempts > 0).length
+
+      // Mastered Words: status = 'mastered'
+      const masteredWords = words.filter(w => w.status === 'mastered').length
+
+      // Hard Words: status = 'hard', sorted by error_rate DESC
+      const hardWords = words
+        .filter(w => w.status === 'hard')
+        .sort((a, b) => (b.error_rate || 0) - (a.error_rate || 0))
+        .slice(0, 10) // Top 10 hardest words
+        .map(w => ({
+          vocabulary_id: w.vocabulary_id,
+          word_text: w.word_text,
+          consecutive_correct: w.consecutive_correct,
+          total_attempts: w.total_attempts,
+          total_correct: w.total_correct,
+          total_incorrect: w.total_incorrect,
+          accuracy: w.accuracy || 0,
+          last_seen_at: w.last_seen_at
+        }))
+
+      // Unclassified Words: status = 'unclassified'
+      const unclassifiedWords = words.filter(w => w.status === 'unclassified').length
+
+      // Words to Review: SRS schedule (next_review_at <= NOW())
+      const wordsToReview = words
+        .filter(w => w.next_review_at && new Date(w.next_review_at) <= new Date())
+        .sort((a, b) => {
+          const aDate = a.next_review_at ? new Date(a.next_review_at).getTime() : 0
+          const bDate = b.next_review_at ? new Date(b.next_review_at).getTime() : 0
+          return aDate - bDate // Oldest review dates first
+        })
+        .slice(0, 10) // Top 10 words due for review
+        .map(w => ({
+          vocabulary_id: w.vocabulary_id,
+          word_text: w.word_text,
+          consecutive_correct: w.consecutive_correct,
+          total_attempts: w.total_attempts,
+          total_correct: w.total_correct,
+          total_incorrect: w.total_incorrect,
+          accuracy: w.accuracy || 0,
+          last_seen_at: w.last_seen_at
+        }))
+
+      return {
+        wordsLearned,
+        masteredWords,
+        hardWords,
+        unclassifiedWords,
+        wordsToReview
+      }
+
+    } catch (error) {
+      console.error('Exception in getDashboardStats:', error)
+      // Fallback to old method on error
+      return await this.getDashboardStatsFallback(userId)
+    }
+  }
+
+  /**
+   * Fallback method using old logic (if view doesn't exist yet)
+   * @private
+   */
+  private static async getDashboardStatsFallback(userId: string): Promise<{
+    wordsLearned: number
+    masteredWords: number
+    hardWords: WeakWord[]
+    unclassifiedWords: number
+    wordsToReview: WeakWord[]
+  }> {
+    try {
       const { data, error } = await supabase
         .from('vocabulary_performance')
         .select('*')
         .eq('user_id', userId)
 
       if (error) {
-        console.error('Error fetching dashboard stats:', error)
+        console.error('Error fetching dashboard stats (fallback):', error)
         return {
           wordsLearned: 0,
           masteredWords: 0,
-          hardWords: []
+          hardWords: [],
+          unclassifiedWords: 0,
+          wordsToReview: []
         }
       }
 
@@ -557,14 +663,31 @@ export class VocabularyTrackingService {
       // Words Learned: Any word with total_attempts > 0
       const wordsLearned = performances.filter(p => p.total_attempts > 0).length
 
-      // Mastered Words: consecutive_correct >= 5 OR mastery_level >= 5
-      const masteredWords = performances.filter(
-        p => p.consecutive_correct >= 5 || p.mastery_level >= 5
-      ).length
+      // Mastered Words: NEW CRITERIA - consecutive_correct >= 5 AND accuracy >= 90% AND total_attempts >= 3
+      const masteredWords = performances.filter(p => {
+        if (p.total_attempts < 3) return false
+        const accuracy = p.total_attempts > 0 ? (p.total_correct / p.total_attempts) * 100 : 0
+        return p.consecutive_correct >= 5 && accuracy >= 90
+      }).length
 
-      // Hard Words: Calculate error rate, filter by total_attempts >= 2, sort by error rate DESC
-      const hardWordsWithErrorRate = performances
-        .filter(p => p.total_attempts >= 2) // Minimum 2 attempts
+      // Hard Words: NEW CRITERIA - (accuracy < 70% OR consecutive_correct < 2) AND total_attempts >= 2 AND NOT mastered
+      const masteredVocabIds = new Set(
+        performances
+          .filter(p => {
+            if (p.total_attempts < 3) return false
+            const accuracy = p.total_attempts > 0 ? (p.total_correct / p.total_attempts) * 100 : 0
+            return p.consecutive_correct >= 5 && accuracy >= 90
+          })
+          .map(p => p.vocabulary_id)
+      )
+
+      const hardWords = performances
+        .filter(p => {
+          if (p.total_attempts < 2) return false
+          if (masteredVocabIds.has(p.vocabulary_id)) return false // Mutual exclusivity
+          const accuracy = p.total_attempts > 0 ? (p.total_correct / p.total_attempts) * 100 : 0
+          return accuracy < 70 || p.consecutive_correct < 2
+        })
         .map(p => ({
           vocabulary_id: p.vocabulary_id,
           word_text: p.word_text,
@@ -573,25 +696,53 @@ export class VocabularyTrackingService {
           total_correct: p.total_correct,
           total_incorrect: p.total_incorrect,
           accuracy: p.total_attempts > 0 ? (p.total_correct / p.total_attempts) * 100 : 0,
-          errorRate: p.total_attempts > 0 ? (p.total_incorrect / p.total_attempts) : 0,
           last_seen_at: p.last_seen_at
         }))
-        .sort((a, b) => b.errorRate - a.errorRate) // Highest error rate first
-        .slice(0, 10) // Top 10 hardest words
-        .map(({ errorRate, ...rest }) => rest) // Remove errorRate from output
+        .sort((a, b) => {
+          const aErrorRate = a.total_attempts > 0 ? (a.total_incorrect / a.total_attempts) : 0
+          const bErrorRate = b.total_attempts > 0 ? (b.total_incorrect / b.total_attempts) : 0
+          return bErrorRate - aErrorRate
+        })
+        .slice(0, 10)
+
+      // Unclassified Words: total_attempts < 3
+      const unclassifiedWords = performances.filter(p => p.total_attempts > 0 && p.total_attempts < 3).length
+
+      // Words to Review: SRS schedule
+      const wordsToReview = performances
+        .filter(p => p.next_review_at && new Date(p.next_review_at) <= new Date())
+        .sort((a, b) => {
+          const aDate = a.next_review_at ? new Date(a.next_review_at).getTime() : 0
+          const bDate = b.next_review_at ? new Date(b.next_review_at).getTime() : 0
+          return aDate - bDate
+        })
+        .slice(0, 10)
+        .map(p => ({
+          vocabulary_id: p.vocabulary_id,
+          word_text: p.word_text,
+          consecutive_correct: p.consecutive_correct,
+          total_attempts: p.total_attempts,
+          total_correct: p.total_correct,
+          total_incorrect: p.total_incorrect,
+          accuracy: p.total_attempts > 0 ? (p.total_correct / p.total_attempts) * 100 : 0,
+          last_seen_at: p.last_seen_at
+        }))
 
       return {
         wordsLearned,
         masteredWords,
-        hardWords: hardWordsWithErrorRate
+        hardWords,
+        unclassifiedWords,
+        wordsToReview
       }
-
     } catch (error) {
-      console.error('Exception in getDashboardStats:', error)
+      console.error('Exception in getDashboardStatsFallback:', error)
       return {
         wordsLearned: 0,
         masteredWords: 0,
-        hardWords: []
+        hardWords: [],
+        unclassifiedWords: 0,
+        wordsToReview: []
       }
     }
   }

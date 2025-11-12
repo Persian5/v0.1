@@ -25,10 +25,10 @@ interface HardWordsWidgetProps {
 export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) {
   if (isLoading) {
     return (
-      <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 hover:shadow-lg transition-shadow">
+      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2 text-red-700">
-            <AlertCircle className="h-5 w-5" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
             Words to Review
           </CardTitle>
           <CardDescription>Words you're struggling with</CardDescription>
@@ -46,10 +46,10 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
 
   if (hardWords.length === 0) {
     return (
-      <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-lg transition-shadow">
+      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2 text-green-700">
-            <TrendingDown className="h-5 w-5" />
+          <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-green-500" />
             Words to Review
           </CardTitle>
           <CardDescription>Great job! No struggling words right now.</CardDescription>
@@ -60,7 +60,7 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
               Keep practicing to maintain your progress!
             </p>
             <Link href="/modules">
-              <Button variant="outline" className="border-green-300 text-green-700 hover:bg-green-100">
+              <Button variant="outline" className="border-neutral-300">
                 Continue Learning
               </Button>
             </Link>
@@ -71,10 +71,10 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
   }
 
   return (
-    <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 hover:shadow-lg transition-shadow">
+    <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2 text-red-700">
-          <AlertCircle className="h-5 w-5" />
+        <CardTitle className="text-lg flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-error-500" />
           Words to Review
         </CardTitle>
         <CardDescription>Focus on these words to improve</CardDescription>
@@ -84,25 +84,25 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
           {hardWords.slice(0, 10).map((word) => (
             <div
               key={word.vocabulary_id}
-              className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-red-100 hover:bg-white/80 transition-colors"
+              className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors min-h-[48px]"
             >
-              <div className="flex-1">
-                <div className="font-semibold text-gray-900">{word.word_text}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-900 truncate">{word.word_text}</div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {word.total_correct} correct / {word.total_attempts} attempts • {Math.round(word.accuracy)}% accuracy
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-red-600 font-medium">
+              <div className="flex items-center gap-2 ml-4">
+                <div className="text-xs text-red-500 font-medium whitespace-nowrap">
                   {word.consecutive_correct < 2 ? "Needs practice" : "Getting better"}
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <div className="mt-4 pt-4 border-t border-red-200">
+        <div className="mt-4 pt-4 border-t border-neutral-200">
           <Link href="/review" className="block">
-            <Button variant="outline" className="w-full border-red-300 text-red-700 hover:bg-red-100">
+            <Button variant="outline" className="w-full border-neutral-300 min-h-[48px]">
               Review Mode
             </Button>
           </Link>
