@@ -25,6 +25,11 @@ export interface StreakMilestone {
  * (trg_update_streak) whenever XP is awarded. This service only reads streak data.
  */
 export class StreakService {
+  /**
+   * Track in-progress streak updates to prevent concurrent calls
+   * Key: userId, Value: true if update is in progress
+   */
+  private static updateInProgress: Set<string> = new Set()
   
   /**
    * Update streak when learning activity occurs

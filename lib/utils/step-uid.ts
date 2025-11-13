@@ -1,5 +1,5 @@
 /**
- * Step UID Generator (v2)
+ * Step UID Generator (v3 - Production Stable)
  * 
  * Generates stable, unique identifiers for lesson steps.
  * These UIDs are used for XP idempotency - ensuring users can only earn XP once per step.
@@ -7,12 +7,14 @@
  * Key principles:
  * 1. UIDs must be stable (same step = same UID across app versions)
  * 2. UIDs must be unique within a lesson AND across lessons
- * 3. UIDs should survive step reordering (content-based, not position-based)
+ * 3. UIDs are content-based ONLY (never position-based)
  * 4. UIDs are collision-resistant through hashing
+ * 5. STRICT: Throw errors if content is missing (forces proper curriculum data)
  * 
  * Version History:
  * - v1: Original implementation (index-based fallbacks, truncation issues)
  * - v2: Content-based hashing, no truncation, version prefix, collision-resistant
+ * - v3: STRICT mode - no index fallbacks, forces proper curriculum data
  */
 
 import type { LessonStep } from '@/lib/types'
@@ -21,7 +23,7 @@ import type { LessonStep } from '@/lib/types'
  * UID version identifier
  * Increment this when changing UID generation logic to invalidate old cache
  */
-export const UID_VERSION = 'v2'
+export const UID_VERSION = 'v3'
 
 /**
  * Simple hash function for generating stable, short identifiers
@@ -45,19 +47,21 @@ function simpleHash(str: string): string {
 /**
  * Derive a stable UID for a lesson step.
  * 
- * Strategy:
- * - Use step type + content identifier when possible
+ * Strategy (v3 - STRICT):
+ * - Use step type + content identifier (REQUIRED)
  * - Hash content for collision resistance
- * - Fall back to step index only when no content available
+ * - NEVER fall back to stepIndex (throw error instead)
+ * - Forces proper curriculum data quality
  * 
  * Examples:
- * - v2-flashcard-salam
- * - v2-quiz-3agmcd (hashed)
- * - v2-audio-seq-k8n2m (hashed sequence)
- * - v2-final-challenge
+ * - v3-flashcard-salam
+ * - v3-quiz-3agmcd (hashed)
+ * - v3-audio-seq-k8n2m (hashed sequence)
+ * - v3-final-challenge
  */
-export function deriveStepUid(step: LessonStep, stepIndex: number): string {
+export function deriveStepUid(step: LessonStep, stepIndex: number, moduleId?: string, lessonId?: string): string {
   const type = step.type
+  const location = moduleId && lessonId ? `${moduleId}/${lessonId}` : 'unknown'
   
   switch (type) {
     case 'welcome':
@@ -66,12 +70,10 @@ export function deriveStepUid(step: LessonStep, stepIndex: number): string {
     
     case 'flashcard': {
       const vocabId = (step as any).data?.vocabularyId
-      if (vocabId) {
-        return `${UID_VERSION}-flashcard-${vocabId}`
+      if (!vocabId) {
+        throw new Error(`[${location}] Flashcard step ${stepIndex} missing vocabularyId - required for stable UID`)
       }
-      // Fallback: use index (shouldn't happen with proper curriculum)
-      console.warn(`Flashcard step ${stepIndex} missing vocabularyId, using index fallback`)
-      return `${UID_VERSION}-flashcard-${stepIndex}`
+      return `${UID_VERSION}-flashcard-${vocabId}`
     }
     
     case 'quiz': {
@@ -85,9 +87,7 @@ export function deriveStepUid(step: LessonStep, stepIndex: number): string {
       if (prompt !== undefined && correct !== undefined) {
         return `${UID_VERSION}-quiz-${simpleHash(`${prompt}-${correct}`)}`
       }
-      // Final fallback
-      console.warn(`Quiz step ${stepIndex} missing vocabularyId and content, using index fallback`)
-      return `${UID_VERSION}-quiz-${stepIndex}`
+      throw new Error(`[${location}] Quiz step ${stepIndex} missing vocabularyId or (prompt + correct) - required for stable UID`)
     }
     
     case 'input': {
@@ -97,80 +97,70 @@ export function deriveStepUid(step: LessonStep, stepIndex: number): string {
       }
       // Use answer as identifier if available
       const answer = (step as any).data?.answer
-      if (answer) {
-        // Sanitize answer for UID (remove special chars, lowercase)
-        const sanitized = answer.replace(/[^a-z0-9]/gi, '').toLowerCase()
-        // Hash if too long
-        const answerId = sanitized.length > 30 
-          ? simpleHash(sanitized)
-          : sanitized
-        return `${UID_VERSION}-input-${answerId}`
+      if (!answer) {
+        throw new Error(`[${location}] Input step ${stepIndex} missing vocabularyId or answer - required for stable UID`)
       }
-      console.warn(`Input step ${stepIndex} missing vocabularyId and answer, using index fallback`)
-      return `${UID_VERSION}-input-${stepIndex}`
+      // Sanitize answer for UID (remove special chars, lowercase)
+      const sanitized = answer.replace(/[^a-z0-9]/gi, '').toLowerCase()
+      // Hash if too long
+      const answerId = sanitized.length > 30 
+        ? simpleHash(sanitized)
+        : sanitized
+      return `${UID_VERSION}-input-${answerId}`
     }
     
     case 'matching': {
       // Extract content from matching words for content-based UID
       const words = (step as any).data?.words
-      const slots = (step as any).data?.slots
       
-      if (words && Array.isArray(words) && words.length > 0) {
-        // Create stable identifier from word texts and their slot assignments
-        // Format: "word1Text:slot1Id,word2Text:slot2Id"
-        const wordSlotPairs = words.map((w: any) => {
-          return `${w.text || w.id}:${w.slotId || ''}`
-        }).join(',')
-        
-        if (wordSlotPairs) {
-          return `${UID_VERSION}-matching-${simpleHash(wordSlotPairs)}`
-        }
+      if (!words || !Array.isArray(words) || words.length === 0) {
+        throw new Error(`[${location}] Matching step ${stepIndex} missing words array - required for stable UID`)
       }
       
-      // Fallback: use index (matching is contextual, so reordering = new challenge)
-      console.warn(`Matching step ${stepIndex} missing words data, using index fallback`)
-      return `${UID_VERSION}-matching-${stepIndex}`
+      // Create stable identifier from word texts and their slot assignments
+      // Format: "word1Text:slot1Id,word2Text:slot2Id"
+      const wordSlotPairs = words.map((w: any) => {
+        return `${w.text || w.id}:${w.slotId || ''}`
+      }).join(',')
+      
+      return `${UID_VERSION}-matching-${simpleHash(wordSlotPairs)}`
     }
     
     case 'audio-meaning': {
       const vocabId = (step as any).data?.vocabularyId
-      if (vocabId) {
-        return `${UID_VERSION}-audio-meaning-${vocabId}`
+      if (!vocabId) {
+        throw new Error(`[${location}] Audio-meaning step ${stepIndex} missing vocabularyId - required for stable UID`)
       }
-      console.warn(`Audio-meaning step ${stepIndex} missing vocabularyId, using index fallback`)
-      return `${UID_VERSION}-audio-meaning-${stepIndex}`
+      return `${UID_VERSION}-audio-meaning-${vocabId}`
     }
     
     case 'audio-sequence': {
       // Audio sequences have a sequence array of vocabulary IDs
       const sequence = (step as any).data?.sequence
-      if (sequence && Array.isArray(sequence) && sequence.length > 0) {
-        // Hash the full sequence for unique, collision-resistant identifier
-        // This ensures "salam,khoobam" and "salam,chetori" get different UIDs
-        const sequenceKey = sequence.join(',')
-        return `${UID_VERSION}-audio-seq-${simpleHash(sequenceKey)}`
+      if (!sequence || !Array.isArray(sequence) || sequence.length === 0) {
+        throw new Error(`[${location}] Audio-sequence step ${stepIndex} missing sequence array - required for stable UID`)
       }
-      console.warn(`Audio-sequence step ${stepIndex} missing sequence data, using index fallback`)
-      return `${UID_VERSION}-audio-seq-${stepIndex}`
+      // Hash the full sequence for unique, collision-resistant identifier
+      const sequenceKey = sequence.join(',')
+      return `${UID_VERSION}-audio-seq-${simpleHash(sequenceKey)}`
     }
     
     case 'text-sequence': {
       // Text sequences have finglish text
       const finglish = (step as any).data?.finglishText
-      if (finglish) {
-        // Sanitize: remove special characters, lowercase
-        const sanitized = finglish.replace(/[^a-z0-9]/gi, '').toLowerCase()
-        
-        // Use full sanitized text if short (easier to debug)
-        // Hash if longer than 50 chars to keep UIDs manageable
-        if (sanitized.length <= 50) {
-          return `${UID_VERSION}-text-seq-${sanitized}`
-        } else {
-          return `${UID_VERSION}-text-seq-${simpleHash(sanitized)}`
-        }
+      if (!finglish) {
+        throw new Error(`[${location}] Text-sequence step ${stepIndex} missing finglishText - required for stable UID`)
       }
-      console.warn(`Text-sequence step ${stepIndex} missing finglishText, using index fallback`)
-      return `${UID_VERSION}-text-seq-${stepIndex}`
+      // Sanitize: remove special characters, lowercase
+      const sanitized = finglish.replace(/[^a-z0-9]/gi, '').toLowerCase()
+      
+      // Use full sanitized text if short (easier to debug)
+      // Hash if longer than 50 chars to keep UIDs manageable
+      if (sanitized.length <= 50) {
+        return `${UID_VERSION}-text-seq-${sanitized}`
+      } else {
+        return `${UID_VERSION}-text-seq-${simpleHash(sanitized)}`
+      }
     }
     
     case 'final':
@@ -180,20 +170,54 @@ export function deriveStepUid(step: LessonStep, stepIndex: number): string {
     case 'story-conversation': {
       // Story conversations use story ID
       const storyId = (step as any).data?.storyId
-      if (storyId) {
-        return `${UID_VERSION}-story-${storyId}`
+      if (!storyId) {
+        throw new Error(`[${location}] Story-conversation step ${stepIndex} missing storyId - required for stable UID`)
       }
-      console.warn(`Story-conversation step ${stepIndex} missing storyId, using index fallback`)
-      return `${UID_VERSION}-story-${stepIndex}`
+      return `${UID_VERSION}-story-${storyId}`
     }
     
     case 'grammar-concept': {
       const conceptId = (step as any).data?.conceptId
-      if (conceptId) {
-        return `${UID_VERSION}-grammar-${conceptId}`
+      if (!conceptId) {
+        throw new Error(`[${location}] Grammar-concept step ${stepIndex} missing conceptId - required for stable UID`)
       }
-      console.warn(`Grammar-concept step ${stepIndex} missing conceptId, using index fallback`)
-      return `${UID_VERSION}-grammar-${stepIndex}`
+      return `${UID_VERSION}-grammar-${conceptId}`
+    }
+    
+    case 'grammar-intro': {
+      const conceptId = (step as any).data?.conceptId
+      if (!conceptId) {
+        throw new Error(`[${location}] Grammar-intro step ${stepIndex} missing conceptId - required for stable UID`)
+      }
+      return `${UID_VERSION}-grammar-intro-${conceptId}`
+    }
+    
+    case 'grammar-fill-blank': {
+      const conceptId = (step as any).data?.conceptId
+      const exercises = (step as any).data?.exercises
+      if (!conceptId || !exercises || !Array.isArray(exercises) || exercises.length === 0) {
+        throw new Error(`[${location}] Grammar-fill-blank step ${stepIndex} missing conceptId or exercises - required for stable UID`)
+      }
+      // Use first exercise's sentence + correct answer for uniqueness
+      const firstExercise = exercises[0]
+      const sentence = firstExercise.sentence || ''
+      const correctAnswer = firstExercise.correctAnswer || (firstExercise.blanks?.[0]?.correctAnswer) || ''
+      const exerciseKey = `${sentence}-${correctAnswer}`
+      return `${UID_VERSION}-grammar-fill-blank-${conceptId}-${simpleHash(exerciseKey)}`
+    }
+    
+    case 'grammar-transformation': {
+      const conceptId = (step as any).data?.conceptId
+      const exercises = (step as any).data?.exercises
+      if (!conceptId || !exercises || !Array.isArray(exercises) || exercises.length === 0) {
+        throw new Error(`[${location}] Grammar-transformation step ${stepIndex} missing conceptId or exercises - required for stable UID`)
+      }
+      // Use first exercise's base word + target meaning for uniqueness
+      const firstExercise = exercises[0]
+      const baseWord = firstExercise.baseWord || ''
+      const targetMeaning = firstExercise.targetMeaning || ''
+      const exerciseKey = `${baseWord}-${targetMeaning}`
+      return `${UID_VERSION}-grammar-transformation-${conceptId}-${simpleHash(exerciseKey)}`
     }
     
     case 'reverse-quiz': {
@@ -207,14 +231,13 @@ export function deriveStepUid(step: LessonStep, stepIndex: number): string {
       if (prompt !== undefined && correct !== undefined) {
         return `${UID_VERSION}-reverse-quiz-${simpleHash(`${prompt}-${correct}`)}`
       }
-      console.warn(`Reverse-quiz step ${stepIndex} missing content, using index fallback`)
-      return `${UID_VERSION}-reverse-quiz-${stepIndex}`
+      throw new Error(`[${location}] Reverse-quiz step ${stepIndex} missing vocabularyId or (prompt + correct) - required for stable UID`)
     }
     
     default:
       // Unknown step type - use type + hash of data
-      console.warn(`Unknown step type: ${type}, using content hash fallback`)
       const dataStr = JSON.stringify((step as any).data || {})
+      console.warn(`Unknown step type: ${type} in ${location}, using content hash`)
       return `${UID_VERSION}-${type}-${simpleHash(dataStr)}`
   }
 }

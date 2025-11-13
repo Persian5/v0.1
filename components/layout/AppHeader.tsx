@@ -11,6 +11,7 @@ import { AccountDropdown } from './AccountDropdown'
 import { MobileMenu } from './MobileMenu'
 import { Button } from '@/components/ui/button'
 import { AuthModal } from '@/components/auth/AuthModal'
+import { getModule } from '@/lib/config/curriculum'
 
 type HeaderVariant = 'default' | 'minimal' | 'logged-out'
 
@@ -58,6 +59,20 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
     }
   }, [pathname, router])
 
+  // Get module info for back button text
+  const moduleInfo = useMemo(() => {
+    const lessonMatch = pathname?.match(/^\/modules\/([^/]+)\/[^/]+$/)
+    if (lessonMatch) {
+      const module = getModule(lessonMatch[1])
+      if (module) {
+        // Extract module number from title (e.g., "Module 1: Greetings" -> "Module 1")
+        const match = module.title.match(/Module (\d+)/)
+        return match ? `Module ${match[1]}` : module.title.split(':')[0]
+      }
+    }
+    return null
+  }, [pathname])
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md relative">
@@ -68,10 +83,12 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               <button
                 onClick={handleBack}
                 className="flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
-                aria-label="Go back to previous page"
+                aria-label={moduleInfo ? `Go back to ${moduleInfo}` : "Go back to previous page"}
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span className="text-sm font-medium hidden sm:inline">Back</span>
+                <span className="text-sm font-medium">
+                  {moduleInfo ? `Back to ${moduleInfo}` : 'Back'}
+                </span>
               </button>
 
               <div className="flex items-center gap-3">

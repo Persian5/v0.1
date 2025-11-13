@@ -301,7 +301,7 @@ export function FinalChallenge({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+    <div className="w-full h-full flex flex-col">
       {/* Confetti Canvas */}
       <div ref={confettiCanvasRef} className="fixed inset-0 pointer-events-none z-50"></div>
       

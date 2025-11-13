@@ -716,12 +716,91 @@ export const curriculumData: Module[] = [
               distractors: ["esme", "shoma", "man"]
             }
           },
-          // PHASE 2: GRAMMAR CONCEPT - EZAFE CONNECTOR  
+          // PHASE 2: GRAMMAR - EZAFE CONNECTOR (3 NEW STEPS)
+          // Step 1: Grammar Intro
           {
-            type: "grammar-concept",
-            points: 2,
+            type: "grammar-intro",
+            points: 1,
             data: {
-              conceptId: "ezafe-connector"
+              conceptId: "ezafe-connector",
+              title: "Connecting Words: The –e Sound",
+              description: "In Persian, you can't just say 'esm man' to mean 'my name.' You need to add a small 'e' sound between the words. This connector sound links words together, like adding 'of' in English. So 'esm' becomes 'esme' when you want to connect it to another word.",
+              rule: "Add –e between two words to connect them and show possession or relationship.",
+              visualType: "comparison",
+              visualData: {
+                before: "esm man",
+                after: "esme man"
+              }
+            }
+          },
+          // Step 2: Grammar Fill Blank (suffix only)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "ezafe-connector",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct connector",
+              exercises: [
+                {
+                  sentence: "esm-___ man",
+                  translation: "my name",
+                  blankPosition: 4,
+                  correctAnswer: "e",
+                  suffixOptions: [
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-et", text: "-et" }
+                  ],
+                  distractors: [
+                    { id: "suffix-ye", text: "-ye" }
+                  ]
+                }
+              ]
+            }
+          },
+          // Step 3: Grammar Fill Blank (suffix + word)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "ezafe-connector",
+              label: "FILL IN THE BLANKS",
+              subtitle: "Complete the sentence with suffix and word",
+              exercises: [
+                {
+                  sentence: "esm-___ ___ chiye?",
+                  translation: "What is your name?",
+                  blanks: [
+                    {
+                      index: 0,
+                      type: "suffix",
+                      correctAnswer: "e"
+                    },
+                    {
+                      index: 1,
+                      type: "word",
+                      correctAnswer: "shoma"
+                    }
+                  ],
+                  suffixOptions: [
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-et", text: "-et" }
+                  ],
+                  wordOptions: [
+                    { id: "word-shoma", text: "shoma" },
+                    { id: "word-man", text: "man" },
+                    { id: "word-esm", text: "esm" },
+                    { id: "word-chi", text: "chi" }
+                  ],
+                  distractors: [
+                    { id: "suffix-ye", text: "-ye" }
+                  ]
+                }
+              ]
             }
           },
           {
@@ -783,13 +862,6 @@ export const curriculumData: Module[] = [
             data: {
               question: "Type how you ask 'What' in Persian?",
               answer: "chi"
-            }
-          },
-          {
-            type: "grammar-concept",
-            points: 2,
-            data: {
-              conceptId: "verb-contraction"
             }
           },
           {
@@ -1398,11 +1470,85 @@ export const curriculumData: Module[] = [
               vocabularyId: "khoob"
             }
           },
+          // GRAMMAR: Personal Endings - Part 1 (State)
+          // Step 1: Grammar Intro
           {
-            type: "grammar-concept",
-            points: 2,
+            type: "grammar-intro",
+            points: 1,
             data: {
-              conceptId: "adjective-suffixes"
+              conceptId: "adjective-suffixes",
+              title: "I Am / You Are: Personal Endings",
+              description: "You've been using khoobam! Let me show you the pattern. In Persian, you add endings to words to say 'I am' or 'you are.' Add -am for 'I am' and -i for 'you are.' These same endings work with ANY adjective.",
+              rule: "Add -am (I am) or -i (you are) to adjectives",
+              visualType: "comparison",
+              visualData: {
+                before: "khoob",
+                after: "khoob-am"
+              }
+            }
+          },
+          // Step 2: Grammar Fill Blank (suffix only)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "adjective-suffixes",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                  sentence: "khoob-___",
+                  translation: "I am good",
+                  blankPosition: 6,
+                  correctAnswer: "am",
+                  suffixOptions: [
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
+            }
+          },
+          // Step 3: Grammar Fill Blank (word + suffix)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "adjective-suffixes",
+              label: "FILL IN THE BLANKS",
+              subtitle: "Complete the sentence with word and suffix",
+              exercises: [
+                {
+                  sentence: "___ merci, khoob-___",
+                  translation: "No thank you, I am good",
+                  blanks: [
+                    {
+                      index: 0,
+                      type: "word",
+                      correctAnswer: "na"
+                    },
+                    {
+                      index: 1,
+                      type: "suffix",
+                      correctAnswer: "am"
+                    }
+                  ],
+                  wordOptions: [
+                    { id: "word-na", text: "na" },
+                    { id: "word-baleh", text: "baleh" },
+                    { id: "word-man", text: "man" },
+                    { id: "word-shoma", text: "shoma" }
+                  ],
+                  suffixOptions: [
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
             }
           },
           {
@@ -2251,11 +2397,85 @@ export const curriculumData: Module[] = [
               ]
             }
           },
+          // GRAMMAR: Connectors
+          // Step 1: Grammar Intro
           {
-            type: "grammar-concept",
-            points: 0,
+            type: "grammar-intro",
+            points: 1,
             data: {
-              conceptId: "connectors-placement"
+              conceptId: "connectors-placement",
+              title: "Connecting Ideas: Va, Ham, Vali",
+              description: "In Persian, connectors work just like English. 'va' means 'and', 'ham' means 'also/too', and 'vali' means 'but'. They always go BETWEEN or AT THE START of sentences, just like in English.",
+              rule: "Place connectors between words or at the start of sentences",
+              visualType: "comparison",
+              visualData: {
+                before: "khoobam. khoob neestam",
+                after: "khoobam vali khoob neestam"
+              }
+            }
+          },
+          // Step 2: Grammar Fill Blank (connector only)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "connectors-placement",
+              label: "FILL IN THE CONNECTOR",
+              subtitle: "Choose the correct word",
+              exercises: [
+                {
+                  sentence: "khoobam ___ khoob neestam",
+                  translation: "I am good but I am not good",
+                  blanks: [
+                    {
+                      index: 0,
+                      type: "connector",
+                      correctAnswer: "vali"
+                    }
+                  ],
+                  wordOptions: [
+                    { id: "conn-vali", text: "vali" },
+                    { id: "conn-va", text: "va" },
+                    { id: "conn-ham", text: "ham" }
+                  ]
+                }
+              ]
+            }
+          },
+          // Step 3: Grammar Fill Blank (word + word)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "connectors-placement",
+              label: "FILL IN THE BLANKS",
+              subtitle: "Complete the sentence with connector and word",
+              exercises: [
+                {
+                  sentence: "man ___ ___",
+                  translation: "I am also good",
+                  blanks: [
+                    {
+                      index: 0,
+                      type: "connector",
+                      correctAnswer: "ham"
+                    },
+                    {
+                      index: 1,
+                      type: "word",
+                      correctAnswer: "khoobam"
+                    }
+                  ],
+                  wordOptions: [
+                    { id: "conn-ham", text: "ham" },
+                    { id: "word-khoobam", text: "khoobam" },
+                    { id: "conn-vali", text: "vali" },
+                    { id: "conn-va", text: "va" },
+                    { id: "word-khoobi", text: "khoobi" },
+                    { id: "word-esmam", text: "esmam" }
+                  ]
+                }
+              ]
             }
           },
           {
@@ -3241,11 +3461,85 @@ export const curriculumData: Module[] = [
               lessonType: "grammar"
             }
           },
+          // GRAMMAR: Personal Endings - Part 2 (Possession)
+          // Step 1: Grammar Intro
           {
-            type: "grammar-concept",
-            points: 3,
+            type: "grammar-intro",
+            points: 1,
             data: {
-              conceptId: "possession-suffixes"
+              conceptId: "possession-suffixes",
+              title: "My / Your: Personal Endings for Possession",
+              description: "You've been using esmam and esmet! These same endings (-am, -i, -et) work for possession too. Add -am to mean 'my', -i for 'your' (informal), and -et for 'your' (formal). The same pattern works for ANY noun.",
+              rule: "Add -am (my), -i (your informal), -et (your formal) to nouns",
+              visualType: "comparison",
+              visualData: {
+                before: "esm",
+                after: "esm-am"
+              }
+            }
+          },
+          // Step 2: Grammar Fill Blank (suffix only)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "possession-suffixes",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                  sentence: "esm-___",
+                  translation: "my name",
+                  blankPosition: 4,
+                  correctAnswer: "am",
+                  suffixOptions: [
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-et", text: "-et" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-e", text: "-e" }
+                  ]
+                }
+              ]
+            }
+          },
+          // Step 3: Grammar Fill Blank (word + suffix)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "possession-suffixes",
+              label: "FILL IN THE BLANKS",
+              subtitle: "Complete the sentence with suffix and word",
+              exercises: [
+                {
+                  sentence: "esm-___ ___ chiye?",
+                  translation: "What is your name?",
+                  blanks: [
+                    {
+                      index: 0,
+                      type: "suffix",
+                      correctAnswer: "e"
+                    },
+                    {
+                      index: 1,
+                      type: "word",
+                      correctAnswer: "shoma"
+                    }
+                  ],
+                  suffixOptions: [
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-et", text: "-et" }
+                  ],
+                  wordOptions: [
+                    { id: "word-shoma", text: "shoma" },
+                    { id: "word-man", text: "man" },
+                    { id: "word-esm", text: "esm" },
+                    { id: "word-chi", text: "chi" }
+                  ]
+                }
+              ]
             }
           },
           {

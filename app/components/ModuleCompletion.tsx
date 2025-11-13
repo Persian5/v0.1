@@ -84,7 +84,7 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
   }, [moduleId]);
 
   // Early return AFTER all hooks
-  if (!module || !completionData) {
+  if (!currentModule || !completionData) {
     return null;
   }
 

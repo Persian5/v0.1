@@ -5,12 +5,13 @@ import { InputExercise } from '@/app/components/games/InputExercise'
 import { MatchingGame } from '@/app/components/games/MatchingGame'
 import { FinalChallenge } from '@/app/components/games/FinalChallenge'
 import { LessonIntro } from '@/app/components/games/WelcomeIntro'
-import { GrammarConcept } from '@/app/components/games/GrammarConcept'
+import { GrammarIntro } from '@/app/components/games/GrammarIntro'
+import { GrammarFillBlank } from '@/app/components/games/GrammarFillBlank'
 import { AudioMeaning } from '@/app/components/games/AudioMeaning'
 import { AudioSequence } from '@/app/components/games/AudioSequence'
 import { StoryConversation } from '@/app/components/games/StoryConversation'
 import { TextSequence } from './games/TextSequence'
-import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, ReverseQuizStep, InputStep, MatchingStep, FinalStep, GrammarConceptStep, AudioMeaningStep, AudioSequenceStep, TextSequenceStep, StoryConversationStep, VocabularyItem, Lesson } from '@/lib/types'
+import { LessonStep, WelcomeStep, FlashcardStep, QuizStep, ReverseQuizStep, InputStep, MatchingStep, FinalStep, GrammarIntroStep, GrammarFillBlankStep, AudioMeaningStep, AudioSequenceStep, TextSequenceStep, StoryConversationStep, VocabularyItem, Lesson } from '@/lib/types'
 import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
@@ -363,7 +364,7 @@ export function LessonRunner({
       }
 
       // Derive stable step UID
-      const stepUid = deriveStepUid(currentStep, idx);
+      const stepUid = deriveStepUid(currentStep, idx, moduleId, lessonId);
       
       // Get XP amount from curriculum
       const xpReward = XpService.getStepXp(currentStep);
@@ -419,7 +420,7 @@ export function LessonRunner({
         const actualWordText = vocabItem?.en 
           ? WordBankService.normalizeVocabEnglish(vocabItem.en)
           : wordText;
-        const stepUid = deriveStepUid(currentStep, idx);
+        const stepUid = deriveStepUid(currentStep, idx, moduleId, lessonId);
         
         VocabularyTrackingService.storeAttempt({
           userId: user.id,
@@ -454,7 +455,7 @@ export function LessonRunner({
         : wordText;
 
       // Derive stable step UID
-      const stepUid = deriveStepUid(currentStep, idx);
+      const stepUid = deriveStepUid(currentStep, idx, moduleId, lessonId);
       
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // ALWAYS track to database (for analytics/review mode)
@@ -833,22 +834,23 @@ export function LessonRunner({
     <>
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
       
-      {/* Positioned wrapper for step content + back button */}
-      <div className="relative w-full">
-        {/* STEP BACK BUTTON - Top-left corner, visible from step 1 onwards */}
+      {/* Positioned wrapper for step content + back button - matches step background */}
+      <div className="relative w-full flex-1 min-h-[calc(100vh-64px)] sm:min-h-0 bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+        {/* STEP BACK BUTTON - Text-only, matches step background, distinct from AppHeader "Back" */}
         {idx > 0 && (
           <button
             onClick={handleBackButton}
             disabled={isNavigating || showXp || isPending}
-            className="absolute left-4 top-4 z-50 flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+            className="absolute left-4 top-2 sm:top-4 z-[100] flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:pointer-events-none transition-colors"
             aria-label="Go back to previous step"
           >
             <ArrowLeft className="h-4 w-4" />
-            Previous
+            <span className="font-medium">Previous</span>
           </button>
         )}
         
-        {/* Render current step based on type */}
+        {/* Render current step based on type - Mobile padding only, no desktop padding */}
+        <div className="pt-9 sm:pt-0">
       {step.type === 'welcome' ? (
         <LessonIntro 
           title={(step as WelcomeStep).title} 
@@ -946,10 +948,25 @@ export function LessonRunner({
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
         />
-      ) : step.type === 'grammar-concept' ? (
-        <GrammarConcept
-          key={`grammar-concept-${idx}`}
-          conceptId={(step as GrammarConceptStep).data.conceptId}
+      ) : step.type === 'grammar-intro' ? (
+        <GrammarIntro
+          key={`grammar-intro-${idx}`}
+          title={(step as GrammarIntroStep).data.title}
+          description={(step as GrammarIntroStep).data.description}
+          rule={(step as GrammarIntroStep).data.rule}
+          visualType={(step as GrammarIntroStep).data.visualType}
+          visualData={(step as GrammarIntroStep).data.visualData}
+          points={step.points}
+          onComplete={handleItemComplete}
+          onXpStart={createStepXpHandler()}
+        />
+      ) : step.type === 'grammar-fill-blank' ? (
+        <GrammarFillBlank
+          key={`grammar-fill-blank-${idx}`}
+          exercises={(step as GrammarFillBlankStep).data.exercises}
+          conceptId={(step as GrammarFillBlankStep).data.conceptId}
+          label={(step as GrammarFillBlankStep).data.label}
+          subtitle={(step as GrammarFillBlankStep).data.subtitle}
           points={step.points}
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
@@ -1001,6 +1018,7 @@ export function LessonRunner({
           addXp={addXp}
         />
       ) : null}
+        </div>
       </div>
     </>
   );

@@ -31,8 +31,8 @@ import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module
 import { ModuleAccessService } from "@/lib/services/module-access-service"
 import { safeTelemetry } from "@/lib/utils/telemetry-safe"
 
-// Cache staleness threshold (5 seconds)
-const CACHE_STALENESS_THRESHOLD = 5000
+// Cache staleness threshold (60 seconds - lesson accessibility rarely changes mid-session)
+const CACHE_STALENESS_THRESHOLD = 60_000 // 60 seconds
 
 function LessonPageContent() {
   const params = useParams()

@@ -39,9 +39,9 @@ export interface Lesson {
 }
 
 // Step types
-export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'reverse-quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'completion' | 'summary' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation';
+export type LessonViewType = 'welcome' | 'flashcard' | 'quiz' | 'reverse-quiz' | 'input' | 'matching' | 'final' | 'grammar-intro' | 'grammar-fill-blank' | 'completion' | 'summary' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation';
 
-export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'reverse-quiz' | 'input' | 'matching' | 'final' | 'grammar-concept' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation';
+export type StepType = 'welcome' | 'flashcard' | 'quiz' | 'reverse-quiz' | 'input' | 'matching' | 'final' | 'grammar-intro' | 'grammar-fill-blank' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation';
 
 // Define base step type
 export interface BaseStep {
@@ -136,11 +136,92 @@ export interface FinalStep extends BaseStep {
   };
 }
 
-export interface GrammarConceptStep {
-  type: 'grammar-concept';
-  points: number;
+// Grammar Intro step - Big simple description
+export interface GrammarIntroStep extends BaseStep {
+  type: 'grammar-intro';
   data: {
-    conceptId: string; // References grammar-concepts.ts
+    conceptId: string;
+    title: string;
+    description: string; // Big simple explanation (2-3 sentences)
+    rule: string; // One-line rule
+    visualType: 'tree' | 'comparison' | 'flow';
+    visualData: {
+      // For tree: base → transformations
+      base?: string;
+      transformations?: Array<{
+        label: string; // e.g., "-am"
+        result: string; // e.g., "khoobam"
+        meaning: string; // e.g., "I'm good"
+      }>;
+      // For comparison: before vs after
+      before?: string; // e.g., "esm man"
+      after?: string; // e.g., "esme man"
+      // For flow: step-by-step
+      steps?: string[];
+    };
+  };
+}
+
+// Grammar Fill Blank step - Fill blanks in sentences
+export interface GrammarFillBlankStep extends BaseStep {
+  type: 'grammar-fill-blank';
+  data: {
+    conceptId: string;
+    label?: string; // Main title (like Quiz/Flashcard)
+    subtitle?: string; // Subtitle (like Quiz/Flashcard)
+    exercises: Array<{
+      sentence: string; // e.g., "na merci, man khoob-___" or "esme ___ chiye?" or "esm-___ ___ chiye?"
+      translation: string; // e.g., "No thank you, I am good" or "What is your name?"
+      blankPosition?: number; // Where the blank is (character index) - deprecated, use blanks array
+      correctAnswer?: string; // What goes in blank (e.g., "am" or "shoma") - deprecated, use blanks array
+      // For multiple blanks (suffix + word)
+      blanks?: Array<{
+        index: number; // Which blank (0 = first, 1 = second, etc.)
+        type: 'suffix' | 'word' | 'connector'; // Type of blank
+        correctAnswer: string; // Correct answer for this blank
+      }>;
+      // For suffix-based fill-blank (Step 2 style)
+      suffixOptions?: Array<{
+        id: string;
+        text: string; // e.g., "-am"
+        meaning?: string; // e.g., "I am"
+      }>;
+      // For word-based fill-blank (Step 3 style - sentence context)
+      wordOptions?: Array<{
+        id: string;
+        text: string; // e.g., "shoma"
+        meaning?: string; // e.g., "you"
+      }>;
+      distractors?: Array<{
+        id: string;
+        text: string;
+        meaning?: string;
+      }>;
+    }>;
+  };
+}
+
+// Grammar Transformation step - Transform words in sentences
+export interface GrammarTransformationStep extends BaseStep {
+  type: 'grammar-transformation';
+  data: {
+    conceptId: string;
+    exercises: Array<{
+      baseWord: string; // e.g., "khoob"
+      baseDefinition: string; // e.g., "good"
+      targetMeaning: string; // e.g., "I'm good"
+      transformationOptions: Array<{
+        id: string;
+        text: string; // e.g., "Add -am"
+        result: string; // e.g., "khoobam"
+        isCorrect: boolean;
+      }>;
+      distractors?: Array<{
+        id: string;
+        text: string;
+        result: string;
+      }>;
+    }>;
   };
 }
 
@@ -235,6 +316,9 @@ export type LessonStep =
   | MatchingStep
   | FinalStep
   | GrammarConceptStep
+  | GrammarIntroStep
+  | GrammarFillBlankStep
+  | GrammarTransformationStep
   | AudioMeaningStep
   | AudioSequenceStep
   | TextSequenceStep

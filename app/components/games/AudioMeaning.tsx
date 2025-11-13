@@ -278,7 +278,7 @@ export function AudioMeaning({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-primary/5 via-primary/2 to-white">
+    <div className="w-full h-full flex flex-col">
       {/* XP Animation - self-positioning */}
       {showResult && isCorrect && (
         <XpAnimation
