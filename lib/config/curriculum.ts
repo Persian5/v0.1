@@ -1,5 +1,6 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
+import { generateGrammarOptions } from "../utils/grammar-options";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -2466,13 +2467,18 @@ export const curriculumData: Module[] = [
                       correctAnswer: "khoobam"
                     }
                   ],
+                  // Generate options dynamically: connector options + vocab options
                   wordOptions: [
-                    { id: "conn-ham", text: "ham" },
-                    { id: "word-khoobam", text: "khoobam" },
-                    { id: "conn-vali", text: "vali" },
-                    { id: "conn-va", text: "va" },
-                    { id: "word-khoobi", text: "khoobi" },
-                    { id: "word-esmam", text: "esmam" }
+                    ...generateGrammarOptions('connector', 'ham', [
+                      { id: "va", en: "And", fa: "و", finglish: "Va", phonetic: "vah", lessonId: "module2-lesson5" },
+                      { id: "ham", en: "Also", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
+                      { id: "vali", en: "But", fa: "ولی", finglish: "Vali", phonetic: "vah-LEE", lessonId: "module2-lesson5" }
+                    ], ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"]),
+                    ...generateGrammarOptions('word', 'khoobam', [
+                      { id: "va", en: "And", fa: "و", finglish: "Va", phonetic: "vah", lessonId: "module2-lesson5" },
+                      { id: "ham", en: "Also", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
+                      { id: "vali", en: "But", fa: "ولی", finglish: "Vali", phonetic: "vah-LEE", lessonId: "module2-lesson5" }
+                    ], ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"], ['khoobi', 'esmam'])
                   ]
                 }
               ]
