@@ -16,6 +16,7 @@
  */
 
 import { supabase } from '@/lib/supabase/client'
+import { StreakService } from './streak-service'
 
 // ============================================================================
 // TYPES
@@ -148,6 +149,12 @@ export class VocabularyTrackingService {
         console.error('❌ Failed to update vocabulary performance')
         return false
       }
+
+      // 3. Update last_activity_date (tracks learning engagement)
+      // Non-blocking - don't fail if this errors
+      StreakService.updateActivityDate(userId).catch(err => {
+        console.warn('Failed to update activity date (non-critical):', err)
+      })
 
       console.log(`✅ Tracked ${vocabularyId}: ${isCorrect ? 'correct' : 'incorrect'}`)
       return true

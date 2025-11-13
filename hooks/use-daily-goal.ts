@@ -34,22 +34,42 @@ export function useDailyGoal(): UseDailyGoalReturn {
   const [error, setError] = useState<Error | null>(null)
 
   // Load daily goal data
-  const loadDailyGoal = useCallback(async () => {
+  const loadDailyGoal = useCallback(async (isMounted: () => boolean) => {
     if (authLoading) {
       return // Wait for auth to finish
     }
 
-    setIsLoading(true)
-    setError(null)
+    if (isMounted()) {
+      setIsLoading(true)
+      setError(null)
+    }
 
     try {
       if (user && isEmailVerified) {
         // Fetch daily goal data
         const goalData = await DailyGoalService.getDailyGoalData(user.id)
+        
+        if (!isMounted()) return // Component unmounted, don't update state
+        
         setGoal(goalData.goal)
         setProgress(goalData.progress)
       } else {
         // Unauthenticated user - default values
+        if (isMounted()) {
+          setGoal(50)
+          setProgress({
+            earned: 0,
+            goal: 50,
+            percentage: 0,
+            remaining: 50,
+            isMet: false
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load daily goal:', err)
+      if (isMounted()) {
+        setError(err instanceof Error ? err : new Error('Failed to load daily goal'))
         setGoal(50)
         setProgress({
           earned: 0,
@@ -59,30 +79,30 @@ export function useDailyGoal(): UseDailyGoalReturn {
           isMet: false
         })
       }
-    } catch (err) {
-      console.error('Failed to load daily goal:', err)
-      setError(err instanceof Error ? err : new Error('Failed to load daily goal'))
-      setGoal(50)
-      setProgress({
-        earned: 0,
-        goal: 50,
-        percentage: 0,
-        remaining: 50,
-        isMet: false
-      })
     } finally {
-      setIsLoading(false)
+      if (isMounted()) {
+        setIsLoading(false)
+      }
     }
   }, [user, isEmailVerified, authLoading])
 
-  // Initial load
+  // Initial load with mount guard
   useEffect(() => {
-    loadDailyGoal()
+    let isMounted = true
+    
+    const checkMounted = () => isMounted
+    
+    loadDailyGoal(checkMounted)
+    
+    return () => {
+      isMounted = false
+    }
   }, [loadDailyGoal])
 
   // Refresh progress manually
   const refreshProgress = useCallback(async () => {
-    await loadDailyGoal()
+    let isMounted = true
+    await loadDailyGoal(() => isMounted)
   }, [loadDailyGoal])
 
   // Update daily goal
@@ -103,7 +123,8 @@ export function useDailyGoal(): UseDailyGoalReturn {
       
       if (result.success) {
         // Reload data to get updated progress
-        await loadDailyGoal()
+        let isMounted = true
+        await loadDailyGoal(() => isMounted)
       }
       
       return result
@@ -117,17 +138,38 @@ export function useDailyGoal(): UseDailyGoalReturn {
     }
   }, [user, isEmailVerified, loadDailyGoal])
 
-  // Auto-refresh on window focus (to catch XP updates)
+  // Auto-refresh on XP updates (daily goal progress changes)
+  // OPTIMIZED: Only refresh if daily XP actually changed (not just total XP)
   useEffect(() => {
-    const handleFocus = () => {
-      if (user && isEmailVerified) {
-        refreshProgress()
-      }
-    }
+    if (!user || !isEmailVerified) return
 
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [user, isEmailVerified, refreshProgress])
+    let isMounted = true
+    let lastDailyXp = progress.earned
+
+    const unsubscribe = SmartAuthService.addEventListener((eventType, data) => {
+      if (!isMounted) return // Guard against calls after unmount
+      
+      if (eventType === 'xp-updated') {
+        // Check if this XP update affects today's daily XP
+        // Only refresh if we're not sure (let DailyGoalService check)
+        // This prevents unnecessary refreshes when XP changes don't affect daily goal
+        refreshProgress().then(() => {
+          if (isMounted && progress.earned !== lastDailyXp) {
+            lastDailyXp = progress.earned
+          }
+        }).catch((error) => {
+          if (isMounted) {
+            console.error('Failed to refresh daily goal progress:', error)
+          }
+        })
+      }
+    })
+
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
+  }, [user, isEmailVerified, refreshProgress, progress.earned])
 
   // Format helpers
   const formattedProgress = DailyGoalService.formatProgress(progress)

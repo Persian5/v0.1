@@ -14,8 +14,12 @@ interface SessionCache {
   totalXp: number
   streakCount: number  // Cached streak count (auto-updated by database trigger)
   dailyGoalXp: number  // Cached daily goal XP (from user_profiles.daily_goal_xp)
+  lastActivityDate?: string | null  // Cached last activity date (YYYY-MM-DD format) - used to prevent duplicate streak updates
   lastSync: number
   expiresAt: number
+  cachedDate?: string  // Current date in user timezone (YYYY-MM-DD) - used for midnight cache invalidation
+  lessonsCompletedToday?: number  // Cached count of lessons completed today (timezone-aware)
+  lessonsCompletedTotal?: number  // Cached total lessons completed
   dashboardStats?: {
     wordsLearned: number
     masteredWords: number
@@ -79,6 +83,9 @@ export class SmartAuthService {
   
   // Event system for reactive updates
   private static eventListeners: Set<SmartAuthEventListener> = new Set()
+  
+  // Midnight check interval (check every minute for cache invalidation)
+  private static midnightCheckInterval: NodeJS.Timeout | null = null
   
   // Session configuration
   private static readonly SESSION_DURATION = 30 * 24 * 60 * 60 * 1000 // 30 days
@@ -173,6 +180,8 @@ export class SmartAuthService {
         totalXp,
         streakCount: profile.streak_count ?? 0,  // Cache streak count (auto-updated by trigger)
         dailyGoalXp: profile.daily_goal_xp ?? 50,  // Cache daily goal XP
+        lastActivityDate: profile.last_activity_date ?? null,  // Cache last activity date (prevents duplicate streak updates)
+        cachedDate: this.getTodayInUserTimezone(),  // Initialize cached date for midnight invalidation
         lastSync: Date.now(),
         expiresAt: Date.now() + this.SESSION_DURATION
       }
@@ -182,6 +191,9 @@ export class SmartAuthService {
       this.emitEvent('progress-updated', { progress })
       this.emitEvent('session-changed', { user: session.user, isEmailVerified: !!session.user.email_confirmed_at })
       this.emitEvent('premium-updated', { hasPremium })  // Emit premium status
+      
+      // Set up midnight check for cache invalidation
+      this.setupMidnightCheck()
       
       // Initialize sync service for XP persistence
       try {
@@ -283,6 +295,183 @@ export class SmartAuthService {
   }
   
   /**
+   * Get cached last activity date (YYYY-MM-DD format)
+   * Used to prevent duplicate streak update RPC calls
+   */
+  static getLastActivityDate(): string | null | undefined {
+    return this.sessionCache?.lastActivityDate
+  }
+  
+  /**
+   * Update cached last activity date
+   * Called after successful streak update to prevent duplicate RPC calls
+   */
+  static updateLastActivityDate(date: string): void {
+    if (!this.sessionCache) return
+    this.sessionCache.lastActivityDate = date
+  }
+  
+  /**
+   * Get user's timezone from cached profile
+   * Defaults to 'America/Los_Angeles' if not set
+   */
+  static getUserTimezone(): string {
+    return this.sessionCache?.profile?.timezone || 'America/Los_Angeles'
+  }
+  
+  /**
+   * Get today's date in user's timezone (YYYY-MM-DD format)
+   * Used for timezone-aware date comparisons
+   */
+  static getTodayInUserTimezone(): string {
+    const timezone = this.getUserTimezone()
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+      return formatter.format(new Date())
+    } catch (error) {
+      console.warn(`Invalid timezone "${timezone}", using UTC`, error)
+      return new Date().toISOString().split('T')[0]
+    }
+  }
+  
+  /**
+   * Check if cache needs invalidation due to new day (midnight check)
+   * Returns true if cached date doesn't match today's date in user timezone
+   */
+  static shouldInvalidateCacheForNewDay(): boolean {
+    if (!this.sessionCache) return false
+    
+    const today = this.getTodayInUserTimezone()
+    const cachedDate = this.sessionCache.cachedDate
+    
+    // If no cached date, initialize it
+    if (!cachedDate) {
+      this.sessionCache.cachedDate = today
+      return false
+    }
+    
+    // If dates don't match, it's a new day - invalidate caches
+    if (cachedDate !== today) {
+      this.sessionCache.cachedDate = today
+      // Invalidate daily caches
+      delete this.sessionCache.lessonsCompletedToday
+      delete this.sessionCache.lastActivityDate
+      delete this.sessionCache.dashboardStats
+      return true
+    }
+    
+    return false
+  }
+  
+  /**
+   * Cache lesson progress counts (timezone-aware)
+   * Called when lesson progress is fetched
+   */
+  static cacheLessonProgressCounts(
+    allProgress: UserLessonProgress[],
+    timezone: string
+  ): void {
+    if (!this.sessionCache) return
+    
+    // Calculate today's date in user timezone
+    const today = this.getTodayInUserTimezone()
+    
+    // Count lessons completed today (timezone-aware)
+    const completedToday = allProgress.filter((p) => {
+      if (!p.completed_at) return false
+      const completedDate = new Date(p.completed_at)
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+      const completedDateStr = formatter.format(completedDate)
+      return completedDateStr === today
+    }).length
+    
+    // Count total completed
+    const totalCompleted = allProgress.filter(p => p.status === 'completed').length
+    
+    // Cache the counts
+    this.sessionCache.lessonsCompletedToday = completedToday
+    this.sessionCache.lessonsCompletedTotal = totalCompleted
+    this.sessionCache.cachedDate = today
+  }
+  
+  /**
+   * Get cached lessons completed today (timezone-aware)
+   * Returns null if cache is stale or doesn't exist
+   */
+  static getCachedLessonsCompletedToday(): number | null {
+    if (!this.sessionCache) return null
+    
+    try {
+      // Check if cache needs invalidation (new day)
+      if (this.shouldInvalidateCacheForNewDay()) {
+        return null
+      }
+      
+      return this.sessionCache.lessonsCompletedToday ?? null
+    } catch (error) {
+      console.warn('Failed to get cached lessons completed today:', error)
+      return null
+    }
+  }
+  
+  /**
+   * Get cached total lessons completed
+   * Returns null if cache doesn't exist
+   */
+  static getCachedLessonsCompletedTotal(): number | null {
+    if (!this.sessionCache) return null
+    
+    try {
+      return this.sessionCache.lessonsCompletedTotal ?? null
+    } catch (error) {
+      console.warn('Failed to get cached lessons completed total:', error)
+      return null
+    }
+  }
+  
+  /**
+   * Set up midnight check interval to invalidate caches at new day
+   * Checks every minute if date changed (handles DST transitions)
+   */
+  private static setupMidnightCheck(): void {
+    if (typeof window === 'undefined') return
+    
+    // Clear existing interval if any
+    if (this.midnightCheckInterval) {
+      clearInterval(this.midnightCheckInterval)
+    }
+    
+    // Check every minute if date changed
+    this.midnightCheckInterval = setInterval(() => {
+      if (this.shouldInvalidateCacheForNewDay()) {
+        console.log('🔄 New day detected - invalidated daily caches')
+        // Emit event to notify components
+        this.emitEvent('daily-goal-updated', { newDay: true })
+      }
+    }, 60 * 1000) // Check every minute
+  }
+  
+  /**
+   * Clean up midnight check interval
+   */
+  static cleanupMidnightCheck(): void {
+    if (this.midnightCheckInterval) {
+      clearInterval(this.midnightCheckInterval)
+      this.midnightCheckInterval = null
+    }
+  }
+  
+  /**
    * Update user data optimistically - instant UI updates
    */
   static updateUserData(updates: {
@@ -293,6 +482,18 @@ export class SmartAuthService {
     profile?: Partial<UserProfile>
   }): void {
     if (!this.sessionCache) return
+    
+    // Check if timezone changed - invalidate date-dependent caches
+    if (updates.profile?.timezone && this.sessionCache.profile?.timezone) {
+      if (updates.profile.timezone !== this.sessionCache.profile.timezone) {
+        // Timezone changed - invalidate date-dependent caches
+        delete this.sessionCache.lessonsCompletedToday
+        delete this.sessionCache.lastActivityDate
+        delete this.sessionCache.cachedDate
+        delete this.sessionCache.dashboardStats
+        console.log(`🔄 Timezone changed: ${this.sessionCache.profile.timezone} → ${updates.profile.timezone}, invalidated caches`)
+      }
+    }
     
     let hasChanges = false
     
@@ -389,6 +590,9 @@ export class SmartAuthService {
     this.sessionCache.totalXp += amount
     
     console.log(`⚡ Optimistic: ${oldXp} → ${this.sessionCache.totalXp} (+${amount})`)
+    
+    // Invalidate dashboard stats cache (XP changed, stats need refresh)
+    this.invalidateDashboardStats()
     
     // Emit event for reactive UI updates
     this.emitEvent('xp-updated', { 
@@ -555,6 +759,9 @@ export class SmartAuthService {
     
     // Stop background sync
     this.stopBackgroundSync()
+    
+    // Clean up midnight check
+    this.cleanupMidnightCheck()
     
     // Use existing AuthService for actual sign out
     await AuthService.signOut()

@@ -27,77 +27,115 @@ export function useLevel(): UseLevelReturn {
   const [error, setError] = useState<Error | null>(null)
 
   // Load level data
-  const loadLevel = useCallback(async () => {
+  const loadLevel = useCallback(async (isMounted: () => boolean) => {
     if (authLoading) {
       return // Wait for auth to finish
     }
 
-    setIsLoading(true)
-    setError(null)
+    if (isMounted()) {
+      setIsLoading(true)
+      setError(null)
+    }
 
     try {
       if (user && isEmailVerified) {
         // Get total XP from cache first (faster)
-        const cachedXp = SmartAuthService.getUserXp()
+        let cachedXp: number | null = null
+        try {
+          cachedXp = SmartAuthService.getUserXp()
+        } catch (error) {
+          // Cache access failed - continue to API call
+          console.warn('Cache access failed, fetching from API:', error)
+        }
         
-        if (cachedXp > 0 || cachedXp === 0) {
+        let levelProgress
+        if (cachedXp !== null && (cachedXp > 0 || cachedXp === 0)) {
           // Cache hit - calculate level from cached XP
-          const levelProgress = await LevelService.getLevelProgress(cachedXp)
-          setLevel(levelProgress.level)
-          setProgress(levelProgress)
+          levelProgress = await LevelService.getLevelProgress(cachedXp)
         } else {
           // Cache miss - fetch from database
-          const levelProgress = await LevelService.getUserLevelProgress(user.id)
-          setLevel(levelProgress.level)
-          setProgress(levelProgress)
+          levelProgress = await LevelService.getUserLevelProgress(user.id)
         }
+        
+        if (!isMounted()) return // Component unmounted, don't update state
+        
+        setLevel(levelProgress.level)
+        setProgress(levelProgress)
       } else {
         // Unauthenticated user - default level
-        setLevel(1)
-        setProgress({
-          level: 1,
-          currentXp: 0,
-          nextLevelXp: 100,
-          remainingXp: 100,
-          progress: 0
-        })
+        if (isMounted()) {
+          setLevel(1)
+          setProgress({
+            level: 1,
+            currentXp: 0,
+            nextLevelXp: 100,
+            remainingXp: 100,
+            progress: 0
+          })
+        }
       }
     } catch (err) {
       console.error('Failed to load level:', err)
-      setError(err instanceof Error ? err : new Error('Failed to load level'))
-      setLevel(1)
-      setProgress(null)
+      if (isMounted()) {
+        setError(err instanceof Error ? err : new Error('Failed to load level'))
+        setLevel(1)
+        setProgress(null)
+      }
     } finally {
-      setIsLoading(false)
+      if (isMounted()) {
+        setIsLoading(false)
+      }
     }
   }, [user, isEmailVerified, authLoading])
 
-  // Initial load
+  // Initial load with mount guard
   useEffect(() => {
-    loadLevel()
+    let isMounted = true
+    
+    const checkMounted = () => isMounted
+    
+    loadLevel(checkMounted)
+    
+    return () => {
+      isMounted = false
+    }
   }, [loadLevel])
 
   // Refresh level manually
   const refreshLevel = useCallback(async () => {
-    await loadLevel()
+    let isMounted = true
+    await loadLevel(() => isMounted)
   }, [loadLevel])
 
   // Auto-refresh when XP updates (listen to SmartAuthService events)
   useEffect(() => {
     if (!user || !isEmailVerified) return
 
+    let isMounted = true
+
     const unsubscribe = SmartAuthService.addEventListener((eventType, data) => {
+      if (!isMounted) return // Guard against calls after unmount
+      
       if (eventType === 'xp-updated') {
         // XP changed - recalculate level
         const newXp = data.newXp || 0
         LevelService.getLevelProgress(newXp).then(levelProgress => {
-          setLevel(levelProgress.level)
-          setProgress(levelProgress)
-        }).catch(console.error)
+          if (isMounted) {
+            setLevel(levelProgress.level)
+            setProgress(levelProgress)
+          }
+        }).catch((error) => {
+          if (isMounted) {
+            console.error('Failed to refresh level:', error)
+          }
+        })
       }
     })
 
-    return unsubscribe
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
   }, [user, isEmailVerified])
 
   // Format helpers

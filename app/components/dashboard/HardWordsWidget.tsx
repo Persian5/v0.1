@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, TrendingDown } from "lucide-react"
+import { TrendingUp, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 
 interface HardWord {
@@ -28,10 +28,10 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
       <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            Words to Review
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Words to Strengthen
           </CardTitle>
-          <CardDescription>Words you're struggling with</CardDescription>
+          <CardDescription>Words that need more practice</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -49,10 +49,10 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
       <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-green-500" />
-            Words to Review
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            Words to Strengthen
           </CardTitle>
-          <CardDescription>Great job! No struggling words right now.</CardDescription>
+          <CardDescription>Excellent! All words are strong.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
@@ -74,10 +74,10 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
     <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-error-500" />
-          Words to Review
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Words to Strengthen
         </CardTitle>
-        <CardDescription>Focus on these words to improve</CardDescription>
+        <CardDescription>Focus on these words to build mastery</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -89,21 +89,21 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-gray-900 truncate">{word.word_text}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {word.total_correct} correct / {word.total_attempts} attempts • {Math.round(word.accuracy)}% accuracy
+                  {Math.round(word.accuracy)}% accuracy
                 </div>
               </div>
               <div className="flex items-center gap-2 ml-4">
-                <div className="text-xs text-red-500 font-medium whitespace-nowrap">
-                  {word.consecutive_correct < 2 ? "Needs practice" : "Getting better"}
+                <div className="text-xs text-primary font-medium whitespace-nowrap">
+                  {word.consecutive_correct < 2 ? "Keep practicing" : "Getting stronger"}
                 </div>
               </div>
             </div>
           ))}
         </div>
         <div className="mt-4 pt-4 border-t border-neutral-200">
-          <Link href="/review" className="block">
+          <Link href="/review?filter=hard-words" className="block">
             <Button variant="outline" className="w-full border-neutral-300 min-h-[48px]">
-              Review Mode
+              Practice These Words
             </Button>
           </Link>
         </div>

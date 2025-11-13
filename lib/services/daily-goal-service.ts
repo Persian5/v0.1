@@ -98,14 +98,26 @@ export class DailyGoalService {
   /**
    * Get current date in user's timezone
    * Returns date string in YYYY-MM-DD format
+   * Matches database function logic exactly (uses Intl.DateTimeFormat)
    * 
    * @param timezone - IANA timezone string (e.g., "America/Los_Angeles")
    * @returns string - Date string in YYYY-MM-DD format
    */
   private static getTodayInTimezone(timezone: string): string {
-    const now = new Date()
-    const todayInUserTz = new Date(now.toLocaleString('en-US', { timeZone: timezone }))
-    return todayInUserTz.toISOString().split('T')[0]
+    try {
+      // Use Intl.DateTimeFormat to match database function logic exactly
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+      return formatter.format(new Date())
+    } catch (error) {
+      // Fallback to UTC if timezone is invalid
+      console.warn(`Invalid timezone "${timezone}", using UTC`, error)
+      return new Date().toISOString().split('T')[0]
+    }
   }
   
   /**
@@ -157,14 +169,18 @@ export class DailyGoalService {
       }
       
       // Filter transactions that occurred today in user's timezone
+      // Use Intl.DateTimeFormat to match database function logic exactly
       let totalXpToday = 0
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
       
       for (const transaction of transactions) {
         const transactionDate = new Date(transaction.created_at)
-        const transactionDateInUserTz = new Date(
-          transactionDate.toLocaleString('en-US', { timeZone: timezone })
-        )
-        const transactionDateStr = transactionDateInUserTz.toISOString().split('T')[0]
+        const transactionDateStr = formatter.format(transactionDate)
         
         if (transactionDateStr === todayDateStr) {
           totalXpToday += transaction.amount || 0

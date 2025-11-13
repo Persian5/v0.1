@@ -167,6 +167,7 @@
 - **Purpose**: Updates user streak when XP is awarded (timezone-aware)
 - **Returns**: `VOID`
 - **Logic**: 
+  - Validates `auth.uid() = p_user_id` (prevents privilege escalation)
   - Gets user's timezone (defaults to 'America/Los_Angeles')
   - Converts server time to user timezone and extracts date
   - Compares dates:
@@ -174,20 +175,30 @@
     - If last activity < today - 1 → streak broken, reset to 1
     - If last activity = today - 1 → continue streak, increment
     - If last activity = today → do nothing (already updated)
-- **Security**: Uses `SECURITY DEFINER` (needed to update user_profiles via trigger)
+- **Security**: 
+  - Uses `SECURITY DEFINER` (needed to update user_profiles via trigger)
+  - Validates `auth.uid() = p_user_id` before execution (prevents users from updating other users' streaks)
+  - When called from trigger, `auth.uid()` matches `NEW.user_id` due to RLS on `user_xp_transactions`
+  - Granted `EXECUTE` to `authenticated` role only
 - **Added**: 2025-01-13 - Automatically called by trigger on XP award
+- **Updated**: 2025-01-13 - Added security validation to prevent privilege escalation
 
 #### `get_xp_earned_today(p_user_id UUID, p_timezone TEXT)`
 - **Purpose**: Calculates total XP earned today in user's timezone (optimized server-side filtering)
 - **Returns**: `INTEGER` (total XP earned today)
 - **Logic**: 
+  - Validates `auth.uid() = p_user_id` (prevents data leakage)
   - Gets today's date in user's timezone
   - Calculates start/end of today in UTC (for efficient querying)
   - Sums all XP transactions that occurred today (in user timezone)
   - Uses PostgreSQL timezone conversion for accurate filtering
-- **Security**: Uses `SECURITY DEFINER`, `STABLE` function (safe for caching)
+- **Security**: 
+  - Uses `SECURITY DEFINER`, `STABLE` function (safe for caching)
+  - Validates `auth.uid() = p_user_id` before execution (prevents users from querying other users' XP)
+  - Granted `EXECUTE` to `authenticated` role only
 - **Performance**: Server-side filtering (much faster than client-side)
 - **Added**: 2025-01-13 - Optimized daily goal progress calculation
+- **Updated**: 2025-01-13 - Added security validation to prevent data leakage
 
 ### user_xp_transactions
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)

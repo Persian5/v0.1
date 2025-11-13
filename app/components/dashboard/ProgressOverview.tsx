@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Award } from "lucide-react"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
+import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { useState, useEffect } from "react"
 
 interface ProgressOverviewProps {
@@ -24,24 +25,61 @@ export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 
   const [lessonsLoading, setLessonsLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+    
     async function loadLessonsCompleted() {
       if (!user?.id) {
-        setLessonsLoading(false)
+        if (isMounted) setLessonsLoading(false)
         return
       }
 
+      // Check cache first (shared with TodaysProgress)
       try {
-        const allProgress = await LessonProgressService.getAllProgress(user.id)
-        const completed = allProgress.filter(p => p.status === 'completed').length
-        setLessonsCompleted(completed)
+        const cachedTotal = SmartAuthService.getCachedLessonsCompletedTotal()
+        if (cachedTotal !== null) {
+          if (isMounted) {
+            setLessonsCompleted(cachedTotal)
+            setLessonsLoading(false)
+          }
+          return
+        }
+      } catch (error) {
+        // Cache access failed - continue to API call
+        console.warn('Cache access failed, fetching from API:', error)
+      }
+
+      try {
+        const allProgress = await LessonProgressService.getUserLessonProgress()
+        
+        if (!isMounted) return // Component unmounted, don't update state
+        
+        const userTimezone = SmartAuthService.getUserTimezone()
+        
+        // Cache the counts (timezone-aware, shared with TodaysProgress)
+        SmartAuthService.cacheLessonProgressCounts(allProgress, userTimezone)
+        
+        // Get from cache (now populated)
+        const count = SmartAuthService.getCachedLessonsCompletedTotal() ?? 0
+        if (isMounted) {
+          setLessonsCompleted(count)
+        }
       } catch (error) {
         console.error('Failed to load lessons completed:', error)
+        if (isMounted) {
+          setLessonsCompleted(0)
+        }
       } finally {
-        setLessonsLoading(false)
+        if (isMounted) {
+          setLessonsLoading(false)
+        }
       }
     }
 
     loadLessonsCompleted()
+    
+    return () => {
+      isMounted = false
+    }
   }, [user?.id])
 
   const isAnyLoading = isLoading || levelLoading || lessonsLoading
@@ -92,39 +130,6 @@ export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 
         </Card>
       )}
 
-      {/* Words to Review - Replace Current Level (already in Hero) */}
-      {isAnyLoading ? (
-        <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
-              Words to Review
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-16 w-full" />
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
-              Words to Review
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-primary mb-2">
-                {wordsToReview}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Due for review
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

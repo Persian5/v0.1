@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { BookOpen, Target, RotateCcw, Grid3x3 } from "lucide-react"
+import { BookOpen, Target, Grid3x3 } from "lucide-react"
 import Link from "next/link"
 
 interface QuickAction {
@@ -25,15 +25,8 @@ const actions: QuickAction[] = [
     label: "Practice Weak Words",
     icon: <Target className="h-5 w-5" />,
     href: "/review",
-    description: "Review words you're struggling with",
+    description: "Focus on words you're struggling with",
     variant: "secondary"
-  },
-  {
-    label: "Review Mode",
-    icon: <RotateCcw className="h-5 w-5" />,
-    href: "/review",
-    description: "Practice all learned words",
-    variant: "outline"
   },
   {
     label: "Browse Modules",
@@ -46,7 +39,7 @@ const actions: QuickAction[] = [
 
 export function QuickActions() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {actions.map((action, index) => {
         // Make "Continue Learning" primary (larger, different style)
         const isPrimary = index === 0

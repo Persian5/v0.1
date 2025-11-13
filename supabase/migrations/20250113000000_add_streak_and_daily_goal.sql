@@ -190,6 +190,20 @@ DECLARE
   v_last_activity DATE;
   v_current_streak INTEGER;
 BEGIN
+  -- SECURITY: Validate that caller can only update their own streak
+  -- This prevents privilege escalation attacks
+  -- Note: When called from trigger, auth.uid() is the user who inserted the XP transaction
+  -- RLS on user_xp_transactions ensures users can only insert XP for themselves
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Unauthorized: User must be authenticated';
+  END IF;
+  
+  -- Allow trigger calls (when called from trigger, auth.uid() matches NEW.user_id due to RLS)
+  -- But prevent direct RPC calls with wrong user_id
+  IF auth.uid() != p_user_id THEN
+    RAISE EXCEPTION 'Forbidden: Users can only update their own streak';
+  END IF;
+  
   -- Get user's timezone (default to 'America/Los_Angeles' if not set)
   SELECT COALESCE(timezone, 'America/Los_Angeles') INTO v_user_timezone
   FROM public.user_profiles
@@ -249,6 +263,9 @@ $$;
 
 COMMENT ON FUNCTION public.update_streak IS 'Updates user streak when XP is awarded. Timezone-aware: converts server time to user timezone before date comparison. Automatically called by trigger.';
 
+-- Grant execute permission to authenticated users (needed for manual calls from app)
+GRANT EXECUTE ON FUNCTION public.update_streak(UUID) TO authenticated;
+
 -- ============================================================================
 -- STEP 7: Trigger Function for Automatic Streak Updates
 -- ============================================================================
@@ -296,6 +313,16 @@ DECLARE
   v_end_of_today_utc TIMESTAMP WITH TIME ZONE;
   v_total_xp INTEGER;
 BEGIN
+  -- SECURITY: Validate that caller can only query their own XP
+  -- This prevents users from seeing other users' daily XP
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Unauthorized: User must be authenticated';
+  END IF;
+  
+  IF auth.uid() != p_user_id THEN
+    RAISE EXCEPTION 'Forbidden: Users can only query their own XP';
+  END IF;
+  
   -- Get today's date in user's timezone
   SELECT (NOW() AT TIME ZONE p_timezone)::DATE INTO v_today_user_tz;
   
@@ -319,6 +346,9 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.get_xp_earned_today IS 'Calculates total XP earned today in user timezone. Efficient server-side filtering using PostgreSQL timezone conversion.';
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION public.get_xp_earned_today(UUID, TEXT) TO authenticated;
 
 -- ============================================================================
 -- STEP 9: Verify RLS Policies

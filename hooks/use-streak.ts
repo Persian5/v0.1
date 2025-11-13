@@ -29,79 +29,118 @@ export function useStreak(): UseStreakReturn {
   const [error, setError] = useState<Error | null>(null)
 
   // Load streak data
-  const loadStreak = useCallback(async () => {
+  const loadStreak = useCallback(async (isMounted: () => boolean) => {
     if (authLoading) {
       return // Wait for auth to finish
     }
 
-    setIsLoading(true)
-    setError(null)
+    if (isMounted()) {
+      setIsLoading(true)
+      setError(null)
+    }
 
     try {
       if (user && isEmailVerified) {
         // Try cache first (faster)
-        const cachedStreak = SmartAuthService.getUserStreak()
+        let cachedStreak: number | null = null
+        try {
+          cachedStreak = SmartAuthService.getUserStreak()
+        } catch (error) {
+          // Cache access failed - continue to API call
+          console.warn('Cache access failed, fetching from API:', error)
+        }
         
-        if (cachedStreak > 0 || cachedStreak === 0) {
-          // Cache hit - use cached value
-          // Still fetch full data for lastActivityDate, etc.
-          const data = await StreakService.getStreakData()
-          setStreak(data.streakCount)
-          setStreakData(data)
-          
-          // Update cache if it's stale
-          if (cachedStreak !== data.streakCount) {
+        const data = await StreakService.getStreakData()
+        
+        if (!isMounted()) return // Component unmounted, don't update state
+        
+        setStreak(data.streakCount)
+        setStreakData(data)
+        
+        // Update cache if it's stale or missing
+        if (cachedStreak === null || cachedStreak !== data.streakCount) {
+          try {
             SmartAuthService.updateUserData({ streakCount: data.streakCount })
+          } catch (error) {
+            // Cache update failed - non-critical
+            console.warn('Failed to update streak cache:', error)
           }
-        } else {
-          // Cache miss - fetch from database
-          const data = await StreakService.getStreakData()
-          setStreak(data.streakCount)
-          setStreakData(data)
-          
-          // Update cache
-          SmartAuthService.updateUserData({ streakCount: data.streakCount })
         }
       } else {
         // Unauthenticated user - no streak
-        setStreak(0)
-        setStreakData({
-          streakCount: 0,
-          lastActivityDate: null,
-          lastStreakDate: null
-        })
+        if (isMounted()) {
+          setStreak(0)
+          setStreakData({
+            streakCount: 0,
+            lastActivityDate: null,
+            lastStreakDate: null
+          })
+        }
       }
     } catch (err) {
       console.error('Failed to load streak:', err)
-      setError(err instanceof Error ? err : new Error('Failed to load streak'))
-      setStreak(0)
-      setStreakData(null)
+      if (isMounted()) {
+        setError(err instanceof Error ? err : new Error('Failed to load streak'))
+        setStreak(0)
+        setStreakData(null)
+      }
     } finally {
-      setIsLoading(false)
+      if (isMounted()) {
+        setIsLoading(false)
+      }
     }
   }, [user, isEmailVerified, authLoading])
 
-  // Initial load
+  // Initial load with mount guard
   useEffect(() => {
-    loadStreak()
+    let isMounted = true
+    
+    const checkMounted = () => isMounted
+    
+    loadStreak(checkMounted)
+    
+    return () => {
+      isMounted = false
+    }
   }, [loadStreak])
 
   // Refresh streak manually
   const refreshStreak = useCallback(async () => {
-    await loadStreak()
+    let isMounted = true
+    await loadStreak(() => isMounted)
   }, [loadStreak])
 
-  // Auto-refresh on window focus (to catch streak updates)
+  // Auto-refresh on XP updates (streak updates via database trigger)
+  // OPTIMIZED: Only refresh if streak actually changed (not just XP)
   useEffect(() => {
-    const handleFocus = () => {
-      if (user && isEmailVerified) {
-        refreshStreak()
-      }
-    }
+    if (!user || !isEmailVerified) return
 
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [user, isEmailVerified, refreshStreak])
+    let isMounted = true
+    let lastStreak = streak
+
+    const unsubscribe = SmartAuthService.addEventListener((eventType, data) => {
+      if (!isMounted) return // Guard against calls after unmount
+      
+      if (eventType === 'xp-updated' || eventType === 'streak-updated') {
+        // Only refresh if streak might have changed
+        // Streak updates happen via trigger, so we need to check
+        refreshStreak().then(() => {
+          if (isMounted && streak !== lastStreak) {
+            lastStreak = streak
+          }
+        }).catch((error) => {
+          if (isMounted) {
+            console.error('Failed to refresh streak:', error)
+          }
+        })
+      }
+    })
+
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
+  }, [user, isEmailVerified, refreshStreak, streak])
 
   // Calculate milestones
   const milestones = StreakService.getStreakMilestones(streak)

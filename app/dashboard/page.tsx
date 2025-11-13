@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { DashboardHero } from "@/app/components/dashboard/DashboardHero"
@@ -9,6 +9,7 @@ import { ResumeLearning } from "@/app/components/dashboard/ResumeLearning"
 import { TodaysProgress } from "@/app/components/dashboard/TodaysProgress"
 import { ProgressOverview } from "@/app/components/dashboard/ProgressOverview"
 import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
+import { WordsToReviewWidget } from "@/app/components/dashboard/WordsToReviewWidget"
 import { LeaderboardWidget } from "@/components/widgets/LeaderboardWidget"
 import { Loader2, AlertCircle } from "lucide-react"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
@@ -46,7 +47,7 @@ function DashboardContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     if (!user?.id) {
       setIsLoading(false)
       return
@@ -89,10 +90,13 @@ function DashboardContent() {
       setError('Failed to load dashboard stats. Please refresh the page.')
       setIsLoading(false)
     }
-  }
+  }, [user?.id])
 
+  // Initial load only - refreshes when navigating to dashboard (not on tab switch)
   useEffect(() => {
-    fetchStats()
+    if (user?.id) {
+      fetchStats()
+    }
   }, [user?.id])
 
   if (isLoading && !stats) {
@@ -163,7 +167,17 @@ function DashboardContent() {
             </WidgetErrorBoundary>
           </div>
 
-          {/* Hard Words Section */}
+          {/* Words to Review Section */}
+          <div className="mb-6 sm:mb-8">
+            <WidgetErrorBoundary>
+              <WordsToReviewWidget 
+                wordsToReview={stats?.wordsToReview || []} 
+                isLoading={isLoading} 
+              />
+            </WidgetErrorBoundary>
+          </div>
+
+          {/* Words to Strengthen Section */}
           <div className="mb-6 sm:mb-8">
             <WidgetErrorBoundary>
               <HardWordsWidget 

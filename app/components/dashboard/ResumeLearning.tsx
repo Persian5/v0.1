@@ -24,14 +24,18 @@ export function ResumeLearning() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+    
     async function loadLastLesson() {
       if (!user?.id) {
-        setIsLoading(false)
+        if (isMounted) setIsLoading(false)
         return
       }
 
       try {
-        const allProgress = await LessonProgressService.getAllProgress(user.id)
+        const allProgress = await LessonProgressService.getUserLessonProgress()
+        
+        if (!isMounted) return // Component unmounted, don't update state
         
         // Find last started or completed lesson
         const lastStarted = allProgress
@@ -42,31 +46,40 @@ export function ResumeLearning() {
             return bDate - aDate
           })[0]
 
-        if (lastStarted) {
-          // Get module/lesson titles from curriculum
-          const { getCurriculum } = await import('@/lib/config/curriculum')
-          const curriculum = getCurriculum()
-          const module = curriculum.modules.find(m => m.id === lastStarted.module_id)
-          const lesson = module?.lessons.find(l => l.id === lastStarted.lesson_id)
+        if (lastStarted && isMounted) {
+          try {
+            // Get module/lesson titles from curriculum
+            const { getModule, getLesson } = await import('@/lib/config/curriculum')
+            const module = getModule(lastStarted.module_id)
+            const lesson = module ? getLesson(lastStarted.module_id, lastStarted.lesson_id) : undefined
 
-          if (module && lesson) {
-            setLastLesson({
-              moduleId: lastStarted.module_id,
-              lessonId: lastStarted.lesson_id,
-              moduleTitle: module.title,
-              lessonTitle: lesson.title,
-              progressPercent: lastStarted.progress_percent,
-            })
+            if (module && lesson && isMounted) {
+              setLastLesson({
+                moduleId: lastStarted.module_id,
+                lessonId: lastStarted.lesson_id,
+                moduleTitle: module.title,
+                lessonTitle: lesson.title,
+                progressPercent: lastStarted.progress_percent,
+              })
+            }
+          } catch (error) {
+            console.error('Failed to load curriculum data:', error)
           }
         }
       } catch (error) {
         console.error('Failed to load last lesson:', error)
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     loadLastLesson()
+    
+    return () => {
+      isMounted = false
+    }
   }, [user?.id])
 
   if (isLoading) {
