@@ -10,6 +10,7 @@ import { ChevronRight, X, Heart, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { AuthModal } from "@/components/auth/AuthModal"
 
 export default function HomePage() {
   const router = useRouter()
@@ -40,6 +41,7 @@ export default function HomePage() {
   const [showIncorrect, setShowIncorrect] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [isLearningNavigating, setIsLearningNavigating] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
@@ -101,6 +103,14 @@ export default function HomePage() {
     router.push('/modules')
   }
 
+  const handleCreateAccount = () => {
+    setAuthModalOpen(true)
+  }
+
+  const handlePreviewLessons = () => {
+    router.push('/modules')
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex-1">
@@ -123,36 +133,58 @@ export default function HomePage() {
                 {/* Right Column: Text only */}
               <div className="w-2/3 md:w-3/5 flex flex-col items-start text-left">
                 <p className="text-xs text-emerald-700 font-normal mb-3 sm:mb-4 tracking-wide uppercase">
-                  An Iranopedia App
+                  Finglish by Iranopedia
                 </p>
                 <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-primary mb-2 md:mb-5">
               Learn Persian. Reconnect with Your Roots.
             </h1>
                   <p className="text-lg md:text-2xl text-muted-foreground mb-0">
-                  Start speaking Persian today — with fun, bite-sized lessons
+                  Start speaking Persian today with fun, bite sized lessons
                 </p>
                 </div>
               </div>
               
-              {/* Bottom row: Start Learning button centered under everything - spans from image center to text end */}
+              {/* Bottom row: Two buttons side by side */}
               <div className="flex justify-center w-full">
-                <div className="w-2/3">
-                  <Button
-                    size="lg"
-                    className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-12 py-4 text-xl font-semibold hover:scale-105 shadow-lg hover:shadow-xl w-full"
-                    onClick={handleStartLearning}
-                    aria-label="Start Learning Persian"
-                    disabled={isLearningNavigating}
-                  >
-                    {isLearningNavigating ? (
-                      <>
-                        <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      "Start Learning"
-                    )}
-                  </Button>
+                <div className="w-2/3 flex flex-col items-center gap-4">
+                  {/* Buttons side by side */}
+                  <div className="flex flex-row gap-4 w-full">
+                    {/* Primary Button: Create Free Account */}
+                    <div className="flex-1 flex flex-col items-center">
+                      <Button
+                        size="lg"
+                        className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-8 py-4 text-lg font-semibold hover:scale-105 shadow-lg hover:shadow-xl w-full"
+                        onClick={handleCreateAccount}
+                        aria-label="Create Free Account"
+                      >
+                        Create Free Account
+                      </Button>
+                    </div>
+                    
+                    {/* Secondary Button: Preview Lesson 1 Free - White fill with red text */}
+                    <div className="flex-1 flex flex-col items-center">
+                      <Button
+                        size="lg"
+                        className="bg-white hover:bg-white/90 text-accent border-2 border-accent transition-all duration-300 rounded-full px-8 py-4 text-lg font-semibold hover:scale-105 shadow-lg hover:shadow-xl w-full"
+                        onClick={handlePreviewLessons}
+                        aria-label="Preview Lesson 1 Free"
+                        disabled={isLearningNavigating}
+                      >
+                        {isLearningNavigating ? (
+                          <>
+                            <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Preview Lesson 1 Free"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  {/* Subtext below buttons */}
+                  <p className="text-sm text-muted-foreground">
+                    Instant access · No credit card needed
+                  </p>
                 </div>
               </div>
             </div>
@@ -160,14 +192,14 @@ export default function HomePage() {
             {/* Mobile layout: stacked with image between subheading and buttons */}
             <div className="flex sm:hidden flex-col items-center text-center">
               <p className="text-xs text-emerald-700 font-normal mb-3 tracking-wide uppercase">
-                An Iranopedia App
+                Finglish by Iranopedia
               </p>
               <h1 className="text-4xl font-bold tracking-tight text-primary mb-3 leading-tight">
                 Learn Persian.<br />
                 <span className="whitespace-nowrap text-3xl">Reconnect with Your Roots.</span>
               </h1>
               <p className="text-sm text-muted-foreground mb-4 max-w-md">
-                Start speaking Persian today — with fun, bite-sized lessons
+                Start speaking Persian today with fun, bite sized lessons
               </p>
               
               {/* Mobile: Image between text and buttons */}
@@ -179,13 +211,29 @@ export default function HomePage() {
                 />
               </div>
               
-              {/* Single larger Start Learning button for mobile */}
-              <div className="w-full">
+              {/* Two buttons stacked for mobile */}
+              <div className="w-full px-4 flex flex-col items-center gap-4">
+                {/* Primary Button: Create Free Account */}
+                <div className="w-full flex flex-col items-center">
+                  <Button
+                    size="lg"
+                    className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-8 py-4 text-lg font-semibold w-full hover:scale-105 shadow-lg"
+                    onClick={handleCreateAccount}
+                    aria-label="Create Free Account"
+                  >
+                    Create Free Account
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Instant access · No credit card needed
+                  </p>
+                </div>
+                
+                {/* Secondary Button: Preview Lesson 1 Free - White fill with red text */}
                 <Button
                   size="lg"
-                  className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-8 py-4 text-lg font-semibold w-full hover:scale-105 shadow-lg"
-                  onClick={handleStartLearning}
-                  aria-label="Start Learning Persian"
+                  className="bg-white hover:bg-white/90 text-accent border-2 border-accent transition-all duration-300 rounded-full px-8 py-4 text-lg font-semibold w-full hover:scale-105 shadow-lg"
+                  onClick={handlePreviewLessons}
+                  aria-label="Preview Lesson 1 Free"
                   disabled={isLearningNavigating}
                 >
                   {isLearningNavigating ? (
@@ -194,7 +242,7 @@ export default function HomePage() {
                       Loading...
                     </>
                   ) : (
-                    "Start Learning"
+                    "Preview Lesson 1 Free"
                   )}
                 </Button>
               </div>
@@ -205,154 +253,179 @@ export default function HomePage() {
         {/* Persian Carpet Border */}
         <div className="w-full h-3 bg-[url('/carpet-border.svg')] bg-repeat-x"></div>
 
-        {/* World Map Section with subtle Girih pattern and Tehran skyline */}
-        <section className="py-8 px-3 sm:px-4 bg-gradient-to-b from-blue-50 to-green-50 relative">
-          <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48cGF0aCBkPSJNMCAwaDQwdjQwSDBWMHptMjAgMTBMMTAgMjBoMjBMMjAgMTB6IiBmaWxsPSIjMjc3QzUyIiBmaWxsLW9wYWNpdHk9IjAuMSIvPjwvc3ZnPg==')]"></div>
-          <div className="absolute inset-x-0 bottom-0 h-48 opacity-15 bg-[url('/tehran.png')] bg-bottom bg-contain bg-repeat-x"></div>
-          <div className="max-w-6xl mx-auto text-center relative z-10">
-            <h2 className="sm:text-3xl md:text-4xl font-bold text-primary mb-4" style={{ fontSize: '19px' }}>
-              Start Your Persian Learning Journey Today!
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600 mb-6">Iranian culture is everywhere. You belong here.</p>
+        {/* Clear Offer Section */}
+        <section className="py-12 px-3 sm:px-6 bg-gradient-to-b from-primary/5 to-white">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12 border-2 border-primary/20">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-4">
+                Start Learning Free — No Signup Required
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-700 mb-6">
+                First module always free. No credit card. No commitment. Just start speaking Persian today.
+              </p>
+              <Button
+                size="lg"
+                className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-12 py-6 text-xl font-semibold hover:scale-105 shadow-lg hover:shadow-xl"
+                onClick={handleStartLearning}
+                aria-label="Start Learning Persian Free"
+                disabled={isLearningNavigating}
+              >
+                {isLearningNavigating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Start Learning Free"
+                )}
+              </Button>
+            </div>
           </div>
         </section>
 
-        {/* Gamified Features Section with geometric pattern background - MOVED HERE */}
-        <section className="py-8 px-3 sm:px-6 bg-gradient-to-br from-blue-50 via-white to-green-50 border-y border-primary/10 relative">
-          <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDUwIDUwIj48cGF0aCBkPSJNMjUsMCBMMCwyNSA1MCwyNSBaIE0wLDI1IEwwLDUwIDI1LDI1IFogTTUwLDI1IEw1MCw1MCAyNSwyNSBaIE0yNSw1MCBMMCw1MCAyNSwyNSA1MCw1MCBaIiBmaWxsPSIjMjc3QzUyIiBmaWxsLW9wYWNpdHk9IjAuMSIvPjwvc3ZnPg==')]"></div>
-          <div className="max-w-6xl mx-auto relative z-10">
-            <div className="text-center max-w-3xl mx-auto mb-10 animate-fade-in">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-primary inline-flex items-center">
-                <span className="mr-2">🎮</span> Gamified Learning Experience
+        {/* Benefits Section - 3 Cards */}
+        <section className="py-12 px-3 sm:px-6 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-4">
+                Why Learn Persian with Finglish?
               </h2>
-              <p className="text-lg sm:text-xl text-gray-700 mb-4">
-                Our learners don't just study — they level up. Track your streaks, speak aloud with real-time feedback,
-                and climb the leaderboard as you grow.
-              </p>
-              <p className="text-base text-gray-600">
-                Join thousands of learners already on the journey — start learning Persian today.
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Real results, real conversations, real Persian
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-6 md:gap-8">
-              {/* Card 1: Leaderboard Mockup */}
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10"></div>
-                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
-                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🏆</span> Leaderboard
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              {/* Benefit 1 */}
+              <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 sm:p-8 border border-primary/10">
+                <div className="text-4xl sm:text-5xl mb-4 text-center">👨‍👩‍👧‍👦</div>
+                <h3 className="text-xl sm:text-2xl font-bold text-primary mb-3 text-center">
+                  Speak with Family in 2 Weeks
                 </h3>
-                <div className="space-y-2 sm:space-y-3">
-                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 bg-gray-50 rounded-lg text-xs sm:text-base">
-                    <span className="font-medium">PersianPro92</span>
-                    <span className="text-gray-600">2,540 XP</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 text-xs sm:text-base">
-                    <span className="font-medium">PersianFanatic</span>
-                    <span className="text-gray-600">2,210 XP</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 bg-gray-50 rounded-lg text-xs sm:text-base">
-                    <span className="font-medium">KoobidehKing</span>
-                    <span className="text-gray-600">1,980 XP</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1 sm:py-2 px-2 sm:px-3 bg-blue-50 rounded-lg text-xs sm:text-base">
-                    <span className="font-medium text-blue-600">You</span>
-                    <span className="text-blue-600">1,450 XP</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Streak Popup Mockup */}
-              <div className="bg-gradient-to-br from-yellow-100 via-orange-50 to-amber-100 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover text-center h-full relative">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/10 via-accent/30 to-accent/10"></div>
-                <div className="absolute -top-3 -right-3 w-8 h-8 sm:w-12 sm:h-12 bg-orange-400 rounded-full flex items-center justify-center text-white text-base sm:text-xl font-bold opacity-80 shadow-sm">
-                  +5
-                </div>
-                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-3 flex justify-center items-center">
-                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🔥</span> Well Done!
-                </h3>
-                <p className="text-gray-700 mb-2 sm:mb-4 text-xs sm:text-base">You've completed today's lesson!</p>
-                <div className="text-2xl sm:text-4xl font-bold text-orange-500 mb-2 sm:mb-4">5-Day Streak</div>
-                <div className="py-2 sm:py-3 px-2 sm:px-4 bg-white/60 backdrop-blur-sm rounded-lg sm:rounded-xl text-xs sm:text-base">
-                  <p className="text-gray-700 font-medium">Keep it going tomorrow!</p>
-                </div>
-              </div>
-
-              {/* Card 3: Pronunciation Score Mockup */}
-              <div className="bg-gradient-to-br from-purple-50 via-white to-pink-50 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover text-center h-full relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10"></div>
-                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
-                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🎤</span> Pronunciation Score
-                </h3>
-                <div className="text-4xl sm:text-6xl mb-3 sm:mb-6 animate-pulse">🎙️</div>
-                <div className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">Your score: 82%</div>
-                <button className="bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 sm:py-3 sm:px-6 rounded-full transition-all duration-300 hover:scale-105 text-xs sm:text-base">
-                  Try Again!
-                </button>
-              </div>
-
-              {/* Card 4: Mini Games */}
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/10 via-accent/30 to-accent/10"></div>
-                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
-                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🎮</span> Mini Games
-                </h3>
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg sm:rounded-xl p-2 sm:p-4 text-center">
-                    <div className="text-2xl sm:text-4xl mb-1 sm:mb-2">🎯</div>
-                    <p className="font-medium text-primary text-xs sm:text-base">Today's Challenge</p>
-                    <p className="text-sm sm:text-lg font-bold text-gray-700">Match 10 Persian Words</p>
-                  </div>
-
-                  <div className="relative">
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '20%' }}></div>
-                    </div>
-                    <div className="text-center text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">2/10 Words</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 5: Unlockables */}
-              <div className="bg-gradient-to-br from-indigo-50 via-white to-teal-50 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10"></div>
-                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
-                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">📖</span> Story Mode
-                </h3>
-                <div className="flex flex-col items-center text-center">
-                  <p className="text-gray-700 text-xs sm:text-base font-medium mb-2">New Story Unlocked!</p>
-                  <p className="text-base sm:text-lg font-bold text-primary mb-2 sm:mb-3">
-                    🧆 "Nowruz at Grandma's House"
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-                    Place yourself in real-world conversations and learn Persian through immersive stories!
-                  </p>
-                  <button className="bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-4 sm:py-3 sm:px-6 rounded-full transition-all duration-300 hover:scale-105 text-xs sm:text-base inline-flex items-center">
-                    <span className="mr-1">▶️</span> Start Story
-                  </button>
-                </div>
-              </div>
-
-              {/* Card 6: Badge Preview */}
-              <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-3 sm:p-6 card-hover h-full relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/10 via-accent/30 to-accent/10"></div>
-                <h3 className="text-base sm:text-xl font-bold mb-2 sm:mb-4 flex justify-center items-center">
-                  <span className="text-lg sm:text-2xl mr-1 sm:mr-2">🎖️</span> Badge Preview
-                </h3>
-                <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3">
-                    <span className="text-2xl sm:text-3xl">👨‍👩‍👧‍👦</span>
-                  </div>
-                  <p className="font-bold text-base sm:text-lg text-primary mb-2">Mehmooni Ready</p>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 text-center">
-                  You can now properly introduce yourself at Persian gatherings.
+                <p className="text-gray-700 text-center">
+                  Learn the phrases you'll actually use with your Persian family. No textbook fluff—just real conversations.
                 </p>
-                <div className="flex flex-col items-center">
-                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden mb-1">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: '3%' }}></div>
-                  </div>
-                  <p className="text-xs text-gray-500">Badges Unlocked: 1 of 35</p>
+              </div>
+
+              {/* Benefit 2 */}
+              <div className="bg-gradient-to-br from-green-50 to-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 sm:p-8 border border-primary/10">
+                <div className="text-4xl sm:text-5xl mb-4 text-center">⏱️</div>
+                <h3 className="text-xl sm:text-2xl font-bold text-primary mb-3 text-center">
+                  5 Minutes a Day, No Grammar Books
+                </h3>
+                <p className="text-gray-700 text-center">
+                  Bite-sized lessons that fit your schedule. Learn through games and stories, not boring grammar rules.
+                </p>
+              </div>
+
+              {/* Benefit 3 */}
+              <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 sm:p-8 border border-primary/10">
+                <div className="text-4xl sm:text-5xl mb-4 text-center">🎯</div>
+                <h3 className="text-xl sm:text-2xl font-bold text-primary mb-3 text-center">
+                  Real Phrases, Not Textbook Persian
+                </h3>
+                <p className="text-gray-700 text-center">
+                  Learn how Persians actually talk. Cultural context, practical examples, and phrases you'll use every day.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Social Proof Section */}
+        <section className="py-12 px-3 sm:px-6 bg-gradient-to-b from-white to-primary/5">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-white rounded-xl shadow-md p-8 sm:p-10 border border-primary/10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-6">
+                Trusted by Persian Learners Worldwide
+              </h2>
+              <p className="text-lg text-gray-700 mb-8">
+                Join thousands of learners who are already speaking Persian with confidence.
+              </p>
+              <div className="flex flex-wrap justify-center gap-6 sm:gap-8 items-center">
+                <div className="text-center">
+                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">100%</div>
+                  <div className="text-sm sm:text-base text-gray-600">Free to Start</div>
                 </div>
+                <div className="text-center">
+                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">No</div>
+                  <div className="text-sm sm:text-base text-gray-600">Credit Card Required</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">Start</div>
+                  <div className="text-sm sm:text-base text-gray-600">Learning Today</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section className="py-16 px-3 sm:px-6 bg-primary/10">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary mb-6">
+              Ready to Start Your Persian Journey?
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
+              Join thousands of learners who are already discovering the beauty of Persian language and culture.
+            </p>
+            <Button
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-white transition-all duration-300 rounded-full px-12 py-6 text-xl font-semibold hover:scale-105 shadow-lg hover:shadow-xl"
+              onClick={handleStartLearning}
+              aria-label="Start Learning Persian"
+              disabled={isLearningNavigating}
+            >
+              {isLearningNavigating ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Start Learning Free"
+              )}
+            </Button>
+          </div>
+        </section>
+
+        {/* Email Capture + Badges Section */}
+        <section className="py-16 px-3 sm:px-6 bg-background">
+          <div className="max-w-4xl mx-auto">
+            {/* Email Capture */}
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-4">
+                Not ready yet?
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Get free weekly Persian lessons in your inbox.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="flex-1"
+                />
+                <Button
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap"
+                >
+                  Send me free lessons
+                </Button>
+              </div>
+            </div>
+
+            {/* Badges */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+              <div className="border border-border rounded-lg px-6 py-4 text-center">
+                <p className="text-sm text-foreground">Built by Iranian creators</p>
+              </div>
+              <div className="border border-border rounded-lg px-6 py-4 text-center">
+                <p className="text-sm text-foreground">Backed by Iranopedia, the web's #1 Persian culture platform</p>
+              </div>
+              <div className="border border-border rounded-lg px-6 py-4 text-center">
+                <p className="text-sm text-foreground">Designed from real conversations</p>
+              </div>
+              <div className="border border-border rounded-lg px-6 py-4 text-center">
+                <p className="text-sm text-foreground">100% beginner friendly</p>
               </div>
             </div>
           </div>
@@ -429,6 +502,16 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => {
+          setAuthModalOpen(false)
+          router.push('/modules')
+        }}
+      />
     </div>
   )
 }

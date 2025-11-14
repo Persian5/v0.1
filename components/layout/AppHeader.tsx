@@ -228,9 +228,9 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                     size="sm" 
                     className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-semibold shadow-sm"
                     onClick={() => setAuthModalOpen(true)}
-                    aria-label="Sign up for Finglish"
+                    aria-label="Sign in to Finglish"
                   >
-                    Sign Up
+                    Sign In
                   </Button>
                 )}
 
