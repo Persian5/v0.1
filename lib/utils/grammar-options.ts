@@ -276,7 +276,7 @@ export function generateGrammarOptions(
     
     // PHASE 4: If learnedSoFar provided, filter to only learned vocab IDs
     if (learnedSoFar?.vocabIds && learnedSoFar.vocabIds.length > 0) {
-      const learnedSet = new Set(learnedSoFar.vocabIds.map(id => id.toLowerCase()));
+      const learnedSet = new Set((learnedSoFar.vocabIds || []).map(id => id.toLowerCase()));
       const beforeLearnedFilter = availableVocab.length
       availableVocab = availableVocab.filter(vocab => 
         learnedSet.has(vocab.id.toLowerCase())
@@ -390,7 +390,7 @@ export function generateGrammarOptions(
       
       // Fallback: Use all learned vocab to ensure proper word bank
       const allLearnedVocab = lessonVocabulary.filter(vocab => {
-        const learnedSet = new Set(learnedSoFar.vocabIds.map(id => id.toLowerCase()));
+        const learnedSet = new Set((learnedSoFar.vocabIds || []).map(id => id.toLowerCase()));
         return learnedSet.has(vocab.id.toLowerCase()) &&
                !connectorWords.includes(vocab.id.toLowerCase()) &&
                vocab.id.toLowerCase() !== correctAnswer.toLowerCase() &&
