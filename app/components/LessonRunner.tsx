@@ -115,37 +115,26 @@ export function LessonRunner({
   }, [moduleId, lessonId, steps, curriculumLexicon]);
   
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // EXISTING VOCAB LOGIC (PRESERVED FOR BACKWARD COMPATIBILITY)
+  // EXISTING VOCAB LOGIC (PHASE PERFORMANCE-ONLY: Optimized with learnedCache)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  // ✅ FIX: Get vocabulary taught up to current step (prevents future vocab in word banks)
-  // This ensures word banks only show vocab the user has learned so far
+  // ✅ PERFORMANCE: Get vocabulary taught up to current step using pre-built cache
+  // Replaces step-rescanning with O(1) lookup + O(n) map
   const getVocabTaughtUpToStep = useCallback((stepIndex: number): VocabularyItem[] => {
-    const taughtVocabIds = new Set<string>();
+    // Get vocab IDs from pre-computed cache
+    const learnedVocabIds = learnedCache[stepIndex]?.vocabIds || [];
     
-    // Collect vocab IDs from all steps up to and including currentStepIndex
-    for (let i = 0; i <= stepIndex && i < steps.length; i++) {
-      const step = steps[i];
-      
-      // Extract vocab IDs introduced in this step
-      if (step.type === 'flashcard' && step.data.vocabularyId) {
-        taughtVocabIds.add(step.data.vocabularyId);
-      } else if (step.type === 'audio-sequence' && step.data.sequence) {
-        step.data.sequence.forEach((id: string) => taughtVocabIds.add(id));
-      } else if (step.type === 'audio-meaning' && step.data.vocabularyId) {
-        taughtVocabIds.add(step.data.vocabularyId);
-      } else if (step.type === 'matching' && step.data.words) {
-        step.data.words.forEach((word: any) => {
-          if (word.id) taughtVocabIds.add(word.id);
-        });
+    // Map IDs back to VocabularyItems using global lexicon
+    const vocabItems: VocabularyItem[] = [];
+    for (const vocabId of learnedVocabIds) {
+      const vocabItem = curriculumLexicon.allVocabMap.get(vocabId);
+      if (vocabItem) {
+        vocabItems.push(vocabItem);
       }
-      // Note: text-sequence, quiz, input, story don't introduce new vocab via IDs
-      // Text-sequence relies on vocabularyBank matching, not explicit IDs
     }
     
-    // Return vocab items for collected IDs
-    return currentLessonVocab.filter(v => taughtVocabIds.has(v.id));
-  }, [currentLessonVocab, steps]);
+    return vocabItems;
+  }, [learnedCache, curriculumLexicon.allVocabMap]);
   
   // Get vocab taught up to current step + review vocab
   const vocabTaughtSoFar = getVocabTaughtUpToStep(idx);
