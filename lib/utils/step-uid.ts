@@ -1,6 +1,20 @@
 /**
  * Step UID Generator (v3 - Production Stable)
  * 
+ * ============================================================================
+ * TO ADD A NEW GRAMMAR STEP TYPE:
+ * ============================================================================
+ * 
+ * Add a case in deriveStepUid() function (around line 150):
+ * 
+ * case 'grammar-multiple-choice':
+ *   return deriveContentBasedUid(step, stepIndex, moduleId, lessonId);
+ * 
+ * The deriveContentBasedUid() function handles all step types generically,
+ * so usually you just need to add the case - no custom logic needed.
+ * 
+ * ============================================================================
+ * 
  * Generates stable, unique identifiers for lesson steps.
  * These UIDs are used for XP idempotency - ensuring users can only earn XP once per step.
  * 

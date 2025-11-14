@@ -1,18 +1,102 @@
 /**
  * Grammar Options Generator
  * 
- * Generates options for grammar-fill-blank steps dynamically.
- * Keeps the same structure as hardcoded options but generates them automatically.
+ * ============================================================================
+ * ARCHITECTURE & REQUIREMENTS FOR ADDING NEW BLANK TYPES
+ * ============================================================================
  * 
- * PHASE 4: Now supports optional learnedSoFar parameter for filtered distractors.
- * When learnedSoFar is provided, only uses vocab/suffixes/connectors learned so far.
- * When absent, falls back to existing behavior (full lesson vocab, hardcoded lists).
+ * This function generates options (correct answer + distractors) for grammar
+ * fill-in-the-blank exercises. It supports:
+ * - Suffix blanks: "-am", "-i", "-e", etc.
+ * - Word blanks: "shoma", "man", "esm", etc.
+ * - Connector blanks: "ham", "va", "vali"
  * 
- * Usage in curriculum.ts:
+ * TO ADD A NEW BLANK TYPE (e.g., "prefix"):
+ * 
+ * 1. Update function signature (line 54):
+ *    blankType: 'suffix' | 'connector' | 'word' | 'prefix'  // ← ADD 'prefix'
+ * 
+ * 2. Update LearnedSoFar interface (line 29):
+ *    export interface LearnedSoFar {
+ *      vocabIds?: string[]
+ *      suffixes?: string[]
+ *      connectors?: string[]
+ *      prefixes?: string[]  // ← ADD
+ *    }
+ * 
+ * 3. Update prefix variable (line 83):
+ *    const prefix = blankType === 'suffix' ? 'suffix' 
+ *                 : blankType === 'connector' ? 'conn' 
+ *                 : blankType === 'prefix' ? 'prefix'  // ← ADD
+ *                 : 'word';
+ * 
+ * 4. Add blank type handling (after line 157):
+ *    } else if (blankType === 'prefix') {
+ *      const prefixPool = learnedSoFar?.prefixes && learnedSoFar.prefixes.length > 0
+ *        ? learnedSoFar.prefixes
+ *        : ['na-', 'be-', 'mi-']; // Fallback: hardcoded list
+ *      
+ *      for (const prefix of prefixPool) {
+ *        if (prefix.toLowerCase() !== correctAnswer.toLowerCase() && options.length < 4) {
+ *          options.push({
+ *            id: `prefix-${prefix}`,
+ *            text: prefix
+ *          });
+ *        }
+ *      }
+ *    } else {
+ * 
+ * 5. Update display text logic (line 69-80):
+ *    if (blankType === 'word') {
+ *      // ... existing logic
+ *    } else if (blankType === 'prefix') {
+ *      displayText = prefix  // e.g., "na-"
+ *    } else {
+ *      displayText = blankType === 'suffix' ? `-${correctAnswer}` : correctAnswer
+ *    }
+ * 
+ * ============================================================================
+ * FILTERING LOGIC (WORD BLANKS ONLY)
+ * ============================================================================
+ * 
+ * Word blanks go through multiple filter stages:
+ * 
+ * 1. Filter connectors + correct answer (line 159-163)
+ *    → Removes: va, ham, vali, correctAnswer
+ * 
+ * 2. Filter by learnedSoFar.vocabIds (line 178-206)
+ *    → Only keeps vocab in learnedSoFar.vocabIds
+ *    → If learnedSoFar not provided, uses all lessonVocabulary
+ * 
+ * 3. Filter by semantic group (line 210-237)
+ *    → Only if expectedSemanticGroup provided
+ *    → Only if ≥3 semantic matches found
+ *    → Otherwise uses all availableVocab (fallback)
+ * 
+ * 4. Select distractors (line 267-346)
+ *    → If <3 remaining vocab → fallback to all learned vocab
+ *    → Selects 3 distractors randomly
+ *    → Adds correct answer → 4 total options
+ * 
+ * Suffix/Connector blanks:
+ * - Use learnedSoFar.suffixes/connectors OR hardcoded fallback
+ * - No semantic filtering
+ * - No vocab filtering
+ * 
+ * ============================================================================
+ * USAGE
+ * ============================================================================
+ * 
+ * In curriculum.ts (legacy):
  * wordOptions: generateGrammarOptions('word', 'khoobam', vocabulary, reviewVocabulary, ['khoobi'])
  * 
- * Usage with learned filtering (Phase 5):
- * wordOptions: generateGrammarOptions('word', 'khoobam', vocabulary, undefined, ['khoobi'], learnedSoFar)
+ * In GrammarFillBlank.tsx (with learned filtering):
+ * generateGrammarOptions('word', 'khoobam', lessonVocabulary, undefined, undefined, {
+ *   learnedSoFar: { vocabIds, suffixes, connectors },
+ *   expectedSemanticGroup: 'pronouns'
+ * })
+ * 
+ * ============================================================================
  */
 
 import { VocabularyItem } from '../types';

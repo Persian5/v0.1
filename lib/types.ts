@@ -162,6 +162,24 @@ export interface GrammarIntroStep extends BaseStep {
   };
 }
 
+/**
+ * Grammar Fill Blank Step
+ * 
+ * ============================================================================
+ * TO ADD A NEW BLANK TYPE (e.g., "prefix"):
+ * ============================================================================
+ * 
+ * 1. Update blank type union (line 180):
+ *    type: 'suffix' | 'word' | 'connector' | 'prefix'  // ← ADD 'prefix'
+ * 
+ * 2. Update generateGrammarOptions() signature in grammar-options.ts
+ * 3. Update GrammarFillBlank.tsx component logic
+ * 4. Update curriculum-lexicon.ts if prefixes are grammar-introduced
+ * 
+ * See lib/utils/GRAMMAR_ARCHITECTURE.md for full guide.
+ * 
+ * ============================================================================
+ */
 // Grammar Fill Blank step - Fill blanks in sentences
 export interface GrammarFillBlankStep extends BaseStep {
   type: 'grammar-fill-blank';
@@ -177,7 +195,7 @@ export interface GrammarFillBlankStep extends BaseStep {
       // For multiple blanks (suffix + word)
       blanks?: Array<{
         index: number; // Which blank (0 = first, 1 = second, etc.)
-        type: 'suffix' | 'word' | 'connector'; // Type of blank
+        type: 'suffix' | 'word' | 'connector'; // Type of blank - UPDATE THIS UNION FOR NEW TYPES
         correctAnswer: string; // Correct answer for this blank
         expectedSemanticGroup?: string; // SEMANTIC FILTER: Expected semantic group for word blanks (e.g., "pronoun", "adjectives")
       }>;

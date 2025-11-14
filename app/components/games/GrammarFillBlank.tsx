@@ -1,3 +1,76 @@
+/**
+ * Grammar Fill Blank Component
+ * 
+ * ============================================================================
+ * ARCHITECTURE & REQUIREMENTS FOR ADDING NEW GRAMMAR MODES
+ * ============================================================================
+ * 
+ * This component handles grammar fill-in-the-blank exercises with support for:
+ * - Suffix blanks (e.g., "khoob-___" → "-am", "-i", "-e")
+ * - Word blanks (e.g., "esme ___ chiye?" → "shoma", "man")
+ * - Connector blanks (e.g., "man ___ khoobam" → "ham", "va")
+ * 
+ * TO ADD A NEW BLANK TYPE (e.g., "prefix"):
+ * 
+ * 1. Update lib/types.ts:
+ *    - Add 'prefix' to blank type union
+ *    - Add prefixOptions to exercise interface (if needed)
+ * 
+ * 2. Update lib/utils/grammar-options.ts:
+ *    - Add 'prefix' handling in generateGrammarOptions()
+ *    - Add prefixes?: string[] to LearnedSoFar interface
+ *    - Update prefix variable (line 83)
+ * 
+ * 3. Update THIS FILE (GrammarFillBlank.tsx):
+ *    - Add isCurrentBlankPrefix detection (line ~95)
+ *    - Add isPrefixBased detection (line ~102)
+ *    - Add prefix text extraction in handleSelectOption (line ~381)
+ *    - Update option filtering if needed (line ~106)
+ * 
+ * 4. Update lib/utils/curriculum-lexicon.ts:
+ *    - Only if prefixes are introduced via grammar steps
+ *    - Add prefixIntroductions map
+ *    - Update buildLearnedCache() to track prefixes
+ * 
+ * 5. Update lib/config/curriculum.ts:
+ *    - Add grammar step with prefix blank type
+ * 
+ * TO ADD A NEW GRAMMAR STEP TYPE (not blank type):
+ * 
+ * 1. Create new component (e.g., GrammarMultipleChoice.tsx)
+ * 2. Update lib/types.ts with new step interface
+ * 3. Update app/components/LessonRunner.tsx to render new component
+ * 4. Update lib/utils/step-uid.ts with new step type case
+ * 5. Pass learnedSoFar prop: learnedSoFar={learnedCache[idx]}
+ * 6. Pass tracking props: moduleId, lessonId, stepIndex
+ * 
+ * ============================================================================
+ * LEARNED-SO-FAR REQUIREMENTS
+ * ============================================================================
+ * 
+ * The learnedSoFar prop contains:
+ * - vocabIds: All vocab learned up to this step (from all previous modules/lessons)
+ * - suffixes: Only suffixes explicitly taught in grammar steps
+ * - connectors: Connectors from vocab OR grammar steps
+ * 
+ * This is pre-computed in LessonRunner via buildLearnedCache().
+ * Always pass learnedCache[stepIndex] to this component.
+ * 
+ * ============================================================================
+ * OPTION GENERATION FLOW
+ * ============================================================================
+ * 
+ * 1. Component receives learnedSoFar prop
+ * 2. Loads ALL learned vocab from learnedSoFar.vocabIds
+ * 3. Determines blank type (suffix/word/connector)
+ * 4. Calls generateGrammarOptions() with learnedSoFar
+ * 5. Generator filters vocab by learnedSoFar + semantic group
+ * 6. Returns 4 options (1 correct + 3 distractors)
+ * 7. Shuffles if word blank (suffix/connector stay in order)
+ * 
+ * ============================================================================
+ */
+
 "use client"
 
 import { useState, useRef, useEffect, useMemo } from "react"

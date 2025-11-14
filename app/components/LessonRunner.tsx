@@ -966,6 +966,41 @@ export function LessonRunner({
           onXpStart={createStepXpHandler()}
         />
       ) : step.type === 'grammar-intro' ? (
+        /**
+         * ============================================================================
+         * GRAMMAR STEP RENDERING
+         * ============================================================================
+         * 
+         * TO ADD A NEW GRAMMAR STEP TYPE (e.g., "grammar-multiple-choice"):
+         * 
+         * 1. Import component at top (line 8-9):
+         *    import { GrammarMultipleChoice } from '@/app/components/games/GrammarMultipleChoice'
+         * 
+         * 2. Import type in types import (line 14):
+         *    import { ..., GrammarMultipleChoiceStep } from '@/lib/types'
+         * 
+         * 3. Add rendering case here (after grammar-fill-blank):
+         *    ) : step.type === 'grammar-multiple-choice' ? (
+         *      <GrammarMultipleChoice
+         *        key={`grammar-multiple-choice-${idx}`}
+         *        question={(step as GrammarMultipleChoiceStep).data.question}
+         *        options={(step as GrammarMultipleChoiceStep).data.options}
+         *        conceptId={(step as GrammarMultipleChoiceStep).data.conceptId}
+         *        moduleId={moduleId}           // ← REQUIRED for tracking
+         *        lessonId={lessonId}           // ← REQUIRED for tracking
+         *        stepIndex={idx}                // ← REQUIRED for tracking
+         *        learnedSoFar={learnedCache[idx]}  // ← REQUIRED: Pass learned cache
+         *        points={step.points}
+         *        onComplete={handleItemComplete}
+         *        onXpStart={createStepXpHandler()}
+         *      />
+         * 
+         * 4. Update lib/types.ts with new step interface
+         * 5. Update lib/utils/step-uid.ts with new step type case
+         * 
+         * See lib/utils/GRAMMAR_ARCHITECTURE.md for full guide.
+         * ============================================================================
+         */
         <GrammarIntro
           key={`grammar-intro-${idx}`}
           title={(step as GrammarIntroStep).data.title}
@@ -982,15 +1017,15 @@ export function LessonRunner({
           key={`grammar-fill-blank-${idx}`}
           exercises={(step as GrammarFillBlankStep).data.exercises}
           conceptId={(step as GrammarFillBlankStep).data.conceptId}
-          moduleId={moduleId}
-          lessonId={lessonId}
-          stepIndex={idx}
+          moduleId={moduleId}           // ← REQUIRED: For grammar tracking
+          lessonId={lessonId}           // ← REQUIRED: For grammar tracking
+          stepIndex={idx}                // ← REQUIRED: For grammar tracking
           label={(step as GrammarFillBlankStep).data.label}
           subtitle={(step as GrammarFillBlankStep).data.subtitle}
           points={step.points}
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
-          learnedSoFar={learnedCache[idx]}  // PHASE 3: Pass learned cache (not used yet)
+          learnedSoFar={learnedCache[idx]}  // ← REQUIRED: Pre-computed learned vocab/suffixes/connectors
         />
       ) : step.type === 'audio-meaning' ? (
         <AudioMeaning

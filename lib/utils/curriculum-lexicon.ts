@@ -1,10 +1,100 @@
 /**
  * Curriculum Lexicon Cache
  * 
- * Global cache built ONCE to eliminate repeated curriculum scanning.
- * Provides O(1) vocabulary lookups and pre-computed learned-so-far data.
+ * ============================================================================
+ * ARCHITECTURE & REQUIREMENTS FOR ADDING NEW GRAMMAR TYPES
+ * ============================================================================
  * 
- * Performance: Eliminates 10-100x repeated scans in grammar-heavy lessons.
+ * This cache pre-computes vocabulary, suffixes, and connectors from the
+ * entire curriculum to eliminate repeated scanning.
+ * 
+ * TO ADD TRACKING FOR NEW GRAMMAR TYPE (e.g., "prefixes"):
+ * 
+ * 1. Update CurriculumLexicon interface (line 17):
+ *    prefixIntroductions: {
+ *      [moduleId: string]: {
+ *        [lessonId: string]: {
+ *          [stepIndex: number]: string[]
+ *        }
+ *      }
+ *    }
+ * 
+ * 2. Update buildCurriculumLexicon() (after line 60):
+ *    const prefixIntroductions: CurriculumLexicon['prefixIntroductions'] = {}
+ *    // ... initialize in module loop
+ *    
+ *    // Extract prefix introductions from grammar steps
+ *    prefixIntroductions[moduleId][lessonId] = {}
+ *    if (lesson.steps) {
+ *      for (let stepIndex = 0; stepIndex < lesson.steps.length; stepIndex++) {
+ *        const step = lesson.steps[stepIndex]
+ *        if (step.type === 'grammar-fill-blank' && step.data.exercises) {
+ *          const stepPrefixes: string[] = []
+ *          for (const exercise of step.data.exercises) {
+ *            if (exercise.prefixOptions) {
+ *              for (const option of exercise.prefixOptions) {
+ *                if (option.id.startsWith('prefix-')) {
+ *                  const prefix = option.id.replace('prefix-', '')
+ *                  if (!stepPrefixes.includes(prefix)) {
+ *                    stepPrefixes.push(prefix)
+ *                  }
+ *                }
+ *              }
+ *            }
+ *          }
+ *          if (stepPrefixes.length > 0) {
+ *            prefixIntroductions[moduleId][lessonId][stepIndex] = stepPrefixes
+ *          }
+ *        }
+ *      }
+ *    }
+ * 
+ * 3. Update LearnedSoFar interface (line 48):
+ *    prefixes?: string[]
+ * 
+ * 4. Update buildLearnedCache() (line 100):
+ *    let currentPrefixes: string[] = []
+ *    // ... track prefixes similar to suffixes
+ *    cache[stepIndex] = {
+ *      vocabIds: [...currentVocabIds],
+ *      suffixes: [...currentSuffixes],
+ *      connectors: [...currentConnectors],
+ *      prefixes: [...currentPrefixes]  // ← ADD
+ *    }
+ * 
+ * ============================================================================
+ * WHEN TO UPDATE THIS FILE
+ * ============================================================================
+ * 
+ * Update ONLY if:
+ * - New grammar type introduces vocab/suffixes/connectors/prefixes via grammar steps
+ * - Need to track when grammar concepts are introduced
+ * - Need to build learned-so-far cache for new grammar type
+ * 
+ * DO NOT update if:
+ * - Just adding a new blank type that uses existing vocab/suffixes
+ * - Adding a new step type that doesn't introduce grammar concepts
+ * - Changing UI/UX only
+ * 
+ * ============================================================================
+ * CACHING STRATEGY
+ * ============================================================================
+ * 
+ * Global Lexicon (built once):
+ * - Scans entire curriculum ONCE
+ * - Stores vocab, module vocab, lesson vocab
+ * - Stores suffix/connector introduction maps
+ * - Reused across all lessons
+ * 
+ * Learned Cache (built per lesson):
+ * - Uses global lexicon for lookups
+ * - Builds incrementally (step 0 → step N)
+ * - Each step adds vocab/suffixes/connectors introduced at that step
+ * - Passed to components as learnedSoFar prop
+ * 
+ * Performance: O(1) lookups instead of O(n) scans
+ * 
+ * ============================================================================
  */
 
 import { VocabularyItem, Module, LessonStep } from '../types'
