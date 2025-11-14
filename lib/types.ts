@@ -179,7 +179,10 @@ export interface GrammarFillBlankStep extends BaseStep {
         index: number; // Which blank (0 = first, 1 = second, etc.)
         type: 'suffix' | 'word' | 'connector'; // Type of blank
         correctAnswer: string; // Correct answer for this blank
+        expectedSemanticGroup?: string; // SEMANTIC FILTER: Expected semantic group for word blanks (e.g., "pronoun", "adjectives")
       }>;
+      // SEMANTIC FILTER: Expected semantic group for single-blank word exercises
+      expectedSemanticGroup?: string;
       // For suffix-based fill-blank (Step 2 style)
       suffixOptions?: Array<{
         id: string;
@@ -196,30 +199,6 @@ export interface GrammarFillBlankStep extends BaseStep {
         id: string;
         text: string;
         meaning?: string;
-      }>;
-    }>;
-  };
-}
-
-// Grammar Transformation step - Transform words in sentences
-export interface GrammarTransformationStep extends BaseStep {
-  type: 'grammar-transformation';
-  data: {
-    conceptId: string;
-    exercises: Array<{
-      baseWord: string; // e.g., "khoob"
-      baseDefinition: string; // e.g., "good"
-      targetMeaning: string; // e.g., "I'm good"
-      transformationOptions: Array<{
-        id: string;
-        text: string; // e.g., "Add -am"
-        result: string; // e.g., "khoobam"
-        isCorrect: boolean;
-      }>;
-      distractors?: Array<{
-        id: string;
-        text: string;
-        result: string;
       }>;
     }>;
   };
@@ -315,10 +294,8 @@ export type LessonStep =
   | InputStep
   | MatchingStep
   | FinalStep
-  | GrammarConceptStep
   | GrammarIntroStep
   | GrammarFillBlankStep
-  | GrammarTransformationStep
   | AudioMeaningStep
   | AudioSequenceStep
   | TextSequenceStep

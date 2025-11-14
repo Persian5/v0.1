@@ -739,7 +739,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "ezafe-connector",
+              conceptId: "suffix-e",
               label: "FILL IN THE SUFFIX",
               subtitle: "Choose the correct connector",
               exercises: [
@@ -766,7 +766,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "ezafe-connector",
+              conceptId: "suffix-e",
               label: "FILL IN THE BLANKS",
               subtitle: "Complete the sentence with suffix and word",
               exercises: [
@@ -782,7 +782,8 @@ export const curriculumData: Module[] = [
                     {
                       index: 1,
                       type: "word",
-                      correctAnswer: "shoma"
+                      correctAnswer: "shoma",
+                      expectedSemanticGroup: "pronouns"  // SEMANTIC FILTER: Only show pronouns as distractors
                     }
                   ],
                   suffixOptions: [
@@ -1493,7 +1494,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "adjective-suffixes",
+              conceptId: "suffix-am",
               label: "FILL IN THE SUFFIX",
               subtitle: "Choose the correct ending",
               exercises: [
@@ -1517,7 +1518,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "adjective-suffixes",
+              conceptId: "suffix-am",
               label: "FILL IN THE BLANKS",
               subtitle: "Complete the sentence with word and suffix",
               exercises: [
@@ -2420,7 +2421,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "connectors-placement",
+              conceptId: "connector-vali",
               label: "FILL IN THE CONNECTOR",
               subtitle: "Choose the correct word",
               exercises: [
@@ -2448,7 +2449,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "connectors-placement",
+              conceptId: "connector-ham",
               label: "FILL IN THE BLANKS",
               subtitle: "Complete the sentence with connector and word",
               exercises: [
@@ -3489,7 +3490,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "possession-suffixes",
+              conceptId: "suffix-am",
               label: "FILL IN THE SUFFIX",
               subtitle: "Choose the correct ending",
               exercises: [
@@ -3513,7 +3514,7 @@ export const curriculumData: Module[] = [
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "possession-suffixes",
+              conceptId: "suffix-e",
               label: "FILL IN THE BLANKS",
               subtitle: "Complete the sentence with suffix and word",
               exercises: [

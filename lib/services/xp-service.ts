@@ -33,10 +33,8 @@ export const XP_REWARDS = {
   FINAL_CHALLENGE: { amount: 4, source: 'final_challenge', description: 'Completed final challenge' },
   AUDIO_MEANING_CORRECT: { amount: 2, source: 'audio_meaning_correct', description: 'Correctly identified audio meaning' },
   AUDIO_SEQUENCE_COMPLETE: { amount: 3, source: 'audio_sequence_complete', description: 'Completed audio sequence challenge' },
-  GRAMMAR_CONCEPT: { amount: 2, source: 'grammar_concept', description: 'Completed grammar concept' },
   GRAMMAR_INTRO: { amount: 1, source: 'grammar_intro', description: 'Completed grammar introduction' },
   GRAMMAR_FILL_BLANK: { amount: 1, source: 'grammar_fill_blank', description: 'Completed grammar fill blank' },
-  GRAMMAR_TRANSFORMATION: { amount: 1, source: 'grammar_transformation', description: 'Completed grammar transformation' },
   STORY_CONVERSATION: { amount: 1, source: 'story_conversation', description: 'Story conversation choice' },
 } as const
 
@@ -94,14 +92,10 @@ export class XpService {
         return XP_REWARDS.AUDIO_SEQUENCE_COMPLETE
       case 'text-sequence':
         return XP_REWARDS.TEXT_SEQUENCE_COMPLETE
-      case 'grammar-concept':
-        return XP_REWARDS.GRAMMAR_CONCEPT
       case 'grammar-intro':
         return XP_REWARDS.GRAMMAR_INTRO
       case 'grammar-fill-blank':
         return XP_REWARDS.GRAMMAR_FILL_BLANK
-      case 'grammar-transformation':
-        return XP_REWARDS.GRAMMAR_TRANSFORMATION
       case 'final':
         return XP_REWARDS.FINAL_CHALLENGE
       case 'story-conversation':

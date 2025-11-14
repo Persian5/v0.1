@@ -29,6 +29,7 @@ import { WordBankService } from '@/lib/services/word-bank-service'
 import { SmartAuthService } from '@/lib/services/smart-auth-service'
 import { verifyLessonCompletionInCache } from '@/lib/utils/cache-verification'
 import { safeTelemetry } from '@/lib/utils/telemetry-safe'
+import { getCurriculumLexicon, buildLearnedCache, type LearnedCache } from '@/lib/utils/curriculum-lexicon'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -100,6 +101,22 @@ export function LessonRunner({
   // This ensures that any vocabulary word mentioned in any quiz can be properly identified
   // and remediated, regardless of lesson boundaries (following DEVELOPMENT_RULES.md)
   const allCurriculumVocab = VocabularyService.getAllCurriculumVocabulary();
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // PHASE 3: CACHING LAYER (ELIMINATES REPEATED CURRICULUM SCANS)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  // Build global curriculum lexicon ONCE (module-scoped cache)
+  const curriculumLexicon = useMemo(() => getCurriculumLexicon(), []);
+  
+  // Build learned cache ONCE per lesson (pre-computed learned-so-far per step)
+  const learnedCache: LearnedCache = useMemo(() => {
+    return buildLearnedCache(moduleId, lessonId, steps, curriculumLexicon);
+  }, [moduleId, lessonId, steps, curriculumLexicon]);
+  
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // EXISTING VOCAB LOGIC (PRESERVED FOR BACKWARD COMPATIBILITY)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
   // ✅ FIX: Get vocabulary taught up to current step (prevents future vocab in word banks)
   // This ensures word banks only show vocab the user has learned so far
@@ -965,11 +982,15 @@ export function LessonRunner({
           key={`grammar-fill-blank-${idx}`}
           exercises={(step as GrammarFillBlankStep).data.exercises}
           conceptId={(step as GrammarFillBlankStep).data.conceptId}
+          moduleId={moduleId}
+          lessonId={lessonId}
+          stepIndex={idx}
           label={(step as GrammarFillBlankStep).data.label}
           subtitle={(step as GrammarFillBlankStep).data.subtitle}
           points={step.points}
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
+          learnedSoFar={learnedCache[idx]}  // PHASE 3: Pass learned cache (not used yet)
         />
       ) : step.type === 'audio-meaning' ? (
         <AudioMeaning

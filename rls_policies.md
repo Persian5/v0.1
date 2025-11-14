@@ -16,3 +16,13 @@
 | public     | user_subscriptions   | Users can view own subscription      | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id) | null                   |
 | public     | user_xp_transactions | Users can insert own XP transactions | PERMISSIVE | {public} | INSERT | null                   | (auth.uid() = user_id) |
 | public     | user_xp_transactions | Users can view own XP transactions   | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id) | null                   |
+| public     | vocabulary_performance | Users can view own vocabulary performance | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id) | null                   |
+| public     | vocabulary_performance | Users can insert own vocabulary performance | PERMISSIVE | {public} | INSERT | null                   | (auth.uid() = user_id) |
+| public     | vocabulary_performance | Users can update own vocabulary performance | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id) | (auth.uid() = user_id) |
+| public     | vocabulary_attempts | Users can view own vocabulary attempts | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id) | null                   |
+| public     | vocabulary_attempts | Users can insert own vocabulary attempts | PERMISSIVE | {public} | INSERT | null                   | (auth.uid() = user_id) |
+| public     | grammar_performance | Users can view own grammar performance | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id) | null                   |
+| public     | grammar_performance | Users can insert own grammar performance | PERMISSIVE | {public} | INSERT | null                   | (auth.uid() = user_id) |
+| public     | grammar_performance | Users can update own grammar performance | PERMISSIVE | {public} | UPDATE | (auth.uid() = user_id) | (auth.uid() = user_id) |
+| public     | grammar_attempts | Users can view own grammar attempts | PERMISSIVE | {public} | SELECT | (auth.uid() = user_id) | null                   |
+| public     | grammar_attempts | Users can insert own grammar attempts | PERMISSIVE | {public} | INSERT | null                   | (auth.uid() = user_id) |

@@ -111,7 +111,7 @@ export class SmartAuthService {
   /**
    * Emit event to all listeners
    */
-  private static emitEvent(eventType: SmartAuthEventType, data: any): void {
+  static emitEvent(eventType: SmartAuthEventType, data: any): void {
     if (this.eventListeners.size === 0 && process.env.NODE_ENV === 'development') {
       console.warn(`⚠️ No listeners registered for ${eventType} - UI won't update! (This can happen during HMR - do a hard refresh)`)
     }

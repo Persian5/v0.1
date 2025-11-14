@@ -176,14 +176,6 @@ export function deriveStepUid(step: LessonStep, stepIndex: number, moduleId?: st
       return `${UID_VERSION}-story-${storyId}`
     }
     
-    case 'grammar-concept': {
-      const conceptId = (step as any).data?.conceptId
-      if (!conceptId) {
-        throw new Error(`[${location}] Grammar-concept step ${stepIndex} missing conceptId - required for stable UID`)
-      }
-      return `${UID_VERSION}-grammar-${conceptId}`
-    }
-    
     case 'grammar-intro': {
       const conceptId = (step as any).data?.conceptId
       if (!conceptId) {
@@ -204,20 +196,6 @@ export function deriveStepUid(step: LessonStep, stepIndex: number, moduleId?: st
       const correctAnswer = firstExercise.correctAnswer || (firstExercise.blanks?.[0]?.correctAnswer) || ''
       const exerciseKey = `${sentence}-${correctAnswer}`
       return `${UID_VERSION}-grammar-fill-blank-${conceptId}-${simpleHash(exerciseKey)}`
-    }
-    
-    case 'grammar-transformation': {
-      const conceptId = (step as any).data?.conceptId
-      const exercises = (step as any).data?.exercises
-      if (!conceptId || !exercises || !Array.isArray(exercises) || exercises.length === 0) {
-        throw new Error(`[${location}] Grammar-transformation step ${stepIndex} missing conceptId or exercises - required for stable UID`)
-      }
-      // Use first exercise's base word + target meaning for uniqueness
-      const firstExercise = exercises[0]
-      const baseWord = firstExercise.baseWord || ''
-      const targetMeaning = firstExercise.targetMeaning || ''
-      const exerciseKey = `${baseWord}-${targetMeaning}`
-      return `${UID_VERSION}-grammar-transformation-${conceptId}-${simpleHash(exerciseKey)}`
     }
     
     case 'reverse-quiz': {

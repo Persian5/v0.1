@@ -88,6 +88,27 @@
 | vocabulary_attempts    | time_spent_ms        | integer                  | YES         | null               |
 | vocabulary_attempts    | context_data         | jsonb                    | YES         | null               |
 | vocabulary_attempts    | created_at           | timestamp with time zone | NO          | now()              |
+| grammar_performance    | id                   | uuid                     | NO          | gen_random_uuid()  |
+| grammar_performance    | user_id              | uuid                     | NO          | null               |
+| grammar_performance    | concept_id           | text                     | NO          | null               |
+| grammar_performance    | total_attempts       | integer                  | NO          | 0                  |
+| grammar_performance    | total_correct        | integer                  | NO          | 0                  |
+| grammar_performance    | total_incorrect      | integer                  | NO          | 0                  |
+| grammar_performance    | last_seen_at         | timestamp with time zone | YES         | null               |
+| grammar_performance    | last_correct_at      | timestamp with time zone | YES         | null               |
+| grammar_performance    | created_at           | timestamp with time zone | NO          | now()              |
+| grammar_performance    | updated_at           | timestamp with time zone | NO          | now()              |
+| grammar_attempts       | id                   | uuid                     | NO          | gen_random_uuid()  |
+| grammar_attempts       | user_id              | uuid                     | NO          | null               |
+| grammar_attempts       | concept_id           | text                     | NO          | null               |
+| grammar_attempts       | step_type            | text                     | NO          | null               |
+| grammar_attempts       | module_id            | text                     | YES         | null               |
+| grammar_attempts       | lesson_id            | text                     | YES         | null               |
+| grammar_attempts       | step_uid             | text                     | YES         | null               |
+| grammar_attempts       | is_correct           | boolean                  | NO          | null               |
+| grammar_attempts       | time_spent_ms        | integer                  | YES         | null               |
+| grammar_attempts       | context_data         | jsonb                    | YES         | null               |
+| grammar_attempts       | created_at           | timestamp with time zone | NO          | now()              |
 
 ## Constraints
 
@@ -219,6 +240,30 @@
 - **INDEX**: `idx_vocab_attempts_user_vocab` on `(user_id, vocabulary_id, created_at DESC)` - Per-word history
 - **INDEX**: `idx_vocab_attempts_vocab_global` on `(vocabulary_id, created_at DESC)` - Global analytics
 - **INDEX**: `idx_vocab_attempts_context_gin` on `context_data` using GIN - JSONB queries
+
+### grammar_performance
+- **UNIQUE**: `(user_id, concept_id)` - One performance record per user per grammar concept
+- **INDEX**: `idx_grammar_perf_user_concept` on `(user_id, concept_id)` - Fast lookups
+- **INDEX**: `idx_grammar_perf_user_last_seen` on `(user_id, last_seen_at DESC)` WHERE `last_seen_at IS NOT NULL` - Recent activity queries
+- **CHECK**: `total_attempts >= 0`, `total_correct >= 0`, `total_incorrect >= 0` - Ensures non-negative counters
+- **Purpose**: Tracks aggregate performance on grammar concepts (analytics only, no XP/progress modification)
+- **Added**: 2025-01-14 - Grammar tracking system
+
+### grammar_attempts
+- **INDEX**: `idx_grammar_attempts_user_time` on `(user_id, created_at DESC)` - User's recent attempts
+- **INDEX**: `idx_grammar_attempts_user_concept` on `(user_id, concept_id, created_at DESC)` - Per-concept history
+- **INDEX**: `idx_grammar_attempts_concept_global` on `(concept_id, created_at DESC)` - Global analytics
+- **INDEX**: `idx_grammar_attempts_context_gin` on `context_data` using GIN - JSONB queries
+- **Purpose**: Detailed log of every grammar attempt (analytics only, no XP/progress modification)
+- **Added**: 2025-01-14 - Grammar tracking system
+
+### Database Triggers (Grammar)
+
+#### `trigger_grammar_perf_updated_at` (BEFORE UPDATE on `grammar_performance`)
+- **Function**: `update_updated_at_column()` (reuses existing function)
+- **Purpose**: Auto-updates `updated_at` timestamp on performance record changes
+- **Security**: Uses `SECURITY DEFINER` (required for trigger functions), RLS policies still enforced
+- **Added**: 2025-01-14
 
 ---
 
