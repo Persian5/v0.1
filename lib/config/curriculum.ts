@@ -236,8 +236,8 @@ export const curriculumData: Module[] = [
       },
       {
         id: "lesson2",
-        title: "Basic Politeness and Essential Responses",
-        description: "Master polite responses and common conversational phrases",
+        title: "Basic Responses",
+        description: "Today you'll learn how to answer Chetori? ('How are you?') like a native Persian speaker. By the end of this lesson, you can tell someone you're good and understand when they say it to you.",
         emoji: "🙏",
         progress: 0,
         locked: false,
@@ -247,7 +247,7 @@ export const curriculumData: Module[] = [
             en: "Good",
             fa: "خوب",
             finglish: "Khoob",
-            phonetic: "khoob",
+            phonetic: "Kh-oob",
             lessonId: "module1-lesson2"
           },
           {
@@ -257,47 +257,22 @@ export const curriculumData: Module[] = [
             finglish: "Khoobam",
             phonetic: "khoo-BAHM",
             lessonId: "module1-lesson2"
-          },
-          {
-            id: "khoobi",
-            en: "You Are Good / Are You Good?",
-            fa: "خوبی",
-            finglish: "Khoobi",
-            phonetic: "khoo-BEE",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "baleh",
-            en: "Yes",
-            fa: "بله",
-            finglish: "Baleh",
-            phonetic: "bah-LEH",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "na",
-            en: "No",
-            fa: "نه",
-            finglish: "Na",
-            phonetic: "nah",
-            lessonId: "module1-lesson2"
           }
         ],
         steps: [
-          // PHASE 1: FOUNDATION REVIEW
           {
             type: "welcome",
-            title: "Politeness & Responses",
-            description: "Master essential polite responses and learn to answer basic questions like a native Persian speaker.",
+            title: "Basic Responses",
+            description: "Today you'll learn how to answer Chetori? ('How are you?') like a native Persian speaker. By the end of this lesson, you can tell someone you're good and understand when they say it to you.",
             points: 0,
             data: {
               objectives: [
-                "Respond when someone asks how you are",
-                "Say thank you properly in Persian",
-                "Answer yes and no questions confidently",
-                "Build simple conversations using greetings"
+                "Learn the word \"khoob\" (good)",
+                "Learn \"khoobam\" (I'm good)",
+                "Respond naturally to \"chetori?\"",
+                "Continue reviewing Lesson 1 greetings"
               ],
-              lessonType: "politeness"
+              lessonType: "responses"
             }
           },
           {
@@ -307,13 +282,13 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "word1", text: "Salam", slotId: "slot1" },
                 { id: "word2", text: "Chetori", slotId: "slot2" },
-                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
+                { id: "word3", text: "Merci", slotId: "slot3" },
                 { id: "word4", text: "Khodafez", slotId: "slot4" }
               ],
               slots: [
                 { id: "slot1", text: "Hello" },
                 { id: "slot2", text: "How are you?" },
-                { id: "slot3", text: "Welcome" },
+                { id: "slot3", text: "Thank you" },
                 { id: "slot4", text: "Goodbye" }
               ]
             }
@@ -323,19 +298,17 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               vocabularyId: "chetori",
-              distractors: ["salam", "khosh_amadid", "khodafez"]
+              distractors: ["salam", "merci", "khodafez"]
             }
           },
           {
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["salam", "khosh_amadid"],
-              expectedTranslation: "Hello welcome"
+              sequence: ["salam", "chetori"],
+              expectedTranslation: "Hello how are you"
             }
           },
-          
-          // PHASE 2: INTRODUCE BASE ADJECTIVE - "khoob"
           {
             type: "flashcard",
             points: 1,
@@ -344,97 +317,22 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khodafez",
-              distractors: ["salam", "chetori", "khosh_amadid"]
-            }
-          },
-          {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "What does 'khoob' mean?",
-              options: ["Good", "Bad", "Hello", "Thank you"],
+              prompt: "Which word means 'good'?",
+              options: ["Khoob", "Salam", "Chetori", "Merci"],
               correct: 0
             }
           },
           {
-            type: "input",
+            type: "audio-meaning",
             points: 2,
             data: {
-              question: "How do you say 'good' in Persian?",
-              answer: "Khoob"
+              vocabularyId: "salam",
+              distractors: ["chetori", "merci", "khodafez"]
             }
           },
-          
-          // PHASE 2.5: GRAMMAR - ADJECTIVE SUFFIXES "-am" & "-i"
-          // Step 1: Grammar Intro
-          {
-            type: "grammar-intro",
-            points: 1,
-            data: {
-              conceptId: "adjective-suffixes",
-              title: "I Am / You Are: Personal Endings",
-              description: "You've been using khoobam! Let me show you the pattern. In Persian, you add endings to words to say 'I am' or 'you are.' Add -am for 'I am' and -i for 'you are.' These same endings work with ANY adjective.",
-              rule: "Add -am (I am) or -i (you are) to adjectives",
-              visualType: "comparison",
-              visualData: {
-                before: "khoob",
-                after: "khoob-am"
-              }
-            }
-          },
-          // Step 2: Grammar Fill Blank for "-am" (suffix only)
-          {
-            type: "grammar-fill-blank",
-            points: 1,
-            data: {
-              conceptId: "suffix-am",
-              label: "FILL IN THE SUFFIX",
-              subtitle: "Choose the correct ending",
-              exercises: [
-                {
-                  sentence: "khoob-___",
-                  translation: "I am good",
-                  blankPosition: 6,
-                  correctAnswer: "am",
-                  suffixOptions: [
-                    { id: "suffix-am", text: "-am" },
-                    { id: "suffix-i", text: "-i" },
-                    { id: "suffix-e", text: "-e" },
-                    { id: "suffix-et", text: "-et" }
-                  ]
-                }
-              ]
-            }
-          },
-          // Step 3: Grammar Fill Blank for "-i" (suffix only)
-          {
-            type: "grammar-fill-blank",
-            points: 1,
-            data: {
-              conceptId: "suffix-i",
-              label: "FILL IN THE SUFFIX",
-              subtitle: "Choose the correct ending",
-              exercises: [
-                {
-                  sentence: "khoob-___",
-                  translation: "you are good",
-                  blankPosition: 6,
-                  correctAnswer: "i",
-                  suffixOptions: [
-                    { id: "suffix-i", text: "-i" },
-                    { id: "suffix-am", text: "-am" },
-                    { id: "suffix-e", text: "-e" },
-                    { id: "suffix-et", text: "-et" }
-                  ]
-                }
-              ]
-            }
-          },
-          // Step 4: Introduce vocabulary "khoobam" and "khoobi" AFTER grammar explanation
           {
             type: "flashcard",
             points: 1,
@@ -443,100 +341,11 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoobi"
-            }
-          },
-          {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Which form means \"I am good\"?",
-              options: ["khoobi", "khoobam", "khoob", "khodafez"],
-              correct: 1
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which form means \"you are good\"?",
-              options: ["khoobam", "khoob", "khoobi", "merci"],
-              correct: 2
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "khoob", slotId: "slot1" },
-                { id: "word2", text: "khoobam", slotId: "slot2" },
-                { id: "word3", text: "khoobi", slotId: "slot3" }
-              ],
-              slots: [
-                { id: "slot1", text: "good" },
-                { id: "slot2", text: "I am good" },
-                { id: "slot3", text: "You are good" },
-                { id: "slot4", text: "Very good" }
-              ]
-            }
-          },
-          
-          // PHASE 3: INTRODUCE "merci" & YES/NO
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "merci"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khosh_amadid",
-              distractors: ["salam", "chetori", "khodafez"]
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "merci",
-              distractors: ["salam", "salam", "khodafez"]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'Thank you' in Persian?",
-              answer: "Merci"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "baleh"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "na"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following words mean 'Thank you'?",
-              options: ["Merci", "Baleh", "Na", "Khoob"],
+              prompt: "What does 'Khoobam' mean?",
+              options: ["I'm Good", "Good", "Hello", "Thank you"],
               correct: 0
             }
           },
@@ -544,8 +353,8 @@ export const curriculumData: Module[] = [
             type: "audio-meaning",
             points: 2,
             data: {
-              vocabularyId: "baleh",
-              distractors: ["na", "merci", "salam"]
+              vocabularyId: "khoobam",
+              distractors: ["khoob", "salam", "chetori"]
             }
           },
           {
@@ -553,32 +362,22 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               words: [
-                { id: "word1", text: "Baleh", slotId: "slot1" },
-                { id: "word2", text: "Na", slotId: "slot2" }
+                { id: "word1", text: "Khoob", slotId: "slot1" },
+                { id: "word2", text: "Khoobam", slotId: "slot2" }
               ],
               slots: [
-                { id: "slot1", text: "Yes" },
-                { id: "slot2", text: "No" },
-                { id: "slot3", text: "Maybe" },
-                { id: "slot4", text: "Hello" }
+                { id: "slot1", text: "Good" },
+                { id: "slot2", text: "I'm Good" }
               ]
             }
           },
           {
-            type: "quiz",
-            points: 2,
+            type: "text-sequence",
+            points: 3,
             data: {
-              prompt: "How do you say 'No, thank you' in Persian?",
-              options: ["Na, merci", "Baleh, merci", "Salam, merci", "Salam"],
-              correct: 0
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'Yes' in Persian?",
-              answer: "Baleh"
+              finglishText: "Salam chetori khoobam",
+              expectedTranslation: "Hello how are you I'm good",
+              maxWordBankSize: 10
             }
           },
           {
@@ -586,7 +385,42 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["khoobam", "merci"],
-              expectedTranslation: "I am good thank you"
+              expectedTranslation: "I'm good thank you"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which of these words mean \"I'm Good\"?",
+              options: ["Khoobam", "Khoob", "Chetori", "Salam"],
+              correct: 0
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "Khoob", slotId: "slot1" },
+                { id: "word2", text: "Khoobam", slotId: "slot2" },
+                { id: "word3", text: "Chetori", slotId: "slot3" },
+                { id: "word4", text: "Salam", slotId: "slot4" }
+              ],
+              slots: [
+                { id: "slot1", text: "Good" },
+                { id: "slot2", text: "I'm Good" },
+                { id: "slot3", text: "How are you?" },
+                { id: "slot4", text: "Hello" }
+              ]
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "merci",
+              distractors: ["salam", "chetori", "khodafez"]
             }
           },
           {
@@ -608,7 +442,7 @@ export const curriculumData: Module[] = [
               },
               title: "Your Polite Conversation",
               successMessage: "Perfect! You handled that polite conversation beautifully!",
-              incorrectMessage: "Almost there—let's practice that conversation flow again!"
+              incorrectMessage: "Almost there, try that conversation again!"
             }
           }
         ]
@@ -684,6 +518,68 @@ export const curriculumData: Module[] = [
                 "Practice combining pronouns with greetings"
               ],
               lessonType: "introductions"
+            }
+          },
+          // GRAMMAR - ADJECTIVE SUFFIXES "-am" & "-i" (moved from Lesson 2)
+          {
+            type: "grammar-intro",
+            points: 1,
+            data: {
+              conceptId: "adjective-suffixes",
+              title: "I Am / You Are: Personal Endings",
+              description: "You've been using khoobam! Let me show you the pattern. In Persian, you add endings to words to say 'I am' or 'you are.' Add -am for 'I am' and -i for 'you are.' These same endings work with ANY adjective.",
+              rule: "Add -am (I am) or -i (you are) to adjectives",
+              visualType: "comparison",
+              visualData: {
+                before: "khoob",
+                after: "khoob-am"
+              }
+            }
+          },
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "suffix-am",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                  sentence: "khoob-___",
+                  translation: "I am good",
+                  blankPosition: 6,
+                  correctAnswer: "am",
+                  suffixOptions: [
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "suffix-i",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                  sentence: "khoob-___",
+                  translation: "you are good",
+                  blankPosition: 6,
+                  correctAnswer: "i",
+                  suffixOptions: [
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
             }
           },
           // PHASE 1: INTRODUCE BASIC VOCABULARY FIRST
