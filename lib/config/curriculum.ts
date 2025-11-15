@@ -17,7 +17,7 @@ export const curriculumData: Module[] = [
         id: "lesson1",
         title: "Basic Persian Greetings",
         description: "Learn essential greetings and how to say hello in different contexts",
-        emoji: "👋",
+        emoji: "",
         progress: 0,
         locked: false,
         vocabulary: [
@@ -38,36 +38,38 @@ export const curriculumData: Module[] = [
             lessonId: "module1-lesson1"
           },
           {
-            id: "khosh_amadid",
-            en: "Welcome",
-            fa: "خوش آمدید",
-            finglish: "Khosh Amadid",
-            phonetic: "khosh uh-mah-DEED",
-            lessonId: "module1-lesson1"
-          },
-          {
             id: "khodafez",
             en: "Goodbye",
             fa: "خداحافظ",
             finglish: "Khodafez",
             phonetic: "kho-DUH-fez",
             lessonId: "module1-lesson1"
+          },
+          {
+            id: "merci",
+            en: "Thank You",
+            fa: "مرسی",
+            finglish: "Merci",
+            phonetic: "mer-SEE",
+            lessonId: "module1-lesson1"
           }
         ],
         steps: [
           {
             type: "welcome",
-            title: "Basic Greetings",
-            description: "Learn common Persian greetings used in everyday conversations.",
+            title: "Basic Persian Greetings",
+            description: "Learn the four essential Persian greetings used in everyday interactions.",
             points: 0,
             data: {
               objectives: [
-                "Say hello and greet someone",
-                "Ask how someone is doing",
-                "Welcome someone",
-                "Say goodbye properly"
+                "Say hello",
+                "Ask how are you",
+                "Say thank you",
+                "Say goodbye",
+                "Recognize these phrases when you hear them"
               ],
-              lessonType: "greetings"
+              lessonType: "greetings",
+              sectionDescription: "By the end of this lesson You'll be able to understand and use the core greetings Iranians say every day, the perfect foundation before building real conversations."
             }
           },
           {
@@ -78,19 +80,19 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following words mean 'Hello'?",
-              options: ["Salam", "Chetori", "Khosh Amadid", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
             type: "flashcard",
             points: 1,
             data: {
               vocabularyId: "chetori"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which of the following means hello?",
+              options: ["Salam", "Chetori", "Merci", "Khodafez"],
+              correct: 0
             }
           },
           {
@@ -103,85 +105,20 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "input",
+            type: "audio-meaning",
             points: 2,
             data: {
-              question: "How do you say 'How are you?' in Persian?",
-              answer: "Chetori"
+              vocabularyId: "chetori",
+              distractors: ["salam", "merci", "khodafez"]
             }
           },
           {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "Which of the following words mean 'How are you?'?",
-              options: ["Chetori", "Salam", "Khosh Amadid", "Khodafez"],
+              prompt: "What does Salam mean?",
+              options: ["Hello", "Goodbye", "Thank you", "How are you?"],
               correct: 0
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khosh_amadid"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "salam",
-              distractors: ["chetori", "khosh_amadid", "khodafez"]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'How are you?' in Persian?",
-              options: ["Chetori", "Salam", "Khodafez", "Khosh Amadid"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khosh_amadid",
-              distractors: ["salam", "chetori", "khodafez"]
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Chetori", slotId: "slot2" },
-                { id: "word3", text: "Khosh Amadid", slotId: "slot3" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "How are you?" },
-                { id: "slot3", text: "Welcome" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam khosh amadid chetori",
-              expectedTranslation: "Hello welcome how are you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "chetori"],
-              expectedTranslation: "Hello how are you"
             }
           },
           {
@@ -192,29 +129,68 @@ export const curriculumData: Module[] = [
             }
           },
           {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "salam",
+              distractors: ["chetori", "merci", "khodafez"]
+            }
+          },
+          {
+            type: "text-sequence",
+            points: 3,
+            data: {
+              finglishText: "Salam khodafez",
+              expectedTranslation: "Hello goodbye",
+              maxWordBankSize: 10
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "khodafez",
+              distractors: ["salam", "chetori", "merci"]
+            }
+          },
+          {
             type: "quiz",
             points: 2,
             data: {
-              prompt: "How do you say 'goodbye' in Persian?",
-              options: ["Khodafez", "Salam", "Khosh Amadid", "Chetori"],
+              prompt: "Which of the following means How are you?",
+              options: ["Chetori", "Salam", "Merci", "Khodafez"],
               correct: 0
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "merci"
+            }
+          },
+          {
+            type: "audio-meaning",
+            points: 2,
+            data: {
+              vocabularyId: "merci",
+              distractors: ["salam", "chetori", "khodafez"]
             }
           },
           {
             type: "audio-sequence",
             points: 3,
             data: {
-              sequence: ["salam", "khosh_amadid", "chetori"],
-              expectedTranslation: "Hello welcome how are you"
+              sequence: ["merci", "khodafez"],
+              expectedTranslation: "Thank you goodbye"
             }
           },
           {
-            type: "quiz",
+            type: "input",
             points: 2,
             data: {
-              prompt: "You're welcoming guests into your home. What do you say?",
-              options: ["Khosh Amadid", "Salam", "Chetori", "Khodafez"],
-              correct: 0
+              question: "How do you say 'Goodbye' in Persian?",
+              answer: "Khodafez"
             }
           },
           {
@@ -222,25 +198,17 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Khosh Amadid", slotId: "slot2" },
-                { id: "word3", text: "Chetori", slotId: "slot3" },
-                { id: "word4", text: "Khodafez", slotId: "slot4" }
+                { id: "word1", text: "Merci", slotId: "slot1" },
+                { id: "word2", text: "Khodafez", slotId: "slot2" },
+                { id: "word3", text: "Salam", slotId: "slot3" },
+                { id: "word4", text: "Chetori", slotId: "slot4" }
               ],
               slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "Welcome" },
-                { id: "slot3", text: "How are you?" },
-                { id: "slot4", text: "Goodbye" }
+                { id: "slot1", text: "Thank you" },
+                { id: "slot2", text: "Goodbye" },
+                { id: "slot3", text: "Hello" },
+                { id: "slot4", text: "How are you?" }
               ]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type how you say 'Goodbye' in Persian",
-              answer: "Khodafez"
             }
           },
           {
@@ -249,19 +217,19 @@ export const curriculumData: Module[] = [
             data: {
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "khosh_amadid", text: "Khosh Amadid", translation: "Welcome" },
                 { id: "chetori", text: "Chetori", translation: "How are you?" },
+                { id: "merci", text: "Merci", translation: "Thank you" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "khosh_amadid", "chetori", "khodafez"],
+              targetWords: ["salam", "chetori", "merci", "khodafez"],
               conversationFlow: {
-                description: "A polite introduction conversation",
-                expectedPhrase: "Hello, welcome, how are you, goodbye",
-                persianSequence: ["salam", "khosh_amadid", "chetori", "khodafez"]
+                description: "A polite greeting conversation",
+                expectedPhrase: "Hello, how are you, thank you, goodbye",
+                persianSequence: ["salam", "chetori", "merci", "khodafez"]
               },
               title: "Your First Conversation",
-              successMessage: "You're a natural—you made a great impression!",
-              incorrectMessage: "Almost there—let's try that conversation order again!"
+              successMessage: "Perfect! You can greet someone in Persian!",
+              incorrectMessage: "Almost there, try that conversation again!"
             }
           }
         ]
@@ -296,14 +264,6 @@ export const curriculumData: Module[] = [
             fa: "خوبی",
             finglish: "Khoobi",
             phonetic: "khoo-BEE",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "merci",
-            en: "Thank You",
-            fa: "مرسی",
-            finglish: "Merci",
-            phonetic: "mer-SEE",
             lessonId: "module1-lesson2"
           },
           {

@@ -1,5 +1,5 @@
 import { VocabularyItem } from '../types';
-import { getLesson } from '../config/curriculum';
+import { getLesson, generateCompleteReviewVocabulary } from '../config/curriculum';
 import { getSemanticGroup, getRelatedGroups, getVocabIdsInGroup } from '../config/semantic-groups';
 import { WordBankService } from './word-bank-service';
 
@@ -144,9 +144,19 @@ export class VocabularyService {
   }
 
   // Get review vocabulary for a lesson (from previous lessons)
+  // AUTO-GENERATED: Automatically includes all vocabulary from previous lessons in the module
   static getReviewVocabulary(moduleId: string, lessonId: string): VocabularyItem[] {
     const lesson = getLesson(moduleId, lessonId);
-    const reviewIds = lesson?.reviewVocabulary || [];
+    if (!lesson) return [];
+    
+    // Auto-generate review vocabulary IDs from previous lessons
+    const lessonNum = parseInt(lessonId.replace('lesson', ''));
+    if (isNaN(lessonNum) || lessonNum < 1) return [];
+    
+    // Use manual array if provided (backward compatibility), otherwise auto-generate
+    const reviewIds = lesson.reviewVocabulary && lesson.reviewVocabulary.length > 0
+      ? lesson.reviewVocabulary  // Use manual if exists (backward compat)
+      : generateCompleteReviewVocabulary(moduleId, lessonNum);  // Auto-generate otherwise
     
     // Get vocabulary items from all previous lessons that match review IDs
     const allVocab: VocabularyItem[] = [];

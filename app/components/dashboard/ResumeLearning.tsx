@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Play, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { UserLessonProgress } from "@/lib/supabase/database"
 
 interface LastLesson {
   moduleId: string
@@ -18,7 +19,12 @@ interface LastLesson {
   progressPercent: number
 }
 
-export function ResumeLearning() {
+interface ResumeLearningProps {
+  sharedProgress?: UserLessonProgress[] | null
+  isLoading?: boolean
+}
+
+export function ResumeLearning({ sharedProgress, isLoading: externalLoading }: ResumeLearningProps) {
   const { user } = useAuth()
   const [lastLesson, setLastLesson] = useState<LastLesson | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -32,43 +38,92 @@ export function ResumeLearning() {
         return
       }
 
-      try {
-        const allProgress = await LessonProgressService.getUserLessonProgress()
-        
-        if (!isMounted) return // Component unmounted, don't update state
-        
-        // Find last started or completed lesson
-        const lastStarted = allProgress
-          .filter(p => p.status === 'in_progress' || p.status === 'completed')
-          .sort((a, b) => {
-            const aDate = a.started_at ? new Date(a.started_at).getTime() : 0
-            const bDate = b.started_at ? new Date(b.started_at).getTime() : 0
-            return bDate - aDate
-          })[0]
+      // Use shared progress if available
+      if (sharedProgress && sharedProgress.length > 0) {
+        try {
+          const lastStarted = sharedProgress
+            .filter(p => p.status === 'in_progress' || p.status === 'completed')
+            .sort((a, b) => {
+              const aDate = a.started_at ? new Date(a.started_at).getTime() : 0
+              const bDate = b.started_at ? new Date(b.started_at).getTime() : 0
+              return bDate - aDate
+            })[0]
 
-        if (lastStarted && isMounted) {
-          try {
-            // Get module/lesson titles from curriculum
-            const { getModule, getLesson } = await import('@/lib/config/curriculum')
-            const module = getModule(lastStarted.module_id)
-            const lesson = module ? getLesson(lastStarted.module_id, lastStarted.lesson_id) : undefined
+          if (lastStarted && isMounted) {
+            try {
+              // Get module/lesson titles from curriculum
+              const { getModule, getLesson } = await import('@/lib/config/curriculum')
+              const module = getModule(lastStarted.module_id)
+              const lesson = module ? getLesson(lastStarted.module_id, lastStarted.lesson_id) : undefined
 
-            if (module && lesson && isMounted) {
-              setLastLesson({
-                moduleId: lastStarted.module_id,
-                lessonId: lastStarted.lesson_id,
-                moduleTitle: module.title,
-                lessonTitle: lesson.title,
-                progressPercent: lastStarted.progress_percent,
-              })
+              if (module && lesson && isMounted) {
+                setLastLesson({
+                  moduleId: lastStarted.module_id,
+                  lessonId: lastStarted.lesson_id,
+                  moduleTitle: module.title,
+                  lessonTitle: lesson.title,
+                  progressPercent: lastStarted.progress_percent,
+                })
+              }
+            } catch (error) {
+              console.error('Failed to load curriculum data:', error)
             }
-          } catch (error) {
-            console.error('Failed to load curriculum data:', error)
+          }
+        } catch (error) {
+          console.error('Failed to process shared progress:', error)
+        } finally {
+          if (isMounted) {
+            setIsLoading(false)
           }
         }
-      } catch (error) {
-        console.error('Failed to load last lesson:', error)
-      } finally {
+        return
+      }
+
+      // Fallback: fetch if no shared progress provided
+      if (externalLoading !== false) {
+        try {
+          const allProgress = await LessonProgressService.getUserLessonProgress()
+          
+          if (!isMounted) return // Component unmounted, don't update state
+          
+          // Find last started or completed lesson
+          const lastStarted = allProgress
+            .filter(p => p.status === 'in_progress' || p.status === 'completed')
+            .sort((a, b) => {
+              const aDate = a.started_at ? new Date(a.started_at).getTime() : 0
+              const bDate = b.started_at ? new Date(b.started_at).getTime() : 0
+              return bDate - aDate
+            })[0]
+
+          if (lastStarted && isMounted) {
+            try {
+              // Get module/lesson titles from curriculum
+              const { getModule, getLesson } = await import('@/lib/config/curriculum')
+              const module = getModule(lastStarted.module_id)
+              const lesson = module ? getLesson(lastStarted.module_id, lastStarted.lesson_id) : undefined
+
+              if (module && lesson && isMounted) {
+                setLastLesson({
+                  moduleId: lastStarted.module_id,
+                  lessonId: lastStarted.lesson_id,
+                  moduleTitle: module.title,
+                  lessonTitle: lesson.title,
+                  progressPercent: lastStarted.progress_percent,
+                })
+              }
+            } catch (error) {
+              console.error('Failed to load curriculum data:', error)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load last lesson:', error)
+        } finally {
+          if (isMounted) {
+            setIsLoading(false)
+          }
+        }
+      } else {
+        // External loading is false and no shared progress - just stop loading
         if (isMounted) {
           setIsLoading(false)
         }
@@ -80,7 +135,7 @@ export function ResumeLearning() {
     return () => {
       isMounted = false
     }
-  }, [user?.id])
+  }, [user?.id, sharedProgress, externalLoading])
 
   if (isLoading) {
     return (

@@ -158,6 +158,12 @@ export class LessonProgressService {
       console.log(`🧹 [LessonProgress] Vocabulary cache cleared`)
     })
 
+    // PHASE 2b: Invalidate dashboard stats cache (CRITICAL for dashboard updates)
+    SmartAuthService.invalidateDashboardStats()
+    safeTelemetry(() => {
+      console.log(`🧹 [LessonProgress] Dashboard stats cache invalidated`)
+    })
+
     // PHASE 3: Update progress cache with verification (blocking with timeout)
     const cacheUpdateSuccess = await this.updateProgressCacheVerified(
       currentUser.id, 

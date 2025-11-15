@@ -530,8 +530,8 @@ export default function HomePage() {
 
             {/* CTA */}
             <div className="text-center mt-12">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-accent hover:bg-accent/90 text-white px-8 py-4 rounded-full text-lg font-semibold"
                 onClick={handleStartLearning}
                 disabled={isLearningNavigating}
@@ -860,8 +860,8 @@ export default function HomePage() {
               <p className="text-xs text-muted-foreground mt-4">
                 No spam, ever. Just short lessons and updates about new modules.
               </p>
-            </div>
-          </div>
+                </div>
+                </div>
         </section>
 
         {/* SECTION 9: What is Iranopedia? */}

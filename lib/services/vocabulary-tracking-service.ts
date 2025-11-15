@@ -564,9 +564,22 @@ export class VocabularyTrackingService {
   }> {
     try {
       // Query the SQL view (single source of truth for mastery logic)
+      // Optimized: Only select fields we need (reduces data transfer)
       const { data, error } = await supabase
         .from('user_word_mastery')
-        .select('*')
+        .select(`
+          vocabulary_id,
+          word_text,
+          total_attempts,
+          total_correct,
+          total_incorrect,
+          consecutive_correct,
+          status,
+          accuracy,
+          error_rate,
+          last_seen_at,
+          next_review_at
+        `)
         .eq('user_id', userId)
 
       if (error) {

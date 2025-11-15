@@ -1,5 +1,5 @@
 import { VocabularyItem } from '../types';
-import { getLesson, getModules } from '../config/curriculum';
+import { getLesson, getModules, generateCompleteReviewVocabulary } from '../config/curriculum';
 import { AuthService } from './auth-service';
 import { DatabaseService } from '../supabase/database';
 
@@ -114,9 +114,20 @@ export class VocabularyProgressService {
       }
       
       // Track review vocabulary IDs (but don't add duplicates)
-      if (includeReview && lesson.reviewVocabulary) {
-        for (const reviewId of lesson.reviewVocabulary) {
-          reviewVocabIds.add(reviewId);
+      // AUTO-GENERATED: Automatically includes all vocabulary from previous lessons
+      if (includeReview) {
+        // Auto-generate review vocabulary IDs from previous lessons in module
+        const lessonNum = parseInt(lessonId.replace('lesson', ''));
+        if (!isNaN(lessonNum) && lessonNum > 1) {
+          const autoReviewIds = generateCompleteReviewVocabulary(moduleId, lessonNum);
+          autoReviewIds.forEach(id => reviewVocabIds.add(id));
+        }
+        
+        // Also include manual reviewVocabulary if provided (backward compatibility)
+        if (lesson.reviewVocabulary && lesson.reviewVocabulary.length > 0) {
+          for (const reviewId of lesson.reviewVocabulary) {
+            reviewVocabIds.add(reviewId);
+          }
         }
       }
     }

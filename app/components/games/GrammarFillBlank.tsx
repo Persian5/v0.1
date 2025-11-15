@@ -645,7 +645,7 @@ export function GrammarFillBlank({
                 setCurrentExerciseIndex(prev => prev + 1)
               }
               setIsSubmitting(false)
-            }, 1000)
+            }, 200)
           } else {
             // All blanks filled but some incorrect - find which blank(s) are wrong
             const incorrectBlanks = blanks.filter(blank => {
@@ -787,7 +787,7 @@ export function GrammarFillBlank({
             setCurrentExerciseIndex(prev => prev + 1)
           }
           setIsSubmitting(false)
-        }, 1000)
+        }, 200)
       }
     } else {
       // Show error feedback and allow retry - track incorrect attempt
