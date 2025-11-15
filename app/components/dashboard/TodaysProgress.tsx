@@ -69,33 +69,33 @@ export function TodaysProgress({ sharedProgress, isLoading: externalLoading }: T
 
     // Fallback: fetch if no shared progress and not externally loading
     if (externalLoading !== false) {
-      if (isMounted()) setLessonsLoading(true)
+    if (isMounted()) setLessonsLoading(true)
+    
+    try {
+      const allProgress = await LessonProgressService.getUserLessonProgress()
       
-      try {
-        const allProgress = await LessonProgressService.getUserLessonProgress()
-        
-        if (!isMounted()) return // Component unmounted, don't update state
-        
-        const userTimezone = SmartAuthService.getUserTimezone()
-        
-        // Cache the counts (timezone-aware)
-        SmartAuthService.cacheLessonProgressCounts(allProgress, userTimezone)
-        
-        // Get from cache (now populated)
-        const count = SmartAuthService.getCachedLessonsCompletedToday() ?? 0
-        if (isMounted()) {
-          setLessonsToday(count)
-        }
-      } catch (error) {
-        console.error('Failed to load lessons today:', error)
-        if (isMounted()) {
-          setLessonsToday(0)
-        }
-      } finally {
-        if (isMounted()) {
-          setLessonsLoading(false)
-        }
+      if (!isMounted()) return // Component unmounted, don't update state
+      
+      const userTimezone = SmartAuthService.getUserTimezone()
+      
+      // Cache the counts (timezone-aware)
+      SmartAuthService.cacheLessonProgressCounts(allProgress, userTimezone)
+      
+      // Get from cache (now populated)
+      const count = SmartAuthService.getCachedLessonsCompletedToday() ?? 0
+      if (isMounted()) {
+        setLessonsToday(count)
       }
+    } catch (error) {
+      console.error('Failed to load lessons today:', error)
+      if (isMounted()) {
+        setLessonsToday(0)
+      }
+    } finally {
+      if (isMounted()) {
+        setLessonsLoading(false)
+      }
+    }
     } else {
       // External loading is false - just stop loading
       if (isMounted()) {

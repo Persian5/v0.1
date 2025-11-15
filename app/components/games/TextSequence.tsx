@@ -6,6 +6,8 @@ import { VocabularyItem } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
+import { FLAGS } from "@/lib/flags"
+import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
 
 interface TextSequenceProps {
   finglishText: string // Finglish phrase to display
@@ -13,6 +15,7 @@ interface TextSequenceProps {
   vocabularyBank: VocabularyItem[] // All available vocabulary for this lesson
   points?: number
   maxWordBankSize?: number // Maximum number of options in word bank
+  learnedSoFar?: LearnedSoFar // PHASE 4: Learned vocabulary state for filtering word bank
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
@@ -24,6 +27,7 @@ export function TextSequence({
   vocabularyBank,
   points = 3,
   maxWordBankSize = 10,
+  learnedSoFar, // PHASE 4: Learned vocabulary state
   onContinue,
   onXpStart,
   onVocabTrack
@@ -46,11 +50,29 @@ export function TextSequence({
 
   // WORD BANK: Use WordBankService for unified, consistent generation
   const [wordBankOptions] = useState<string[]>(() => {
+    // PHASE 4: Sanity logging before calling generateWordBank
+    if (FLAGS.LOG_WORDBANK) {
+      console.log(
+        "%c[TEXT SEQUENCE - PRE WORDBANK]",
+        "color: #00BCD4; font-weight: bold;",
+        {
+          stepType: 'text-sequence',
+          learnedVocabIds: learnedSoFar?.vocabIds || [],
+          learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
+          vocabularyBankSize: vocabularyBank.length,
+        }
+      );
+    }
+    
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
       vocabularyBank,
       maxSize: maxWordBankSize,
-      distractorStrategy: 'semantic'
+      distractorStrategy: 'semantic',
+      // PHASE 4: Pass learned vocab IDs if feature flag is enabled
+      learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
+        ? learnedSoFar.vocabIds
+        : undefined,
     })
     
     // WordBankService returns normalized, shuffled words ready for display

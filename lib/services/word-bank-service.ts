@@ -23,6 +23,7 @@ export interface WordBankOptions {
   sequenceIds?: string[]; // Vocabulary IDs in correct order (for AudioSequence)
   maxSize?: number; // Maximum word bank size (overrides dynamic calculation)
   distractorStrategy?: 'semantic' | 'random'; // Distractor selection strategy
+  learnedVocabIds?: string[]; // PHASE 4: Filter vocabularyBank to only learned vocab (optional)
 }
 
 /**
@@ -200,7 +201,7 @@ export class WordBankService {
    * @returns Complete word bank with correct words and distractors
    */
   static generateWordBank(options: WordBankOptions): WordBankResult {
-    const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic' } = options;
+    const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic', learnedVocabIds } = options;
 
     if (FLAGS.LOG_WORDBANK) {
       console.log(
@@ -210,15 +211,60 @@ export class WordBankService {
           expectedTranslation,
           vocabularyBankSize: vocabularyBank?.length,
           sequence: sequenceIds,
+          learnedVocabIdsCount: learnedVocabIds?.length || 0,
         }
       );
     }
 
+    // PHASE 4: Filter vocabularyBank by learned vocab if feature flag is enabled
+    let filteredVocabularyBank = vocabularyBank;
+    
+    if (FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedVocabIds && learnedVocabIds.length > 0) {
+      const learnedSet = new Set(learnedVocabIds);
+      const filtered = vocabularyBank.filter(v => learnedSet.has(v.id));
+      
+      // Minimum viable bank: ensure we have at least correct words + 3 distractors
+      const minRequired = (sequenceIds?.length || 0) + 3;
+      
+      if (filtered.length >= minRequired) {
+        filteredVocabularyBank = filtered;
+        
+        if (FLAGS.LOG_WORDBANK) {
+          console.log(
+            "%c[WORDBANK LEARNED FILTER]",
+            "color: #9C27B0; font-weight: bold;",
+            {
+              originalBankSize: vocabularyBank.length,
+              filteredBankSize: filtered.length,
+              minRequired,
+              filterApplied: true,
+            }
+          );
+        }
+      } else {
+        // Fallback: filtered bank too small, use full vocabularyBank
+        if (FLAGS.LOG_WORDBANK) {
+          console.log(
+            "%c[WORDBANK LEARNED FILTER - FALLBACK]",
+            "color: #FF9800; font-weight: bold;",
+            {
+              originalBankSize: vocabularyBank.length,
+              filteredBankSize: filtered.length,
+              minRequired,
+              filterApplied: false,
+              reason: 'Filtered bank too small, using full vocabularyBank',
+            }
+          );
+        }
+      }
+    }
+
     // ✅ FIX: Filter vocabularyBank to ONLY vocab in sequence (current step)
     // This prevents future vocab (like "esmet" from Module 2) appearing in Module 1
+    // PHASE 4: Use filteredVocabularyBank (learned-aware) instead of vocabularyBank
     const availableVocab = sequenceIds && sequenceIds.length > 0
-      ? vocabularyBank.filter(v => sequenceIds.includes(v.id))
-      : vocabularyBank;
+      ? filteredVocabularyBank.filter(v => sequenceIds.includes(v.id))
+      : filteredVocabularyBank;
 
     // Step 1: Extract semantic units from expectedTranslation (PRIMARY source)
     // This ensures all expected words/phrases appear in word bank even if vocabulary matching fails
@@ -266,9 +312,10 @@ export class WordBankService {
     // Step 4: Generate distractors
     // ✅ Use vocabularyBank (all lesson vocab) for distractors, NOT availableVocab
     // This allows distractors from vocab taught in previous steps
+    // PHASE 4: Use filteredVocabularyBank (learned-aware) instead of vocabularyBank
     let distractorItems = distractorStrategy === 'semantic'
-      ? this.generateSemanticDistractors(correctWordBankItems, vocabularyBank, targetSize - correctWordBankItems.length)
-      : this.generateRandomDistractors(correctWordBankItems, vocabularyBank, targetSize - correctWordBankItems.length);
+      ? this.generateSemanticDistractors(correctWordBankItems, filteredVocabularyBank, targetSize - correctWordBankItems.length)
+      : this.generateRandomDistractors(correctWordBankItems, filteredVocabularyBank, targetSize - correctWordBankItems.length);
 
     // STEP: Remove redundant single-word distractors from multi-word correct vocab items
     // Example: If "I'm good" is correct, remove "good", "I'm", "I", "am" as distractors

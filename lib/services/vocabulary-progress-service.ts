@@ -125,8 +125,8 @@ export class VocabularyProgressService {
         
         // Also include manual reviewVocabulary if provided (backward compatibility)
         if (lesson.reviewVocabulary && lesson.reviewVocabulary.length > 0) {
-          for (const reviewId of lesson.reviewVocabulary) {
-            reviewVocabIds.add(reviewId);
+        for (const reviewId of lesson.reviewVocabulary) {
+          reviewVocabIds.add(reviewId);
           }
         }
       }

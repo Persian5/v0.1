@@ -77,27 +77,27 @@ export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 
 
       // Fallback: fetch if no shared progress and not externally loading
       if (progressLoading !== false) {
-        try {
-          const allProgress = await LessonProgressService.getUserLessonProgress()
-          
-          if (!isMounted) return // Component unmounted, don't update state
-          
-          const userTimezone = SmartAuthService.getUserTimezone()
-          
-          // Cache the counts (timezone-aware, shared with TodaysProgress)
-          SmartAuthService.cacheLessonProgressCounts(allProgress, userTimezone)
-          
-          // Get from cache (now populated)
-          const count = SmartAuthService.getCachedLessonsCompletedTotal() ?? 0
-          if (isMounted) {
-            setLessonsCompleted(count)
-          }
-        } catch (error) {
-          console.error('Failed to load lessons completed:', error)
-          if (isMounted) {
-            setLessonsCompleted(0)
-          }
-        } finally {
+      try {
+        const allProgress = await LessonProgressService.getUserLessonProgress()
+        
+        if (!isMounted) return // Component unmounted, don't update state
+        
+        const userTimezone = SmartAuthService.getUserTimezone()
+        
+        // Cache the counts (timezone-aware, shared with TodaysProgress)
+        SmartAuthService.cacheLessonProgressCounts(allProgress, userTimezone)
+        
+        // Get from cache (now populated)
+        const count = SmartAuthService.getCachedLessonsCompletedTotal() ?? 0
+        if (isMounted) {
+          setLessonsCompleted(count)
+        }
+      } catch (error) {
+        console.error('Failed to load lessons completed:', error)
+        if (isMounted) {
+          setLessonsCompleted(0)
+        }
+      } finally {
           if (isMounted) {
             setLessonsLoading(false)
           }

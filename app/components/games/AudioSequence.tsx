@@ -7,6 +7,8 @@ import { VocabularyItem } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
+import { FLAGS } from "@/lib/flags"
+import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
 
 interface AudioSequenceProps {
   sequence: string[] // Array of vocabulary IDs in correct order
@@ -16,6 +18,7 @@ interface AudioSequenceProps {
   expectedTranslation?: string // Custom English translation override for phrases
   targetWordCount?: number // Number of English words expected (overrides sequence.length)
   maxWordBankSize?: number // Maximum number of options in word bank (prevents crowding)
+  learnedSoFar?: LearnedSoFar // PHASE 4: Learned vocabulary state for filtering word bank
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
@@ -29,6 +32,7 @@ export function AudioSequence({
   expectedTranslation, // Add support for custom translation
   targetWordCount, // Add support for custom word count
   maxWordBankSize = 12, // Default max 12 options for better variety while manageable
+  learnedSoFar, // PHASE 4: Learned vocabulary state
   onContinue,
   onXpStart,
   onVocabTrack
@@ -60,13 +64,31 @@ export function AudioSequence({
     displayKeyToVocabId: Map<string, string>; // Map display key → vocabularyId
     displayKeyToWordText: Map<string, string>; // Map display key → wordText
   }>(() => {
+    // PHASE 4: Sanity logging before calling generateWordBank
+    if (FLAGS.LOG_WORDBANK) {
+      console.log(
+        "%c[AUDIO SEQUENCE - PRE WORDBANK]",
+        "color: #00BCD4; font-weight: bold;",
+        {
+          stepType: 'audio-sequence',
+          learnedVocabIds: learnedSoFar?.vocabIds || [],
+          learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
+          vocabularyBankSize: vocabularyBank.length,
+        }
+      );
+    }
+    
     // Generate word bank using WordBankService
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
       vocabularyBank,
       sequenceIds: expectedTranslation ? undefined : sequence,
       maxSize: maxWordBankSize,
-      distractorStrategy: 'semantic'
+      distractorStrategy: 'semantic',
+      // PHASE 4: Pass learned vocab IDs if feature flag is enabled
+      learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
+        ? learnedSoFar.vocabIds
+        : undefined,
     })
 
     // Build mappings for vocabulary ID lookup and duplicate handling

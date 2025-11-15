@@ -1052,6 +1052,7 @@ export function LessonRunner({
           expectedTranslation={(step as AudioSequenceStep).data.expectedTranslation}
           targetWordCount={(step as AudioSequenceStep).data.targetWordCount}
           maxWordBankSize={(step as AudioSequenceStep).data.maxWordBankSize}
+          learnedSoFar={learnedCache[idx]} // PHASE 4: Pass learned vocabulary state
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
@@ -1063,6 +1064,7 @@ export function LessonRunner({
           expectedTranslation={(step as TextSequenceStep).data.expectedTranslation}
           vocabularyBank={allVocab}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4: Pass learned vocabulary state
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           maxWordBankSize={(step as TextSequenceStep).data.maxWordBankSize}

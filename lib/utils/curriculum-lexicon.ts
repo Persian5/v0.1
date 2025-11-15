@@ -575,46 +575,16 @@ function getIntroductionsFromStep(
 }
 
 // ============================================================================
-// STANDALONE HELPER FOR EXTERNAL USE
+// STANDALONE HELPER FOR EXTERNAL USE (RE-EXPORTED FROM learned-state.ts)
 // ============================================================================
 
 /**
- * Get learned state for a specific step index
+ * Re-export getLearnedStateForStep for backward compatibility
  * 
- * This is a convenience helper that other parts of the app can use to get
- * "what does the learner know up to this exact step?" without having to
- * manually build the cache or understand the internal logic.
- * 
- * @param moduleId - Current module ID
- * @param lessonId - Current lesson ID
- * @param steps - Array of lesson steps
- * @param lexicon - Pre-built curriculum lexicon
- * @param stepIndex - Step index to query (0-based)
- * @returns LearnedSoFar state for that step
- * 
- * @example
- * ```ts
- * const lexicon = getCurriculumLexicon()
- * const learned = getLearnedStateForStep('module1', 'lesson1', steps, lexicon, 5)
- * console.log(learned.vocabIds) // ['salam', 'chetori', 'merci']
- * ```
+ * The actual implementation now lives in lib/utils/learned-state.ts
+ * This re-export ensures existing code continues to work.
  */
-export function getLearnedStateForStep(
-  moduleId: string,
-  lessonId: string,
-  steps: LessonStep[],
-  lexicon: CurriculumLexicon,
-  stepIndex: number
-): LearnedSoFar {
-  // Build cache for this lesson
-  const cache = buildLearnedCache(moduleId, lessonId, steps, lexicon)
-  
-  // Clamp stepIndex to valid range
-  const clampedIndex = Math.max(0, Math.min(stepIndex, steps.length - 1))
-  
-  // Return learned state for this step (or empty if no steps)
-  return cache[clampedIndex] || { vocabIds: [], suffixes: [], connectors: [] }
-}
+export { getLearnedStateForStep } from './learned-state'
 
 // ============================================================================
 // HELPER FUNCTIONS
