@@ -9,6 +9,7 @@ import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { shuffle } from "@/lib/utils"
 import { FLAGS } from "@/lib/flags"
+import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
 
 interface AudioMeaningProps {
   vocabularyId: string
@@ -16,6 +17,7 @@ interface AudioMeaningProps {
   vocabularyBank: VocabularyItem[] // All available vocabulary for this lesson
   points?: number
   autoPlay?: boolean // Keep for backward compatibility but don't use
+  learnedSoFar?: LearnedSoFar // PHASE 5: Learned vocabulary state for unified distractor generation
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
@@ -27,6 +29,7 @@ export function AudioMeaning({
   vocabularyBank,
   points = 2,
   autoPlay = false, // Default to false now
+  learnedSoFar, // PHASE 5: Learned vocabulary state
   onContinue,
   onXpStart,
   onVocabTrack
@@ -83,20 +86,68 @@ export function AudioMeaning({
     
     lastShuffledVocabId.current = vocabularyId
     
-    // Remove duplicates from distractors first
-    const uniqueDistractors = Array.from(new Set(distractors))
-    const allOptions = [vocabularyId, ...uniqueDistractors]
-    
-    // Use Fisher-Yates shuffle for better randomization
-    const shuffled = [...allOptions]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    // PHASE 5: Use unified WordBankService when flag is ON
+    if (FLAGS.USE_LEARNED_VOCAB_IN_AUDIO_MEANING) {
+      // PHASE 5: Debug logging
+      if (FLAGS.LOG_WORDBANK) {
+        console.log(
+          "%c[AUDIO MEANING - UNIFIED WORDBANK]",
+          "color: #FF9800; font-weight: bold;",
+          {
+            stepType: 'audio-meaning',
+            learnedVocabIds: learnedSoFar?.vocabIds || [],
+            learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
+            vocabularyBankSize: vocabularyBank.length,
+            usingUnifiedWordBank: true,
+          }
+        );
+      }
+      
+      // Generate options using WordBankService (semantic distractors)
+      const wordBankResult = WordBankService.generateWordBank({
+        expectedTranslation: undefined,
+        vocabularyBank,
+        sequenceIds: [vocabularyId], // Correct answer
+        maxSize: 4, // 1 correct + 3 distractors
+        distractorStrategy: 'semantic',
+        learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
+          ? learnedSoFar.vocabIds
+          : undefined,
+      });
+      
+      // PATCH: Extract correct answer and distractors from WordBankService
+      const { correctWords, distractors: distractorWords } = wordBankResult;
+      
+      // PATCH: Use first correct word as the correct option
+      const correctOption = correctWords[0];
+      
+      // PATCH: Build options array by shuffling correct + distractors, limit to 4
+      const options = shuffle([correctOption, ...distractorWords]).slice(0, 4);
+      
+      // PATCH: Ensure correct answer is always present
+      if (!options.includes(correctOption)) {
+        options[0] = correctOption; // Force correct answer into first slot if missing
+      }
+      
+      setShuffledOptions(options);
+      setCorrectAnswerIndex(options.indexOf(correctOption));
+    } else {
+      // OLD BEHAVIOR: Manual distractor handling
+      // Remove duplicates from distractors first
+      const uniqueDistractors = Array.from(new Set(distractors))
+      const allOptions = [vocabularyId, ...uniqueDistractors]
+      
+      // Use Fisher-Yates shuffle for better randomization
+      const shuffled = [...allOptions]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+      
+      setShuffledOptions(shuffled)
+      setCorrectAnswerIndex(shuffled.indexOf(vocabularyId))
     }
-    
-    setShuffledOptions(shuffled)
-    setCorrectAnswerIndex(shuffled.indexOf(vocabularyId))
-  }, [vocabularyId]) // ONLY depend on vocabularyId - ignore distractors changes
+  }, [vocabularyId, learnedSoFar, vocabularyBank, distractors]) // Added dependencies for new logic
   
   // Reset component state when vocabularyId changes (for review mode auto-advance)
   useEffect(() => {
@@ -125,6 +176,20 @@ export function AudioMeaning({
   // Get English meanings for the options - deduplicated and memoized
   // CRITICAL: Always ensure 4 options (1 correct + 3 distractors), replace duplicates
   const answerOptionsWithIndices = useMemo(() => {
+    // PHASE 5: When using unified WordBankService, shuffledOptions contains English text strings
+    // OLD: When using manual distractors, shuffledOptions contains vocabulary IDs
+    
+    if (FLAGS.USE_LEARNED_VOCAB_IN_AUDIO_MEANING) {
+      // NEW BEHAVIOR: shuffledOptions are English text strings from WordBankService
+      // Simply map them to display format
+      return shuffledOptions.map((text, index) => ({
+        text,
+        originalIndex: index,
+        vocabId: vocabularyId // All options map back to vocab for tracking (simplified)
+      }));
+    }
+    
+    // OLD BEHAVIOR: Manual deduplication and replacement logic
     const optionsMap = new Map<string, { text: string; originalIndex: number; vocabId: string }>()
     const usedIndices = new Set<number>()
     const duplicatesToReplace: Array<{ originalIndex: number; vocabId: string }> = []

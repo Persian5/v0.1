@@ -7,5 +7,6 @@ export const FLAGS = {
   USE_NEW_WORDBANK_LOGIC: false,
   USE_NEW_GRAMMAR_OPTIONS: false,
   USE_LEARNED_VOCAB_IN_WORDBANK: true, // ✅ Enable for testing
+  USE_LEARNED_VOCAB_IN_AUDIO_MEANING: true, // ✅ PHASE 5: Enable for testing
 };
 

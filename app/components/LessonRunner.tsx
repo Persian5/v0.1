@@ -1038,6 +1038,7 @@ export function LessonRunner({
           vocabularyBank={allCurriculumVocab}
           points={step.points}
           autoPlay={(step as AudioMeaningStep).data.autoPlay}
+          learnedSoFar={learnedCache[idx]} // PHASE 5: Pass learned vocabulary state
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
