@@ -30,6 +30,7 @@ import { SmartAuthService } from '@/lib/services/smart-auth-service'
 import { verifyLessonCompletionInCache } from '@/lib/utils/cache-verification'
 import { safeTelemetry } from '@/lib/utils/telemetry-safe'
 import { getCurriculumLexicon, buildLearnedCache, type LearnedCache } from '@/lib/utils/curriculum-lexicon'
+import { FLAGS } from '@/lib/flags'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -191,6 +192,19 @@ export function LessonRunner({
       }
     };
   }, []);
+
+  // Learned vocabulary logging (only when step index changes)
+  useEffect(() => {
+    if (FLAGS.LOG_LEARNED_VOCAB) {
+      const learned = learnedCache[idx]?.vocabIds || [];
+      console.log("%c[LEARNED VOCAB]", "color:#4CAF50;font-weight:bold;", {
+        moduleId,
+        lessonId,
+        stepIndex: idx,
+        learned,
+      });
+    }
+  }, [idx]);
 
   // Update progress when step changes
   useEffect(() => {

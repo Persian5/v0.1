@@ -12,6 +12,7 @@
 
 import { VocabularyItem } from '../types';
 import { getSemanticGroup, getRelatedGroups, getVocabIdsInGroup } from '../config/semantic-groups';
+import { FLAGS } from '../flags';
 
 /**
  * Options for word bank generation
@@ -200,6 +201,18 @@ export class WordBankService {
    */
   static generateWordBank(options: WordBankOptions): WordBankResult {
     const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic' } = options;
+
+    if (FLAGS.LOG_WORDBANK) {
+      console.log(
+        "%c[WORDBANK INPUT]",
+        "color: #00BCD4; font-weight: bold;",
+        {
+          expectedTranslation,
+          vocabularyBankSize: vocabularyBank?.length,
+          sequence: sequenceIds,
+        }
+      );
+    }
 
     // ✅ FIX: Filter vocabularyBank to ONLY vocab in sequence (current step)
     // This prevents future vocab (like "esmet" from Module 2) appearing in Module 1
@@ -524,6 +537,18 @@ export class WordBankService {
       ...finalCorrectItems,
       ...finalDistractorItems
     ];
+
+    if (FLAGS.LOG_WORDBANK) {
+      console.log(
+        "%c[WORDBANK OUTPUT]",
+        "color: #2196F3; font-weight: bold;",
+        {
+          correctWords: normalizedCorrect,
+          distractors: normalizedDistractors,
+          allOptions: shuffled,
+        }
+      );
+    }
 
     return {
       correctWords: normalizedCorrect,

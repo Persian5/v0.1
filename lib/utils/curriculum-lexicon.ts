@@ -295,8 +295,15 @@ function buildCurriculumLexicon(): CurriculumLexicon {
 // ============================================================================
 
 /**
- * Build learned cache for a specific lesson
- * Pre-computes learned-so-far for each step index
+ * CURRENT BEHAVIOR (FIXED):
+ * - Step 0 starts with ONLY vocabulary from PREVIOUS modules/lessons
+ * - Does NOT include current lesson's vocabulary array upfront
+ * - Vocabulary is added step-by-step as flashcards/audio-meaning steps introduce them
+ * - Grammar suffixes/connectors are added when grammar-intro steps occur
+ * 
+ * PREVIOUS BUG (NOW FIXED):
+ * - getBaseVocabIds used to include current lesson's vocabulary array,
+ *   causing step 0 to have all lesson vocab immediately (incorrect)
  */
 export function buildLearnedCache(
   moduleId: string,
@@ -306,33 +313,40 @@ export function buildLearnedCache(
 ): LearnedCache {
   const cache: LearnedCache = {}
   
-  // Base learned vocab: all vocab from previous modules + lessons + current lesson
+  // Base learned state: ONLY from PREVIOUS modules/lessons (NOT current lesson)
   const baseVocabIds = getBaseVocabIds(moduleId, lessonId, lexicon)
-  
-  // Base connectors: all connectors from previous lessons + current lesson
+  const baseSuffixes = getBaseSuffixes(moduleId, lessonId, lexicon)
   const baseConnectors = getBaseConnectors(moduleId, lessonId, lexicon)
   
-  // Incremental building: each step adds to previous
+  // Incremental building: each step adds new introductions
   let currentVocabIds = [...baseVocabIds]
-  let currentSuffixes: string[] = []
+  let currentSuffixes = [...baseSuffixes]
   let currentConnectors = [...baseConnectors]
   
   for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
     const step = steps[stepIndex]
     
-    // Add vocab introduced by this step
-    const stepVocabIds = extractVocabFromStep(step)
-    for (const vocabId of stepVocabIds) {
+    // Get what this step introduces
+    const introductions = getIntroductionsFromStep(step, lexicon, moduleId, lessonId, stepIndex)
+    
+    // Add new vocab (deduplicate)
+    for (const vocabId of introductions.vocabIds) {
       if (!currentVocabIds.includes(vocabId)) {
         currentVocabIds.push(vocabId)
       }
     }
     
-    // Add suffixes introduced by this step
-    const stepSuffixes = lexicon.suffixIntroductions[moduleId]?.[lessonId]?.[stepIndex] || []
-    for (const suffix of stepSuffixes) {
+    // Add new suffixes (deduplicate)
+    for (const suffix of introductions.suffixes) {
       if (!currentSuffixes.includes(suffix)) {
         currentSuffixes.push(suffix)
+      }
+    }
+    
+    // Add new connectors (deduplicate)
+    for (const connector of introductions.connectors) {
+      if (!currentConnectors.includes(connector)) {
+        currentConnectors.push(connector)
       }
     }
     
@@ -348,7 +362,8 @@ export function buildLearnedCache(
 }
 
 /**
- * Get base vocabulary IDs (all previous modules + lessons + current lesson)
+ * Get base vocabulary IDs (all previous modules + lessons ONLY, NOT current lesson)
+ * FIX: Removed current lesson's vocabulary from base — it's added step-by-step instead
  */
 function getBaseVocabIds(
   currentModuleId: string,
@@ -367,20 +382,17 @@ function getBaseVocabIds(
       continue
     }
     
-    // Current module: add vocab from previous lessons + current lesson
+    // Current module: add vocab from PREVIOUS lessons ONLY (NOT current lesson)
     if (moduleId === currentModuleId) {
       for (const lesson of module.lessons) {
         const lessonId = lesson.id
         
-        // Add vocab from previous lessons
+        // Add vocab from previous lessons only
         if (isLessonBefore(lessonId, currentLessonId)) {
           vocabIds.push(...(lexicon.moduleVocab[moduleId]?.lessonVocab[lessonId] || []))
         }
         
-        // Add vocab from current lesson (base vocabulary)
-        if (lessonId === currentLessonId) {
-          vocabIds.push(...(lexicon.moduleVocab[moduleId]?.lessonVocab[lessonId] || []))
-        }
+        // DO NOT add current lesson vocab — that's added step-by-step
       }
       break
     }
@@ -390,7 +402,58 @@ function getBaseVocabIds(
 }
 
 /**
- * Get base connectors (all connectors from previous lessons + current lesson)
+ * Get base suffixes (all suffixes from previous lessons ONLY, NOT current lesson)
+ * FIX: Added to properly track suffixes from previous lessons
+ */
+function getBaseSuffixes(
+  currentModuleId: string,
+  currentLessonId: string,
+  lexicon: CurriculumLexicon
+): string[] {
+  const suffixes: string[] = []
+  const modules = getModules()
+  
+  for (const module of modules) {
+    const moduleId = module.id
+    
+    // Add all suffixes from previous modules
+    if (isModuleBefore(moduleId, currentModuleId)) {
+      const moduleSuffixIntros = lexicon.suffixIntroductions[moduleId] || {}
+      for (const lessonId in moduleSuffixIntros) {
+        const lessonSuffixIntros = moduleSuffixIntros[lessonId] || {}
+        for (const stepIndex in lessonSuffixIntros) {
+          suffixes.push(...lessonSuffixIntros[stepIndex])
+        }
+      }
+      continue
+    }
+    
+    // Current module: add suffixes from PREVIOUS lessons ONLY
+    if (moduleId === currentModuleId) {
+      for (const lesson of module.lessons) {
+        const lessonId = lesson.id
+        
+        // Add suffixes from previous lessons only
+        if (isLessonBefore(lessonId, currentLessonId)) {
+          const lessonSuffixIntros = lexicon.suffixIntroductions[moduleId]?.[lessonId] || {}
+          for (const stepIndex in lessonSuffixIntros) {
+            suffixes.push(...lessonSuffixIntros[stepIndex])
+          }
+        }
+        
+        // DO NOT add current lesson suffixes — that's added step-by-step
+      }
+      break
+    }
+  }
+  
+  // Remove duplicates
+  return Array.from(new Set(suffixes))
+}
+
+/**
+ * Get base connectors (all connectors from previous lessons ONLY, NOT current lesson)
+ * FIX: Removed current lesson's connectors from base — they're added step-by-step instead
  */
 function getBaseConnectors(
   currentModuleId: string,
@@ -411,15 +474,17 @@ function getBaseConnectors(
       continue
     }
     
-    // Current module: add connectors from previous lessons + current lesson
+    // Current module: add connectors from PREVIOUS lessons ONLY (NOT current lesson)
     if (moduleId === currentModuleId) {
       for (const lesson of module.lessons) {
         const lessonId = lesson.id
         
-        // Add connectors from previous lessons + current lesson
-        if (isLessonBefore(lessonId, currentLessonId) || lessonId === currentLessonId) {
+        // Add connectors from previous lessons only
+        if (isLessonBefore(lessonId, currentLessonId)) {
           connectors.push(...(lexicon.connectorIntroductions[moduleId]?.[lessonId] || []))
         }
+        
+        // DO NOT add current lesson connectors — that's added step-by-step
       }
       break
     }
@@ -430,43 +495,130 @@ function getBaseConnectors(
 }
 
 /**
- * Extract vocabulary IDs introduced by a step
+ * Step Introduction Result
+ * Represents what new items a single step introduces
  */
-function extractVocabFromStep(step: LessonStep): string[] {
+interface StepIntroduction {
+  vocabIds: string[]
+  suffixes: string[]
+  connectors: string[]
+}
+
+/**
+ * Determine what vocabulary, suffixes, and connectors a step introduces
+ * 
+ * STEP TYPE INTRODUCTION RULES:
+ * 
+ * VOCABULARY INTRODUCTION:
+ * - flashcard: ONLY step type that introduces vocabulary (if vocabularyId present)
+ * 
+ * GRAMMAR INTRODUCTION:
+ * - grammar-fill-blank: Introduces suffixes tracked in lexicon for this step
+ * - grammar-intro: May introduce suffixes/connectors (future, tracked via lexicon)
+ * 
+ * PRACTICE-ONLY (NO INTRODUCTIONS):
+ * - welcome, audio-meaning, audio-sequence, text-sequence, matching
+ * - quiz, reverse-quiz, input, final, story-conversation
+ */
+function getIntroductionsFromStep(
+  step: LessonStep,
+  lexicon: CurriculumLexicon,
+  moduleId: string,
+  lessonId: string,
+  stepIndex: number
+): StepIntroduction {
   const vocabIds: string[] = []
+  const suffixes: string[] = []
+  const connectors: string[] = []
   
   switch (step.type) {
     case 'flashcard':
-      if (step.data.vocabularyId) {
+      // ONLY flashcards introduce new vocabulary
+      if (step.data?.vocabularyId) {
         vocabIds.push(step.data.vocabularyId)
       }
       break
     
-    case 'audio-sequence':
-      if (step.data.sequence) {
-        vocabIds.push(...step.data.sequence)
-      }
+    case 'grammar-fill-blank':
+      // Grammar fill-blank introduces suffixes tracked in lexicon
+      const stepSuffixes = lexicon.suffixIntroductions[moduleId]?.[lessonId]?.[stepIndex] || []
+      suffixes.push(...stepSuffixes)
       break
     
+    case 'grammar-intro':
+      // Grammar intro doesn't introduce vocab, but may introduce suffixes/connectors
+      // (Currently tracked at grammar-fill-blank step level in lexicon)
+      // Future: Could extract from conceptId if needed
+      break
+    
+    // All other step types are practice/review only (no introductions)
     case 'audio-meaning':
-      if (step.data.vocabularyId) {
-        vocabIds.push(step.data.vocabularyId)
-      }
-      break
-    
+    case 'audio-sequence':
     case 'matching':
-      if (step.data.words) {
-        for (const word of step.data.words) {
-          if (word.id) {
-            vocabIds.push(word.id)
-          }
-        }
-      }
+    case 'welcome':
+    case 'text-sequence':
+    case 'quiz':
+    case 'reverse-quiz':
+    case 'input':
+    case 'final':
+    case 'story-conversation':
+    default:
+      // No introductions - practice only
       break
   }
   
-  return vocabIds
+  return {
+    vocabIds,
+    suffixes,
+    connectors
+  }
 }
+
+// ============================================================================
+// STANDALONE HELPER FOR EXTERNAL USE
+// ============================================================================
+
+/**
+ * Get learned state for a specific step index
+ * 
+ * This is a convenience helper that other parts of the app can use to get
+ * "what does the learner know up to this exact step?" without having to
+ * manually build the cache or understand the internal logic.
+ * 
+ * @param moduleId - Current module ID
+ * @param lessonId - Current lesson ID
+ * @param steps - Array of lesson steps
+ * @param lexicon - Pre-built curriculum lexicon
+ * @param stepIndex - Step index to query (0-based)
+ * @returns LearnedSoFar state for that step
+ * 
+ * @example
+ * ```ts
+ * const lexicon = getCurriculumLexicon()
+ * const learned = getLearnedStateForStep('module1', 'lesson1', steps, lexicon, 5)
+ * console.log(learned.vocabIds) // ['salam', 'chetori', 'merci']
+ * ```
+ */
+export function getLearnedStateForStep(
+  moduleId: string,
+  lessonId: string,
+  steps: LessonStep[],
+  lexicon: CurriculumLexicon,
+  stepIndex: number
+): LearnedSoFar {
+  // Build cache for this lesson
+  const cache = buildLearnedCache(moduleId, lessonId, steps, lexicon)
+  
+  // Clamp stepIndex to valid range
+  const clampedIndex = Math.max(0, Math.min(stepIndex, steps.length - 1))
+  
+  // Return learned state for this step (or empty if no steps)
+  return cache[clampedIndex] || { vocabIds: [], suffixes: [], connectors: [] }
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
 /**
  * Check if moduleA comes before moduleB (lexicographic comparison)

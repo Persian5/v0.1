@@ -8,6 +8,7 @@ import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { shuffle } from "@/lib/utils"
+import { FLAGS } from "@/lib/flags"
 
 interface AudioMeaningProps {
   vocabularyId: string
@@ -207,8 +208,27 @@ export function AudioMeaning({
       setCorrectAnswerIndex(correctOption.originalIndex)
     }
     
-    return Array.from(optionsMap.values())
-  }, [shuffledOptions, vocabularyId])
+    const optionItems = Array.from(optionsMap.values());
+    
+    if (FLAGS.LOG_DISTRACTORS) {
+      console.log(
+        "%c[AUDIO MEANING DISTRACTORS]",
+        "color: #FF9800; font-weight: bold;",
+        {
+          vocabularyId,
+          correct: targetVocabularyWithFallback?.en,
+          distractors: optionItems
+            .filter(opt => opt.vocabId !== vocabularyId)
+            .map(opt => {
+              const vocab = vocabularyBank.find(v => v.id === opt.vocabId);
+              return vocab?.en || opt.text;
+            }),
+        }
+      );
+    }
+    
+    return optionItems;
+  }, [shuffledOptions, vocabularyId, vocabularyBank, targetVocabularyWithFallback])
   // Note: vocabularyBank removed from deps to prevent re-shuffle during transitions
 
   const handleAnswerSelect = async (answerIndex: number) => {

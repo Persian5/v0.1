@@ -101,6 +101,7 @@
 
 import { VocabularyItem } from '../types';
 import { getSemanticGroup } from '../config/semantic-groups';
+import { FLAGS } from '../flags';
 
 export interface GrammarOption {
   id: string;
@@ -446,13 +447,18 @@ export function generateGrammarOptions(
     }
   }
 
-  // DEBUG LOG: Final options
-  console.log('✅ [generateGrammarOptions] Final Options Returned:', {
-    blankType,
-    correctAnswer,
-    totalOptions: options.length,
-    options: options
-  })
+  if (FLAGS.LOG_DISTRACTORS) {
+    console.log(
+      "%c[GRAMMAR OPTIONS]",
+      "color: #FF5722; font-weight: bold;",
+      {
+        blankType,
+        correctAnswer,
+        options: options.map(o => o.text || o.meaning),
+        learnedSoFarCount: learnedSoFar?.vocabIds?.length,
+      }
+    );
+  }
 
   return options;
 }
