@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "validate:curriculum": "tsx scripts/validateCurriculum.ts"
   },
   "dependencies": {
     "@radix-ui/react-aspect-ratio": "^1.1.1",

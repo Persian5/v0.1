@@ -98,7 +98,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "Salam chetori",
-              expectedTranslation: "Hello How are you",
+              expectedTranslation: "Hello how are you",
               maxWordBankSize: 10
             }
           },
@@ -172,7 +172,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "Salam khosh amadid chetori",
-              expectedTranslation: "Hello Welcome How are you",
+              expectedTranslation: "Hello welcome how are you",
               maxWordBankSize: 10
             }
           },
@@ -181,7 +181,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "chetori"],
-              expectedTranslation: "Hello How are you"
+              expectedTranslation: "Hello how are you"
             }
           },
           {
@@ -205,7 +205,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "khosh_amadid", "chetori"],
-              expectedTranslation: "Hello Welcome How are you"
+              expectedTranslation: "Hello welcome how are you"
             }
           },
           {
@@ -273,7 +273,6 @@ export const curriculumData: Module[] = [
         emoji: "🙏",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori"],
         vocabulary: [
           {
             id: "khoob",
@@ -293,18 +292,10 @@ export const curriculumData: Module[] = [
           },
           {
             id: "khoobi",
-            en: "You Are Good",
+            en: "You Are Good / Are You Good?",
             fa: "خوبی",
             finglish: "Khoobi",
             phonetic: "khoo-BEE",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "khoobi-question",
-            en: "Are You Good?",
-            fa: "خوبی؟",
-            finglish: "Khoobi?",
-            phonetic: "khoo-BEE?",
             lessonId: "module1-lesson2"
           },
           {
@@ -380,7 +371,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "khosh_amadid"],
-              expectedTranslation: "Hello Welcome"
+              expectedTranslation: "Hello welcome"
             }
           },
           
@@ -415,6 +406,122 @@ export const curriculumData: Module[] = [
             data: {
               question: "How do you say 'good' in Persian?",
               answer: "Khoob"
+            }
+          },
+          
+          // PHASE 2.5: GRAMMAR - ADJECTIVE SUFFIXES "-am" & "-i"
+          // Step 1: Grammar Intro
+          {
+            type: "grammar-intro",
+            points: 1,
+            data: {
+              conceptId: "adjective-suffixes",
+              title: "I Am / You Are: Personal Endings",
+              description: "You've been using khoobam! Let me show you the pattern. In Persian, you add endings to words to say 'I am' or 'you are.' Add -am for 'I am' and -i for 'you are.' These same endings work with ANY adjective.",
+              rule: "Add -am (I am) or -i (you are) to adjectives",
+              visualType: "comparison",
+              visualData: {
+                before: "khoob",
+                after: "khoob-am"
+              }
+            }
+          },
+          // Step 2: Grammar Fill Blank for "-am" (suffix only)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "suffix-am",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                  sentence: "khoob-___",
+                  translation: "I am good",
+                  blankPosition: 6,
+                  correctAnswer: "am",
+                  suffixOptions: [
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
+            }
+          },
+          // Step 3: Grammar Fill Blank for "-i" (suffix only)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+              conceptId: "suffix-i",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                  sentence: "khoob-___",
+                  translation: "you are good",
+                  blankPosition: 6,
+                  correctAnswer: "i",
+                  suffixOptions: [
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
+            }
+          },
+          // Step 4: Introduce vocabulary "khoobam" and "khoobi" AFTER grammar explanation
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khoobam"
+            }
+          },
+          {
+            type: "flashcard",
+            points: 1,
+            data: {
+              vocabularyId: "khoobi"
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which form means \"I am good\"?",
+              options: ["khoobi", "khoobam", "khoob", "khodafez"],
+              correct: 1
+            }
+          },
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+              prompt: "Which form means \"you are good\"?",
+              options: ["khoobam", "khoob", "khoobi", "merci"],
+              correct: 2
+            }
+          },
+          {
+            type: "matching",
+            points: 3,
+            data: {
+              words: [
+                { id: "word1", text: "khoob", slotId: "slot1" },
+                { id: "word2", text: "khoobam", slotId: "slot2" },
+                { id: "word3", text: "khoobi", slotId: "slot3" }
+              ],
+              slots: [
+                { id: "slot1", text: "good" },
+                { id: "slot2", text: "I am good" },
+                { id: "slot3", text: "You are good" },
+                { id: "slot4", text: "Very good" }
+              ]
             }
           },
           
@@ -553,7 +660,6 @@ export const curriculumData: Module[] = [
         emoji: "🧑‍💼",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi", "khosh_amadid", "khodafez", "baleh", "na", "esme", "chiye"],
         vocabulary: [
           {
             id: "man",
@@ -641,7 +747,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "Salam Khosh Amadid Chetori?",
-              expectedTranslation: "Hello Welcome How are You",
+              expectedTranslation: "Hello welcome how are you",
               maxWordBankSize: 10
             }
           },
@@ -673,7 +779,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "Salam shoma khoobi?",
-              expectedTranslation: "Hello are you good",
+              expectedTranslation: "Hello are you good?",
               maxWordBankSize: 10
             }
           },
@@ -714,7 +820,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               vocabularyId: "esm",
-              distractors: ["esme", "shoma", "man"]
+              distractors: ["chi", "shoma", "man"]
             }
           },
           // PHASE 2: GRAMMAR - EZAFE CONNECTOR (3 NEW STEPS)
@@ -871,7 +977,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "Esme shoma chiye?",
-              expectedTranslation: "What is your name",
+              expectedTranslation: "What is your name?",
               maxWordBankSize: 10
             }
           },
@@ -977,7 +1083,6 @@ export const curriculumData: Module[] = [
         emoji: "💬",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi", "khosh_amadid", "khodafez", "baleh", "na", "esme", "chiye"],
         vocabulary: [
           {
             id: "khoshbakhtam",
@@ -1025,7 +1130,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "Salam esme shoma chiye?",
-              expectedTranslation: "Hello What is your name",
+              expectedTranslation: "Hello what is your name?",
               maxWordBankSize: 10
             }
           },
@@ -1041,8 +1146,8 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "Baleh merci",
-              expectedTranslation: "Yes thank you",
+              finglishText: "Na merci",
+              expectedTranslation: "No thank you",
               maxWordBankSize: 10
             }
           },
@@ -1060,7 +1165,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "khosh_amadid", "chetori"],
-              expectedTranslation: "Hello Welcome How are you"
+              expectedTranslation: "Hello welcome how are you"
             }
           },
           {
@@ -1090,11 +1195,26 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "input",
-            points: 2,
+            type: "grammar-fill-blank",
+            points: 1,
             data: {
-              question: "Type the suffix for 'you are' after the word 'khoob': khoob-___",
-              answer: "i"
+              conceptId: "suffix-i",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                  sentence: "khoob-___",
+                  translation: "you are good",
+                  blankPosition: 6,
+                  correctAnswer: "i",
+                  suffixOptions: [
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
             }
           },
           {
@@ -1111,7 +1231,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["na", "merci", "khoobam"],
-              expectedTranslation: "no thank you I am good"
+              expectedTranslation: "No thank you I am good"
             }
           },
           {
@@ -1119,7 +1239,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["khosh_amadid", "khodafez"],
-              expectedTranslation: "welcome goodbye"
+              expectedTranslation: "Welcome goodbye"
             }
           },
           {
@@ -1431,7 +1551,6 @@ export const curriculumData: Module[] = [
         progress: 0,
         locked: false,
         grammarLesson: true,
-        reviewVocabulary: ["salam", "esme", "man", "shoma", "chi", "chiye", "chetori", "khoshbakhtam", "merci", "khoobam", "baleh", "na", "khodafez", "khosh_amadid", "esm"],
         vocabulary: [
           {
             id: "khoob",
@@ -1439,81 +1558,25 @@ export const curriculumData: Module[] = [
             fa: "خوب",
             finglish: "Khoob",
             phonetic: "khoob",
-            lessonId: "module2-lesson1"
-          },
-          {
-            id: "khoobi",
-            en: "You Are Good",
-            fa: "خوبی",
-            finglish: "Khoob-i",
-            phonetic: "khoob-ee",
-            lessonId: "module2-lesson1"
+            lessonId: "module1-lesson2"
           }
         ],
         steps: [
           {
             type: "welcome",
-            title: "Adjective Suffixes \"–am\" & \"–i\"",
-            description: "This rule applies only to adjectives, not nouns (we'll do noun possession later). We take the adjective khoob (\"good\") and attach: –am (\"I am …\") → khoob‑am, –i (\"you are …\") → khoob‑i",
+            title: "Review: Adjective Suffixes \"–am\" & \"–i\"",
+            description: "Let's practice what you learned! You already know how to add -am (I am) and -i (you are) to adjectives. This lesson will help you use these suffixes more confidently in conversations.",
             points: 0,
             data: {
               objectives: [
-                "Recognize the base adjective khoob",
-                "Form khoob‑am and khoob‑i correctly", 
-                "Distinguish between \"I am good\" and \"you are good\""
+                "Review the -am and -i suffix patterns",
+                "Practice forming sentences with adjective suffixes", 
+                "Use suffixes naturally in conversations"
               ],
-              lessonType: "grammar"
+              lessonType: "review"
             }
           },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoob"
-            }
-          },
-          // GRAMMAR: Personal Endings - Part 1 (State)
-          // Step 1: Grammar Intro
-          {
-            type: "grammar-intro",
-            points: 1,
-            data: {
-              conceptId: "adjective-suffixes",
-              title: "I Am / You Are: Personal Endings",
-              description: "You've been using khoobam! Let me show you the pattern. In Persian, you add endings to words to say 'I am' or 'you are.' Add -am for 'I am' and -i for 'you are.' These same endings work with ANY adjective.",
-              rule: "Add -am (I am) or -i (you are) to adjectives",
-              visualType: "comparison",
-              visualData: {
-                before: "khoob",
-                after: "khoob-am"
-              }
-            }
-          },
-          // Step 2: Grammar Fill Blank (suffix only)
-          {
-            type: "grammar-fill-blank",
-            points: 1,
-            data: {
-              conceptId: "suffix-am",
-              label: "FILL IN THE SUFFIX",
-              subtitle: "Choose the correct ending",
-              exercises: [
-                {
-                  sentence: "khoob-___",
-                  translation: "I am good",
-                  blankPosition: 6,
-                  correctAnswer: "am",
-                  suffixOptions: [
-                    { id: "suffix-am", text: "-am" },
-                    { id: "suffix-i", text: "-i" },
-                    { id: "suffix-e", text: "-e" },
-                    { id: "suffix-et", text: "-et" }
-                  ]
-                }
-              ]
-            }
-          },
-          // Step 3: Grammar Fill Blank (word + suffix)
+          // REVIEW: Grammar Fill Blank (word + suffix) - More complex than Module 1
           {
             type: "grammar-fill-blank",
             points: 1,
@@ -1554,71 +1617,6 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoobam"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoobi"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which form means \"I am good\"?",
-              options: ["khoobi", "khoobam", "khoob", "khodafez"],
-              correct: 1
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which form means \"you are good\"?",
-              options: ["khoobam", "khoob", "khoobi", "merci"],
-              correct: 2
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "khoob", slotId: "slot1" },
-                { id: "word2", text: "khoobam", slotId: "slot2" },
-                { id: "word3", text: "khoobi", slotId: "slot3" }
-              ],
-              slots: [
-                { id: "slot1", text: "good" },
-                { id: "slot2", text: "I am good" },
-                { id: "slot3", text: "You are good" },
-                { id: "slot4", text: "Very good" }
-              ]
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "-am", slotId: "slot1" },
-                { id: "word2", text: "-i", slotId: "slot2" }
-              ],
-              slots: [
-                { id: "slot1", text: "I am" },
-                { id: "slot2", text: "You are" },
-                { id: "slot3", text: "Good" },
-                { id: "slot4", text: "Hello" }
-              ]
-            }
-          },
-          {
             type: "input",
             points: 2,
             data: {
@@ -1627,27 +1625,21 @@ export const curriculumData: Module[] = [
             }
           },
           {
-            type: "input",
-            points: 2,
+            type: "text-sequence",
+            points: 3,
             data: {
-              question: "Type the Persian (phonetic) for 'you are good.'",
-              answer: "khoob-i"
+              finglishText: "Salam khoobi?",
+              expectedTranslation: "Hello are you good?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man khoob-am",
-              expectedTranslation: "I am good"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "khoobi?",
-              expectedTranslation: "are you good?"
+              finglishText: "Khoobi?",
+              expectedTranslation: "Are you good?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -1680,7 +1672,6 @@ export const curriculumData: Module[] = [
         emoji: "🌍",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "esme", "man", "shoma", "chetori", "merci", "khodafez", "khoob", "khoobam", "khoobi"],
         vocabulary: [
           {
             id: "hast",
@@ -1831,16 +1822,18 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man kheily khoob hastam",
-              expectedTranslation: "I am very good"
+              finglishText: "Man kheily khoobam",
+              expectedTranslation: "I am very good",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "khoob neestam",
-              expectedTranslation: "I am not good"
+              finglishText: "Khoob neestam",
+              expectedTranslation: "I am not good",
+              maxWordBankSize: 10
             }
           },
           {
@@ -1855,8 +1848,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme man James neest",
-              expectedTranslation: "My name is not James"
+              finglishText: "Esme man James neest",
+              expectedTranslation: "My name is not James",
+              maxWordBankSize: 10
             }
           },
           {
@@ -1881,8 +1875,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man James hastam",
-              expectedTranslation: "I am James"
+              finglishText: "Man James hastam",
+              expectedTranslation: "I am James",
+              maxWordBankSize: 10
             }
           },
           {
@@ -1892,21 +1887,19 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "man", text: "Man", translation: "I" },
-                { id: "kheily", text: "Kheily", translation: "Very" },
                 { id: "khoob", text: "Khoob", translation: "Good" },
-                { id: "hastam", text: "Hastam", translation: "I am" },
+                { id: "neestam", text: "Neestam", translation: "I am not" },
                 { id: "merci", text: "Merci", translation: "Thank you" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "chetori", "man", "kheily", "khoob", "hastam", "merci", "khodafez"],
+              targetWords: ["salam", "chetori", "khoob", "neestam", "merci", "khodafez"],
               title: "Complete Conversation Practice",
               successMessage: "Excellent! You can now express complex states and responses!",
               incorrectMessage: "Almost there—let's practice that conversation flow again!",
               conversationFlow: {
                 description: "A complete conversation with complex responses",
-                expectedPhrase: "Hello, how are you? I am very good, thank you, goodbye",
-                persianSequence: ["salam", "chetori", "man", "kheily", "khoob", "hastam", "merci", "khodafez"]
+                expectedPhrase: "Hello, how are you? I am not good, thank you, goodbye",
+                persianSequence: ["salam", "chetori", "khoob", "neestam", "merci", "khodafez"]
               }
             }
           }
@@ -1919,7 +1912,6 @@ export const curriculumData: Module[] = [
         emoji: "🌍",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "baleh", "hasti"],
         vocabulary: [
           {
             id: "koja",
@@ -1974,8 +1966,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "koja hasti?",
-              expectedTranslation: "where are you"
+              finglishText: "Koja hasti?",
+              expectedTranslation: "Where are you?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2041,24 +2034,27 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man khoobam shoma chi",
-              expectedTranslation: "I am good what about you"
+              finglishText: "Man khoobam shoma chi",
+              expectedTranslation: "I am good what about you",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma ahle koja hasti",
-              expectedTranslation: "where are you from"
+              finglishText: "Shoma ahle koja hasti",
+              expectedTranslation: "Where are you from?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ahle Iran hastam",
-              expectedTranslation: "I am from Iran"
+              finglishText: "Man ahle Iran hastam",
+              expectedTranslation: "I am from Iran",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2066,7 +2062,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["shoma", "ahle", "koja", "hasti"],
-              expectedTranslation: "where are you from"
+              expectedTranslation: "Where are you from?"
             }
           },
           {
@@ -2103,12 +2099,11 @@ export const curriculumData: Module[] = [
         emoji: "🏠",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "koja", "ahle", "man", "shoma", "khoobam"],
         vocabulary: [
           {
             id: "zendegi",
             en: "Life",
-            fa: "",
+            fa: "زندگی",
             finglish: "Zendegi",
             phonetic: "zen-deh-GEE",
             lessonId: "module2-lesson4"
@@ -2116,7 +2111,7 @@ export const curriculumData: Module[] = [
           {
             id: "mikonam",
             en: "I do",
-            fa: "",
+            fa: "می کنم",
             finglish: "Mikonam",
             phonetic: "MEE-ko-nam",
             lessonId: "module2-lesson4"
@@ -2124,7 +2119,7 @@ export const curriculumData: Module[] = [
           {
             id: "mikoni",
             en: "You do",
-            fa: "",
+            fa: "می کنی",
             finglish: "Mikoni",
             phonetic: "MEE-kon-ee",
             lessonId: "module2-lesson4"
@@ -2132,7 +2127,7 @@ export const curriculumData: Module[] = [
           {
             id: "dar",
             en: "In",
-            fa: "",
+            fa: "در",
             finglish: "Dar",
             phonetic: "dahr",
             lessonId: "module2-lesson4"
@@ -2140,7 +2135,7 @@ export const curriculumData: Module[] = [
           {
             id: "amrika",
             en: "America",
-            fa: "",
+            fa: "آمریکا",
             finglish: "Amrika",
             phonetic: "uhm-ree-ka",
             lessonId: "module2-lesson4"
@@ -2253,8 +2248,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man dar amrika zendegi mikonam",
-              expectedTranslation: "I live in America"
+              finglishText: "Man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2279,8 +2275,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni",
-              expectedTranslation: "where do you live"
+              finglishText: "Shoma koja zendegi mikoni",
+              expectedTranslation: "Where do you live?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2319,7 +2316,6 @@ export const curriculumData: Module[] = [
         emoji: "🔗",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"],
         vocabulary: [
           {
             id: "va",
@@ -2331,7 +2327,7 @@ export const curriculumData: Module[] = [
           },
           {
             id: "ham",
-            en: "Also",
+            en: "Also / Too",
             fa: "هم",
             finglish: "Ham",
             phonetic: "hahm",
@@ -2472,12 +2468,12 @@ export const curriculumData: Module[] = [
                   wordOptions: [
                     ...generateGrammarOptions('connector', 'ham', [
                       { id: "va", en: "And", fa: "و", finglish: "Va", phonetic: "vah", lessonId: "module2-lesson5" },
-                      { id: "ham", en: "Also", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
+                      { id: "ham", en: "Also / Too", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
                       { id: "vali", en: "But", fa: "ولی", finglish: "Vali", phonetic: "vah-LEE", lessonId: "module2-lesson5" }
                     ], ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"]),
                     ...generateGrammarOptions('word', 'khoobam', [
                       { id: "va", en: "And", fa: "و", finglish: "Va", phonetic: "vah", lessonId: "module2-lesson5" },
-                      { id: "ham", en: "Also", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
+                      { id: "ham", en: "Also / Too", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
                       { id: "vali", en: "But", fa: "ولی", finglish: "Vali", phonetic: "vah-LEE", lessonId: "module2-lesson5" }
                     ], ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"], ['khoobi', 'esmam'])
                   ]
@@ -2498,8 +2494,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man khoobam vali khoob neestam",
-              expectedTranslation: "I am good but not good"
+              finglishText: "Man khoobam vali khoob neestam",
+              expectedTranslation: "I am good but not good",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2550,16 +2547,18 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ham khoobam",
-              expectedTranslation: "I am good too"
+              finglishText: "Man ham khoobam",
+              expectedTranslation: "I am also good",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man dar amrika zendegi mikonam",
-              expectedTranslation: "I live in America"
+              finglishText: "Man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2593,8 +2592,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ahle iran hastam vali dar amrika zendegi mikonam",
-              expectedTranslation: "I am from Iran but I live in America"
+              finglishText: "Man ahle iran hastam vali dar amrika zendegi mikonam",
+              expectedTranslation: "I am from Iran but I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2632,7 +2632,6 @@ export const curriculumData: Module[] = [
         emoji: "🔄",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "khodafez", "baleh", "na", "man", "shoma", "khoob", "hastam", "hasti", "neestam", "neesti", "kheily", "va", "ham", "vali", "ahle", "koja", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "esme", "chiye", "khoshbakhtam"],
         vocabulary: [],
         steps: [
           {
@@ -2700,7 +2699,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "chetori", "man", "khoobam", "merci", "khodafez"],
-              expectedTranslation: "hello how are you I am good thank you goodbye"
+              expectedTranslation: "Hello how are you I am good thank you goodbye"
             }
           },
           {
@@ -2716,16 +2715,18 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man kheily khoob hastam shoma chi",
-              expectedTranslation: "I am very good what about you"
+              finglishText: "Man kheily khoob hastam shoma chi",
+              expectedTranslation: "I am very good what about you",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni",
-              expectedTranslation: "where do you live"
+              finglishText: "Shoma koja zendegi mikoni",
+              expectedTranslation: "Where do you live?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2758,8 +2759,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma ahle koja hasti",
-              expectedTranslation: "where are you from"
+              finglishText: "Shoma ahle koja hasti",
+              expectedTranslation: "Where are you from?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2793,15 +2795,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "shoma", "chiye"],
-              expectedTranslation: "what is your name"
+              expectedTranslation: "What is your name?"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme man Bob-e khoshbakhtam",
-              expectedTranslation: "my name is Bob nice to meet you"
+              finglishText: "Esme man Bob-e khoshbakhtam",
+              expectedTranslation: "My name is Bob nice to meet you",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2899,7 +2902,6 @@ export const curriculumData: Module[] = [
         emoji: "💬",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "kheily", "esme", "chiye", "ahle", "koja", "hasti", "iran", "vali", "dar", "amrika", "zendegi", "mikonam", "ham", "khoshbakhtam", "khodafez"],
         vocabulary: [],
         steps: [
           {
@@ -3164,7 +3166,6 @@ export const curriculumData: Module[] = [
         emoji: "🔄",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "man", "shoma", "merci", "esm", "esmam", "chi", "chiye", "ahle", "koja", "dar", "iran", "amrika", "mikonam", "mikoni", "zendegi", "hast", "neest", "hastam", "hasti", "neestam", "neesti", "khoob", "kheily", "va", "ham", "vali", "khodafez"],
         vocabulary: [],
         steps: [
           {
@@ -3214,7 +3215,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["salam", "chetori"],
-              expectedTranslation: "hello how are you"
+              expectedTranslation: "Hello how are you"
             }
           },
           {
@@ -3222,7 +3223,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "chetori", "man", "khoobam", "merci"],
-              expectedTranslation: "hello how are you I am good thank you"
+              expectedTranslation: "Hello how are you I am good thank you"
             }
           },
           {
@@ -3256,8 +3257,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esmam Bob-e, esmet chiye",
-              expectedTranslation: "my name is Bob what is your name"
+              finglishText: "Esmam Bob-e, esmet chiye",
+              expectedTranslation: "My name is Bob what is your name",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3309,8 +3311,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni? man dar amrika zendegi mikonam",
-              expectedTranslation: "where do you live I live in America"
+              finglishText: "Shoma koja zendegi mikoni? man dar amrika zendegi mikonam",
+              expectedTranslation: "Where do you live I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3396,8 +3399,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ahle iran hastam vali dar amrika zendegi mikonam",
-              expectedTranslation: "I am from Iran but I live in America"
+              finglishText: "Man ahle iran hastam vali dar amrika zendegi mikonam",
+              expectedTranslation: "I am from Iran but I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3405,7 +3409,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "man", "khoob", "neestam", "shoma", "khodafez"],
-              expectedTranslation: "hello I am not good what about you goodbye"
+              expectedTranslation: "Hello I am not good what about you goodbye"
             }
           }
         ]
@@ -3417,7 +3421,6 @@ export const curriculumData: Module[] = [
         emoji: "👤",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["esm", "va", "vali", "ham"],
         vocabulary: [
           {
             id: "esmam",
@@ -3425,7 +3428,7 @@ export const curriculumData: Module[] = [
             fa: "اسمم",
             finglish: "esmam",
             phonetic: "es-MAM",
-            lessonId: "lesson2"
+            lessonId: "module3-lesson2"
           },
           {
             id: "esmet",
@@ -3433,15 +3436,7 @@ export const curriculumData: Module[] = [
             fa: "اسمت",
             finglish: "esmet",
             phonetic: "es-MET",
-            lessonId: "lesson2"
-          },
-          {
-            id: "hast",
-            en: "is",
-            fa: "هست",
-            finglish: "hast",
-            phonetic: "hast",
-            lessonId: "lesson2"
+            lessonId: "module3-lesson2"
           },
           {
             id: "in",
@@ -3449,7 +3444,7 @@ export const curriculumData: Module[] = [
             fa: "این",
             finglish: "in",
             phonetic: "een",
-            lessonId: "lesson2"
+            lessonId: "module3-lesson2"
           }
         ],
         steps: [
@@ -3603,8 +3598,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esmam Bob-e, esme shoma chiye",
-              expectedTranslation: "my name is Bob what is your name"
+              finglishText: "Esmam Bob-e, esme shoma chiye",
+              expectedTranslation: "My name is Bob what is your name",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3629,8 +3625,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme man Bob hast",
-              expectedTranslation: "my name is Bob"
+              finglishText: "Esme man Bob hast",
+              expectedTranslation: "My name is Bob",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3672,8 +3669,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esmet Bob-e",
-              expectedTranslation: "your name is Bob"
+              finglishText: "Esmet Bob-e",
+              expectedTranslation: "Your name is Bob",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3681,7 +3679,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["esmam"],
-              expectedTranslation: "my name"
+              expectedTranslation: "My name"
             }
           },
           {
@@ -3689,7 +3687,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["esmet"],
-              expectedTranslation: "your name"
+              expectedTranslation: "Your name"
             }
           },
           {
@@ -3697,7 +3695,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "esme", "shoma", "chiye", "khoshbakhtam"],
-              expectedTranslation: "hello what is your name nice to meet you"
+              expectedTranslation: "Hello what is your name nice to meet you"
             }
           }
         ]
@@ -3709,7 +3707,6 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["in", "hast", "va", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "mikoni", "esm", "esmam", "esmet"],
         vocabulary: [
           {
             id: "madar",
@@ -3717,7 +3714,7 @@ export const curriculumData: Module[] = [
             fa: "مادر",
             finglish: "madar",
             phonetic: "MAH-dar",
-            lessonId: "lesson3"
+            lessonId: "module3-lesson3"
           },
           {
             id: "pedar",
@@ -3725,7 +3722,7 @@ export const curriculumData: Module[] = [
             fa: "پدر",
             finglish: "pedar",
             phonetic: "peh-DAR",
-            lessonId: "lesson3"
+            lessonId: "module3-lesson3"
           }
         ],
         steps: [
@@ -3805,8 +3802,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "in pedare shoma hast?",
-              expectedTranslation: "is this your father"
+              finglishText: "In pedare shoma hast?",
+              expectedTranslation: "Is this your father?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3839,8 +3837,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaret va pedaret",
-              expectedTranslation: "your mother and your father"
+              finglishText: "Madaret va pedaret",
+              expectedTranslation: "Your mother and your father",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3865,24 +3864,27 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni",
-              expectedTranslation: "where do you live"
+              finglishText: "Shoma koja zendegi mikoni",
+              expectedTranslation: "Where do you live?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man dar amrika zendegi mikonam",
-              expectedTranslation: "I live in America"
+              finglishText: "Man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "pedaram ahle iran hast vali madaram ahle amrika hast",
-              expectedTranslation: "my father is from Iran but my mother is from America"
+              finglishText: "Pedaram ahle iran hast vali madaram ahle amrika hast",
+              expectedTranslation: "My father is from Iran but my mother is from America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3918,7 +3920,6 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👦‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "salam", "khodafez", "chetori", "merci", "baleh", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "hastam", "va", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "khoob"],
         vocabulary: [],
         steps: [
           {
@@ -3957,7 +3958,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "va", "pedar"],
-              expectedTranslation: "mother and father"
+              expectedTranslation: "Mother and father"
             }
           },
           {
@@ -3990,32 +3991,36 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme madare shoma chiye?",
-              expectedTranslation: "what is your mother's name"
+              finglishText: "Esme madare shoma chiye?",
+              expectedTranslation: "What is your mother's name?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme madaram Sara-e",
-              expectedTranslation: "my mother's name is Sara"
+              finglishText: "Esme madaram Sara-e",
+              expectedTranslation: "My mother's name is Sara",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "pedare shoma ahle koja hast?",
-              expectedTranslation: "where is your father from"
+              finglishText: "Pedare shoma ahle koja hast?",
+              expectedTranslation: "Where is your father from?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "in madare shoma hast?",
-              expectedTranslation: "is this your mother"
+              finglishText: "In madare shoma hast?",
+              expectedTranslation: "Is this your mother?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4023,15 +4028,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "ahle", "iran", "hast"],
-              expectedTranslation: "mother is from Iran"
+              expectedTranslation: "Mother is from Iran"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaret khoob hast?",
-              expectedTranslation: "is your mother good"
+              finglishText: "Madaret khoob hast?",
+              expectedTranslation: "Is your mother good?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4057,7 +4063,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["pedar", "ahle", "amrika", "hast"],
-              expectedTranslation: "father is from America"
+              expectedTranslation: "Father is from America"
             }
           },
           {
@@ -4065,7 +4071,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "ahle", "amrika", "hast", "vali", "pedar", "ahle", "iran", "hast"],
-              expectedTranslation: "mother is from America but father is from Iran"
+              expectedTranslation: "Mother is from America but father is from Iran"
             }
           },
           {
@@ -4101,7 +4107,6 @@ export const curriculumData: Module[] = [
         emoji: "👫",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ham", "ahle", "koja", "zendegi"],
         vocabulary: [
           {
             id: "baradar",
@@ -4109,7 +4114,7 @@ export const curriculumData: Module[] = [
             fa: "برادر",
             finglish: "baradar",
             phonetic: "bah-rah-DAR",
-            lessonId: "lesson5"
+            lessonId: "module3-lesson5"
           },
           {
             id: "khahar",
@@ -4117,7 +4122,7 @@ export const curriculumData: Module[] = [
             fa: "خواهر",
             finglish: "khahar",
             phonetic: "khah-HAR",
-            lessonId: "lesson5"
+            lessonId: "module3-lesson5"
           }
         ],
         steps: [
@@ -4187,7 +4192,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["pedar", "va", "baradar"],
-              expectedTranslation: "father and brother"
+              expectedTranslation: "Father and brother"
             }
           },
           {
@@ -4221,7 +4226,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "esme baradare shoma chiye?",
-              expectedTranslation: "what is your brother's name"
+              expectedTranslation: "What is your brother's name?"
             }
           },
           {
@@ -4229,15 +4234,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "baradar", "Amir-e"],
-              expectedTranslation: "my brother's name is Amir"
+              expectedTranslation: "My brother's name is Amir"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme baradaram Amir neest",
-              expectedTranslation: "my brother's name is not Amir"
+              finglishText: "Esme baradaram Amir neest",
+              expectedTranslation: "My brother's name is not Amir",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4245,15 +4251,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["khahar", "khoob", "hast"],
-              expectedTranslation: "sister is good"
+              expectedTranslation: "Sister is good"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "baradaram khoob hast vali khaharam khoob neest",
-              expectedTranslation: "my brother is good but my sister is not good"
+              finglishText: "Baradaram khoob hast vali khaharam khoob neest",
+              expectedTranslation: "My brother is good but my sister is not good",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4313,7 +4320,6 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👧‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "baradar", "khahar", "salam", "khodafez", "merci", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "kheily", "na", "baleh"],
         vocabulary: [],
         steps: [
           {
@@ -4379,7 +4385,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "madar", "Sara-e", "vali", "esme", "pedar", "Bob-e"],
-              expectedTranslation: "my mother's name is Sara but my father's name is Bob"
+              expectedTranslation: "My mother's name is Sara but my father's name is Bob"
             }
           },
           {
@@ -4421,8 +4427,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaret va khaharet",
-              expectedTranslation: "your mother and your sister"
+              finglishText: "Madaret va khaharet",
+              expectedTranslation: "Your mother and your sister",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4455,7 +4462,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "esme baradare shoma chiye?",
-              expectedTranslation: "what is your brother's name"
+              expectedTranslation: "What is your brother's name?"
             }
           },
           {
@@ -4490,23 +4497,25 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "in", "pedar", "man", "hast"],
-              expectedTranslation: "hello this is my father"
+              expectedTranslation: "Hello this is my father"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "baradaram khoob hast vali madaram khoob neest",
-              expectedTranslation: "my brother is good but my mother is not good"
+              finglishText: "Baradaram khoob hast vali madaram khoob neest",
+              expectedTranslation: "My brother is good but my mother is not good",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaram ahle iran hast vali pedaram ahle amrika hast",
-              expectedTranslation: "my mother is from Iran but my father is from America"
+              finglishText: "Madaram ahle iran hast vali pedaram ahle amrika hast",
+              expectedTranslation: "My mother is from Iran but my father is from America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4680,7 +4689,7 @@ function createConversationFlow(
  * @param currentLessonNumber - The current lesson number (e.g., 4 for lesson4)
  * @returns Array of all vocabulary IDs from previous lessons in the module
  */
-function generateCompleteReviewVocabulary(moduleId: string, currentLessonNumber: number): string[] {
+export function generateCompleteReviewVocabulary(moduleId: string, currentLessonNumber: number): string[] {
   const module = getModule(moduleId);
   if (!module) return [];
   

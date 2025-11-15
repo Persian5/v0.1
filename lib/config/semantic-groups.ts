@@ -16,7 +16,7 @@
  */
 export const SEMANTIC_GROUPS = {
   greetings: ['salam', 'chetori', 'khosh_amadid', 'khodafez', 'khoshbakhtam'],
-  responses: ['khoobam', 'khoobi', 'khoobi-question', 'merci', 'baleh', 'na'],
+  responses: ['khoobam', 'khoobi', 'merci', 'baleh', 'na'],
   pronouns: ['man', 'shoma'],
   questions: ['chi', 'chiye', 'koja'],
   adjectives: ['khoob', 'kheily'],
