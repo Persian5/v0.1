@@ -18,6 +18,8 @@ interface AudioMeaningProps {
   points?: number
   autoPlay?: boolean // Keep for backward compatibility but don't use
   learnedSoFar?: LearnedSoFar // PHASE 5: Learned vocabulary state for unified distractor generation
+  moduleId?: string // For tiered fallback in WordBankService
+  lessonId?: string // For tiered fallback in WordBankService
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
@@ -30,6 +32,8 @@ export function AudioMeaning({
   points = 2,
   autoPlay = false, // Default to false now
   learnedSoFar, // PHASE 5: Learned vocabulary state
+  moduleId, // For tiered fallback
+  lessonId, // For tiered fallback
   onContinue,
   onXpStart,
   onVocabTrack
@@ -113,6 +117,8 @@ export function AudioMeaning({
         learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
           ? learnedSoFar.vocabIds
           : undefined,
+        moduleId, // For tiered fallback
+        lessonId, // For tiered fallback
       });
       
       // PATCH: Extract correct answer and distractors from WordBankService

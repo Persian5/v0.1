@@ -23,12 +23,15 @@ export interface QuizProps {
   points?: number;
   onComplete: (correct: boolean) => void;
   onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
-  vocabularyId?: string; // Optional: for tracking vocabulary performance
+  vocabularyId?: string; // Optional: for tracking vocabulary performance OR from step.data.vocabularyId
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
   label?: string; // Optional custom label (e.g., "PRACTICE AGAIN" for remediation)
   subtitle?: string; // Optional custom subtitle
   learnedSoFar?: LearnedSoFar; // PHASE 4A: Learned vocabulary state for filtering
   vocabularyBank?: VocabularyItem[]; // PHASE 4A: All vocabulary for WordBankService lookup
+  quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Quiz type from step.data.quizType
+  moduleId?: string; // For tiered fallback in WordBankService
+  lessonId?: string; // For tiered fallback in WordBankService
 }
 
 export function Quiz({ 
@@ -43,7 +46,10 @@ export function Quiz({
   label = "QUICK QUIZ",
   subtitle = "Test what you've learned",
   learnedSoFar, // PHASE 4A: Learned vocabulary state
-  vocabularyBank // PHASE 4A: Vocabulary bank for lookup
+  vocabularyBank, // PHASE 4A: Vocabulary bank for lookup
+  quizType, // NEW: Quiz type to determine distractor generation strategy
+  moduleId, // For tiered fallback
+  lessonId // For tiered fallback
 }: QuizProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
@@ -83,67 +89,93 @@ export function Quiz({
     ? vocabularyBank.map(v => v.id).join(",")
     : "";
 
-  // PHASE 4A: Unified distractor generation OR old behavior (flag-gated)
+  // PHASE 4A: Unified distractor generation OR old behavior (flag-gated + quizType-aware)
   const shuffledOptions = useMemo(() => {
-    // PHASE 4A: Unified WordBankService path (flag ON)
-    if (FLAGS.USE_LEARNED_VOCAB_IN_QUIZ && learnedSoFar && vocabularyBank && vocabularyBank.length > 0) {
-      // Step 1: Extract correct answer text
-      let correctAnswerText: string | undefined;
-      if (Array.isArray(options) && typeof options[0] === 'string') {
-        // String array - correct is index
-        correctAnswerText = options[correct] as string;
-      } else {
-        // QuizOption array - find correct option
-        correctAnswerText = (options as QuizOption[]).find(opt => opt.correct)?.text;
-      }
+    // Skip WordBankService for phrase/grammar quizzes (use curriculum options as-is)
+    if (quizType === 'phrase' || quizType === 'grammar') {
+      // Convert string[] to QuizOption[] if needed
+      const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
+        ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
+        : options as QuizOption[];
+      return shuffle(formattedOptions);
+    }
+    
+    // PHASE 4A: Unified WordBankService path (flag ON + vocab quiz type)
+    if (FLAGS.USE_LEARNED_VOCAB_IN_QUIZ && 
+        (quizType === 'vocab-normal' || quizType === 'vocab-reverse') &&
+        learnedSoFar && 
+        vocabularyBank && 
+        vocabularyBank.length > 0) {
       
-      if (!correctAnswerText) {
-        console.warn('[QUIZ] Could not extract correct answer text, falling back to curriculum options');
+      // Step 1: Get vocabulary ID (required for vocab quizzes)
+      let correctVocabId = vocabularyId;
+      
+      if (!correctVocabId) {
+        console.warn('[QUIZ] vocab-normal/vocab-reverse quiz missing vocabularyId, falling back to curriculum options');
         // Fall through to old behavior
       } else {
-        // Step 2: Look up vocabulary ID from correct answer text
-        // Prefer vocabularyId prop if available (for remediation quiz)
-        let correctVocabId = vocabularyId;
+        // Step 2: Find the correct vocabulary item
+        const correctVocab = vocabularyBank.find(v => v.id === correctVocabId);
         
-        if (!correctVocabId) {
-          // Normalize correct answer text for comparison
-          const normalizedCorrectText = WordBankService.normalizeVocabEnglish(correctAnswerText).toLowerCase();
-          
-          // Find vocabulary item by English translation
-          const correctVocab = vocabularyBank.find(v => {
-            const normalizedVocabEn = WordBankService.normalizeVocabEnglish(v.en).toLowerCase();
-            return normalizedVocabEn === normalizedCorrectText;
-          });
-          
-          correctVocabId = correctVocab?.id;
-        }
-        
-        if (correctVocabId) {
+        if (!correctVocab) {
+          console.warn(`[QUIZ] Vocabulary ID "${correctVocabId}" not found in vocabulary bank, falling back to curriculum options`);
+          // Fall through to old behavior
+        } else {
           // Step 3: Generate unified options using WordBankService
+          // Use default maxSize of 4 if options array is empty (from vocabQuiz helper)
+          const maxSize = options.length > 0 ? options.length : 4;
+          
           const wordBankResult = WordBankService.generateWordBank({
             expectedTranslation: undefined, // Quiz doesn't have translation context
             vocabularyBank,
             sequenceIds: [correctVocabId], // Correct answer
-            maxSize: options.length, // Match current option count (usually 4)
+            maxSize, // Default to 4 if options array is empty
             distractorStrategy: 'semantic',
             learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
               ? learnedSoFar.vocabIds
               : undefined,
+            moduleId, // For tiered fallback
+            lessonId, // For tiered fallback
           });
           
-          // Step 4: Extract unified options: correctWords[0] + distractors
+          // Step 4: Extract unified options based on quiz type
           const { correctWords, distractors: distractorWords } = wordBankResult;
           
           if (correctWords.length > 0 && distractorWords.length > 0) {
-            // Build unified options array
-            const unifiedOptionsText = [
-              correctWords[0], // Correct answer
-              ...distractorWords
-            ].slice(0, options.length); // Ensure exact count match
+            let unifiedOptionsText: string[] = [];
+            
+            if (quizType === 'vocab-normal') {
+              // vocab-normal: Persian prompt → English options
+              // WordBankService returns English translations
+              unifiedOptionsText = [
+                correctWords[0], // Correct English translation
+                ...distractorWords
+              ].slice(0, maxSize);
+            } else if (quizType === 'vocab-reverse') {
+              // vocab-reverse: English prompt → Persian/Finglish options
+              // Need to map English distractors back to Persian/Finglish
+              const correctFinglish = correctVocab.finglish || correctVocab.id;
+              
+              // Find Persian/Finglish for distractors
+              const distractorFinglish = distractorWords.map(englishText => {
+                // Find vocab item with matching English translation
+                const vocabItem = vocabularyBank.find(v => {
+                  const normalizedVocabEn = WordBankService.normalizeVocabEnglish(v.en).toLowerCase();
+                  const normalizedDistractorEn = WordBankService.normalizeVocabEnglish(englishText).toLowerCase();
+                  return normalizedVocabEn === normalizedDistractorEn;
+                });
+                return vocabItem?.finglish || vocabItem?.id || englishText; // Fallback to English if not found
+              });
+              
+              unifiedOptionsText = [
+                correctFinglish, // Correct Persian/Finglish
+                ...distractorFinglish
+              ].slice(0, maxSize);
+            }
             
             // Transform to QuizOption[] format
             const unifiedOptions: QuizOption[] = unifiedOptionsText.map((text, index) => ({
-              text: text, // English text from WordBankService
+              text: text,
               correct: index === 0 // First option is always correct
             }));
             
@@ -156,9 +188,13 @@ export function Quiz({
                 "%c[QUIZ - UNIFIED WORDBANK]",
                 "color: #9C27B0; font-weight: bold;",
                 {
-                  stepType: 'quiz',
-                  correctAnswerText,
-                  correctVocabId,
+                  quizType,
+                  vocabularyId: correctVocabId,
+                  correctVocab: {
+                    id: correctVocab.id,
+                    en: correctVocab.en,
+                    finglish: correctVocab.finglish
+                  },
                   learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
                   vocabularyBankSize: vocabularyBank.length,
                   unifiedOptions: unifiedOptionsText,
@@ -172,9 +208,6 @@ export function Quiz({
             console.warn('[QUIZ] WordBankService returned empty options, falling back to curriculum options');
             // Fall through to old behavior
           }
-        } else {
-          console.warn('[QUIZ] Vocabulary lookup failed, falling back to curriculum options');
-          // Fall through to old behavior
         }
       }
     }
@@ -184,6 +217,36 @@ export function Quiz({
     const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
       ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
       : options as QuizOption[];
+    
+    // Safety check: If options are empty (from vocabQuiz helper) and flag is OFF,
+    // we need to generate options manually as fallback
+    if (formattedOptions.length === 0 && quizType && (quizType === 'vocab-normal' || quizType === 'vocab-reverse') && vocabularyId && vocabularyBank) {
+      console.warn('[QUIZ] Empty options array with vocab quiz type - generating fallback options');
+      const vocab = vocabularyBank.find(v => v.id === vocabularyId);
+      if (vocab) {
+        // Generate simple fallback: correct answer + 3 random distractors
+        const distractors = vocabularyBank
+          .filter(v => v.id !== vocabularyId)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3);
+        
+        if (quizType === 'vocab-normal') {
+          // English options
+          const fallbackOptions: QuizOption[] = [
+            { text: vocab.en, correct: true },
+            ...distractors.map(v => ({ text: v.en, correct: false }))
+          ];
+          return shuffle(fallbackOptions);
+        } else {
+          // vocab-reverse: Persian/Finglish options
+          const fallbackOptions: QuizOption[] = [
+            { text: vocab.finglish || vocab.id, correct: true },
+            ...distractors.map(v => ({ text: v.finglish || v.id, correct: false }))
+          ];
+          return shuffle(fallbackOptions);
+        }
+      }
+    }
 
     // Fisher-Yates shuffle for proper randomization
     return shuffle(formattedOptions);
@@ -192,6 +255,7 @@ export function Quiz({
     vocabularyId,
     learnedSignature,
     vocabBankSignature,
+    quizType, // NEW: Include quizType in dependencies
     FLAGS.USE_LEARNED_VOCAB_IN_QUIZ
   ]); // Stable signatures prevent infinite re-renders
 

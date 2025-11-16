@@ -1,0 +1,54 @@
+/**
+ * Curriculum Helpers - Thin Wrapper Layer
+ * 
+ * This file only imports helper functions and re-exports them with clean names.
+ * All implementation logic lives in lib/curriculum/helpers/
+ * 
+ * DO NOT add implementation logic here.
+ * Only add thin wrappers that import and re-export from helpers.
+ */
+
+import { quizHelper } from "../curriculum/helpers/quiz-helper";
+import { flashcardHelper } from "../curriculum/helpers/flashcard-helper";
+import { inputHelper } from "../curriculum/helpers/input-helper";
+
+/**
+ * Generate a vocab quiz step
+ * 
+ * @param vocabulary - Array of vocabulary items from the lesson
+ * @param vocabId - Vocabulary ID to test (e.g., "salam")
+ * @param quizType - Type of quiz: "vocab-normal" or "vocab-reverse"
+ * @param points - Points for the quiz (default: 2)
+ */
+export const vocabQuiz = (
+  vocabulary: Parameters<typeof quizHelper>[0],
+  vocabId: Parameters<typeof quizHelper>[1],
+  quizType: Parameters<typeof quizHelper>[2] = "vocab-normal",
+  points: Parameters<typeof quizHelper>[3] = 2
+) => quizHelper(vocabulary, vocabId, quizType, points);
+
+/**
+ * Generate a flashcard step
+ * 
+ * @param vocabulary - Array of vocabulary items from the lesson
+ * @param vocabId - Vocabulary ID to display (e.g., "salam")
+ * @param points - Points for the flashcard (default: 1)
+ */
+export const flashcard = (
+  vocabulary: Parameters<typeof flashcardHelper>[0],
+  vocabId: Parameters<typeof flashcardHelper>[1],
+  points: Parameters<typeof flashcardHelper>[2] = 1
+) => flashcardHelper(vocabulary, vocabId, points);
+
+/**
+ * Generate an input exercise step
+ * 
+ * @param question - The question prompt (e.g., "How do you say 'Goodbye' in Persian?")
+ * @param answer - The expected answer (e.g., "Khodafez")
+ * @param points - Points for the input exercise (default: 2)
+ */
+export const input = (
+  question: Parameters<typeof inputHelper>[0],
+  answer: Parameters<typeof inputHelper>[1],
+  points: Parameters<typeof inputHelper>[2] = 2
+) => inputHelper(question, answer, points);

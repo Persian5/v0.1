@@ -1,6 +1,7 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
+import { vocabQuiz, flashcard, input } from "./curriculum-helpers";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -13,14 +14,9 @@ export const curriculumData: Module[] = [
     estimatedTime: "25 minutes",
     available: true,
     lessons: [
-      {
-        id: "lesson1",
-        title: "Basic Persian Greetings",
-        description: "Learn essential greetings and how to say hello in different contexts",
-        emoji: "",
-        progress: 0,
-        locked: false,
-        vocabulary: [
+      // Module 1 Lesson 1
+      (() => {
+        const vocabulary: VocabularyItem[] = [
           {
             id: "salam",
             en: "Hello",
@@ -53,8 +49,17 @@ export const curriculumData: Module[] = [
             phonetic: "mer-SEE",
             lessonId: "module1-lesson1"
           }
-        ],
-        steps: [
+        ];
+        
+        return {
+          id: "lesson1",
+          title: "Basic Persian Greetings",
+          description: "Learn essential greetings and how to say hello in different contexts",
+          emoji: "",
+          progress: 0,
+          locked: false,
+          vocabulary,
+          steps: [
           {
             type: "welcome",
             title: "Basic Persian Greetings",
@@ -72,29 +77,9 @@ export const curriculumData: Module[] = [
               sectionDescription: "By the end of this lesson You'll be able to understand and use the core greetings Iranians say every day, the perfect foundation before building real conversations."
             }
           },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "salam"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "chetori"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following means hello?",
-              options: ["Salam", "Chetori", "Merci", "Khodafez"],
-              correct: 0
-            }
-          },
+          flashcard(vocabulary, "salam"),
+          flashcard(vocabulary, "chetori"),
+          vocabQuiz(vocabulary, "salam", "vocab-reverse"),
           {
             type: "text-sequence",
             points: 3,
@@ -112,22 +97,8 @@ export const curriculumData: Module[] = [
               distractors: ["salam", "merci", "khodafez"]
             }
           },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does Salam mean?",
-              options: ["Hello", "Goodbye", "Thank you", "How are you?"],
-              correct: 0
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khodafez"
-            }
-          },
+          vocabQuiz(vocabulary, "salam", "vocab-normal"),
+          flashcard(vocabulary, "khodafez"),
           {
             type: "audio-meaning",
             points: 2,
@@ -153,22 +124,8 @@ export const curriculumData: Module[] = [
               distractors: ["salam", "chetori", "merci"]
             }
           },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following means How are you?",
-              options: ["Chetori", "Salam", "Merci", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "merci"
-            }
-          },
+          vocabQuiz(vocabulary, "chetori", "vocab-reverse"),
+          flashcard(vocabulary, "merci"),
           {
             type: "audio-meaning",
             points: 2,
@@ -185,14 +142,7 @@ export const curriculumData: Module[] = [
               expectedTranslation: "Thank you goodbye"
             }
           },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'Goodbye' in Persian?",
-              answer: "Khodafez"
-            }
-          },
+          input("How do you say 'Goodbye' in Persian?", "Khodafez"),
           {
             type: "matching",
             points: 3,
@@ -233,15 +183,11 @@ export const curriculumData: Module[] = [
             }
           }
         ]
-      },
-      {
-        id: "lesson2",
-        title: "Basic Responses",
-        description: "Today you'll learn how to answer Chetori? ('How are you?') like a native Persian speaker. By the end of this lesson, you can tell someone you're good and understand when they say it to you.",
-        emoji: "🙏",
-        progress: 0,
-        locked: false,
-        vocabulary: [
+        };
+      })(),
+      // Module 1 Lesson 2
+      (() => {
+        const vocabulary: VocabularyItem[] = [
           {
             id: "khoob",
             en: "Good",
@@ -258,8 +204,17 @@ export const curriculumData: Module[] = [
             phonetic: "khoo-BAHM",
             lessonId: "module1-lesson2"
           }
-        ],
-        steps: [
+        ];
+        
+        return {
+          id: "lesson2",
+          title: "Basic Responses",
+          description: "Today you'll learn how to answer Chetori? ('How are you?') like a native Persian speaker. By the end of this lesson, you can tell someone you're good and understand when they say it to you.",
+          emoji: "🙏",
+          progress: 0,
+          locked: false,
+          vocabulary,
+          steps: [
           {
             type: "welcome",
             title: "Basic Responses",
@@ -309,22 +264,8 @@ export const curriculumData: Module[] = [
               expectedTranslation: "Hello how are you"
             }
           },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoob"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which word means 'good'?",
-              options: ["Khoob", "Salam", "Chetori", "Merci"],
-              correct: 0
-            }
-          },
+          flashcard(vocabulary, "khoob"),
+          vocabQuiz(vocabulary, "khoob", "vocab-reverse"),
           {
             type: "audio-meaning",
             points: 2,
@@ -333,22 +274,8 @@ export const curriculumData: Module[] = [
               distractors: ["chetori", "merci", "khodafez"]
             }
           },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoobam"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'Khoobam' mean?",
-              options: ["I'm Good", "Good", "Hello", "Thank you"],
-              correct: 0
-            }
-          },
+          flashcard(vocabulary, "khoobam"),
+          vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
           {
             type: "audio-meaning",
             points: 2,
@@ -388,15 +315,7 @@ export const curriculumData: Module[] = [
               expectedTranslation: "I'm good thank you"
             }
           },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of these words mean \"I'm Good\"?",
-              options: ["Khoobam", "Khoob", "Chetori", "Salam"],
-              correct: 0
-            }
-          },
+          vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
           {
             type: "matching",
             points: 3,
@@ -446,7 +365,8 @@ export const curriculumData: Module[] = [
             }
           }
         ]
-      },
+        };
+      })(),
       {
         id: "lesson3",
         title: "Basic Pronouns and Question Words",

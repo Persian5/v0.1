@@ -81,6 +81,8 @@ export interface QuizStep extends BaseStep {
     prompt: string;
     options: string[];
     correct: number;
+    quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Distinguishes quiz types
+    vocabularyId?: string; // For vocab quizzes, specifies which vocabulary item to test
   };
 }
 
@@ -91,6 +93,8 @@ export interface ReverseQuizStep extends BaseStep {
     prompt: string;       // English prompt: "How do you say 'Hello' in Persian?"
     options: string[];    // Persian options: ["سلام", "خداحافظ", "مرسی", "بله"]
     correct: number;      // Index of correct Persian option
+    quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Distinguishes quiz types
+    vocabularyId?: string; // For vocab quizzes, specifies which vocabulary item to test
   };
 }
 

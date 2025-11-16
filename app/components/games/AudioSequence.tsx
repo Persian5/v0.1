@@ -19,6 +19,8 @@ interface AudioSequenceProps {
   targetWordCount?: number // Number of English words expected (overrides sequence.length)
   maxWordBankSize?: number // Maximum number of options in word bank (prevents crowding)
   learnedSoFar?: LearnedSoFar // PHASE 4: Learned vocabulary state for filtering word bank
+  moduleId?: string // For tiered fallback in WordBankService
+  lessonId?: string // For tiered fallback in WordBankService
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
@@ -33,6 +35,8 @@ export function AudioSequence({
   targetWordCount, // Add support for custom word count
   maxWordBankSize = 12, // Default max 12 options for better variety while manageable
   learnedSoFar, // PHASE 4: Learned vocabulary state
+  moduleId, // For tiered fallback
+  lessonId, // For tiered fallback
   onContinue,
   onXpStart,
   onVocabTrack
@@ -89,6 +93,8 @@ export function AudioSequence({
       learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
         ? learnedSoFar.vocabIds
         : undefined,
+      moduleId, // For tiered fallback
+      lessonId, // For tiered fallback
     })
 
     // Build mappings for vocabulary ID lookup and duplicate handling
@@ -213,7 +219,9 @@ export function AudioSequence({
       const wordBankResult = WordBankService.generateWordBank({
         expectedTranslation,
         vocabularyBank,
-        sequenceIds: undefined
+        sequenceIds: undefined,
+        moduleId, // For tiered fallback
+        lessonId, // For tiered fallback
       });
       
       // Extract expected semantic units (normalized with contractions and punctuation)

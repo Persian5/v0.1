@@ -13,6 +13,7 @@
 import { VocabularyItem } from '../types';
 import { getSemanticGroup, getRelatedGroups, getVocabIdsInGroup } from '../config/semantic-groups';
 import { FLAGS } from '../flags';
+import { VocabularyService } from './vocabulary-service';
 
 /**
  * Options for word bank generation
@@ -24,6 +25,8 @@ export interface WordBankOptions {
   maxSize?: number; // Maximum word bank size (overrides dynamic calculation)
   distractorStrategy?: 'semantic' | 'random'; // Distractor selection strategy
   learnedVocabIds?: string[]; // PHASE 4: Filter vocabularyBank to only learned vocab (optional)
+  moduleId?: string; // Optional: For tiered fallback (current lesson → current module → previous modules)
+  lessonId?: string; // Optional: For tiered fallback (current lesson vocab)
 }
 
 /**
@@ -201,7 +204,7 @@ export class WordBankService {
    * @returns Complete word bank with correct words and distractors
    */
   static generateWordBank(options: WordBankOptions): WordBankResult {
-    const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic', learnedVocabIds } = options;
+    const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic', learnedVocabIds, moduleId, lessonId } = options;
 
     if (FLAGS.LOG_WORDBANK) {
       console.log(
@@ -216,8 +219,13 @@ export class WordBankService {
       );
     }
 
-    // PHASE 4: Filter vocabularyBank by learned vocab if feature flag is enabled
+    // TIERED FALLBACK SYSTEM: Progressive expansion when learned vocab is insufficient
+    // 1. Try learned vocab first
+    // 2. Fallback 1: Current lesson vocab
+    // 3. Fallback 2: Current module vocab
+    // 4. Fallback 3: Previous modules (should never reach)
     let filteredVocabularyBank = vocabularyBank;
+    let fallbackLevel = 'none';
     
     if (FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedVocabIds && learnedVocabIds.length > 0) {
       const learnedSet = new Set(learnedVocabIds);
@@ -227,7 +235,9 @@ export class WordBankService {
       const minRequired = (sequenceIds?.length || 0) + 3;
       
       if (filtered.length >= minRequired) {
+        // ✅ Learned vocab is sufficient
         filteredVocabularyBank = filtered;
+        fallbackLevel = 'learned';
         
         if (FLAGS.LOG_WORDBANK) {
           console.log(
@@ -242,19 +252,109 @@ export class WordBankService {
           );
         }
       } else {
-        // Fallback: filtered bank too small, use full vocabularyBank
-        if (FLAGS.LOG_WORDBANK) {
-          console.log(
-            "%c[WORDBANK LEARNED FILTER - FALLBACK]",
-            "color: #FF9800; font-weight: bold;",
-            {
-              originalBankSize: vocabularyBank.length,
-              filteredBankSize: filtered.length,
-              minRequired,
-              filterApplied: false,
-              reason: 'Filtered bank too small, using full vocabularyBank',
+        // ❌ Learned vocab insufficient - try tiered fallbacks
+        if (moduleId && lessonId) {
+          // FALLBACK 1: Current lesson vocab
+          const currentLessonVocab = VocabularyService.getLessonVocabulary(moduleId, lessonId);
+          if (currentLessonVocab.length >= minRequired) {
+            filteredVocabularyBank = currentLessonVocab;
+            fallbackLevel = 'current-lesson';
+            
+            if (FLAGS.LOG_WORDBANK) {
+              console.log(
+                "%c[WORDBANK FALLBACK 1 - CURRENT LESSON]",
+                "color: #FF9800; font-weight: bold;",
+                {
+                  learnedVocabSize: filtered.length,
+                  currentLessonVocabSize: currentLessonVocab.length,
+                  minRequired,
+                  reason: 'Learned vocab insufficient, using current lesson vocab',
+                }
+              );
             }
-          );
+          } else {
+            // FALLBACK 2: Current module vocab
+            const currentModuleVocab = VocabularyService.getModuleVocabulary(moduleId);
+            if (currentModuleVocab.length >= minRequired) {
+              filteredVocabularyBank = currentModuleVocab;
+              fallbackLevel = 'current-module';
+              
+              if (FLAGS.LOG_WORDBANK) {
+                console.log(
+                  "%c[WORDBANK FALLBACK 2 - CURRENT MODULE]",
+                  "color: #F44336; font-weight: bold;",
+                  {
+                    learnedVocabSize: filtered.length,
+                    currentLessonVocabSize: currentLessonVocab.length,
+                    currentModuleVocabSize: currentModuleVocab.length,
+                    minRequired,
+                    reason: 'Current lesson vocab insufficient, using current module vocab',
+                  }
+                );
+              }
+            } else {
+              // FALLBACK 3: Previous modules (should never reach here)
+              // Get all vocab from previous modules
+              const allModules = require('../config/curriculum').getModules();
+              const previousModulesVocab: VocabularyItem[] = [];
+              
+              const currentModuleIndex = allModules.findIndex((m: any) => m.id === moduleId);
+              if (currentModuleIndex > 0) {
+                for (let i = 0; i < currentModuleIndex; i++) {
+                  const module = allModules[i];
+                  if (module.lessons) {
+                    for (const lesson of module.lessons) {
+                      if (lesson.vocabulary) {
+                        previousModulesVocab.push(...lesson.vocabulary);
+                      }
+                    }
+                  }
+                }
+              }
+              
+              // Combine: learned + current lesson + current module + previous modules
+              const combinedVocab = [
+                ...filtered, // Learned vocab
+                ...currentLessonVocab.filter(v => !learnedSet.has(v.id)), // Current lesson (deduped)
+                ...currentModuleVocab.filter(v => !learnedSet.has(v.id) && !currentLessonVocab.some(lv => lv.id === v.id)), // Current module (deduped)
+                ...previousModulesVocab.filter(v => !learnedSet.has(v.id) && !currentModuleVocab.some(mv => mv.id === v.id)), // Previous modules (deduped)
+              ];
+              
+              filteredVocabularyBank = combinedVocab;
+              fallbackLevel = 'previous-modules';
+              
+              console.warn(
+                "%c[WORDBANK FALLBACK 3 - PREVIOUS MODULES]",
+                "color: #E91E63; font-weight: bold;",
+                {
+                  learnedVocabSize: filtered.length,
+                  currentLessonVocabSize: currentLessonVocab.length,
+                  currentModuleVocabSize: currentModuleVocab.length,
+                  previousModulesVocabSize: previousModulesVocab.length,
+                  combinedVocabSize: combinedVocab.length,
+                  minRequired,
+                  reason: '⚠️ Should never reach here - curriculum may need review',
+                }
+              );
+            }
+          }
+        } else {
+          // No moduleId/lessonId provided - fallback to full vocabularyBank
+          fallbackLevel = 'full-bank';
+          
+          if (FLAGS.LOG_WORDBANK) {
+            console.log(
+              "%c[WORDBANK LEARNED FILTER - FALLBACK TO FULL BANK]",
+              "color: #FF9800; font-weight: bold;",
+              {
+                originalBankSize: vocabularyBank.length,
+                filteredBankSize: filtered.length,
+                minRequired,
+                filterApplied: false,
+                reason: 'Filtered bank too small, moduleId/lessonId not provided, using full vocabularyBank',
+              }
+            );
+          }
         }
       }
     }

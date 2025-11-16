@@ -915,9 +915,14 @@ export function LessonRunner({
           options={(step as QuizStep).data.options}
           correct={(step as QuizStep).data.correct}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
+          vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for lookup
+          quizType={(step as QuizStep).data.quizType} // NEW: Pass quizType from step data
+          vocabularyId={(step as QuizStep).data.vocabularyId || extractVocabularyFromFailedQuiz(step)} // NEW: Prefer step.data.vocabularyId, fallback to extraction
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
-          vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'reverse-quiz' ? (
@@ -927,9 +932,14 @@ export function LessonRunner({
           options={(step as ReverseQuizStep).data.options}
           correct={(step as ReverseQuizStep).data.correct}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
+          vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for lookup
+          quizType={(step as ReverseQuizStep).data.quizType} // NEW: Pass quizType from step data
+          vocabularyId={(step as ReverseQuizStep).data.vocabularyId || extractVocabularyFromFailedQuiz(step)} // NEW: Prefer step.data.vocabularyId, fallback to extraction
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
-          vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'input' ? (
@@ -965,6 +975,8 @@ export function LessonRunner({
           incorrectMessage={(step as FinalStep).data.incorrectMessage}
           conversationFlow={(step as FinalStep).data.conversationFlow}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
+          vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for filtering
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
         />
@@ -1039,6 +1051,8 @@ export function LessonRunner({
           points={step.points}
           autoPlay={(step as AudioMeaningStep).data.autoPlay}
           learnedSoFar={learnedCache[idx]} // PHASE 5: Pass learned vocabulary state
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
@@ -1054,6 +1068,8 @@ export function LessonRunner({
           targetWordCount={(step as AudioSequenceStep).data.targetWordCount}
           maxWordBankSize={(step as AudioSequenceStep).data.maxWordBankSize}
           learnedSoFar={learnedCache[idx]} // PHASE 4: Pass learned vocabulary state
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
@@ -1066,6 +1082,8 @@ export function LessonRunner({
           vocabularyBank={allVocab}
           points={step.points}
           learnedSoFar={learnedCache[idx]} // PHASE 4: Pass learned vocabulary state
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           maxWordBankSize={(step as TextSequenceStep).data.maxWordBankSize}

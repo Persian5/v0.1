@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { X } from "lucide-react"
 import { playSuccessSound } from "./Flashcard"
+import { FLAGS } from "@/lib/flags"
+import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
+import { type VocabularyItem } from "@/lib/types"
 
 interface WordItem {
   id: string;
@@ -34,6 +37,8 @@ export interface FinalChallengeProps {
   points: number;
   onComplete: (success: boolean) => void;
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed;
+  learnedSoFar?: LearnedSoFar; // PHASE 4A: Learned vocabulary state for filtering word bank
+  vocabularyBank?: VocabularyItem[]; // PHASE 4A: Vocabulary bank for ID lookup
 }
 
 export function FinalChallenge({ 
@@ -46,12 +51,108 @@ export function FinalChallenge({
   conversationFlow,
   points = 20, 
   onComplete,
-  onXpStart
+  onXpStart,
+  learnedSoFar, // PHASE 4A: Learned vocabulary state
+  vocabularyBank // PHASE 4A: Vocabulary bank for lookup
 }: FinalChallengeProps) {
-  // ENHANCED WORD BANK: Handle conversation flow patterns
+  // PHASE 4A: Stable signatures for useMemo dependencies (prevents infinite re-renders)
+  const learnedSignature = learnedSoFar
+    ? learnedSoFar.vocabIds.join(",")
+    : "";
+  const vocabBankSignature = vocabularyBank
+    ? vocabularyBank.map(v => v.id).join(",")
+    : "";
+  const wordsSignature = words.map(w => `${w.id}:${w.text}`).join(",");
+  const targetWordsSignature = targetWords.join(",");
+  const conversationFlowSignature = conversationFlow
+    ? `${conversationFlow.persianSequence.join(",")}:${conversationFlow.expectedPhrase}`
+    : "";
+
+  // PHASE 4A: Learned-aware word bank filtering OR old behavior (flag-gated)
   const enhancedWords = useMemo(() => {
+    // PHASE 4A: Filter words by learnedState when flag is ON
+    let filteredWords = words;
+    
+    if (FLAGS.USE_LEARNED_VOCAB_IN_FINAL_CHALLENGE && learnedSoFar && learnedSoFar.vocabIds.length > 0 && vocabularyBank && vocabularyBank.length > 0) {
+      // Step 1: Map word IDs to vocabulary IDs
+      // FinalChallenge words have `id` field (e.g., "salam", "chetori")
+      // These should match vocabulary IDs in the curriculum
+      
+      // Filter words to only include those that are in learnedSoFar
+      const learnedWordIds = new Set(learnedSoFar.vocabIds);
+      
+      filteredWords = words.filter(word => {
+        // Direct ID match (word.id === vocab.id)
+        if (learnedWordIds.has(word.id)) {
+          return true;
+        }
+        
+        // Fallback: Try to match by text (Finglish) if ID doesn't match
+        // This handles cases where word.id might be different from vocab.id
+        const matchingVocab = vocabularyBank.find(v => {
+          // Normalize for comparison (lowercase, remove hyphens/spaces)
+          const normalizedWordText = word.text.toLowerCase().replace(/[- ]/g, '');
+          const normalizedVocabFinglish = (v.finglish || '').toLowerCase().replace(/[- ]/g, '');
+          return normalizedWordText === normalizedVocabFinglish;
+        });
+        
+        if (matchingVocab && learnedWordIds.has(matchingVocab.id)) {
+          return true;
+        }
+        
+        // Always include target words (required for the challenge)
+        // Even if not yet "learned", they must be available
+        if (targetWords.includes(word.id)) {
+          return true;
+        }
+        
+        // Always include conversation flow sequence words (required)
+        if (conversationFlow && conversationFlow.persianSequence.includes(word.id)) {
+          return true;
+        }
+        
+        return false;
+      });
+      
+      // Safety check: Ensure we have enough words for the challenge
+      const requiredWordIds = new Set([
+        ...targetWords,
+        ...(conversationFlow ? conversationFlow.persianSequence : [])
+      ]);
+      
+      const hasAllRequired = requiredWordIds.size > 0 && 
+        Array.from(requiredWordIds).every(id => filteredWords.some(w => w.id === id));
+      
+      if (!hasAllRequired) {
+        console.warn('[FINAL CHALLENGE] Filtered word bank missing required words, falling back to full word bank');
+        filteredWords = words; // Fallback to original
+      }
+      
+      // PHASE 4A: Debug logging
+      if (FLAGS.LOG_WORDBANK) {
+        console.log(
+          "%c[FINAL CHALLENGE - LEARNED FILTER]",
+          "color: #E91E63; font-weight: bold;",
+          {
+            stepType: 'final',
+            originalWordCount: words.length,
+            filteredWordCount: filteredWords.length,
+            learnedVocabCount: learnedSoFar.vocabIds.length,
+            targetWordsCount: targetWords.length,
+            conversationSequenceLength: conversationFlow?.persianSequence.length || 0,
+            usingLearnedFilter: true,
+            filteredWordIds: filteredWords.map(w => w.id),
+          }
+        );
+      }
+    } else {
+      // OLD BEHAVIOR: Flag OFF or learnedSoFar missing
+      filteredWords = words;
+    }
+    
+    // ENHANCED WORD BANK: Handle conversation flow patterns (existing logic)
     if (!conversationFlow) {
-      return words; // Use original words if no conversation flow
+      return filteredWords; // Use filtered words if no conversation flow
     }
     
     // Create enhanced word bank with conversation-aware vocabulary
@@ -60,7 +161,7 @@ export function FinalChallenge({
     
     // Add words needed for the conversation sequence
     conversationFlow.persianSequence.forEach(seqId => {
-      const originalWord = words.find(w => w.id === seqId);
+      const originalWord = filteredWords.find(w => w.id === seqId);
       if (originalWord && !usedWordIds.has(seqId)) {
         conversationWords.push(originalWord);
         usedWordIds.add(seqId);
@@ -68,7 +169,7 @@ export function FinalChallenge({
     });
     
     // Add remaining words as distractors (avoiding duplicates)
-    words.forEach(word => {
+    filteredWords.forEach(word => {
       if (!usedWordIds.has(word.id)) {
         conversationWords.push(word);
         usedWordIds.add(word.id);
@@ -76,7 +177,14 @@ export function FinalChallenge({
     });
     
     return conversationWords;
-  }, [words, conversationFlow, targetWords]);
+  }, [
+    wordsSignature,
+    targetWordsSignature,
+    conversationFlowSignature,
+    learnedSignature,
+    vocabBankSignature,
+    FLAGS.USE_LEARNED_VOCAB_IN_FINAL_CHALLENGE
+  ]); // Stable signatures prevent infinite re-renders
 
   // SYSTEMATIC RANDOMIZATION: Randomize word bank display order once on mount
   // Following same pattern as Quiz component for consistency
