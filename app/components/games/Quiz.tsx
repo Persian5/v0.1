@@ -6,6 +6,10 @@ import { XpAnimation } from "./XpAnimation"
 import { playSuccessSound } from "./Flashcard"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { shuffle } from "@/lib/utils"
+import { FLAGS } from "@/lib/flags"
+import { WordBankService } from "@/lib/services/word-bank-service"
+import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
+import { type VocabularyItem } from "@/lib/types"
 
 type QuizOption = {
   text: string;
@@ -23,6 +27,8 @@ export interface QuizProps {
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
   label?: string; // Optional custom label (e.g., "PRACTICE AGAIN" for remediation)
   subtitle?: string; // Optional custom subtitle
+  learnedSoFar?: LearnedSoFar; // PHASE 4A: Learned vocabulary state for filtering
+  vocabularyBank?: VocabularyItem[]; // PHASE 4A: All vocabulary for WordBankService lookup
 }
 
 export function Quiz({ 
@@ -35,7 +41,9 @@ export function Quiz({
   vocabularyId,
   onVocabTrack,
   label = "QUICK QUIZ",
-  subtitle = "Test what you've learned"
+  subtitle = "Test what you've learned",
+  learnedSoFar, // PHASE 4A: Learned vocabulary state
+  vocabularyBank // PHASE 4A: Vocabulary bank for lookup
 }: QuizProps) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
@@ -67,8 +75,111 @@ export function Quiz({
     startTime.current = Date.now()
   }, [prompt, optionsHash])
 
-  // Randomize options ONCE when content changes
+  // PHASE 4A: Stable signatures for useMemo dependencies (prevents infinite re-renders)
+  const learnedSignature = learnedSoFar
+    ? learnedSoFar.vocabIds.join(",")
+    : "";
+  const vocabBankSignature = vocabularyBank
+    ? vocabularyBank.map(v => v.id).join(",")
+    : "";
+
+  // PHASE 4A: Unified distractor generation OR old behavior (flag-gated)
   const shuffledOptions = useMemo(() => {
+    // PHASE 4A: Unified WordBankService path (flag ON)
+    if (FLAGS.USE_LEARNED_VOCAB_IN_QUIZ && learnedSoFar && vocabularyBank && vocabularyBank.length > 0) {
+      // Step 1: Extract correct answer text
+      let correctAnswerText: string | undefined;
+      if (Array.isArray(options) && typeof options[0] === 'string') {
+        // String array - correct is index
+        correctAnswerText = options[correct] as string;
+      } else {
+        // QuizOption array - find correct option
+        correctAnswerText = (options as QuizOption[]).find(opt => opt.correct)?.text;
+      }
+      
+      if (!correctAnswerText) {
+        console.warn('[QUIZ] Could not extract correct answer text, falling back to curriculum options');
+        // Fall through to old behavior
+      } else {
+        // Step 2: Look up vocabulary ID from correct answer text
+        // Prefer vocabularyId prop if available (for remediation quiz)
+        let correctVocabId = vocabularyId;
+        
+        if (!correctVocabId) {
+          // Normalize correct answer text for comparison
+          const normalizedCorrectText = WordBankService.normalizeVocabEnglish(correctAnswerText).toLowerCase();
+          
+          // Find vocabulary item by English translation
+          const correctVocab = vocabularyBank.find(v => {
+            const normalizedVocabEn = WordBankService.normalizeVocabEnglish(v.en).toLowerCase();
+            return normalizedVocabEn === normalizedCorrectText;
+          });
+          
+          correctVocabId = correctVocab?.id;
+        }
+        
+        if (correctVocabId) {
+          // Step 3: Generate unified options using WordBankService
+          const wordBankResult = WordBankService.generateWordBank({
+            expectedTranslation: undefined, // Quiz doesn't have translation context
+            vocabularyBank,
+            sequenceIds: [correctVocabId], // Correct answer
+            maxSize: options.length, // Match current option count (usually 4)
+            distractorStrategy: 'semantic',
+            learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
+              ? learnedSoFar.vocabIds
+              : undefined,
+          });
+          
+          // Step 4: Extract unified options: correctWords[0] + distractors
+          const { correctWords, distractors: distractorWords } = wordBankResult;
+          
+          if (correctWords.length > 0 && distractorWords.length > 0) {
+            // Build unified options array
+            const unifiedOptionsText = [
+              correctWords[0], // Correct answer
+              ...distractorWords
+            ].slice(0, options.length); // Ensure exact count match
+            
+            // Transform to QuizOption[] format
+            const unifiedOptions: QuizOption[] = unifiedOptionsText.map((text, index) => ({
+              text: text, // English text from WordBankService
+              correct: index === 0 // First option is always correct
+            }));
+            
+            // Shuffle for display (preserve correct flag)
+            const shuffledUnified = shuffle(unifiedOptions);
+            
+            // PHASE 4A: Debug logging
+            if (FLAGS.LOG_WORDBANK) {
+              console.log(
+                "%c[QUIZ - UNIFIED WORDBANK]",
+                "color: #9C27B0; font-weight: bold;",
+                {
+                  stepType: 'quiz',
+                  correctAnswerText,
+                  correctVocabId,
+                  learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
+                  vocabularyBankSize: vocabularyBank.length,
+                  unifiedOptions: unifiedOptionsText,
+                  usingUnifiedWordBank: true,
+                }
+              );
+            }
+            
+            return shuffledUnified;
+          } else {
+            console.warn('[QUIZ] WordBankService returned empty options, falling back to curriculum options');
+            // Fall through to old behavior
+          }
+        } else {
+          console.warn('[QUIZ] Vocabulary lookup failed, falling back to curriculum options');
+          // Fall through to old behavior
+        }
+      }
+    }
+    
+    // OLD BEHAVIOR: Flag OFF or fallback (curriculum options)
     // Convert string[] to QuizOption[] if needed
     const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
       ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
@@ -76,7 +187,13 @@ export function Quiz({
 
     // Fisher-Yates shuffle for proper randomization
     return shuffle(formattedOptions);
-  }, [optionsHash]); // Only re-shuffle if content actually changes
+  }, [
+    optionsHash,
+    vocabularyId,
+    learnedSignature,
+    vocabBankSignature,
+    FLAGS.USE_LEARNED_VOCAB_IN_QUIZ
+  ]); // Stable signatures prevent infinite re-renders
 
   const handleSelect = async (index: number) => {
     // Prevent multiple selections
