@@ -1,7 +1,7 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
-import { vocabQuiz, flashcard, input } from "./curriculum-helpers";
+import { vocabQuiz, flashcard, input, audioMeaning } from "./curriculum-helpers";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -86,27 +86,13 @@ export const curriculumData: Module[] = [
             data: {
               finglishText: "Salam chetori",
               expectedTranslation: "Hello how are you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chetori",
-              distractors: ["salam", "merci", "khodafez"]
-            }
-          },
-          vocabQuiz(vocabulary, "salam", "vocab-normal"),
+            maxWordBankSize: 10
+          }
+        },
+        audioMeaning("chetori"),
+        vocabQuiz(vocabulary, "salam", "vocab-normal"),
           flashcard(vocabulary, "khodafez"),
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "salam",
-              distractors: ["chetori", "merci", "khodafez"]
-            }
-          },
+          audioMeaning("salam"),
           {
             type: "text-sequence",
             points: 3,
@@ -116,25 +102,11 @@ export const curriculumData: Module[] = [
               maxWordBankSize: 10
             }
           },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khodafez",
-              distractors: ["salam", "chetori", "merci"]
-            }
-          },
-          vocabQuiz(vocabulary, "chetori", "vocab-reverse"),
-          flashcard(vocabulary, "merci"),
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "merci",
-              distractors: ["salam", "chetori", "khodafez"]
-            }
-          },
-          {
+          audioMeaning("khodafez"),
+        vocabQuiz(vocabulary, "chetori", "vocab-reverse"),
+        flashcard(vocabulary, "merci"),
+        audioMeaning("merci"),
+        {
             type: "audio-sequence",
             points: 3,
             data: {
@@ -264,27 +236,13 @@ export const curriculumData: Module[] = [
               expectedTranslation: "Hello how are you"
             }
           },
-          flashcard(vocabulary, "khoob"),
-          vocabQuiz(vocabulary, "khoob", "vocab-reverse"),
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "salam",
-              distractors: ["chetori", "merci", "khodafez"]
-            }
-          },
-          flashcard(vocabulary, "khoobam"),
-          vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khoobam",
-              distractors: ["khoob", "salam", "chetori"]
-            }
-          },
-          {
+        flashcard(vocabulary, "khoob"),
+        vocabQuiz(vocabulary, "khoob", "vocab-reverse"),
+        audioMeaning("salam"),
+        flashcard(vocabulary, "khoobam"),
+        vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
+        audioMeaning("khoobam"),
+        {
             type: "matching",
             points: 3,
             data: {
@@ -331,18 +289,11 @@ export const curriculumData: Module[] = [
                 { id: "slot2", text: "I'm Good" },
                 { id: "slot3", text: "How are you?" },
                 { id: "slot4", text: "Hello" }
-              ]
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "merci",
-              distractors: ["salam", "chetori", "khodafez"]
-            }
-          },
-          {
+            ]
+          }
+        },
+        audioMeaning("merci"),
+        {
             type: "final",
             points: 4,
             data: {
