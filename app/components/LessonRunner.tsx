@@ -796,61 +796,8 @@ export function LessonRunner({
     setTimeout(() => setIsNavigating(false), 300);
   };
 
-  // Render remediation content
-  if (isInRemediation && remediationQueue.length > 0) {
-    const currentWord = remediationQueue[0];
-    const vocabItem = findVocabularyById(currentWord);
-    
-    // Don't setState here - the useEffect above will handle cleanup
-    if (!vocabItem) {
-      return null; // Temporary render while useEffect cleans up
-    }
-
-    if (remediationStep === 'flashcard') {
-      return (
-        <>
-          <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
-          <Flashcard
-            vocabularyItem={vocabItem}
-            points={1}
-            onContinue={() => completeRemediation()}
-            onXpStart={createStepXpHandler()}
-            onVocabTrack={createVocabularyTracker()}
-            label="QUICK REVIEW"
-          />
-        </>
-      );
-    } else {
-      // DYNAMIC Quiz step for remediation - completely systemized
-      const remediationQuizData = generateRemediationQuiz(currentWord);
-      
-      // Don't setState here - the useEffect above will handle cleanup
-      if (!remediationQuizData) {
-        return null; // Temporary render while useEffect cleans up
-      }
-
-      return (
-        <>
-          <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
-          <Quiz
-            key={`remediation-quiz-${currentWord}-${quizAttemptCounter}`}
-            prompt={remediationQuizData.prompt}
-            options={remediationQuizData.options}
-            correct={0} // This will be ignored since we're passing QuizOption objects
-            points={2}
-            onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
-            onXpStart={createStepXpHandler()}
-            vocabularyId={currentWord}
-            onVocabTrack={createVocabularyTracker()}
-            label="PRACTICE AGAIN"
-            subtitle="Review this word one more time"
-          />
-        </>
-      );
-    }
-  }
-
   // PHASE 8 FIX: Memoize matching step resolution to prevent constant re-shuffling
+  // MUST be called before any early returns to satisfy React hooks rules
   const matchingStepData = useMemo(() => {
     if (step.type !== 'matching') return null;
     const matchingStep = step as MatchingStep;
@@ -905,6 +852,60 @@ export function LessonRunner({
       persianSequence: finalStep.data.conversationFlow?.persianSequence || []
     };
   }, [idx, step.type, (step as FinalStep).data?.lexemeRefs, (step as FinalStep).data?.words]);
+
+  // Render remediation content (AFTER hooks to satisfy React rules)
+  if (isInRemediation && remediationQueue.length > 0) {
+    const currentWord = remediationQueue[0];
+    const vocabItem = findVocabularyById(currentWord);
+    
+    // Don't setState here - the useEffect above will handle cleanup
+    if (!vocabItem) {
+      return null; // Temporary render while useEffect cleans up
+    }
+
+    if (remediationStep === 'flashcard') {
+      return (
+        <>
+          <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
+          <Flashcard
+            vocabularyItem={vocabItem}
+            points={1}
+            onContinue={() => completeRemediation()}
+            onXpStart={createStepXpHandler()}
+            onVocabTrack={createVocabularyTracker()}
+            label="QUICK REVIEW"
+          />
+        </>
+      );
+    } else {
+      // DYNAMIC Quiz step for remediation - completely systemized
+      const remediationQuizData = generateRemediationQuiz(currentWord);
+      
+      // Don't setState here - the useEffect above will handle cleanup
+      if (!remediationQuizData) {
+        return null; // Temporary render while useEffect cleans up
+      }
+
+      return (
+        <>
+          <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
+          <Quiz
+            key={`remediation-quiz-${currentWord}-${quizAttemptCounter}`}
+            prompt={remediationQuizData.prompt}
+            options={remediationQuizData.options}
+            correct={0} // This will be ignored since we're passing QuizOption objects
+            points={2}
+            onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
+            onXpStart={createStepXpHandler()}
+            vocabularyId={currentWord}
+            onVocabTrack={createVocabularyTracker()}
+            label="PRACTICE AGAIN"
+            subtitle="Review this word one more time"
+          />
+        </>
+      );
+    }
+  }
 
   return (
     <>
