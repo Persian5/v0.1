@@ -87,6 +87,15 @@ export const curriculumData: Module[] = [
           phonetic: ["Kh-oob", "khoo-BAHM"]
         });
         
+        // Review vocabulary from Lesson 1 for matching step
+        const lesson1Vocab = createVocabulary("module1-lesson1", {
+          ids: ["salam", "chetori", "khodafez", "merci"],
+          en: ["Hello", "How Are You?", "Goodbye", "Thank You"],
+          fa: ["سلام", "چطوری", "خداحافظ", "مرسی"],
+          finglish: ["Salam", "Chetori", "Khodafez", "Merci"],
+          phonetic: ["sah-LUHM", "che-TOH-ree", "kho-DUH-fez", "mer-SEE"]
+        });
+        
         return {
           id: "lesson2",
           title: "Basic Responses",
@@ -111,24 +120,7 @@ export const curriculumData: Module[] = [
               lessonType: "responses"
             }
           },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Chetori", slotId: "slot2" },
-                { id: "word3", text: "Merci", slotId: "slot3" },
-                { id: "word4", text: "Khodafez", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "How are you?" },
-                { id: "slot3", text: "Thank you" },
-                { id: "slot4", text: "Goodbye" }
-              ]
-            }
-          },
+          matching(lesson1Vocab, ["salam", "chetori", "merci", "khodafez"]),
           audioMeaning("chetori"),
           audioSequence(["salam", "chetori"], "Hello how are you"),
         flashcard(vocabulary, "khoob"),
