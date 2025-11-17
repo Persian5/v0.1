@@ -145,28 +145,15 @@ export const curriculumData: Module[] = [
           vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
           matching(vocabulary, ["khoob", "khoobam", "chetori", "salam"]),
         audioMeaning("merci"),
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "khoobam", text: "Khoobam", translation: "I'm good" },
-                { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
-              ],
-              targetWords: ["salam", "chetori", "khoobam", "merci", "khodafez"],
-              conversationFlow: {
-                description: "A polite conversation",
-                expectedPhrase: "Hello, how are you? I'm good, thank you, goodbye",
-                persianSequence: ["salam", "chetori", "khoobam", "merci", "khodafez"]
-              },
-              title: "Your Polite Conversation",
-              successMessage: "Perfect! You handled that polite conversation beautifully!",
-              incorrectMessage: "Almost there, try that conversation again!"
-            }
-          }
+          final(vocabulary, ["salam", "chetori", "khoobam", "merci", "khodafez"], 4, {
+            conversationFlow: {
+              description: "A polite conversation",
+              expectedPhrase: "Hello, how are you? I'm good, thank you, goodbye"
+            },
+            title: "Your Polite Conversation",
+            successMessage: "Perfect! You handled that polite conversation beautifully!",
+            incorrectMessage: "Almost there, try that conversation again!"
+          })
         ]
         };
       })(),
