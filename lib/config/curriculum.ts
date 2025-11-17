@@ -200,24 +200,12 @@ export const curriculumData: Module[] = [
           textSequence("Salam chetori khoobam", "Hello how are you I'm good", 3, 10),
           audioSequence(["khoobam", "merci"], "I'm good thank you"),
           vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Khoob", slotId: "slot1" },
-                { id: "word2", text: "Khoobam", slotId: "slot2" },
-                { id: "word3", text: "Chetori", slotId: "slot3" },
-                { id: "word4", text: "Salam", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Good" },
-                { id: "slot2", text: "I'm Good" },
-                { id: "slot3", text: "How are you?" },
-                { id: "slot4", text: "Hello" }
-            ]
-          }
-        },
+          matching([
+            { word: "Khoob", slot: "Good" },
+            { word: "Khoobam", slot: "I'm Good" },
+            { word: "Chetori", slot: "How are you?" },
+            { word: "Salam", slot: "Hello" }
+          ]),
         audioMeaning("merci"),
         {
             type: "final",
