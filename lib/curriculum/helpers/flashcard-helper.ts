@@ -1,6 +1,5 @@
 import { FlashcardStep } from "../../types";
 import { VocabularyItem } from "../../types";
-import { VocabularyService } from "../../services/vocabulary-service";
 
 /**
  * Internal helper function to generate flashcard steps
@@ -8,29 +7,20 @@ import { VocabularyService } from "../../services/vocabulary-service";
  * This is the implementation logic for flashcard step generation.
  * Exported for use by curriculum-helpers.ts wrapper.
  * 
- * Uses VocabularyService for global vocabulary lookup to support
- * flashcards for vocabulary from any lesson.
+ * IMPORTANT: Does NOT validate vocabulary during curriculum initialization
+ * to avoid circular dependencies. Validation happens at runtime in UI.
  * 
- * @param vocabulary - DEPRECATED: Kept for backward compatibility, not used (VocabularyService looks up vocab)
+ * @param vocabulary - DEPRECATED: Kept for backward compatibility, not used
  * @param vocabId - Vocabulary ID to display (e.g., "salam")
  * @param points - Points for the flashcard (default: 1)
- * @returns FlashcardStep with vocabularyId reference
+ * @returns FlashcardStep with vocabularyId reference (no validation)
  */
 export function flashcardHelper(
   vocabulary: VocabularyItem[],  // DEPRECATED: Not used, kept for backward compat
   vocabId: string,
   points: number = 1
 ): FlashcardStep {
-  // Look up vocabulary globally (supports cross-lesson flashcards)
-  const vocab = VocabularyService.findVocabularyById(vocabId);
-  
-  if (!vocab) {
-    throw new Error(
-      `[flashcardHelper] Vocabulary ID "${vocabId}" not found in curriculum. ` +
-      `Make sure the vocabulary exists in any lesson.`
-    );
-  }
-  
+  // NO VALIDATION - store raw ID, validation happens at runtime
   return {
     type: "flashcard",
     points,
