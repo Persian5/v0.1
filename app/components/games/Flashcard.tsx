@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
@@ -29,6 +29,7 @@ interface FlashcardProps {
     phonetic: string;
     audio?: string;
   }
+  vocabularyId?: string // PHASE 8 FIX: Fallback ID if vocabularyItem lookup fails
   points?: number
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
@@ -80,6 +81,7 @@ export function Flashcard({
   front,
   back,
   vocabularyItem,
+  vocabularyId,
   points = 2,
   onContinue,
   onXpStart,
@@ -90,6 +92,17 @@ export function Flashcard({
   label = "NEW WORD",
   subtitle
 }: FlashcardProps) {
+  // PHASE 8 FIX: Runtime lookup if vocabularyItem is missing but vocabularyId exists
+  const resolvedVocabularyItem = useMemo(() => {
+    if (vocabularyItem) return vocabularyItem;
+    if (!vocabularyId) return undefined;
+    try {
+      const { VocabularyService } = require('@/lib/services/vocabulary-service');
+      return VocabularyService.findVocabularyById(vocabularyId);
+    } catch {
+      return undefined;
+    }
+  }, [vocabularyItem, vocabularyId]);
   const [localFlip, setLocalFlip] = useState(false)
   const [localShowNext, setLocalShowNext] = useState(false)
   const [showXp, setShowXp] = useState(false)
@@ -113,9 +126,9 @@ export function Flashcard({
       
       // Only play Persian audio if we're already showing the Persian side (isFlipped = true)
       // This prevents playing Persian audio when English side is shown initially
-      if (isFlipped && vocabularyItem?.id) {
+      if (isFlipped && resolvedVocabularyItem?.id) {
         setIsPlayingAudio(true);
-        AudioService.playVocabularyAudio(vocabularyItem.id).then(() => {
+        AudioService.playVocabularyAudio(resolvedVocabularyItem.id).then(() => {
           setIsPlayingAudio(false);
         });
       } else if (isFlipped && front) {
@@ -129,19 +142,19 @@ export function Flashcard({
         }
       }
     }
-  }, [vocabularyItem?.id, front, isFlipped]);
+  }, [resolvedVocabularyItem?.id, front, isFlipped]);
 
   // Play audio when flip state changes
   useEffect(() => {
     // Only play audio if the flip state has actually changed
     if (isFlipped !== lastFlipState) {
       
-      if (vocabularyItem?.id) {
+      if (resolvedVocabularyItem?.id) {
         // Use AudioService for vocabulary-based flashcards (Persian only)
         if (isFlipped) {
           // Persian audio when showing finglish side
           setIsPlayingAudio(true);
-          AudioService.playVocabularyAudio(vocabularyItem.id).then(() => {
+          AudioService.playVocabularyAudio(resolvedVocabularyItem.id).then(() => {
             setIsPlayingAudio(false);
           });
         }
@@ -168,7 +181,7 @@ export function Flashcard({
         setHasBeenFlipped(true);
       }
     }
-  }, [isFlipped, vocabularyItem?.id, front, back, lastFlipState, hasBeenFlipped]);
+  }, [isFlipped, resolvedVocabularyItem?.id, front, back, lastFlipState, hasBeenFlipped]);
 
   const handleXpComplete = () => {
     // Reset local state
@@ -201,8 +214,8 @@ export function Flashcard({
     const timeSpentMs = Date.now() - startTime.current
     
     // Track vocabulary performance (flashcards are always "seen", counted as correct)
-    if (vocabularyItem?.id && onVocabTrack) {
-      onVocabTrack(vocabularyItem.id, vocabularyItem.en, true, timeSpentMs);
+    if (resolvedVocabularyItem?.id && onVocabTrack) {
+      onVocabTrack(resolvedVocabularyItem.id, resolvedVocabularyItem.en, true, timeSpentMs);
     }
     
     // Award XP and check if step was already completed
@@ -257,7 +270,7 @@ export function Flashcard({
               }`}
             >
               <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center px-2">
-                {front || vocabularyItem?.en}
+                {front || resolvedVocabularyItem?.en}
               </h2>
               <p className="text-xs xs:text-sm text-muted-foreground mt-1 sm:mt-2">Click to flip</p>
             </div>
@@ -269,7 +282,7 @@ export function Flashcard({
               }`}
             >
               <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-primary text-center px-2">
-                {back || vocabularyItem?.finglish}
+                {back || resolvedVocabularyItem?.finglish}
               </h2>
               <p className="text-xs xs:text-sm text-muted-foreground mt-1 sm:mt-2">Click to flip back</p>
               
@@ -311,7 +324,7 @@ export function Flashcard({
               }`}>🗣️</span>
                 
                 <span className="text-sm sm:text-base text-primary/90 font-semibold">
-                  {vocabularyItem?.phonetic || getPronunciation(back || "")}
+                  {resolvedVocabularyItem?.phonetic || getPronunciation(back || "")}
                 </span>
               </div>
             ) : (

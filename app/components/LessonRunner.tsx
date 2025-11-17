@@ -881,6 +881,31 @@ export function LessonRunner({
     };
   }, [idx, step.type, (step as MatchingStep).data?.lexemeRefs, (step as MatchingStep).data?.words]);
 
+  // PHASE 8 FIX: Memoize final step resolution to show actual words instead of IDs
+  const finalStepData = useMemo(() => {
+    if (step.type !== 'final') return null;
+    const finalStep = step as FinalStep;
+    const { GrammarService } = require('@/lib/services/grammar-service');
+    
+    if (finalStep.data.lexemeRefs) {
+      const resolved = finalStep.data.lexemeRefs.map(ref => GrammarService.resolve(ref));
+      return {
+        words: resolved.map((lexeme, index) => ({
+          id: lexeme.id,
+          text: lexeme.finglish,
+          translation: lexeme.en
+        })),
+        targetWords: resolved.map(lexeme => lexeme.id),
+        persianSequence: resolved.map(lexeme => lexeme.id)
+      };
+    }
+    return {
+      words: finalStep.data.words,
+      targetWords: finalStep.data.targetWords,
+      persianSequence: finalStep.data.conversationFlow?.persianSequence || []
+    };
+  }, [idx, step.type, (step as FinalStep).data?.lexemeRefs, (step as FinalStep).data?.words]);
+
   return (
     <>
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
@@ -934,6 +959,7 @@ export function LessonRunner({
               ? safeFindVocabularyById((step as FlashcardStep).data.vocabularyId)
               : undefined
           }
+          vocabularyId={(step as FlashcardStep).data.vocabularyId} // PHASE 8 FIX: Pass ID for runtime lookup fallback
           points={step.points}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
@@ -995,16 +1021,19 @@ export function LessonRunner({
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
         />
-      ) : step.type === 'final' ? (
+      ) : step.type === 'final' && finalStepData ? (
         <FinalChallenge
           key={`final-${idx}`}
-          words={(step as FinalStep).data.words}
-          targetWords={(step as FinalStep).data.targetWords}
-          title={(step as FinalStep).data.title}
-          description={(step as FinalStep).data.description}
-          successMessage={(step as FinalStep).data.successMessage}
-          incorrectMessage={(step as FinalStep).data.incorrectMessage}
-          conversationFlow={(step as FinalStep).data.conversationFlow}
+          words={finalStepData.words}
+          targetWords={finalStepData.targetWords}
+          title={(step as FinalStep).title}
+          description={(step as FinalStep).description}
+          successMessage={(step as FinalStep).successMessage}
+          incorrectMessage={(step as FinalStep).incorrectMessage}
+          conversationFlow={{
+            ...(step as FinalStep).data.conversationFlow,
+            persianSequence: finalStepData.persianSequence
+          }}
           points={step.points}
           learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
           vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for filtering
