@@ -93,10 +93,10 @@ export const curriculumData: Module[] = [
         audioSequence(["merci", "khodafez"], "Thank you goodbye"),
           input("How do you say 'Goodbye' in Persian?", "Khodafez"),
           matching([
-            { word: "Merci", slot: "Thank you" },
-            { word: "Khodafez", slot: "Goodbye" },
-            { word: "Salam", slot: "Hello" },
-            { word: "Chetori", slot: "How are you?" }
+            ["Merci", "Thank you"],
+            ["Khodafez", "Goodbye"],
+            ["Salam", "Hello"],
+            ["Chetori", "How are you?"]
           ]),
           {
             type: "final",
@@ -194,8 +194,8 @@ export const curriculumData: Module[] = [
         vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
         audioMeaning("khoobam"),
         matching([
-          { word: "Khoob", slot: "Good" },
-          { word: "Khoobam", slot: "I'm Good" }
+          ["Khoob", "Good"],
+          ["Khoobam", "I'm Good"]
         ]),
           textSequence("Salam chetori khoobam", "Hello how are you I'm good", 3, 10),
           audioSequence(["khoobam", "merci"], "I'm good thank you"),
