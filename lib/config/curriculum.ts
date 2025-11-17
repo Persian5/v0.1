@@ -1,7 +1,7 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
-import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence } from "./curriculum-helpers";
+import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence, matching } from "./curriculum-helpers";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -92,24 +92,12 @@ export const curriculumData: Module[] = [
         audioMeaning("merci"),
         audioSequence(["merci", "khodafez"], "Thank you goodbye"),
           input("How do you say 'Goodbye' in Persian?", "Khodafez"),
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Merci", slotId: "slot1" },
-                { id: "word2", text: "Khodafez", slotId: "slot2" },
-                { id: "word3", text: "Salam", slotId: "slot3" },
-                { id: "word4", text: "Chetori", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Thank you" },
-                { id: "slot2", text: "Goodbye" },
-                { id: "slot3", text: "Hello" },
-                { id: "slot4", text: "How are you?" }
-              ]
-            }
-          },
+          matching([
+            { word: "Merci", slot: "Thank you" },
+            { word: "Khodafez", slot: "Goodbye" },
+            { word: "Salam", slot: "Hello" },
+            { word: "Chetori", slot: "How are you?" }
+          ]),
           {
             type: "final",
             points: 4,

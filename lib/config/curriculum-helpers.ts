@@ -14,6 +14,7 @@ import { inputHelper } from "../curriculum/helpers/input-helper";
 import { audioMeaningHelper } from "../curriculum/helpers/audio-meaning-helper";
 import { audioSequenceHelper } from "../curriculum/helpers/audio-sequence-helper";
 import { textSequenceHelper } from "../curriculum/helpers/text-sequence-helper";
+import { matchingHelper, type MatchingPair } from "../curriculum/helpers/matching-helper";
 
 /**
  * Generate a vocab quiz step
@@ -111,3 +112,16 @@ export const textSequence = (
   points: Parameters<typeof textSequenceHelper>[2] = 3,
   maxWordBankSize?: Parameters<typeof textSequenceHelper>[3]
 ) => textSequenceHelper(finglishText, expectedTranslation, points, maxWordBankSize);
+
+/**
+ * Generate a matching step
+ * 
+ * Presents words and slots that users drag to match Persian words with English translations.
+ * 
+ * @param pairs - Array of word-slot pairs (e.g., [{word: "Salam", slot: "Hello"}, ...])
+ * @param points - Points for the matching exercise (default: 3)
+ */
+export const matching = (
+  pairs: MatchingPair[],
+  points: Parameters<typeof matchingHelper>[1] = 3
+) => matchingHelper(pairs, points);
