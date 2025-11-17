@@ -85,15 +85,7 @@ export const curriculumData: Module[] = [
         vocabQuiz(vocabulary, "salam", "vocab-normal"),
           flashcard(vocabulary, "khodafez"),
           audioMeaning("salam"),
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam khodafez",
-              expectedTranslation: "Hello goodbye",
-              maxWordBankSize: 10
-            }
-          },
+          textSequence("Salam khodafez", "Hello goodbye", 3, 10),
           audioMeaning("khodafez"),
         vocabQuiz(vocabulary, "chetori", "vocab-reverse"),
         flashcard(vocabulary, "merci"),
@@ -227,15 +219,7 @@ export const curriculumData: Module[] = [
               ]
             }
           },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam chetori khoobam",
-              expectedTranslation: "Hello how are you I'm good",
-              maxWordBankSize: 10
-            }
-          },
+          textSequence("Salam chetori khoobam", "Hello how are you I'm good", 3, 10),
           audioSequence(["khoobam", "merci"], "I'm good thank you"),
           vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
           {
