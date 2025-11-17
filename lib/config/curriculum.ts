@@ -433,7 +433,7 @@ export const curriculumData: Module[] = [
             ], {
               conversationFlow: {
                 description: "Greet someone and respond that you're doing well.",
-                expectedPhrase: "Salam, chetori? Khoobam merci"
+                expectedPhrase: "Hello, how are you? I'm good, thank you"
               },
               title: "Your Mini Conversation"
             })
