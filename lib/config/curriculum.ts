@@ -1,7 +1,7 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
-import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence, matching } from "./curriculum-helpers";
+import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence, matching, final } from "./curriculum-helpers";
 import { createVocabulary } from "./vocabulary-builder";
 
 // Define all modules, lessons, and their content
@@ -67,27 +67,15 @@ export const curriculumData: Module[] = [
         audioSequence(["merci", "khodafez"], "Thank you goodbye"),
           input("How do you say 'Goodbye' in Persian?", "Khodafez"),
           matching(vocabulary, ["merci", "khodafez", "salam", "chetori"]),
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
-              ],
-              targetWords: ["salam", "chetori", "merci", "khodafez"],
-              conversationFlow: {
-                description: "A polite greeting conversation",
-                expectedPhrase: "Hello, how are you, thank you, goodbye",
-                persianSequence: ["salam", "chetori", "merci", "khodafez"]
-              },
-              title: "Your First Conversation",
-              successMessage: "Perfect! You can greet someone in Persian!",
-              incorrectMessage: "Almost there, try that conversation again!"
-            }
-          }
+          final(vocabulary, ["salam", "chetori", "merci", "khodafez"], 4, {
+            conversationFlow: {
+              description: "A polite greeting conversation",
+              expectedPhrase: "Hello, how are you, thank you, goodbye"
+            },
+            title: "Your First Conversation",
+            successMessage: "Perfect! You can greet someone in Persian!",
+            incorrectMessage: "Almost there, try that conversation again!"
+          })
         ]
         };
       })(),

@@ -15,6 +15,7 @@ import { audioMeaningHelper } from "../curriculum/helpers/audio-meaning-helper";
 import { audioSequenceHelper } from "../curriculum/helpers/audio-sequence-helper";
 import { textSequenceHelper } from "../curriculum/helpers/text-sequence-helper";
 import { matchingHelper } from "../curriculum/helpers/matching-helper";
+import { finalHelper, type FinalStepOptions } from "../curriculum/helpers/final-helper";
 
 /**
  * Generate a vocab quiz step
@@ -128,3 +129,21 @@ export const matching = (
   vocabIds: Parameters<typeof matchingHelper>[1],
   points: Parameters<typeof matchingHelper>[2] = 3
 ) => matchingHelper(vocabulary, vocabIds, points);
+
+/**
+ * Generate a final challenge step
+ * 
+ * Presents a conversation challenge where users arrange words in order.
+ * Auto-generates words array, targetWords, and persianSequence from vocabulary IDs.
+ * 
+ * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
+ * @param vocabIds - Array of vocabulary IDs in target order (e.g., ["salam", "chetori", "merci", "khodafez"])
+ * @param points - Points for the final challenge (default: 4)
+ * @param options - Optional custom fields (title, messages, conversationFlow)
+ */
+export const final = (
+  vocabulary: Parameters<typeof finalHelper>[0],
+  vocabIds: Parameters<typeof finalHelper>[1],
+  points: Parameters<typeof finalHelper>[2] = 4,
+  options?: FinalStepOptions
+) => finalHelper(vocabulary, vocabIds, points, options);
