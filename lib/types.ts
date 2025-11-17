@@ -280,7 +280,8 @@ export interface GrammarFillBlankStep extends BaseStep {
 export interface AudioMeaningStep extends BaseStep {
   type: 'audio-meaning';
   data: {
-    vocabularyId: string;  // The target vocabulary item to test
+    vocabularyId: string;  // The target vocabulary item to test (base vocab for tracking)
+    lexemeId?: string;     // Optional: surface form ID for grammar forms (e.g., "khoobam")
     distractors: string[]; // Other vocabulary IDs to use as wrong answers
     autoPlay?: boolean;    // Whether to auto-play audio on load (default: true)
   };
