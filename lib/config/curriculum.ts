@@ -11,8 +11,8 @@ export const curriculumData: Module[] = [
     title: "Module 1: Greetings & Politeness",
     description: "Start a conversation the right way. Learn how to say hello, goodbye, thank you, please, and the difference between formal and casual tone.",
     emoji: "👋",
-    lessonCount: 5,
-    estimatedTime: "25 minutes",
+    lessonCount: 6,
+    estimatedTime: "30 minutes",
     available: true,
     lessons: [
       // Module 1 Lesson 1
@@ -137,8 +137,71 @@ export const curriculumData: Module[] = [
         ]
         };
       })(),
+      // Module 1 Lesson 3
+      (() => {
+        const vocabulary = createVocabulary("module1-lesson3", {
+          ids: ["baleh", "na"],
+          en: ["Yes", "No"],
+          fa: ["بله", "نه"],
+          finglish: ["Baleh", "Na"],
+          phonetic: ["ba-LEH", "nah"]
+        });
+        
+        return {
+          id: "lesson3",
+          title: "Yes, No & Basic Responses",
+          description: "Today you'll learn how to say yes and no in Persian, and use them in everyday conversations.",
+          emoji: "👋",
+          progress: 0,
+          locked: false,
+          vocabulary,
+        steps: [
+          {
+            type: "welcome",
+            title: "Yes, No & Basic Responses",
+            description: "Today you'll learn how to say yes and no in Persian, and use them in everyday conversations.",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn 'yes' and 'no'",
+                "Use basic responses",
+                "Combine yes/no with greetings",
+                "Practice natural conversation flow"
+              ],
+              lessonType: "responses"
+            }
+          },
+          textSequence("Salam, Chetori, Khoobam, Merci", "Hello, how are you, I'm good, thank you"),
+          audioMeaning("khodafez"),
+          flashcard(vocabulary, "baleh"),
+          flashcard(vocabulary, "na"),
+          matching(["baleh", "na"]),
+          audioMeaning("baleh"),
+          matching(["khodafez", "salam", "khoobam", "chetori"]),
+          audioMeaning("na"),
+          vocabQuiz(vocabulary, "baleh", "vocab-normal"),
+          audioSequence(["baleh", "merci"], "Yes thank you"),
+          audioMeaning("khoob"),
+          input("How do you say 'Yes' in Persian?", "Baleh"),
+          vocabQuiz(vocabulary, "na", "vocab-normal"),
+          audioSequence(["na", "merci"], "No thank you"),
+          textSequence("Salam Chetori", "Hello how are you"),
+          audioSequence(["khoobam", "merci"], "I'm good thank you"),
+          vocabQuiz(vocabulary, "khoob", "vocab-reverse"),
+          matching(["baleh", "na", "chetori", "khodafez"]),
+          textSequence("Na Merci Khoobam", "No thank you I'm good"),
+          final(vocabulary, ["salam", "na", "merci", "khoobam", "khodafez"], {
+            conversationFlow: {
+              description: "A conversation using yes, no, and basic responses",
+              expectedPhrase: "Hello, no, thank you, I'm good, goodbye"
+            },
+            title: "Your Basic Conversation"
+          })
+        ]
+        };
+      })(),
       {
-        id: "lesson3",
+        id: "lesson4",
         title: "Basic Pronouns and Question Words",
         description: "Master essential pronouns (I, You) and question words (What, Name)",
         emoji: "🧑‍💼",
@@ -623,7 +686,7 @@ export const curriculumData: Module[] = [
         ]
       },
       {
-        id: "lesson4",
+        id: "lesson5",
         title: "Complete Conversations & Meeting People",
         description: "Put it all together! Practice full conversations and learn to end introductions politely",
         emoji: "💬",
@@ -636,7 +699,7 @@ export const curriculumData: Module[] = [
             fa: "خوشبختم",
             finglish: "Khoshbakhtam",
             phonetic: "khosh-BAHKH-tam",
-            lessonId: "module1-lesson4"
+            lessonId: "module1-lesson5"
           }
         ],
         steps: [
@@ -877,7 +940,7 @@ export const curriculumData: Module[] = [
         ]
       },
       {
-        id: "lesson5",
+        id: "lesson6",
         title: "Story Mode: Meeting Someone New",
         description: "Practice your greetings in a real conversation with Sara at a friend's house",
         emoji: "🗣️",
