@@ -35,7 +35,7 @@ export interface QuizProps {
 }
 
 export function Quiz({ 
-  prompt,
+  prompt: rawPrompt,
   options,
   correct = 0,
   points = 2,
@@ -59,6 +59,33 @@ export function Quiz({
   
   // Time tracking for analytics
   const startTime = useRef(Date.now())
+  
+  // PHASE 8 FIX: Generate prompt at runtime if empty (avoids circular dependency during curriculum init)
+  const prompt = useMemo(() => {
+    if (rawPrompt && rawPrompt.trim() !== '') {
+      return rawPrompt; // Use provided prompt if exists
+    }
+    
+    // Generate prompt from vocabularyId + quizType
+    if (!vocabularyId) {
+      return "Select the correct answer"; // Fallback
+    }
+    
+    const vocab = VocabularyService.findVocabularyById(vocabularyId);
+    if (!vocab) {
+      console.warn(`[Quiz] Vocabulary ID "${vocabularyId}" not found`);
+      return "Select the correct answer"; // Fallback
+    }
+    
+    // Generate prompt based on quiz type
+    if (quizType === 'vocab-reverse') {
+      // English prompt → Persian options
+      return `Which means '${vocab.en}'?`;
+    } else {
+      // vocab-normal (default): Persian prompt → English options
+      return `What does ${vocab.finglish} mean?`;
+    }
+  }, [rawPrompt, vocabularyId, quizType]);
   
   // Reset tracking flag when vocabulary changes (new step)
   useEffect(() => {
