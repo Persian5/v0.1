@@ -1,7 +1,7 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
-import { vocabQuiz, flashcard, input, audioMeaning, audioSequence } from "./curriculum-helpers";
+import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence } from "./curriculum-helpers";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -80,16 +80,8 @@ export const curriculumData: Module[] = [
           flashcard(vocabulary, "salam"),
           flashcard(vocabulary, "chetori"),
           vocabQuiz(vocabulary, "salam", "vocab-reverse"),
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam chetori",
-              expectedTranslation: "Hello how are you",
-            maxWordBankSize: 10
-          }
-        },
-        audioMeaning("chetori"),
+          textSequence("Salam chetori", "Hello how are you", 3, 10),
+          audioMeaning("chetori"),
         vocabQuiz(vocabulary, "salam", "vocab-normal"),
           flashcard(vocabulary, "khodafez"),
           audioMeaning("salam"),
