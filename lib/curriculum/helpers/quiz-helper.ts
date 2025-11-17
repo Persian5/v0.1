@@ -1,5 +1,6 @@
 import { QuizStep } from "../../types";
 import { VocabularyItem } from "../../types";
+import { VocabularyService } from "../../services/vocabulary-service";
 
 /**
  * Internal helper function to generate vocab quiz steps
@@ -7,25 +8,28 @@ import { VocabularyItem } from "../../types";
  * This is the implementation logic for quiz step generation.
  * Exported for use by curriculum-helpers.ts wrapper.
  * 
- * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
+ * Uses VocabularyService for global vocabulary lookup to support
+ * quizzing on vocabulary from previous lessons.
+ * 
+ * @param vocabulary - DEPRECATED: Kept for backward compatibility, not used (VocabularyService looks up vocab)
  * @param vocabId - Vocabulary ID to test (e.g., "salam")
  * @param quizType - Type of quiz: "vocab-normal" (Persian → English) or "vocab-reverse" (English → Persian)
  * @param points - Points for the quiz (default: 2)
  * @returns QuizStep with auto-generated prompt and empty options
  */
 export function quizHelper(
-  vocabulary: VocabularyItem[],
+  vocabulary: VocabularyItem[],  // DEPRECATED: Not used, kept for backward compat
   vocabId: string,
   quizType: 'vocab-normal' | 'vocab-reverse',
   points: number = 2
 ): QuizStep {
-  // Find vocabulary item
-  const vocab = vocabulary.find(v => v.id === vocabId);
+  // Look up vocabulary globally (supports cross-lesson quizzes)
+  const vocab = VocabularyService.findVocabularyById(vocabId);
   
   if (!vocab) {
     throw new Error(
-      `[quizHelper] Vocabulary ID "${vocabId}" not found in vocabulary array. ` +
-      `Available IDs: ${vocabulary.map(v => v.id).join(', ')}`
+      `[quizHelper] Vocabulary ID "${vocabId}" not found in curriculum. ` +
+      `Make sure the vocabulary exists in any lesson.`
     );
   }
   
@@ -53,4 +57,3 @@ export function quizHelper(
     }
   };
 }
-
