@@ -72,9 +72,7 @@ export const curriculumData: Module[] = [
               description: "A polite greeting conversation",
               expectedPhrase: "Hello, how are you, thank you, goodbye"
             },
-            title: "Your First Conversation",
-            successMessage: "Perfect! You can greet someone in Persian!",
-            incorrectMessage: "Almost there, try that conversation again!"
+            title: "Your First Conversation"
           })
         ]
         };
@@ -150,9 +148,7 @@ export const curriculumData: Module[] = [
               description: "A polite conversation",
               expectedPhrase: "Hello, how are you? I'm good, thank you, goodbye"
             },
-            title: "Your Polite Conversation",
-            successMessage: "Perfect! You handled that polite conversation beautifully!",
-            incorrectMessage: "Almost there, try that conversation again!"
+            title: "Your Polite Conversation"
           })
         ]
         };

@@ -4,13 +4,14 @@ import { FinalStep, VocabularyItem } from "../../types";
  * Options for final step generation
  */
 export interface FinalStepOptions {
-  conversationFlow?: {
+  conversationFlow: {
     description: string;
     expectedPhrase: string;
     // persianSequence is auto-generated from vocabIds
   };
   title?: string;
   description?: string;
+  // successMessage and incorrectMessage have defaults - only override if needed
   successMessage?: string;
   incorrectMessage?: string;
 }
@@ -66,14 +67,16 @@ export function finalHelper(
   // Auto-generate persianSequence (same as vocabIds in order)
   const persianSequence = [...vocabIds];
 
-  // Build conversationFlow if provided
-  const conversationFlow = options?.conversationFlow
-    ? {
-        description: options.conversationFlow.description,
-        expectedPhrase: options.conversationFlow.expectedPhrase,
-        persianSequence // Auto-generated from vocabIds
-      }
-    : undefined;
+  // Default messages (used unless overridden)
+  const defaultSuccessMessage = "Perfect! You can greet someone in Persian!";
+  const defaultIncorrectMessage = "Almost there, try that conversation again!";
+
+  // Build conversationFlow (required)
+  const conversationFlow = {
+    description: options.conversationFlow.description,
+    expectedPhrase: options.conversationFlow.expectedPhrase,
+    persianSequence // Auto-generated from vocabIds
+  };
 
   return {
     type: "final",
@@ -81,11 +84,11 @@ export function finalHelper(
     data: {
       words,
       targetWords,
-      ...(conversationFlow && { conversationFlow }),
+      conversationFlow,
       ...(options?.title && { title: options.title }),
       ...(options?.description && { description: options.description }),
-      ...(options?.successMessage && { successMessage: options.successMessage }),
-      ...(options?.incorrectMessage && { incorrectMessage: options.incorrectMessage })
+      successMessage: options?.successMessage || defaultSuccessMessage,
+      incorrectMessage: options?.incorrectMessage || defaultIncorrectMessage
     }
   };
 }
