@@ -552,6 +552,14 @@ export function LessonRunner({
   }, [idx, steps, user?.id, moduleId, lessonId, isInRemediation, incorrectAttempts]);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Get current step BEFORE hooks (needed for useMemo hooks)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  // CRITICAL: Define step BEFORE useMemo hooks that reference it
+  // Guard against idx >= steps.length to prevent undefined access
+  const step = idx < steps.length ? steps[idx] : null;
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Early returns (after all hooks)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -559,8 +567,6 @@ export function LessonRunner({
   if (idx >= steps.length && !isInRemediation && !storyCompleted) {
     return null;
   }
-
-  const step = steps[idx]
   
   // Guard: if step is undefined (edge case during navigation), return null
   if (!step) {
@@ -799,7 +805,7 @@ export function LessonRunner({
   // PHASE 8 FIX: Memoize matching step resolution to prevent constant re-shuffling
   // MUST be called before any early returns to satisfy React hooks rules
   const matchingStepData = useMemo(() => {
-    if (step.type !== 'matching') return null;
+    if (!step || step.type !== 'matching') return null;
     const matchingStep = step as MatchingStep;
     const { GrammarService } = require('@/lib/services/grammar-service');
     
@@ -826,11 +832,11 @@ export function LessonRunner({
       words: matchingStep.data.words,
       slots: matchingStep.data.slots
     };
-  }, [idx, step.type, (step as MatchingStep).data?.lexemeRefs, (step as MatchingStep).data?.words]);
+  }, [idx, step?.type, (step as MatchingStep)?.data?.lexemeRefs, (step as MatchingStep)?.data?.words]);
 
   // PHASE 8 FIX: Memoize final step resolution to show actual words instead of IDs
   const finalStepData = useMemo(() => {
-    if (step.type !== 'final') return null;
+    if (!step || step.type !== 'final') return null;
     const finalStep = step as FinalStep;
     const { GrammarService } = require('@/lib/services/grammar-service');
     
@@ -851,7 +857,7 @@ export function LessonRunner({
       targetWords: finalStep.data.targetWords,
       persianSequence: finalStep.data.conversationFlow?.persianSequence || []
     };
-  }, [idx, step.type, (step as FinalStep).data?.lexemeRefs, (step as FinalStep).data?.words]);
+  }, [idx, step?.type, (step as FinalStep)?.data?.lexemeRefs, (step as FinalStep)?.data?.words]);
 
   // Render remediation content (AFTER hooks to satisfy React rules)
   if (isInRemediation && remediationQueue.length > 0) {
@@ -1107,6 +1113,7 @@ export function LessonRunner({
         <AudioMeaning
           key={`audio-meaning-${idx}`}
           vocabularyId={(step as AudioMeaningStep).data.vocabularyId}
+          lexemeRef={(step as AudioMeaningStep).data.lexemeRef} // NEW: Pass LexemeRef for grammar forms
           distractors={(step as AudioMeaningStep).data.distractors}
           vocabularyBank={allCurriculumVocab}
           points={step.points}
@@ -1122,6 +1129,7 @@ export function LessonRunner({
         <AudioSequence
           key={`audio-sequence-${idx}`}
           sequence={(step as AudioSequenceStep).data.sequence}
+          lexemeSequence={(step as AudioSequenceStep).data.lexemeSequence} // NEW: Pass LexemeRef[] for grammar forms
           vocabularyBank={allVocab}
           points={step.points}
           autoPlay={(step as AudioSequenceStep).data.autoPlay}

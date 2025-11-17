@@ -371,11 +371,53 @@ export class WordBankService {
     let correctWordBankItems: WordBankItem[] = [];
     
     if (expectedTranslation) {
-      // TextSequence: Extract semantic units directly from expectedTranslation
-      correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, availableVocab, sequenceIds).map(item => ({
-        ...item,
-        isCorrect: true
-      }));
+      // CRITICAL FIX: Check if expectedTranslation is a grammar-generated form
+      // Grammar forms have IDs like "badam" that aren't in vocabularyBank
+      // If sequenceId is not in vocabularyBank but expectedTranslation is provided, treat as single unit
+      if (sequenceIds && sequenceIds.length === 1) {
+        const sequenceId = sequenceIds[0];
+        const vocab = vocabularyBank.find(v => v.id === sequenceId);
+        
+        // If vocab not found in vocabularyBank, it's likely a grammar-generated form
+        // Also check if expectedTranslation is multi-word (phrases like "I'm bad")
+        const isMultiWord = expectedTranslation.trim().split(/\s+/).length > 1;
+        
+        if (!vocab && isMultiWord) {
+          // Grammar-generated form - treat expectedTranslation as single semantic unit
+          // Extract baseId from grammar form ID (e.g., "badam" → "bad")
+          const baseId = sequenceId.replace(/am$|i$|e$|im$|et$|and$/, '');
+          const baseVocab = vocabularyBank.find(v => v.id === baseId);
+          
+          correctWordBankItems = [{
+            vocabularyId: sequenceId,
+            wordText: this.normalizeVocabEnglish(expectedTranslation),
+            isPhrase: true,
+            semanticGroup: baseVocab?.semanticGroup || getSemanticGroup(baseId),
+            isCorrect: true
+          }];
+        } else if (vocab && this.normalizeVocabEnglish(vocab.en) === this.normalizeVocabEnglish(expectedTranslation)) {
+          // Matches existing vocab exactly - treat as single unit (could be phrase vocab)
+          correctWordBankItems = [{
+            vocabularyId: sequenceId,
+            wordText: this.normalizeVocabEnglish(expectedTranslation),
+            isPhrase: expectedTranslation.split(' ').length > 1,
+            semanticGroup: vocab.semanticGroup || getSemanticGroup(sequenceId),
+            isCorrect: true
+          }];
+        } else {
+          // Not a grammar form or doesn't match - use normal extraction
+          correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, availableVocab, sequenceIds).map(item => ({
+            ...item,
+            isCorrect: true
+          }));
+        }
+      } else {
+        // Multiple sequenceIds or no sequenceIds - use normal extraction
+        correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, availableVocab, sequenceIds).map(item => ({
+          ...item,
+          isCorrect: true
+        }));
+      }
     } else if (sequenceIds && sequenceIds.length > 0) {
       // AudioSequence: Get English translations from availableVocab
       // Normalize slash-separated translations (use first part)

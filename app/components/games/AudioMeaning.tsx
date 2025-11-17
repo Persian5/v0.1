@@ -3,16 +3,18 @@ import { Button } from "@/components/ui/button"
 import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
-import { VocabularyItem } from "@/lib/types"
+import { VocabularyItem, LexemeRef, ResolvedLexeme } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { shuffle } from "@/lib/utils"
 import { FLAGS } from "@/lib/flags"
 import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
+import { GrammarService } from "@/lib/services/grammar-service"
 
 interface AudioMeaningProps {
   vocabularyId: string
+  lexemeRef?: LexemeRef // NEW: Optional LexemeRef for grammar forms (takes precedence over vocabularyId)
   distractors: string[] // Other vocabulary IDs for wrong answers
   vocabularyBank: VocabularyItem[] // All available vocabulary for this lesson
   points?: number
@@ -27,6 +29,7 @@ interface AudioMeaningProps {
 
 export function AudioMeaning({
   vocabularyId,
+  lexemeRef, // NEW: Optional LexemeRef for grammar forms
   distractors,
   vocabularyBank,
   points = 2,
@@ -49,46 +52,83 @@ export function AudioMeaning({
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   const [hasTracked, setHasTracked] = useState(false) // Prevent duplicate tracking
   
-  // Track if we've already shuffled for this vocabularyId (prevents double shuffle)
-  const lastShuffledVocabId = useRef<string | null>(null)
+  // Track if we've already shuffled for this question (prevents double shuffle)
+  const lastShuffledKey = useRef<string | null>(null)
   
   // Time tracking for analytics
   const startTime = useRef(Date.now())
 
-  // Find the target vocabulary item
-  const targetVocabulary = vocabularyBank.find(v => v.id === vocabularyId)
-  
-  // Fallback: if not found in bank, try to look it up from VocabularyService
-  const targetVocabularyWithFallback = targetVocabulary || (() => {
-    if (!vocabularyId) return null
-    try {
-      const { VocabularyService } = require('@/lib/services/vocabulary-service')
-      return VocabularyService.findVocabularyById(vocabularyId)
-    } catch {
-      return null
+  // CRITICAL: Resolve LexemeRef if provided, otherwise use vocabularyId
+  const resolvedLexeme: ResolvedLexeme | null = useMemo(() => {
+    if (lexemeRef) {
+      try {
+        return GrammarService.resolve(lexemeRef);
+      } catch (error) {
+        console.error('[AudioMeaning] Failed to resolve lexemeRef:', error);
+        return null;
+      }
     }
-  })()
+    
+    // Fallback to vocabularyId lookup
+    const vocab = vocabularyBank.find(v => v.id === vocabularyId) || (() => {
+      try {
+        const { VocabularyService } = require('@/lib/services/vocabulary-service')
+        return VocabularyService.findVocabularyById(vocabularyId)
+      } catch {
+        return null
+      }
+    })();
+    
+    if (!vocab) return null;
+    
+    // Convert VocabularyItem to ResolvedLexeme format
+    return {
+      id: vocab.id,
+      baseId: vocab.id,
+      en: vocab.en,
+      fa: vocab.fa,
+      finglish: vocab.finglish,
+      phonetic: vocab.phonetic,
+      lessonId: vocab.lessonId,
+      semanticGroup: vocab.semanticGroup,
+      isGrammarForm: false
+    };
+  }, [lexemeRef, vocabularyId, vocabularyBank]);
+
+  // Use resolved lexeme for display and audio
+  const targetVocabularyWithFallback = resolvedLexeme ? {
+    id: resolvedLexeme.id,
+    en: resolvedLexeme.en,
+    fa: resolvedLexeme.fa,
+    finglish: resolvedLexeme.finglish,
+    phonetic: resolvedLexeme.phonetic,
+    lessonId: resolvedLexeme.lessonId,
+    semanticGroup: resolvedLexeme.semanticGroup
+  } as VocabularyItem : null;
   
-  // Define playTargetAudio callback before useEffects that use it
+  // Define playTargetAudio callback - uses playLexeme for grammar forms
   const playTargetAudio = useCallback(async () => {
-    if (targetVocabularyWithFallback) {
+    if (resolvedLexeme) {
       setIsPlayingAudio(true)
-      const success = await AudioService.playVocabularyAudio(targetVocabularyWithFallback.id)
+      const success = await AudioService.playLexeme(resolvedLexeme)
       setIsPlayingAudio(false)
       if (success) {
         setHasPlayedAudio(true)
       }
     }
-  }, [targetVocabularyWithFallback])
+  }, [resolvedLexeme])
   
-  // Initialize shuffled options - ONLY shuffle once per question (when vocabularyId changes)
+  // Initialize shuffled options - ONLY shuffle once per question (when resolved lexeme changes)
   useEffect(() => {
-    // Only shuffle if this is a NEW question (vocabularyId changed)
-    if (vocabularyId === lastShuffledVocabId.current) {
+    if (!resolvedLexeme) return;
+    
+    // Use resolved lexeme ID as unique key for shuffle tracking
+    const shuffleKey = resolvedLexeme.id;
+    if (shuffleKey === lastShuffledKey.current) {
       return // Already shuffled for this question, don't shuffle again
     }
     
-    lastShuffledVocabId.current = vocabularyId
+    lastShuffledKey.current = shuffleKey
     
     // PHASE 5: Use unified WordBankService when flag is ON
     if (FLAGS.USE_LEARNED_VOCAB_IN_AUDIO_MEANING) {
@@ -99,6 +139,9 @@ export function AudioMeaning({
           "color: #FF9800; font-weight: bold;",
           {
             stepType: 'audio-meaning',
+            resolvedLexemeId: resolvedLexeme.id,
+            resolvedLexemeEn: resolvedLexeme.en,
+            isGrammarForm: resolvedLexeme.isGrammarForm,
             learnedVocabIds: learnedSoFar?.vocabIds || [],
             learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
             vocabularyBankSize: vocabularyBank.length,
@@ -108,10 +151,13 @@ export function AudioMeaning({
       }
       
       // Generate options using WordBankService (semantic distractors)
+      // Use resolved lexeme's English translation as correct answer
+      const correctAnswerText = WordBankService.normalizeVocabEnglish(resolvedLexeme.en);
+      
       const wordBankResult = WordBankService.generateWordBank({
-        expectedTranslation: undefined,
+        expectedTranslation: resolvedLexeme.en, // Use resolved English translation
         vocabularyBank,
-        sequenceIds: [vocabularyId], // Correct answer
+        sequenceIds: [resolvedLexeme.id], // Use resolved lexeme ID
         maxSize: 4, // 1 correct + 3 distractors
         distractorStrategy: 'semantic',
         learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
@@ -124,8 +170,8 @@ export function AudioMeaning({
       // PATCH: Extract correct answer and distractors from WordBankService
       const { correctWords, distractors: distractorWords } = wordBankResult;
       
-      // PATCH: Use first correct word as the correct option
-      const correctOption = correctWords[0];
+      // PATCH: Use first correct word as the correct option (should match resolved lexeme's English)
+      const correctOption = correctWords[0] || correctAnswerText;
       
       // PATCH: Build options array by shuffling correct + distractors, limit to 4
       const options = shuffle([correctOption, ...distractorWords]).slice(0, 4);
@@ -139,23 +185,23 @@ export function AudioMeaning({
       setCorrectAnswerIndex(options.indexOf(correctOption));
     } else {
       // OLD BEHAVIOR: Manual distractor handling
-    // Remove duplicates from distractors first
-    const uniqueDistractors = Array.from(new Set(distractors))
-    const allOptions = [vocabularyId, ...uniqueDistractors]
-    
-    // Use Fisher-Yates shuffle for better randomization
-    const shuffled = [...allOptions]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      // Remove duplicates from distractors first
+      const uniqueDistractors = Array.from(new Set(distractors))
+      const allOptions = [resolvedLexeme.id, ...uniqueDistractors]
+      
+      // Use Fisher-Yates shuffle for better randomization
+      const shuffled = [...allOptions]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+      
+      setShuffledOptions(shuffled)
+      setCorrectAnswerIndex(shuffled.indexOf(resolvedLexeme.id))
     }
-    
-    setShuffledOptions(shuffled)
-    setCorrectAnswerIndex(shuffled.indexOf(vocabularyId))
-    }
-  }, [vocabularyId, learnedSoFar, vocabularyBank, distractors]) // Added dependencies for new logic
+  }, [resolvedLexeme, learnedSoFar, vocabularyBank, distractors]) // Use resolvedLexeme instead of vocabularyId
   
-  // Reset component state when vocabularyId changes (for review mode auto-advance)
+  // Reset component state when resolved lexeme changes (for review mode auto-advance)
   useEffect(() => {
     setSelectedAnswer(null)
     setShowResult(false)
@@ -166,18 +212,18 @@ export function AudioMeaning({
     setIsAlreadyCompleted(false)
     setHasTracked(false) // Reset tracking flag when vocabulary changes
     startTime.current = Date.now()
-  }, [vocabularyId])
+  }, [resolvedLexeme?.id]) // Use resolved lexeme ID
   
-  // Auto-play audio when vocabularyId changes (for review mode)
+  // Auto-play audio when resolved lexeme changes (for review mode)
   useEffect(() => {
-    if (autoPlay && targetVocabularyWithFallback && !hasPlayedAudio) {
+    if (autoPlay && resolvedLexeme && !hasPlayedAudio) {
       // Small delay to ensure audio service is ready
       const timer = setTimeout(() => {
         playTargetAudio()
       }, 300)
       return () => clearTimeout(timer)
     }
-  }, [vocabularyId, autoPlay, targetVocabularyWithFallback, hasPlayedAudio, playTargetAudio])
+  }, [resolvedLexeme?.id, autoPlay, resolvedLexeme, hasPlayedAudio, playTargetAudio])
   
   // Get English meanings for the options - deduplicated and memoized
   // CRITICAL: Always ensure 4 options (1 correct + 3 distractors), replace duplicates
@@ -188,10 +234,11 @@ export function AudioMeaning({
     if (FLAGS.USE_LEARNED_VOCAB_IN_AUDIO_MEANING) {
       // NEW BEHAVIOR: shuffledOptions are English text strings from WordBankService
       // Simply map them to display format
+      if (!resolvedLexeme) return [];
       return shuffledOptions.map((text, index) => ({
         text,
         originalIndex: index,
-        vocabId: vocabularyId // All options map back to vocab for tracking (simplified)
+        vocabId: resolvedLexeme.id // Use resolved lexeme ID for tracking
       }));
     }
     
@@ -199,6 +246,8 @@ export function AudioMeaning({
     const optionsMap = new Map<string, { text: string; originalIndex: number; vocabId: string }>()
     const usedIndices = new Set<number>()
     const duplicatesToReplace: Array<{ originalIndex: number; vocabId: string }> = []
+    
+    if (!resolvedLexeme) return [];
     
     // First pass: collect unique options and identify duplicates
     shuffledOptions.forEach((id, originalIndex) => {
@@ -240,10 +289,10 @@ export function AudioMeaning({
     if (currentCount < targetCount && vocabularyBank.length > currentCount) {
       // Find replacement distractors (exclude current options and correct answer)
       const usedVocabIds = new Set(Array.from(optionsMap.values()).map(opt => opt.vocabId))
-      usedVocabIds.add(vocabularyId) // Also exclude correct answer
+      usedVocabIds.add(resolvedLexeme.id) // Also exclude correct answer
       
       const availableVocab = vocabularyBank.filter(v => 
-        !usedVocabIds.has(v.id) && v.id !== vocabularyId
+        !usedVocabIds.has(v.id) && v.id !== resolvedLexeme.id
       )
       
       // Replace duplicates or add missing distractors
@@ -274,7 +323,7 @@ export function AudioMeaning({
     }
     
     // Update correctAnswerIndex based on deduplicated options
-    const correctOption = Array.from(optionsMap.values()).find(opt => opt.vocabId === vocabularyId)
+    const correctOption = Array.from(optionsMap.values()).find(opt => opt.vocabId === resolvedLexeme.id)
     if (correctOption) {
       setCorrectAnswerIndex(correctOption.originalIndex)
     }
@@ -286,10 +335,11 @@ export function AudioMeaning({
         "%c[AUDIO MEANING DISTRACTORS]",
         "color: #FF9800; font-weight: bold;",
         {
-          vocabularyId,
-          correct: targetVocabularyWithFallback?.en,
+          resolvedLexemeId: resolvedLexeme.id,
+          resolvedLexemeEn: resolvedLexeme.en,
+          correct: resolvedLexeme.en,
           distractors: optionItems
-            .filter(opt => opt.vocabId !== vocabularyId)
+            .filter(opt => opt.vocabId !== resolvedLexeme.id)
             .map(opt => {
               const vocab = vocabularyBank.find(v => v.id === opt.vocabId);
               return vocab?.en || opt.text;
@@ -299,7 +349,7 @@ export function AudioMeaning({
     }
     
     return optionItems;
-  }, [shuffledOptions, vocabularyId, vocabularyBank, targetVocabularyWithFallback])
+  }, [shuffledOptions, resolvedLexeme, vocabularyBank])
   // Note: vocabularyBank removed from deps to prevent re-shuffle during transitions
 
   const handleAnswerSelect = async (answerIndex: number) => {
@@ -318,9 +368,10 @@ export function AudioMeaning({
     // Track vocabulary performance to Supabase
     // In review mode: track every attempt (wrong or correct)
     // hasTracked prevents duplicate tracking within same answer selection
-    if (onVocabTrack && targetVocabularyWithFallback && !hasTracked) {
+    // Use baseId for tracking (e.g., "bad" not "badam") to track base vocab performance
+    if (onVocabTrack && resolvedLexeme && !hasTracked) {
       setHasTracked(true) // Mark as tracked for this attempt
-      onVocabTrack(vocabularyId, targetVocabularyWithFallback.en, correct, timeSpentMs);
+      onVocabTrack(resolvedLexeme.baseId, resolvedLexeme.en, correct, timeSpentMs);
     }
 
     if (correct) {

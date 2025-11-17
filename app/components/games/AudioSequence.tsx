@@ -1,17 +1,19 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Volume2, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
-import { VocabularyItem } from "@/lib/types"
+import { VocabularyItem, LexemeRef, ResolvedLexeme } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { FLAGS } from "@/lib/flags"
 import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
+import { GrammarService } from "@/lib/services/grammar-service"
 
 interface AudioSequenceProps {
-  sequence: string[] // Array of vocabulary IDs in correct order
+  sequence: string[] // Array of vocabulary IDs in correct order (backward compat, legacy)
+  lexemeSequence?: LexemeRef[] // NEW: Optional LexemeRef[] for grammar forms (takes precedence over sequence)
   vocabularyBank: VocabularyItem[] // All available vocabulary for this lesson
   points?: number
   autoPlay?: boolean
@@ -28,6 +30,7 @@ interface AudioSequenceProps {
 
 export function AudioSequence({
   sequence,
+  lexemeSequence, // NEW: Optional LexemeRef[] for grammar forms
   vocabularyBank,
   points = 3,
   autoPlay = false,
@@ -54,44 +57,137 @@ export function AudioSequence({
   // Time tracking for analytics
   const startTime = useRef(Date.now())
 
+  // CRITICAL: Resolve LexemeRef[] if provided, otherwise use sequence
+  const resolvedLexemes: ResolvedLexeme[] = useMemo(() => {
+    if (lexemeSequence && lexemeSequence.length > 0) {
+      return lexemeSequence.map(ref => {
+        try {
+          return GrammarService.resolve(ref);
+        } catch (error) {
+          console.error('[AudioSequence] Failed to resolve lexemeRef:', ref, error);
+          // Fallback: try to treat as string vocab ID
+          const vocab = vocabularyBank.find(v => v.id === (typeof ref === 'string' ? ref : ref.baseId));
+          if (vocab) {
+            return {
+              id: vocab.id,
+              baseId: vocab.id,
+              en: vocab.en,
+              fa: vocab.fa,
+              finglish: vocab.finglish,
+              phonetic: vocab.phonetic,
+              lessonId: vocab.lessonId,
+              semanticGroup: vocab.semanticGroup,
+              isGrammarForm: false
+            };
+          }
+          throw error;
+        }
+      });
+    }
+    
+    // Fallback to sequence (backward compat)
+    return sequence.map(id => {
+      const vocab = vocabularyBank.find(v => v.id === id) || (() => {
+        try {
+          const { VocabularyService } = require('@/lib/services/vocabulary-service')
+          return VocabularyService.findVocabularyById(id)
+        } catch {
+          return null
+        }
+      })();
+      
+      if (!vocab) {
+        console.warn(`[AudioSequence] Vocabulary not found for ID: ${id}`);
+        // Return placeholder
+        return {
+          id,
+          baseId: id,
+          en: id,
+          fa: '',
+          finglish: id,
+          phonetic: '',
+          lessonId: undefined,
+          semanticGroup: undefined,
+          isGrammarForm: false
+        };
+      }
+      
+      return {
+        id: vocab.id,
+        baseId: vocab.id,
+        en: vocab.en,
+        fa: vocab.fa,
+        finglish: vocab.finglish,
+        phonetic: vocab.phonetic,
+        lessonId: vocab.lessonId,
+        semanticGroup: vocab.semanticGroup,
+        isGrammarForm: false
+      };
+    });
+  }, [lexemeSequence, sequence, vocabularyBank]);
+
+  // Extract sequence IDs from resolved lexemes
+  const resolvedSequenceIds = useMemo(() => resolvedLexemes.map(l => l.id), [resolvedLexemes]);
+
   // Calculate expected semantic unit count (phrases count as 1, words count as 1)
   const expectedWordCount = targetWordCount || WordBankService.getSemanticUnits({
     expectedTranslation,
     vocabularyBank,
-    sequenceIds: expectedTranslation ? undefined : sequence
+    sequenceIds: expectedTranslation ? undefined : resolvedSequenceIds
   });
+
+  // CRITICAL FIX: Create stable signatures for useMemo dependencies to prevent infinite recalculation
+  // learnedSoFar is a new object reference on every render, so we need to extract stable values
+  const learnedVocabIdsSignature = useMemo(() => 
+    learnedSoFar?.vocabIds?.join(',') || '', 
+    [learnedSoFar?.vocabIds]
+  );
+  const vocabularyBankSignature = useMemo(() => 
+    vocabularyBank.map(v => v.id).join(','), 
+    [vocabularyBank]
+  );
+  const resolvedSequenceIdsSignature = useMemo(() => 
+    resolvedSequenceIds.join(','), 
+    [resolvedSequenceIds]
+  );
 
   // WORD BANK: Use WordBankService for unified, consistent generation
   // Create mapping from wordText → vocabularyId[] and unique keys for display
-  const [wordBankData] = useState<{
+  // CRITICAL: Use stable signatures to prevent reshuffling on re-renders
+  // Only recalculate when actual content changes (resolvedSequenceIds, expectedTranslation)
+  const wordBankData = useMemo<{
     wordBankItems: string[]; // Shuffled wordText values for display (from allOptions)
     displayKeyToVocabId: Map<string, string>; // Map display key → vocabularyId
     displayKeyToWordText: Map<string, string>; // Map display key → wordText
+    wordTextToDisplayKey: Map<string, string>; // NEW: Map wordText → stable displayKey (for userOrder lookup)
   }>(() => {
     // PHASE 4: Sanity logging before calling generateWordBank
     if (FLAGS.LOG_WORDBANK) {
+      const learnedIds = learnedVocabIdsSignature ? learnedVocabIdsSignature.split(',').filter(id => id.length > 0) : [];
       console.log(
         "%c[AUDIO SEQUENCE - PRE WORDBANK]",
         "color: #00BCD4; font-weight: bold;",
         {
           stepType: 'audio-sequence',
-          learnedVocabIds: learnedSoFar?.vocabIds || [],
-          learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
+          learnedVocabIds: learnedIds,
+          learnedVocabCount: learnedIds.length,
           vocabularyBankSize: vocabularyBank.length,
         }
       );
     }
     
     // Generate word bank using WordBankService
+    // Use resolved sequence IDs (from resolved lexemes)
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
       vocabularyBank,
-      sequenceIds: expectedTranslation ? undefined : sequence,
+      sequenceIds: expectedTranslation ? undefined : resolvedSequenceIds,
       maxSize: maxWordBankSize,
       distractorStrategy: 'semantic',
       // PHASE 4: Pass learned vocab IDs if feature flag is enabled
-      learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
-        ? learnedSoFar.vocabIds
+      // Use stable vocabIds from learnedSoFar (extracted via signature)
+      learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedVocabIdsSignature
+        ? learnedVocabIdsSignature.split(',').filter(id => id.length > 0)
         : undefined,
       moduleId, // For tiered fallback
       lessonId, // For tiered fallback
@@ -101,6 +197,7 @@ export function AudioSequence({
     // Use shuffled allOptions for display order, but map to WordBankItems for metadata
     const displayKeyToVocabId = new Map<string, string>()
     const displayKeyToWordText = new Map<string, string>()
+    const wordTextToDisplayKey = new Map<string, string>() // NEW: Stable mapping wordText → displayKey
 
     // Create a map from wordText (normalized) to WordBankItem[] for lookup
     const wordTextToItems = new Map<string, typeof wordBankResult.wordBankItems>()
@@ -114,14 +211,16 @@ export function AudioSequence({
 
     // Process shuffled allOptions to create display keys in display order
     // Track how many times we've seen each wordText to handle duplicates
+    // CRITICAL: Use stable displayKeys based on wordText + occurrence, NOT array index
     const wordTextCounts = new Map<string, number>()
     wordBankResult.allOptions.forEach((wordText, displayIndex) => {
       const normalizedKey = wordText.toLowerCase()
       const count = wordTextCounts.get(normalizedKey) || 0
       wordTextCounts.set(normalizedKey, count + 1)
 
-      // Create unique display key for this occurrence
-      const displayKey = `${wordText}-${displayIndex}`
+      // CRITICAL FIX: Use stable displayKey based on wordText + occurrence count, NOT array index
+      // This ensures displayKeys don't change when array reshuffles
+      const displayKey = `${wordText}-${count}` // Use count (occurrence) instead of displayIndex
 
       // Find matching WordBankItem for this wordText occurrence
       const matchingItems = wordTextToItems.get(normalizedKey) || []
@@ -133,14 +232,20 @@ export function AudioSequence({
         displayKeyToVocabId.set(displayKey, matchingItem.vocabularyId)
       }
       displayKeyToWordText.set(displayKey, wordText)
+      
+      // NEW: Create stable mapping wordText → displayKey (first occurrence only)
+      if (!wordTextToDisplayKey.has(wordText)) {
+        wordTextToDisplayKey.set(wordText, displayKey)
+      }
     })
       
       return {
       wordBankItems: wordBankResult.allOptions,
       displayKeyToVocabId,
-      displayKeyToWordText
+      displayKeyToWordText,
+      wordTextToDisplayKey // NEW: Add stable mapping
     }
-  })
+  }, [expectedTranslation, vocabularyBankSignature, resolvedSequenceIdsSignature, maxWordBankSize, learnedVocabIdsSignature, moduleId, lessonId])
 
   // Dynamic vocabulary lookup with WordBankService support
   const getVocabularyById = (id: string) => {
@@ -159,6 +264,23 @@ export function AudioSequence({
         lessonId: 'display'
       } as VocabularyItem
     }
+    
+    // NEW: Fallback - if id is a wordText, look it up via wordTextToDisplayKey
+    // This handles cases where displayKey changed but userOrder still has old key
+    if (wordBankData.wordTextToDisplayKey.has(id)) {
+      const displayKey = wordBankData.wordTextToDisplayKey.get(id)!
+      const wordText = wordBankData.displayKeyToWordText.get(displayKey)
+      if (wordText) {
+        return {
+          id: displayKey,
+          en: wordText,
+          fa: '',
+          finglish: wordText,
+          phonetic: '',
+          lessonId: 'display'
+        } as VocabularyItem
+      }
+    }
 
     // Check the original vocabulary bank
     const vocab = vocabularyBank.find(v => v.id === id)
@@ -170,18 +292,34 @@ export function AudioSequence({
       }
     }
     
+    // Final fallback: if id looks like a displayKey but wasn't found, extract wordText
+    // Handle format "wordText-0" or "wordText-1"
+    const match = id.match(/^(.+)-(\d+)$/)
+    if (match) {
+      const wordText = match[1]
+      return {
+        id: id,
+        en: wordText,
+        fa: '',
+        finglish: wordText,
+        phonetic: '',
+        lessonId: 'display'
+      } as VocabularyItem
+    }
+    
     return undefined
   }
 
   const playAudioSequence = async () => {
     setIsPlayingAudio(true)
     try {
-      for (let i = 0; i < sequence.length; i++) {
-        const vocabularyId = sequence[i]
-        await AudioService.playVocabularyAudio(vocabularyId)
+      // Use resolved lexemes - playLexeme handles both base vocab and grammar forms
+      for (let i = 0; i < resolvedLexemes.length; i++) {
+        const resolvedLexeme = resolvedLexemes[i]
+        await AudioService.playLexeme(resolvedLexeme)
         
         // Short pause between words
-        if (i < sequence.length - 1) {
+        if (i < resolvedLexemes.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 200))
         }
       }
@@ -259,7 +397,8 @@ export function AudioSequence({
       const userVocabIds = userOrder.map(displayKey => {
         return wordBankData.displayKeyToVocabId.get(displayKey) || displayKey
       })
-      correct = JSON.stringify(userVocabIds) === JSON.stringify(sequence)
+      // Compare with resolved sequence IDs (from resolved lexemes)
+      correct = JSON.stringify(userVocabIds) === JSON.stringify(resolvedSequenceIds)
     }
     
     setIsCorrect(correct)
@@ -290,12 +429,10 @@ export function AudioSequence({
         }
       });
     } else if (onVocabTrack) {
-      // Fallback: If no expectedTranslation, use old bulk tracking
-      sequence.forEach(vocabId => {
-        const vocab = vocabularyBank.find(v => v.id === vocabId);
-        if (vocab) {
-          onVocabTrack(vocabId, vocab.en, correct, timeSpentMs);
-        }
+      // Fallback: If no expectedTranslation, use resolved lexemes for tracking
+      // Track baseId (e.g., "bad" not "badam") to track base vocab performance
+      resolvedLexemes.forEach(resolved => {
+        onVocabTrack(resolved.baseId, resolved.en, correct, timeSpentMs);
       });
     }
 
@@ -469,7 +606,10 @@ export function AudioSequence({
             <h3 className="text-lg font-semibold mb-2 text-center">Word Bank:</h3>
         <div className="flex flex-wrap gap-2 justify-center">
           {wordBankData.wordBankItems.map((wordText: string, index: number) => {
-            const displayKey = `${wordText}-${index}`
+            // CRITICAL FIX: Use stable displayKey based on wordText + occurrence count
+            // Count occurrences of this wordText up to current index
+            const occurrenceCount = wordBankData.wordBankItems.slice(0, index + 1).filter(w => w === wordText).length - 1
+            const displayKey = `${wordText}-${occurrenceCount}` // Stable key based on occurrence, not array index
             const isUsed = userOrder.includes(displayKey)
             
             return (

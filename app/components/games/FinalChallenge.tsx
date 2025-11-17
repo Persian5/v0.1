@@ -186,11 +186,18 @@ export function FinalChallenge({
     FLAGS.USE_LEARNED_VOCAB_IN_FINAL_CHALLENGE
   ]); // Stable signatures prevent infinite re-renders
 
+  // CRITICAL FIX: Create stable signature for enhancedWords to prevent unnecessary reshuffling
+  const enhancedWordsSignature = useMemo(() => 
+    enhancedWords.map(w => `${w.id}:${w.text}`).join(','), 
+    [enhancedWords]
+  );
+
   // SYSTEMATIC RANDOMIZATION: Randomize word bank display order once on mount
   // Following same pattern as Quiz component for consistency
+  // CRITICAL: Use stable signature so shuffle only happens when words actually change
   const shuffledWords = useMemo(() => {
     return [...enhancedWords].sort(() => Math.random() - 0.5);
-  }, [enhancedWords]);
+  }, [enhancedWordsSignature]); // Use signature instead of array reference
 
   // Generate dynamic description if none provided
   const getDynamicDescription = () => {
@@ -257,7 +264,10 @@ export function FinalChallenge({
   const confettiCanvasRef = useRef<HTMLDivElement>(null)
 
   // Reset items and slots when props change
+  // CRITICAL: Only reset when actual word content changes, not when shuffled order changes
+  // Use enhancedWordsSignature (word content) - this only changes when words actually change
   useEffect(() => {
+    // Use current shuffledWords value (from closure) but only reset when content changes
     setItems(shuffledWords.map(word => ({
       id: word.id,
       text: word.text,
@@ -274,7 +284,7 @@ export function FinalChallenge({
     
     setShowFeedback(false)
     setIsCorrect(false)
-  }, [shuffledWords, targetWords, conversationFlow])
+  }, [enhancedWordsSignature, targetWordsSignature, conversationFlowSignature]) // Only reset when content changes, not shuffle order
 
   // Handle clicking on a phrase to add it to the next available slot
   const handlePhraseClick = (itemId: string) => {
