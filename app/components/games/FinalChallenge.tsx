@@ -197,7 +197,9 @@ export function FinalChallenge({
     if (description) return description;
     
     if (conversationFlow) {
-      return `Build this sentence: "${conversationFlow.expectedPhrase}"`;
+      // PHASE 8 FIX: Show English translation, not Persian (don't give answer away)
+      const englishTranslation = words.map(w => w.translation).join(' ');
+      return `Build this sentence: "${englishTranslation}"`;
     }
     
     // For final challenges without conversationFlow, we need to create proper sentences

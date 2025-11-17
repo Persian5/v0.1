@@ -722,7 +722,8 @@ export class WordBankService {
   ): WordBankItem[] {
     const semanticUnits: WordBankItem[] = [];
     const usedVocabIds = new Set<string>();
-    const words = expectedTranslation.split(' ').filter(w => w.length > 0);
+    // PHASE 8 FIX: Strip punctuation from words after splitting (commas, periods, etc.)
+    const words = expectedTranslation.split(' ').filter(w => w.length > 0).map(w => w.replace(/[,\.!?;:]/g, ''));
     const matchedIndices = new Set<number>();
 
     // Step 1: Detect phrases from expectedTranslation FIRST (4-word, 3-word, 2-word)
@@ -1069,7 +1070,8 @@ export class WordBankService {
   ): { matchedItems: WordBankItem[]; matchedVocabIds: string[]; matchedIndices: Set<number> } {
     const matchedItems: WordBankItem[] = [];
     const matchedVocabIds: string[] = [];
-    const words = expectedTranslation.split(' ').filter(w => w.length > 0);
+    // PHASE 8 FIX: Strip punctuation from words after splitting (commas, periods, etc.)
+    const words = expectedTranslation.split(' ').filter(w => w.length > 0).map(w => w.replace(/[,\.!?;:]/g, ''));
     const matchedIndices = new Set<number>();
 
     // CRITICAL: Try 4-word phrases FIRST (for "Nice to Meet You")
