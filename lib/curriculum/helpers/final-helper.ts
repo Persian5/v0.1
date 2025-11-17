@@ -23,13 +23,14 @@ export interface FinalStepOptions {
  * PHASE 4.4: Now supports LexemeRef[] (base vocab or grammar forms)
  * 
  * Final steps present a conversation challenge where users arrange words in order.
- * Auto-generates words array, targetWords, and persianSequence from lexeme references.
- * Points have consistent default - always 4 points.
  * 
- * @param vocabulary - DEPRECATED: Kept for backward compatibility, not used (GrammarService looks up vocab)
+ * IMPORTANT: Stores raw LexemeRef[] to avoid circular dependencies during curriculum initialization.
+ * Generates placeholder words. UI component resolves at runtime.
+ * 
+ * @param vocabulary - DEPRECATED: Kept for backward compatibility, not used
  * @param refs - Array of lexeme references in the target order
  * @param options - Required conversationFlow, optional title and custom messages
- * @returns FinalStep with auto-generated words, targetWords, and persianSequence
+ * @returns FinalStep with placeholder words + raw LexemeRef[] for runtime resolution
  * 
  * Examples:
  *   finalHelper(vocabulary, ["salam", "chetori", "merci"], { conversationFlow: {...} })
@@ -40,21 +41,26 @@ export function finalHelper(
   refs: LexemeRef[],
   options: FinalStepOptions
 ): FinalStep {
-  // Resolve all lexeme references (vocabulary parameter ignored)
-  const resolved = refs.map(ref => GrammarService.resolve(ref));
+  // Generate placeholder words using simple IDs
+  // UI will resolve the actual text at runtime from lexemeRefs
+  const words = refs.map(ref => {
+    const id = typeof ref === 'string' ? ref : `${ref.baseId}_${ref.suffixId}`;
+    return {
+      id,
+      text: id,          // Placeholder - UI resolves from lexemeRefs
+      translation: id    // Placeholder - UI resolves from lexemeRefs
+    };
+  });
 
-  // Auto-generate words array from resolved lexemes
-  const words = resolved.map(lexeme => ({
-    id: lexeme.id,          // Surface ID (e.g., "khoobam" for grammar forms)
-    text: lexeme.finglish,  // Use finglish for display (e.g., "Salam" or "Khoobam")
-    translation: lexeme.en   // Use English translation (e.g., "Hello" or "I'm good")
-  }));
+  // Generate placeholder targetWords (simple IDs)
+  const targetWords = refs.map(ref => 
+    typeof ref === 'string' ? ref : `${ref.baseId}_${ref.suffixId}`
+  );
 
-  // Auto-generate targetWords (surface IDs in order)
-  const targetWords = resolved.map(lexeme => lexeme.id);
-
-  // Auto-generate persianSequence (surface IDs in order)
-  const persianSequence = resolved.map(lexeme => lexeme.id);
+  // Generate placeholder persianSequence (simple IDs)
+  const persianSequence = refs.map(ref => 
+    typeof ref === 'string' ? ref : `${ref.baseId}_${ref.suffixId}`
+  );
 
   // Default messages (used unless overridden)
   const defaultSuccessMessage = "Perfect! You can greet someone in Persian!";
@@ -64,7 +70,7 @@ export function finalHelper(
   const conversationFlow = {
     description: options.conversationFlow.description,
     expectedPhrase: options.conversationFlow.expectedPhrase,
-    persianSequence // Auto-generated from refs
+    persianSequence // Placeholder IDs
   };
 
   return {
@@ -74,11 +80,12 @@ export function finalHelper(
       words,
       targetWords,
       conversationFlow,
-      ...(options?.title && { title: options.title }),
-      ...(options?.description && { description: options.description }),
-      successMessage: options?.successMessage || defaultSuccessMessage,
-      incorrectMessage: options?.incorrectMessage || defaultIncorrectMessage
-    }
+      lexemeRefs: refs  // NEW: Store raw LexemeRef[] for runtime resolution
+    },
+    title: options.title || "Final Challenge",
+    description: options.description,
+    successMessage: options.successMessage || defaultSuccessMessage,
+    incorrectMessage: options.incorrectMessage || defaultIncorrectMessage
   };
 }
 

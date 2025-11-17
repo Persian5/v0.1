@@ -7,13 +7,13 @@ import { GrammarService } from "../../services/grammar-service";
  * PHASE 4.3: Now supports LexemeRef[] (base vocab or grammar forms)
  * 
  * Matching steps present words and slots that users drag to match.
- * Auto-generates English translations from lexeme references.
  * 
- * Uses GrammarService.resolve() to support both base vocab and grammar forms.
+ * IMPORTANT: Stores raw LexemeRef[] to avoid circular dependencies during curriculum initialization.
+ * For now, generates simple placeholder words/slots. UI component should resolve at runtime.
  * 
  * @param refs - Array of lexeme references to match
  * @param points - Points for the matching exercise (default: 3)
- * @returns MatchingStep with words and slots arrays
+ * @returns MatchingStep with placeholder words/slots + raw LexemeRef[]
  * 
  * Examples:
  *   matchingHelper(["salam", "khodafez"])
@@ -23,35 +23,32 @@ export function matchingHelper(
   refs: LexemeRef[],
   points: number = 3
 ): MatchingStep {
-  // Resolve all lexeme references
-  const pairs = refs.map(ref => {
-    const resolved = GrammarService.resolve(ref);
-    
+  // Generate placeholder words and slots using simple IDs
+  // UI will resolve the actual text at runtime from lexemeRefs
+  const words = refs.map((ref, index) => {
+    const id = typeof ref === 'string' ? ref : `${ref.baseId}_${ref.suffixId}`;
     return {
-      word: resolved.finglish,  // Persian/Finglish word (e.g., "Salam" or "Khoobam")
-      slot: resolved.en         // English translation (e.g., "Hello" or "I'm good")
+      id: `word${index + 1}`,
+      text: id,  // Placeholder - UI resolves from lexemeRefs
+      slotId: `slot${index + 1}`
     };
   });
 
-  // Generate unique IDs for words and slots
-  const words = pairs.map((pair, index) => ({
-    id: `word${index + 1}`,
-    text: pair.word,
-    slotId: `slot${index + 1}`
-  }));
-
-  const slots = pairs.map((pair, index) => ({
-    id: `slot${index + 1}`,
-    text: pair.slot
-  }));
+  const slots = refs.map((ref, index) => {
+    const id = typeof ref === 'string' ? ref : `${ref.baseId}_${ref.suffixId}`;
+    return {
+      id: `slot${index + 1}`,
+      text: id  // Placeholder - UI resolves from lexemeRefs
+    };
+  });
 
   return {
     type: "matching",
     points,
     data: {
       words,
-      slots
+      slots,
+      lexemeRefs: refs  // NEW: Store raw LexemeRef[] for runtime resolution
     }
   };
 }
-
