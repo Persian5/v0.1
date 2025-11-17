@@ -1,14 +1,6 @@
 import { MatchingStep } from "../../types";
 
 /**
- * Pair structure for matching helper
- */
-export interface MatchingPair {
-  word: string;  // Persian/Finglish word (e.g., "Salam")
-  slot: string;  // English translation (e.g., "Hello")
-}
-
-/**
  * Internal helper function to generate matching steps
  * 
  * This is the implementation logic for matching step generation.
@@ -16,24 +8,24 @@ export interface MatchingPair {
  * 
  * Matching steps present words and slots that users drag to match.
  * 
- * @param pairs - Array of word-slot pairs (e.g., [{word: "Salam", slot: "Hello"}, ...])
+ * @param pairs - Array of [word, slot] tuples (e.g., [["Salam", "Hello"], ...])
  * @param points - Points for the matching exercise (default: 3)
  * @returns MatchingStep with words and slots arrays
  */
 export function matchingHelper(
-  pairs: MatchingPair[],
+  pairs: [string, string][],  // Array of [word, slot] tuples
   points: number = 3
 ): MatchingStep {
   // Generate unique IDs for words and slots
-  const words = pairs.map((pair, index) => ({
+  const words = pairs.map(([word], index) => ({
     id: `word${index + 1}`,
-    text: pair.word,
+    text: word,
     slotId: `slot${index + 1}`
   }));
 
-  const slots = pairs.map((pair, index) => ({
+  const slots = pairs.map(([, slot], index) => ({
     id: `slot${index + 1}`,
-    text: pair.slot
+    text: slot
   }));
 
   return {

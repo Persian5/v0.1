@@ -14,7 +14,7 @@ import { inputHelper } from "../curriculum/helpers/input-helper";
 import { audioMeaningHelper } from "../curriculum/helpers/audio-meaning-helper";
 import { audioSequenceHelper } from "../curriculum/helpers/audio-sequence-helper";
 import { textSequenceHelper } from "../curriculum/helpers/text-sequence-helper";
-import { matchingHelper, type MatchingPair } from "../curriculum/helpers/matching-helper";
+import { matchingHelper } from "../curriculum/helpers/matching-helper";
 
 /**
  * Generate a vocab quiz step
@@ -118,10 +118,10 @@ export const textSequence = (
  * 
  * Presents words and slots that users drag to match Persian words with English translations.
  * 
- * @param pairs - Array of word-slot pairs (e.g., [{word: "Salam", slot: "Hello"}, ...])
+ * @param pairs - Array of [word, slot] tuples (e.g., [["Salam", "Hello"], ["Chetori", "How are you?"], ...])
  * @param points - Points for the matching exercise (default: 3)
  */
 export const matching = (
-  pairs: MatchingPair[],
+  pairs: Parameters<typeof matchingHelper>[0],
   points: Parameters<typeof matchingHelper>[1] = 3
 ) => matchingHelper(pairs, points);
