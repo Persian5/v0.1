@@ -1,40 +1,35 @@
-import { MatchingStep, VocabularyItem } from "../../types";
-import { VocabularyService } from "../../services/vocabulary-service";
+import { MatchingStep, LexemeRef } from "../../types";
+import { GrammarService } from "../../services/grammar-service";
 
 /**
  * Internal helper function to generate matching steps
  * 
- * This is the implementation logic for matching step generation.
- * Exported for use by curriculum-helpers.ts wrapper.
+ * PHASE 4.3: Now supports LexemeRef[] (base vocab or grammar forms)
  * 
  * Matching steps present words and slots that users drag to match.
- * Auto-generates English translations from vocabulary IDs.
+ * Auto-generates English translations from lexeme references.
  * 
- * Uses VocabularyService.findVocabularyById() to look up vocabulary dynamically
- * from the entire curriculum - no need to pass vocabulary arrays!
+ * Uses GrammarService.resolve() to support both base vocab and grammar forms.
  * 
- * @param vocabIds - Array of vocabulary IDs to match (e.g., ["salam", "khodafez"])
+ * @param refs - Array of lexeme references to match
  * @param points - Points for the matching exercise (default: 3)
  * @returns MatchingStep with words and slots arrays
+ * 
+ * Examples:
+ *   matchingHelper(["salam", "khodafez"])
+ *   matchingHelper([{ kind: "suffix", baseId: "khoob", suffixId: "am" }, "bad"])
  */
 export function matchingHelper(
-  vocabIds: string[],
+  refs: LexemeRef[],
   points: number = 3
 ): MatchingStep {
-  // Look up vocabulary items from entire curriculum using VocabularyService
-  const pairs = vocabIds.map(vocabId => {
-    const vocab = VocabularyService.findVocabularyById(vocabId);
-    
-    if (!vocab) {
-      throw new Error(
-        `[matchingHelper] Vocabulary ID "${vocabId}" not found in curriculum. ` +
-        `Make sure this vocabulary exists in your curriculum definition.`
-      );
-    }
+  // Resolve all lexeme references
+  const pairs = refs.map(ref => {
+    const resolved = GrammarService.resolve(ref);
     
     return {
-      word: vocab.finglish,  // Persian/Finglish word (e.g., "Salam")
-      slot: vocab.en          // English translation (e.g., "Hello")
+      word: resolved.finglish,  // Persian/Finglish word (e.g., "Salam" or "Khoobam")
+      slot: resolved.en         // English translation (e.g., "Hello" or "I'm good")
     };
   });
 
