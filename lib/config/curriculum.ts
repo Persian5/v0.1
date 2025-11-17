@@ -200,10 +200,78 @@ export const curriculumData: Module[] = [
         ]
         };
       })(),
+      // Module 1 Lesson 4
+      (() => {
+        const vocabulary = createVocabulary("module1-lesson4", {
+          ids: ["man", "shoma", "esm", "esme", "chi", "chiye"],
+          en: ["I / Me", "You", "Name", "Name of", "What", "What is / What is it"],
+          fa: ["من", "شما", "اسم", "اسمه", "چی", "چیه"],
+          finglish: ["Man", "Shoma", "Esm", "Esme", "Chi", "Chiye"],
+          phonetic: ["man", "sho-MUH", "esm", "es-MEH", "chee", "chee-YEH"]
+        });
+        
+        return {
+          id: "lesson4",
+          title: "Basic Pronouns and Question Words",
+          description: "Today you'll learn how to introduce yourself in Persian using simple words like \"I,\" \"you,\" and \"name.\" By the end of this lesson, you'll understand and respond to the question, \"What is your name?\"",
+          emoji: "🧑‍💼",
+          progress: 0,
+          locked: false,
+          vocabulary,
+        steps: [
+          {
+            type: "welcome",
+            title: "Basic Pronouns and Question Words",
+            description: "Today you'll learn how to introduce yourself in Persian using simple words like \"I,\" \"you,\" and \"name.\" By the end of this lesson, you'll understand and respond to the question, \"What is your name?\"",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn pronouns I and You",
+                "Learn question words What and Name",
+                "Ask and answer 'What is your name?'",
+                "Build simple introduction sentences"
+              ],
+              lessonType: "introductions"
+            }
+          },
+          audioSequence(["salam", "chetori", "khoobam", "merci"], "Hello how are you I'm good thank you"),
+          matching(["baleh", "na", "khodafez", "khoob"]),
+          audioMeaning("chetori"),
+          flashcard(vocabulary, "man"),
+          flashcard(vocabulary, "shoma"),
+          vocabQuiz(vocabulary, "man", "vocab-normal"),
+          matching(["man", "shoma", "salam", "merci"]),
+          audioMeaning("shoma"),
+          flashcard(vocabulary, "esm"),
+          flashcard(vocabulary, "esme"),
+          matching(["man", "shoma", "esm", "esme"]),
+          audioSequence(["esme", "man"], "My name"),
+          textSequence("Esme Shoma", "Your name"),
+          audioMeaning("esm"),
+          flashcard(vocabulary, "chi"),
+          vocabQuiz(vocabulary, "chi", "vocab-reverse"),
+          flashcard(vocabulary, "chiye"),
+          vocabQuiz(vocabulary, "chiye", "vocab-normal"),
+          matching(["esme", "shoma", "chiye", "man"]),
+          textSequence("Esme Shoma Chiye", "What is your name"),
+          audioSequence(["esme", "shoma", "chiye"], "What is your name"),
+          textSequence("Esme Man", "My name"),
+          input("How do you say 'I' in Persian?", "Man"),
+          audioMeaning("khodafez"),
+          final(vocabulary, ["salam", "esme", "shoma", "chiye"], {
+            conversationFlow: {
+              description: "A polite introduction conversation asking for a name",
+              expectedPhrase: "Hello, what is your name?"
+            },
+            title: "Your Introduction"
+          })
+        ]
+        };
+      })(),
       {
-        id: "lesson4",
-        title: "Basic Pronouns and Question Words",
-        description: "Master essential pronouns (I, You) and question words (What, Name)",
+        id: "lesson5",
+        title: "Basic Pronouns and Question Words (Advanced)",
+        description: "Master essential pronouns (I, You) and question words (What, Name) with grammar concepts",
         emoji: "🧑‍💼",
         progress: 0,
         locked: false,
@@ -214,7 +282,7 @@ export const curriculumData: Module[] = [
             fa: "من",
             finglish: "Man",
             phonetic: "man",
-            lessonId: "module1-lesson3"
+            lessonId: "module1-lesson5"
           },
           {
             id: "shoma",
@@ -222,7 +290,7 @@ export const curriculumData: Module[] = [
             fa: "شما",
             finglish: "Shoma",
             phonetic: "sho-MAH",
-            lessonId: "module1-lesson3"
+            lessonId: "module1-lesson5"
           },
           {
             id: "esm",
@@ -230,7 +298,7 @@ export const curriculumData: Module[] = [
             fa: "اسم",
             finglish: "Esm",
             phonetic: "esm",
-            lessonId: "module1-lesson3"
+            lessonId: "module1-lesson5"
           },
           {
             id: "esme",
@@ -238,7 +306,7 @@ export const curriculumData: Module[] = [
             fa: "اسمه",
             finglish: "Esme",
             phonetic: "es-MEH",
-            lessonId: "module1-lesson3"
+            lessonId: "module1-lesson5"
           },
           {
             id: "chi",
@@ -246,7 +314,7 @@ export const curriculumData: Module[] = [
             fa: "چی",
             finglish: "Chi",
             phonetic: "chee",
-            lessonId: "module1-lesson3"
+            lessonId: "module1-lesson5"
           },
           {
             id: "chiye",
@@ -254,13 +322,21 @@ export const curriculumData: Module[] = [
             fa: "چیه",
             finglish: "Chiye",
             phonetic: "chee-YEH",
-            lessonId: "module1-lesson3"
+            lessonId: "module1-lesson5"
+          },
+          {
+            id: "khoshbakhtam",
+            en: "Nice to Meet You",
+            fa: "خوشبختم",
+            finglish: "Khoshbakhtam",
+            phonetic: "khosh-BAHKH-tam",
+            lessonId: "module1-lesson5"
           }
         ],
         steps: [
           {
             type: "welcome",
-            title: "Basic Pronouns & Question Words",
+            title: "Basic Pronouns & Question Words (Advanced)",
             description: "Learn essential pronouns and question words that form the foundation of Persian conversation.",
             points: 0,
             data: {
@@ -682,27 +758,8 @@ export const curriculumData: Module[] = [
               successMessage: "Incredible! You can now have complete, polite conversations!",
               incorrectMessage: "Almost there—let's practice that introduction conversation again!"
             }
-          }
-        ]
-      },
-      {
-        id: "lesson5",
-        title: "Complete Conversations & Meeting People",
-        description: "Put it all together! Practice full conversations and learn to end introductions politely",
-        emoji: "💬",
-        progress: 0,
-        locked: false,
-        vocabulary: [
-          {
-            id: "khoshbakhtam",
-            en: "Nice to Meet You",
-            fa: "خوشبختم",
-            finglish: "Khoshbakhtam",
-            phonetic: "khosh-BAHKH-tam",
-            lessonId: "module1-lesson5"
-          }
-        ],
-        steps: [
+          },
+          // Merged content from old Lesson 5: Complete Conversations & Meeting People
           {
             type: "welcome",
             title: "Complete Conversations & Meeting People",
@@ -711,14 +768,13 @@ export const curriculumData: Module[] = [
             data: {
               objectives: [
                 "Complete full introduction conversations",
-                "Review all vocabulary from lessons 1-3",
+                "Review all vocabulary from lessons 1-4",
                 "Learn to end conversations politely",
                 "Practice natural conversation flow"
               ],
               lessonType: "conversations"
             }
           },
-          // NEW ORDER: 3) flashcard is now first after welcome intro
           {
             type: "flashcard",
             points: 1,
