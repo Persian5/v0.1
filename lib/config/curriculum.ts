@@ -193,20 +193,10 @@ export const curriculumData: Module[] = [
         flashcard(vocabulary, "khoobam"),
         vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
         audioMeaning("khoobam"),
-        {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Khoob", slotId: "slot1" },
-                { id: "word2", text: "Khoobam", slotId: "slot2" }
-              ],
-              slots: [
-                { id: "slot1", text: "Good" },
-                { id: "slot2", text: "I'm Good" }
-              ]
-            }
-          },
+        matching([
+          { word: "Khoob", slot: "Good" },
+          { word: "Khoobam", slot: "I'm Good" }
+        ]),
           textSequence("Salam chetori khoobam", "Hello how are you I'm good", 3, 10),
           audioSequence(["khoobam", "merci"], "I'm good thank you"),
           vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
