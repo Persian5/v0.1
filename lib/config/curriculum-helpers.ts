@@ -117,11 +117,14 @@ export const textSequence = (
  * Generate a matching step
  * 
  * Presents words and slots that users drag to match Persian words with English translations.
+ * Auto-generates English translations from vocabulary IDs.
  * 
- * @param pairs - Array of [word, slot] tuples (e.g., [["Salam", "Hello"], ["Chetori", "How are you?"], ...])
+ * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
+ * @param vocabIds - Array of vocabulary IDs to match (e.g., ["salam", "khodafez"])
  * @param points - Points for the matching exercise (default: 3)
  */
 export const matching = (
-  pairs: Parameters<typeof matchingHelper>[0],
-  points: Parameters<typeof matchingHelper>[1] = 3
-) => matchingHelper(pairs, points);
+  vocabulary: Parameters<typeof matchingHelper>[0],
+  vocabIds: Parameters<typeof matchingHelper>[1],
+  points: Parameters<typeof matchingHelper>[2] = 3
+) => matchingHelper(vocabulary, vocabIds, points);

@@ -1,4 +1,4 @@
-import { MatchingStep } from "../../types";
+import { MatchingStep, VocabularyItem } from "../../types";
 
 /**
  * Internal helper function to generate matching steps
@@ -7,25 +7,45 @@ import { MatchingStep } from "../../types";
  * Exported for use by curriculum-helpers.ts wrapper.
  * 
  * Matching steps present words and slots that users drag to match.
+ * Auto-generates English translations from vocabulary IDs.
  * 
- * @param pairs - Array of [word, slot] tuples (e.g., [["Salam", "Hello"], ...])
+ * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
+ * @param vocabIds - Array of vocabulary IDs to match (e.g., ["salam", "khodafez"])
  * @param points - Points for the matching exercise (default: 3)
  * @returns MatchingStep with words and slots arrays
  */
 export function matchingHelper(
-  pairs: [string, string][],  // Array of [word, slot] tuples
+  vocabulary: VocabularyItem[],
+  vocabIds: string[],
   points: number = 3
 ): MatchingStep {
+  // Look up vocabulary items and generate pairs
+  const pairs = vocabIds.map(vocabId => {
+    const vocab = vocabulary.find(v => v.id === vocabId);
+    
+    if (!vocab) {
+      throw new Error(
+        `[matchingHelper] Vocabulary ID "${vocabId}" not found in vocabulary array. ` +
+        `Available IDs: ${vocabulary.map(v => v.id).join(', ')}`
+      );
+    }
+    
+    return {
+      word: vocab.finglish,  // Persian/Finglish word (e.g., "Salam")
+      slot: vocab.en          // English translation (e.g., "Hello")
+    };
+  });
+
   // Generate unique IDs for words and slots
-  const words = pairs.map(([word], index) => ({
+  const words = pairs.map((pair, index) => ({
     id: `word${index + 1}`,
-    text: word,
+    text: pair.word,
     slotId: `slot${index + 1}`
   }));
 
-  const slots = pairs.map(([, slot], index) => ({
+  const slots = pairs.map((pair, index) => ({
     id: `slot${index + 1}`,
-    text: slot
+    text: pair.slot
   }));
 
   return {
