@@ -4,15 +4,6 @@ import { generateGrammarOptions } from "../utils/grammar-options";
 import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence, matching, final } from "./curriculum-helpers";
 import { createVocabulary } from "./vocabulary-builder";
 
-// Shared vocabulary constants (can be referenced across lessons)
-const module1Lesson1Vocabulary = createVocabulary("module1-lesson1", {
-  ids: ["salam", "chetori", "khodafez", "merci"],
-  en: ["Hello", "How Are You?", "Goodbye", "Thank You"],
-  fa: ["سلام", "چطوری", "خداحافظ", "مرسی"],
-  finglish: ["Salam", "Chetori", "Khodafez", "Merci"],
-  phonetic: ["sah-LUHM", "che-TOH-ree", "kho-DUH-fez", "mer-SEE"]
-});
-
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
   {
@@ -26,7 +17,13 @@ export const curriculumData: Module[] = [
     lessons: [
       // Module 1 Lesson 1
       (() => {
-        const vocabulary = module1Lesson1Vocabulary;
+        const vocabulary = createVocabulary("module1-lesson1", {
+          ids: ["salam", "chetori", "khodafez", "merci"],
+          en: ["Hello", "How Are You?", "Goodbye", "Thank You"],
+          fa: ["سلام", "چطوری", "خداحافظ", "مرسی"],
+          finglish: ["Salam", "Chetori", "Khodafez", "Merci"],
+          phonetic: ["sah-LUHM", "che-TOH-ree", "kho-DUH-fez", "mer-SEE"]
+        });
         
         return {
           id: "lesson1",
@@ -69,7 +66,7 @@ export const curriculumData: Module[] = [
         audioMeaning("merci"),
         audioSequence(["merci", "khodafez"], "Thank you goodbye"),
           input("How do you say 'Goodbye' in Persian?", "Khodafez"),
-          matching(vocabulary, ["merci", "khodafez", "salam", "chetori"]),
+          matching(["merci", "khodafez", "salam", "chetori"]),
           final(vocabulary, ["salam", "chetori", "merci", "khodafez"], {
             conversationFlow: {
               description: "A polite greeting conversation",
@@ -114,8 +111,8 @@ export const curriculumData: Module[] = [
               lessonType: "responses"
             }
           },
-          // Reference shared Lesson 1 vocabulary for review
-          matching(module1Lesson1Vocabulary, ["salam", "chetori", "merci", "khodafez"]),
+          // Review Lesson 1 vocabulary - VocabularyService looks it up automatically
+          matching(["salam", "chetori", "merci", "khodafez"]),
           audioMeaning("chetori"),
           audioSequence(["salam", "chetori"], "Hello how are you"),
         flashcard(vocabulary, "khoob"),
@@ -124,11 +121,11 @@ export const curriculumData: Module[] = [
         flashcard(vocabulary, "khoobam"),
         vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
         audioMeaning("khoobam"),
-        matching(vocabulary, ["khoob", "khoobam"]),
+        matching(["khoob", "khoobam"]),
           textSequence("Salam chetori khoobam", "Hello how are you I'm good"),
           audioSequence(["khoobam", "merci"], "I'm good thank you"),
           vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
-          matching(vocabulary, ["khoob", "khoobam", "chetori", "salam"]),
+          matching(["khoob", "khoobam", "chetori", "salam"]),
         audioMeaning("merci"),
           final(vocabulary, ["salam", "chetori", "khoobam", "merci", "khodafez"], {
             conversationFlow: {

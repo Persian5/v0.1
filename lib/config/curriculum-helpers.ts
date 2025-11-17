@@ -117,15 +117,16 @@ export const textSequence = (
  * Presents words and slots that users drag to match Persian words with English translations.
  * Auto-generates English translations from vocabulary IDs.
  * 
- * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
+ * Uses VocabularyService to look up vocabulary dynamically from entire curriculum.
+ * No need to pass vocabulary arrays - just vocab IDs!
+ * 
  * @param vocabIds - Array of vocabulary IDs to match (e.g., ["salam", "khodafez"])
  * @param points - Points for the matching exercise (default: 3)
  */
 export const matching = (
-  vocabulary: Parameters<typeof matchingHelper>[0],
-  vocabIds: Parameters<typeof matchingHelper>[1],
-  points: Parameters<typeof matchingHelper>[2] = 3
-) => matchingHelper(vocabulary, vocabIds, points);
+  vocabIds: Parameters<typeof matchingHelper>[0],
+  points: Parameters<typeof matchingHelper>[1] = 3
+) => matchingHelper(vocabIds, points);
 
 /**
  * Generate a final challenge step

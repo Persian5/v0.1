@@ -1,4 +1,5 @@
 import { MatchingStep, VocabularyItem } from "../../types";
+import { VocabularyService } from "../../services/vocabulary-service";
 
 /**
  * Internal helper function to generate matching steps
@@ -9,24 +10,25 @@ import { MatchingStep, VocabularyItem } from "../../types";
  * Matching steps present words and slots that users drag to match.
  * Auto-generates English translations from vocabulary IDs.
  * 
- * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
+ * Uses VocabularyService.findVocabularyById() to look up vocabulary dynamically
+ * from the entire curriculum - no need to pass vocabulary arrays!
+ * 
  * @param vocabIds - Array of vocabulary IDs to match (e.g., ["salam", "khodafez"])
  * @param points - Points for the matching exercise (default: 3)
  * @returns MatchingStep with words and slots arrays
  */
 export function matchingHelper(
-  vocabulary: VocabularyItem[],
   vocabIds: string[],
   points: number = 3
 ): MatchingStep {
-  // Look up vocabulary items and generate pairs
+  // Look up vocabulary items from entire curriculum using VocabularyService
   const pairs = vocabIds.map(vocabId => {
-    const vocab = vocabulary.find(v => v.id === vocabId);
+    const vocab = VocabularyService.findVocabularyById(vocabId);
     
     if (!vocab) {
       throw new Error(
-        `[matchingHelper] Vocabulary ID "${vocabId}" not found in vocabulary array. ` +
-        `Available IDs: ${vocabulary.map(v => v.id).join(', ')}`
+        `[matchingHelper] Vocabulary ID "${vocabId}" not found in curriculum. ` +
+        `Make sure this vocabulary exists in your curriculum definition.`
       );
     }
     
