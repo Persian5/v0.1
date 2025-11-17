@@ -850,6 +850,37 @@ export function LessonRunner({
     }
   }
 
+  // PHASE 8 FIX: Memoize matching step resolution to prevent constant re-shuffling
+  const matchingStepData = useMemo(() => {
+    if (step.type !== 'matching') return null;
+    const matchingStep = step as MatchingStep;
+    const { GrammarService } = require('@/lib/services/grammar-service');
+    
+    if (matchingStep.data.lexemeRefs) {
+      return {
+        words: matchingStep.data.lexemeRefs.map((ref, index) => {
+          const resolved = GrammarService.resolve(ref);
+          return {
+            id: `word${index + 1}`,
+            text: resolved.finglish,
+            slotId: `slot${index + 1}`
+          };
+        }),
+        slots: matchingStep.data.lexemeRefs.map((ref, index) => {
+          const resolved = GrammarService.resolve(ref);
+          return {
+            id: `slot${index + 1}`,
+            text: resolved.en
+          };
+        })
+      };
+    }
+    return {
+      words: matchingStep.data.words,
+      slots: matchingStep.data.slots
+    };
+  }, [idx, step.type, (step as MatchingStep).data?.lexemeRefs, (step as MatchingStep).data?.words]);
+
   return (
     <>
       <div id="lesson-runner-state" ref={stateRef} style={{ display: 'none' }} />
@@ -953,11 +984,11 @@ export function LessonRunner({
           vocabularyId={getStepVocabularyId(step)}
           onVocabTrack={createVocabularyTracker()}
         />
-      ) : step.type === 'matching' ? (
+      ) : step.type === 'matching' && matchingStepData ? (
         <MatchingGame
           key={`matching-${idx}`}
-          words={(step as MatchingStep).data.words}
-          slots={(step as MatchingStep).data.slots}
+          words={matchingStepData.words}
+          slots={matchingStepData.slots}
           points={step.points}
           vocabularyBank={allCurriculumVocab}
           onComplete={handleItemComplete}
