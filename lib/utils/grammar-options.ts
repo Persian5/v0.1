@@ -452,8 +452,8 @@ export function generateGrammarOptions(
       "%c[GRAMMAR OPTIONS]",
       "color: #FF5722; font-weight: bold;",
       {
-        blankType,
-        correctAnswer,
+    blankType,
+    correctAnswer,
         options: options.map(o => o.text || o.meaning),
         learnedSoFarCount: learnedSoFar?.vocabIds?.length,
       }

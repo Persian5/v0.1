@@ -59,7 +59,7 @@ export const curriculumData: Module[] = [
           progress: 0,
           locked: false,
           vocabulary,
-          steps: [
+        steps: [
           {
             type: "welcome",
             title: "Basic Persian Greetings",
@@ -151,7 +151,7 @@ export const curriculumData: Module[] = [
           progress: 0,
           locked: false,
           vocabulary,
-          steps: [
+        steps: [
           {
             type: "welcome",
             title: "Basic Responses",
@@ -207,7 +207,7 @@ export const curriculumData: Module[] = [
             { word: "Salam", slot: "Hello" }
           ]),
         audioMeaning("merci"),
-        {
+          {
             type: "final",
             points: 4,
             data: {

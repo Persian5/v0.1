@@ -139,19 +139,19 @@ export function AudioMeaning({
       setCorrectAnswerIndex(options.indexOf(correctOption));
     } else {
       // OLD BEHAVIOR: Manual distractor handling
-      // Remove duplicates from distractors first
-      const uniqueDistractors = Array.from(new Set(distractors))
-      const allOptions = [vocabularyId, ...uniqueDistractors]
-      
-      // Use Fisher-Yates shuffle for better randomization
-      const shuffled = [...allOptions]
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-      }
-      
-      setShuffledOptions(shuffled)
-      setCorrectAnswerIndex(shuffled.indexOf(vocabularyId))
+    // Remove duplicates from distractors first
+    const uniqueDistractors = Array.from(new Set(distractors))
+    const allOptions = [vocabularyId, ...uniqueDistractors]
+    
+    // Use Fisher-Yates shuffle for better randomization
+    const shuffled = [...allOptions]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    
+    setShuffledOptions(shuffled)
+    setCorrectAnswerIndex(shuffled.indexOf(vocabularyId))
     }
   }, [vocabularyId, learnedSoFar, vocabularyBank, distractors]) // Added dependencies for new logic
   
