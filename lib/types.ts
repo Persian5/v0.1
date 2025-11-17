@@ -23,6 +23,56 @@ export interface VocabularyItem {
   semanticGroup?: string; // Semantic group for distractor generation (e.g., "greetings", "pronouns")
 }
 
+// ============================================================================
+// LEXEME & GRAMMAR TYPES (PHASE 1)
+// ============================================================================
+// Support for grammar-generated forms (e.g., "khoobam" = "khoob" + "-am")
+// Backward compatible: All existing string vocab IDs remain valid
+
+/**
+ * Base vocabulary ID (e.g., "khoob", "salam")
+ */
+export type VocabId = string;
+
+/**
+ * Grammar reference for morphological forms
+ * Example: { kind: "suffix", baseId: "khoob", suffixId: "am" } → "khoobam" (I'm good)
+ */
+export interface GrammarRef {
+  kind: "suffix";
+  baseId: VocabId;
+  suffixId: string; // e.g., "am", "i", "e", "im", "et", "and"
+}
+
+/**
+ * Lexeme reference - union type supporting both base vocab and grammar forms
+ * - string: Base vocabulary ID (existing behavior, backward compatible)
+ * - GrammarRef: Grammar-generated form (new)
+ */
+export type LexemeRef = VocabId | GrammarRef;
+
+/**
+ * Resolved lexeme with all fields populated
+ * Returned by GrammarService.resolve()
+ */
+export interface ResolvedLexeme {
+  id: string;           // Surface ID (e.g., "khoobam" for grammar form, "salam" for base)
+  baseId: string;       // Base vocabulary ID (e.g., "khoob")
+  en: string;           // English meaning (e.g., "I'm good")
+  fa: string;           // Persian script (e.g., "خوبم")
+  finglish: string;     // Finglish (e.g., "Khoobam")
+  phonetic?: string;    // Pronunciation guide (e.g., "khoob-AM")
+  lessonId?: string;    // Lesson where base vocab was introduced
+  semanticGroup?: string; // Semantic group of base vocab
+  isGrammarForm: boolean; // true if generated from GrammarRef, false if base vocab
+  grammar?: {
+    kind: "suffix";
+    suffixId: string;   // The suffix used (e.g., "am")
+  };
+}
+
+// ============================================================================
+
 // Lesson types
 export interface Lesson {
   id: string;
