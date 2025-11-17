@@ -2,6 +2,7 @@ import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
 import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence, matching } from "./curriculum-helpers";
+import { createVocabulary } from "./vocabulary-builder";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -16,40 +17,13 @@ export const curriculumData: Module[] = [
     lessons: [
       // Module 1 Lesson 1
       (() => {
-        const vocabulary: VocabularyItem[] = [
-          {
-            id: "salam",
-            en: "Hello",
-            fa: "سلام",
-            finglish: "Salam",
-            phonetic: "sah-LUHM",
-            lessonId: "module1-lesson1"
-          },
-          {
-            id: "chetori",
-            en: "How Are You?",
-            fa: "چطوری",
-            finglish: "Chetori",
-            phonetic: "che-TOH-ree",
-            lessonId: "module1-lesson1"
-          },
-          {
-            id: "khodafez",
-            en: "Goodbye",
-            fa: "خداحافظ",
-            finglish: "Khodafez",
-            phonetic: "kho-DUH-fez",
-            lessonId: "module1-lesson1"
-          },
-          {
-            id: "merci",
-            en: "Thank You",
-            fa: "مرسی",
-            finglish: "Merci",
-            phonetic: "mer-SEE",
-            lessonId: "module1-lesson1"
-          }
-        ];
+        const vocabulary = createVocabulary("module1-lesson1", {
+          ids: ["salam", "chetori", "khodafez", "merci"],
+          en: ["Hello", "How Are You?", "Goodbye", "Thank You"],
+          fa: ["سلام", "چطوری", "خداحافظ", "مرسی"],
+          finglish: ["Salam", "Chetori", "Khodafez", "Merci"],
+          phonetic: ["sah-LUHM", "che-TOH-ree", "kho-DUH-fez", "mer-SEE"]
+        });
         
         return {
           id: "lesson1",
@@ -119,24 +93,13 @@ export const curriculumData: Module[] = [
       })(),
       // Module 1 Lesson 2
       (() => {
-        const vocabulary: VocabularyItem[] = [
-          {
-            id: "khoob",
-            en: "Good",
-            fa: "خوب",
-            finglish: "Khoob",
-            phonetic: "Kh-oob",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "khoobam",
-            en: "I'm Good",
-            fa: "خوبم",
-            finglish: "Khoobam",
-            phonetic: "khoo-BAHM",
-            lessonId: "module1-lesson2"
-          }
-        ];
+        const vocabulary = createVocabulary("module1-lesson2", {
+          ids: ["khoob", "khoobam"],
+          en: ["Good", "I'm Good"],
+          fa: ["خوب", "خوبم"],
+          finglish: ["Khoob", "Khoobam"],
+          phonetic: ["Kh-oob", "khoo-BAHM"]
+        });
         
         return {
           id: "lesson2",
