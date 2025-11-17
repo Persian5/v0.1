@@ -1,7 +1,7 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
-import { vocabQuiz, flashcard, input, audioMeaning } from "./curriculum-helpers";
+import { vocabQuiz, flashcard, input, audioMeaning, audioSequence } from "./curriculum-helpers";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -106,14 +106,7 @@ export const curriculumData: Module[] = [
         vocabQuiz(vocabulary, "chetori", "vocab-reverse"),
         flashcard(vocabulary, "merci"),
         audioMeaning("merci"),
-        {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["merci", "khodafez"],
-              expectedTranslation: "Thank you goodbye"
-            }
-          },
+        audioSequence(["merci", "khodafez"], "Thank you goodbye"),
           input("How do you say 'Goodbye' in Persian?", "Khodafez"),
           {
             type: "matching",
@@ -220,22 +213,8 @@ export const curriculumData: Module[] = [
               ]
             }
           },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chetori",
-              distractors: ["salam", "merci", "khodafez"]
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "chetori"],
-              expectedTranslation: "Hello how are you"
-            }
-          },
+          audioMeaning("chetori"),
+          audioSequence(["salam", "chetori"], "Hello how are you"),
         flashcard(vocabulary, "khoob"),
         vocabQuiz(vocabulary, "khoob", "vocab-reverse"),
         audioMeaning("salam"),
@@ -265,14 +244,7 @@ export const curriculumData: Module[] = [
               maxWordBankSize: 10
             }
           },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["khoobam", "merci"],
-              expectedTranslation: "I'm good thank you"
-            }
-          },
+          audioSequence(["khoobam", "merci"], "I'm good thank you"),
           vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
           {
             type: "matching",
