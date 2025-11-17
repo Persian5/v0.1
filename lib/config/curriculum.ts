@@ -54,12 +54,12 @@ export const curriculumData: Module[] = [
           flashcard(vocabulary, "salam"),
           flashcard(vocabulary, "chetori"),
           vocabQuiz(vocabulary, "salam", "vocab-reverse"),
-          textSequence("Salam chetori", "Hello how are you", 3, 10),
+          textSequence("Salam chetori", "Hello how are you"),
           audioMeaning("chetori"),
         vocabQuiz(vocabulary, "salam", "vocab-normal"),
           flashcard(vocabulary, "khodafez"),
           audioMeaning("salam"),
-          textSequence("Salam khodafez", "Hello goodbye", 3, 10),
+          textSequence("Salam khodafez", "Hello goodbye"),
           audioMeaning("khodafez"),
         vocabQuiz(vocabulary, "chetori", "vocab-reverse"),
         flashcard(vocabulary, "merci"),
@@ -67,7 +67,7 @@ export const curriculumData: Module[] = [
         audioSequence(["merci", "khodafez"], "Thank you goodbye"),
           input("How do you say 'Goodbye' in Persian?", "Khodafez"),
           matching(vocabulary, ["merci", "khodafez", "salam", "chetori"]),
-          final(vocabulary, ["salam", "chetori", "merci", "khodafez"], 4, {
+          final(vocabulary, ["salam", "chetori", "merci", "khodafez"], {
             conversationFlow: {
               description: "A polite greeting conversation",
               expectedPhrase: "Hello, how are you, thank you, goodbye"
@@ -138,12 +138,12 @@ export const curriculumData: Module[] = [
         vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
         audioMeaning("khoobam"),
         matching(vocabulary, ["khoob", "khoobam"]),
-          textSequence("Salam chetori khoobam", "Hello how are you I'm good", 3, 10),
+          textSequence("Salam chetori khoobam", "Hello how are you I'm good"),
           audioSequence(["khoobam", "merci"], "I'm good thank you"),
           vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
           matching(vocabulary, ["khoob", "khoobam", "chetori", "salam"]),
         audioMeaning("merci"),
-          final(vocabulary, ["salam", "chetori", "khoobam", "merci", "khodafez"], 4, {
+          final(vocabulary, ["salam", "chetori", "khoobam", "merci", "khodafez"], {
             conversationFlow: {
               description: "A polite conversation",
               expectedPhrase: "Hello, how are you? I'm good, thank you, goodbye"
