@@ -197,9 +197,15 @@ export function FinalChallenge({
     if (description) return description;
     
     if (conversationFlow) {
-      // PHASE 8 FIX: Show English translation, not Persian (don't give answer away)
-      const englishTranslation = words.map(w => w.translation).join(' ');
-      return `Build this sentence: "${englishTranslation}"`;
+      // PHASE 8 FIX: Use expectedPhrase (English) and normalize to sentence format
+      let sentence = conversationFlow.expectedPhrase;
+      // Capitalize first letter
+      sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+      // Ensure proper punctuation at end
+      if (!sentence.endsWith('.') && !sentence.endsWith('?') && !sentence.endsWith('!')) {
+        sentence += '.';
+      }
+      return `Build this sentence: "${sentence}"`;
     }
     
     // For final challenges without conversationFlow, we need to create proper sentences
