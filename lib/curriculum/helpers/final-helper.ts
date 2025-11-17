@@ -1,4 +1,5 @@
-import { FinalStep, VocabularyItem } from "../../types";
+import { FinalStep, LexemeRef, VocabularyItem } from "../../types";
+import { GrammarService } from "../../services/grammar-service";
 
 /**
  * Options for final step generation
@@ -19,52 +20,41 @@ export interface FinalStepOptions {
 /**
  * Internal helper function to generate final challenge steps
  * 
- * This is the implementation logic for final step generation.
- * Exported for use by curriculum-helpers.ts wrapper.
+ * PHASE 4.4: Now supports LexemeRef[] (base vocab or grammar forms)
  * 
  * Final steps present a conversation challenge where users arrange words in order.
- * Auto-generates words array, targetWords, and persianSequence from vocabulary IDs.
+ * Auto-generates words array, targetWords, and persianSequence from lexeme references.
  * Points have consistent default - always 4 points.
  * 
- * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
- * @param vocabIds - Array of vocabulary IDs in the target order (e.g., ["salam", "chetori", "merci", "khodafez"])
+ * @param vocabulary - DEPRECATED: Kept for backward compatibility, not used (GrammarService looks up vocab)
+ * @param refs - Array of lexeme references in the target order
  * @param options - Required conversationFlow, optional title and custom messages
  * @returns FinalStep with auto-generated words, targetWords, and persianSequence
+ * 
+ * Examples:
+ *   finalHelper(vocabulary, ["salam", "chetori", "merci"], { conversationFlow: {...} })
+ *   finalHelper(vocabulary, [{ kind: "suffix", baseId: "khoob", suffixId: "am" }, "merci"], { conversationFlow: {...} })
  */
 export function finalHelper(
-  vocabulary: VocabularyItem[],
-  vocabIds: string[],
+  vocabulary: VocabularyItem[], // DEPRECATED: Kept for backward compatibility
+  refs: LexemeRef[],
   options: FinalStepOptions
 ): FinalStep {
-  // Validate all vocabulary IDs exist
-  const missingIds = vocabIds.filter(id => !vocabulary.find(v => v.id === id));
-  if (missingIds.length > 0) {
-    throw new Error(
-      `[finalHelper] Vocabulary IDs not found in vocabulary array: ${missingIds.join(', ')}. ` +
-      `Available IDs: ${vocabulary.map(v => v.id).join(', ')}`
-    );
-  }
+  // Resolve all lexeme references (vocabulary parameter ignored)
+  const resolved = refs.map(ref => GrammarService.resolve(ref));
 
-  // Auto-generate words array from vocabulary
-  const words = vocabIds.map(vocabId => {
-    const vocab = vocabulary.find(v => v.id === vocabId);
-    if (!vocab) {
-      // This should never happen due to validation above, but TypeScript needs it
-      throw new Error(`[finalHelper] Vocabulary ID "${vocabId}" not found`);
-    }
-    
-    return {
-      id: vocabId,
-      text: vocab.finglish,  // Use finglish for display (e.g., "Salam")
-      translation: vocab.en   // Use English translation (e.g., "Hello")
-    };
-  });
+  // Auto-generate words array from resolved lexemes
+  const words = resolved.map(lexeme => ({
+    id: lexeme.id,          // Surface ID (e.g., "khoobam" for grammar forms)
+    text: lexeme.finglish,  // Use finglish for display (e.g., "Salam" or "Khoobam")
+    translation: lexeme.en   // Use English translation (e.g., "Hello" or "I'm good")
+  }));
 
-  // Auto-generate targetWords (same as vocabIds in order)
-  const targetWords = [...vocabIds];
+  // Auto-generate targetWords (surface IDs in order)
+  const targetWords = resolved.map(lexeme => lexeme.id);
 
-  // Auto-generate persianSequence (same as vocabIds in order)
-  const persianSequence = [...vocabIds];
+  // Auto-generate persianSequence (surface IDs in order)
+  const persianSequence = resolved.map(lexeme => lexeme.id);
 
   // Default messages (used unless overridden)
   const defaultSuccessMessage = "Perfect! You can greet someone in Persian!";
@@ -74,7 +64,7 @@ export function finalHelper(
   const conversationFlow = {
     description: options.conversationFlow.description,
     expectedPhrase: options.conversationFlow.expectedPhrase,
-    persianSequence // Auto-generated from vocabIds
+    persianSequence // Auto-generated from refs
   };
 
   return {

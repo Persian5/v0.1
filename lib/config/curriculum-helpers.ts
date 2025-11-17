@@ -132,16 +132,16 @@ export const matching = (
  * Generate a final challenge step
  * 
  * Presents a conversation challenge where users arrange words in order.
- * Auto-generates words array, targetWords, and persianSequence from vocabulary IDs.
+ * Auto-generates words array, targetWords, and persianSequence from lexeme references.
  * Points have consistent default (always 4 points).
  * Success and incorrect messages have defaults - only override if needed.
  * 
- * @param vocabulary - Array of vocabulary items from the lesson (for lookup)
- * @param vocabIds - Array of vocabulary IDs in target order (e.g., ["salam", "chetori", "merci", "khodafez"])
+ * @param vocabulary - Vocabulary array (kept for backward compatibility, not used internally)
+ * @param refs - Array of lexeme references in target order
  * @param options - Required conversationFlow, optional title and custom messages
  */
 export const final = (
   vocabulary: Parameters<typeof finalHelper>[0],
-  vocabIds: Parameters<typeof finalHelper>[1],
+  refs: Parameters<typeof finalHelper>[1],
   options: FinalStepOptions
-) => finalHelper(vocabulary, vocabIds, options);
+) => finalHelper(vocabulary, refs, options);
