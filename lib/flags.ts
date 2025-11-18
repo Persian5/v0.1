@@ -2,6 +2,7 @@ export const FLAGS = {
   LOG_LEARNED_VOCAB: true,
   LOG_DISTRACTORS: false,
   LOG_WORDBANK: true, // ✅ Enable for testing
+  LOG_GRAMMAR_OPTIONS: false, // Debug logs for generateGrammarOptions (disabled by default)
   LOG_SEMANTIC_GROUPS: false,
   USE_NEW_DISTRACTOR_LOGIC: false,
   USE_NEW_WORDBANK_LOGIC: false,
