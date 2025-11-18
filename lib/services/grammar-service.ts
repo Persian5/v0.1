@@ -68,6 +68,18 @@ export function resolve(ref: LexemeRef): ResolvedLexeme {
   // ============================================================================
   
   if (typeof ref === 'string') {
+    // Check if it's a grammar form ID (e.g., "khoob|am")
+    if (ref.includes('|')) {
+      const [baseId, suffixId] = ref.split('|');
+      if (baseId && suffixId) {
+        return resolve({
+          kind: 'suffix',
+          baseId,
+          suffixId
+        });
+      }
+    }
+
     // Base vocabulary ID - look up from curriculum
     const baseVocab = VocabularyService.findVocabularyById(ref);
     

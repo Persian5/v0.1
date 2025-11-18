@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react"
@@ -7,6 +7,8 @@ import { XpAnimation } from "./XpAnimation"
 import { playSuccessSound } from "./Flashcard"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { ValidatedLetterInput } from "./ValidatedLetterInput"
+import { type LexemeRef } from "@/lib/types"
+import { GrammarService } from "@/lib/services/grammar-service"
 
 export interface InputExerciseProps {
   question: string
@@ -15,6 +17,7 @@ export interface InputExerciseProps {
   onComplete: (correct: boolean) => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance
+  lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
 }
 
@@ -116,8 +119,27 @@ export function InputExercise({
   onComplete,
   onXpStart,
   vocabularyId,
+  lexemeRef, // NEW
   onVocabTrack
 }: InputExerciseProps) {
+
+  // Resolve grammar form if provided
+  const resolvedLexeme = useMemo(() => {
+    if (lexemeRef) {
+      try {
+        return GrammarService.resolve(lexemeRef);
+      } catch (e) {
+        console.warn("Failed to resolve lexemeRef in InputExercise", e);
+        return null;
+      }
+    }
+    return null;
+  }, [lexemeRef]);
+
+  const trackingId = resolvedLexeme ? resolvedLexeme.id : vocabularyId;
+  // Use resolved English meaning for tracking if available, otherwise fallback to question
+  const trackingText = resolvedLexeme ? resolvedLexeme.en : question;
+
   const [input, setInput] = useState("")
   const [showFeedback, setShowFeedback] = useState(false)
   const [showXp, setShowXp] = useState(false)
@@ -172,8 +194,8 @@ export function InputExercise({
     const timeSpentMs = Date.now() - startTime.current;
 
     // Track vocabulary performance to Supabase - hasTracked already set above
-    if (vocabularyId && onVocabTrack) {
-      onVocabTrack(vocabularyId, question, isAnswerCorrect, timeSpentMs);
+    if (trackingId && onVocabTrack) {
+      onVocabTrack(trackingId, trackingText, isAnswerCorrect, timeSpentMs);
     }
     
     // NOTE: Remediation is handled automatically by onVocabTrack

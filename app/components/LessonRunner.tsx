@@ -16,7 +16,6 @@ import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
 import { VocabularyTrackingService } from '@/lib/services/vocabulary-tracking-service'
-import { PhraseTrackingService } from '@/lib/services/phrase-tracking-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
 import { SyncService } from '@/lib/services/sync-service'
@@ -542,12 +541,7 @@ export function LessonRunner({
         console.log(`✅ Correct answer for "${vocabularyId}" - counter unchanged`);
       }
       
-      // Keep localStorage tracking for backwards compatibility
-      if (isCorrect) {
-        VocabularyService.recordCorrectAnswer(vocabularyId);
-      } else {
-        VocabularyService.recordIncorrectAnswer(vocabularyId);
-      }
+      // LocalStorage tracking removed (Phase 1 Cleanup)
     };
   }, [idx, steps, user?.id, moduleId, lessonId, isInRemediation, incorrectAttempts]);
 
@@ -989,6 +983,7 @@ export function LessonRunner({
           vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for lookup
           quizType={(step as QuizStep).data.quizType} // NEW: Pass quizType from step data
           vocabularyId={(step as QuizStep).data.vocabularyId || extractVocabularyFromFailedQuiz(step)} // NEW: Prefer step.data.vocabularyId, fallback to extraction
+          lexemeRef={(step as QuizStep).data.lexemeRef} // NEW: Pass lexemeRef for grammar forms
           moduleId={moduleId} // For tiered fallback
           lessonId={lessonId} // For tiered fallback
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
@@ -1006,6 +1001,7 @@ export function LessonRunner({
           vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for lookup
           quizType={(step as ReverseQuizStep).data.quizType} // NEW: Pass quizType from step data
           vocabularyId={(step as ReverseQuizStep).data.vocabularyId || extractVocabularyFromFailedQuiz(step)} // NEW: Prefer step.data.vocabularyId, fallback to extraction
+          lexemeRef={(step as ReverseQuizStep).data.lexemeRef} // NEW: Pass lexemeRef for grammar forms
           moduleId={moduleId} // For tiered fallback
           lessonId={lessonId} // For tiered fallback
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
@@ -1021,6 +1017,7 @@ export function LessonRunner({
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
           vocabularyId={getStepVocabularyId(step)}
+          lexemeRef={(step as InputStep).data.lexemeRef} // NEW: Pass lexemeRef for grammar forms
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'matching' && matchingStepData ? (

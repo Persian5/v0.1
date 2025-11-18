@@ -21,16 +21,16 @@ import { finalHelper, type FinalStepOptions } from "../curriculum/helpers/final-
  * Generate a vocab quiz step
  * 
  * @param vocabulary - Array of vocabulary items from the lesson
- * @param vocabId - Vocabulary ID to test (e.g., "salam")
+ * @param vocabRef - Vocabulary ID (string) or LexemeRef to test
  * @param quizType - Type of quiz: "vocab-normal" or "vocab-reverse"
  * @param points - Points for the quiz (default: 2)
  */
 export const vocabQuiz = (
   vocabulary: Parameters<typeof quizHelper>[0],
-  vocabId: Parameters<typeof quizHelper>[1],
+  vocabRef: Parameters<typeof quizHelper>[1],
   quizType: Parameters<typeof quizHelper>[2] = "vocab-normal",
   points: Parameters<typeof quizHelper>[3] = 2
-) => quizHelper(vocabulary, vocabId, quizType, points);
+) => quizHelper(vocabulary, vocabRef, quizType, points);
 
 /**
  * Generate a flashcard step
@@ -51,12 +51,14 @@ export const flashcard = (
  * @param question - The question prompt (e.g., "How do you say 'Goodbye' in Persian?")
  * @param answer - The expected answer (e.g., "Khodafez")
  * @param points - Points for the input exercise (default: 2)
+ * @param vocabRef - Optional: Vocabulary ID or Grammar Form for tracking
  */
 export const input = (
   question: Parameters<typeof inputHelper>[0],
   answer: Parameters<typeof inputHelper>[1],
-  points: Parameters<typeof inputHelper>[2] = 2
-) => inputHelper(question, answer, points);
+  points: Parameters<typeof inputHelper>[2] = 2,
+  vocabRef?: Parameters<typeof inputHelper>[3]
+) => inputHelper(question, answer, points, vocabRef);
 
 /**
  * Generate an audio-meaning step

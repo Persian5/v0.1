@@ -16,6 +16,8 @@
 
 import { supabase } from '@/lib/supabase/client'
 import { VocabularyTrackingService, WeakWord } from './vocabulary-tracking-service'
+import { GrammarService } from './grammar-service'
+import { VocabularyItem } from '../types'
 
 // ============================================================================
 // TYPES
@@ -142,6 +144,32 @@ export class ReviewSessionService {
       tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
       tomorrow.setUTCHours(0, 0, 0, 0)
       return tomorrow.toISOString()
+    }
+  }
+
+  /**
+   * Convert vocabulary_performance row to VocabularyItem
+   * Handles BOTH base vocab AND grammar forms (e.g., "khoob|am")
+   * 
+   * Replaces duplicate resolution logic across review games.
+   */
+  static toVocabularyItem(word: { vocabulary_id: string }): VocabularyItem | null {
+    try {
+      // Uses enhanced GrammarService to handle "bad" and "bad|am" automatically
+      const resolved = GrammarService.resolve(word.vocabulary_id)
+      
+      return {
+        id: resolved.id,
+        en: resolved.en,
+        fa: resolved.fa,
+        finglish: resolved.finglish,
+        phonetic: resolved.phonetic || '',
+        lessonId: resolved.lessonId || '',
+        semanticGroup: resolved.semanticGroup
+      }
+    } catch (error) {
+      console.warn(`[ReviewSessionService] Failed to resolve vocabulary: ${word.vocabulary_id}`, error)
+      return null
     }
   }
 

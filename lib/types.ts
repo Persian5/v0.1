@@ -129,10 +129,11 @@ export interface QuizStep extends BaseStep {
   type: 'quiz';
   data: {
     prompt: string;
-    options: string[];
+    options: string[]; // Generic string options (for QuizOption object array, component handles casting)
     correct: number;
     quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Distinguishes quiz types
     vocabularyId?: string; // For vocab quizzes, specifies which vocabulary item to test
+    lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   };
 }
 
@@ -145,6 +146,7 @@ export interface ReverseQuizStep extends BaseStep {
     correct: number;      // Index of correct Persian option
     quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Distinguishes quiz types
     vocabularyId?: string; // For vocab quizzes, specifies which vocabulary item to test
+    lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   };
 }
 
@@ -154,6 +156,8 @@ export interface InputStep extends BaseStep {
   data: {
     question: string;
     answer: string;
+    vocabularyId?: string; // NEW: Track performance
+    lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   };
 }
 

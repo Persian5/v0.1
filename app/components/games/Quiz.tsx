@@ -9,7 +9,8 @@ import { shuffle } from "@/lib/utils"
 import { FLAGS } from "@/lib/flags"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
-import { type VocabularyItem } from "@/lib/types"
+import { type VocabularyItem, type LexemeRef } from "@/lib/types"
+import { GrammarService } from "@/lib/services/grammar-service"
 
 type QuizOption = {
   text: string;
@@ -24,6 +25,7 @@ export interface QuizProps {
   onComplete: (correct: boolean) => void;
   onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
   vocabularyId?: string; // Optional: for tracking vocabulary performance OR from step.data.vocabularyId
+  lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
   label?: string; // Optional custom label (e.g., "PRACTICE AGAIN" for remediation)
   subtitle?: string; // Optional custom subtitle
@@ -42,6 +44,7 @@ export function Quiz({
   onComplete,
   onXpStart,
   vocabularyId,
+  lexemeRef, // NEW
   onVocabTrack,
   label = "QUICK QUIZ",
   subtitle = "Test what you've learned",
@@ -51,6 +54,26 @@ export function Quiz({
   moduleId, // For tiered fallback
   lessonId // For tiered fallback
 }: QuizProps) {
+  
+  // Resolve grammar form if provided
+  const resolvedLexeme = useMemo(() => {
+    if (lexemeRef) {
+      try {
+        return GrammarService.resolve(lexemeRef);
+      } catch (e) {
+        console.warn("Failed to resolve lexemeRef in Quiz", e);
+        return null;
+      }
+    }
+    return null;
+  }, [lexemeRef]);
+
+  const trackingId = resolvedLexeme ? resolvedLexeme.id : vocabularyId;
+  // Use resolved English meaning for tracking if available, otherwise fallback to prompt (will be resolved below)
+  // Note: We use rawPrompt here if available, but the actual prompt used in UI is resolved below.
+  // For tracking, we want the English meaning if possible.
+  const trackingText = resolvedLexeme ? resolvedLexeme.en : (rawPrompt || '');
+
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
   const [isCorrectAnswer, setIsCorrectAnswer] = useState(false)
@@ -313,8 +336,8 @@ export function Quiz({
         const timeSpentMs = Date.now() - startTime.current
         
         // Track vocabulary performance to Supabase
-        if (vocabularyId && onVocabTrack) {
-          onVocabTrack(vocabularyId, prompt, true, timeSpentMs);
+        if (trackingId && onVocabTrack) {
+          onVocabTrack(trackingId, trackingText, true, timeSpentMs);
         }
         
         setQuizState('completed');
@@ -326,8 +349,8 @@ export function Quiz({
       const timeSpentMs = Date.now() - startTime.current
       
       // For incorrect answers, track immediately since we're not advancing
-      if (vocabularyId && onVocabTrack) {
-        onVocabTrack(vocabularyId, prompt, false, timeSpentMs);
+      if (trackingId && onVocabTrack) {
+        onVocabTrack(trackingId, trackingText, false, timeSpentMs);
       }
       
       // NOTE: Remediation is handled automatically by onVocabTrack

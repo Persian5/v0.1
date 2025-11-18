@@ -401,7 +401,7 @@ export const curriculumData: Module[] = [
             textSequence(
               "Na, Badam", 
               "No, I'm bad",
-              [{ kind: "suffix", baseId: "bad", suffixId: "am" } as const]
+              ["na", { kind: "suffix", baseId: "bad", suffixId: "am" } as const]
             ),
             // 13. Audio Meaning: Khoobam
             audioMeaning({ kind: "suffix", baseId: "khoob", suffixId: "am" } as const),

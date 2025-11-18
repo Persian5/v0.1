@@ -229,7 +229,11 @@ export class WordBankService {
     
     if (FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedVocabIds && learnedVocabIds.length > 0) {
       const learnedSet = new Set(learnedVocabIds);
-      const filtered = vocabularyBank.filter(v => learnedSet.has(v.id));
+      const filtered = vocabularyBank.filter(v => {
+        // ALWAYS include items required for the sequence (e.g. grammar forms not in learned set yet)
+        if (sequenceIds && sequenceIds.includes(v.id)) return true;
+        return learnedSet.has(v.id);
+      });
       
       // Minimum viable bank: ensure we have at least correct words + 3 distractors
       const minRequired = (sequenceIds?.length || 0) + 3;

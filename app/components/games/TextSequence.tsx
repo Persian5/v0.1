@@ -52,6 +52,28 @@ export function TextSequence({
     [resolvedLexemes]
   );
 
+  // GRAMMAR FORMS: Inject resolved lexemes into vocabularyBank so WordBankService can match them
+  // This ensures "bad|am" (meaning "I'm bad") is found during phrase detection
+  const expandedVocabularyBank = useMemo(() => {
+    if (!resolvedLexemes.length) return vocabularyBank;
+
+    const grammarVocabItems = resolvedLexemes.map(resolved => ({
+      id: resolved.id,
+      en: resolved.en,
+      fa: resolved.fa,
+      finglish: resolved.finglish,
+      phonetic: resolved.phonetic || '',
+      lessonId: resolved.lessonId || '',
+      semanticGroup: resolved.semanticGroup
+    }));
+    
+    // Avoid duplicates (if base vocab is already in bank)
+    const bankIds = new Set(vocabularyBank.map(v => v.id));
+    const uniqueGrammarItems = grammarVocabItems.filter(v => !bankIds.has(v.id));
+    
+    return [...vocabularyBank, ...uniqueGrammarItems];
+  }, [vocabularyBank, resolvedLexemes]);
+
   const [userOrder, setUserOrder] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
   const [showXp, setShowXp] = useState(false)
@@ -65,7 +87,8 @@ export function TextSequence({
   // Calculate expected semantic unit count (phrases count as 1, words count as 1)
   const expectedWordCount = WordBankService.getSemanticUnits({
     expectedTranslation,
-    vocabularyBank
+    vocabularyBank: expandedVocabularyBank, // ✅ Use expanded bank
+    sequenceIds // ✅ Pass sequenceIds for phrase matching
   });
 
   // WORD BANK: Use WordBankService for unified, consistent generation
@@ -86,7 +109,7 @@ export function TextSequence({
     
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
-      vocabularyBank,
+      vocabularyBank: expandedVocabularyBank, // ✅ Use expanded bank
       sequenceIds: sequenceIds.length > 0 ? sequenceIds : undefined, // GRAMMAR FORMS: Pass vocabulary IDs (e.g., ["bad|am"])
       maxSize: maxWordBankSize,
       distractorStrategy: 'semantic',
@@ -121,7 +144,7 @@ export function TextSequence({
     // Get correct semantic units from WordBankService
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
-      vocabularyBank,
+      vocabularyBank: expandedVocabularyBank, // ✅ Use expanded bank
       sequenceIds: sequenceIds.length > 0 ? sequenceIds : undefined // GRAMMAR FORMS: Pass vocabulary IDs for tracking
     });
     

@@ -112,7 +112,7 @@ export function PersianWordRush({
           
           // Convert to VocabularyItem[]
           for (const word of words) {
-            const vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+            const vocabItem = ReviewSessionService.toVocabularyItem(word) // Use unified helper
             if (vocabItem) {
               userVocabulary.push(vocabItem)
             }
@@ -289,9 +289,16 @@ export function PersianWordRush({
               isCorrect: false,
               contextData: { reviewMode: true }
             }).catch(console.error)
-          } else {
-            // Regular mode: use legacy tracking
-            VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+          } else if (user?.id) {
+            // Regular mode: use VocabularyTrackingService
+            VocabularyTrackingService.storeAttempt({
+              userId: user.id,
+              vocabularyId: currentWord.word.id,
+              wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+              gameType: 'persian-word-rush',
+              isCorrect: false,
+              contextData: { reviewMode: false }
+            }).catch(console.error)
           }
 
           // Check game over or shake word red
@@ -371,9 +378,16 @@ export function PersianWordRush({
         
         // Award review XP (1 XP per correct)
         ReviewSessionService.awardReviewXp(user.id, 1).catch(console.error)
-      } else {
-        // Regular mode: use legacy tracking
-        VocabularyService.recordCorrectAnswer(currentWord.word.id)
+      } else if (user?.id) {
+        // Regular mode: use VocabularyTrackingService
+        VocabularyTrackingService.storeAttempt({
+          userId: user.id,
+          vocabularyId: currentWord.word.id,
+          wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+          gameType: 'persian-word-rush',
+          isCorrect: true,
+          contextData: { reviewMode: false }
+        }).catch(console.error)
       }
 
       // Shake word green and then start next word
@@ -406,9 +420,16 @@ export function PersianWordRush({
           isCorrect: false,
           contextData: { reviewMode: true }
         }).catch(console.error)
-      } else {
-        // Regular mode: use legacy tracking
-        VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+      } else if (user?.id) {
+        // Regular mode: use VocabularyTrackingService
+        VocabularyTrackingService.storeAttempt({
+          userId: user.id,
+          vocabularyId: currentWord.word.id,
+          wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+          gameType: 'persian-word-rush',
+          isCorrect: false,
+          contextData: { reviewMode: false }
+        }).catch(console.error)
       }
 
       // Check game over or shake word red
