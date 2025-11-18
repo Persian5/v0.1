@@ -657,128 +657,212 @@ export const curriculumData: Module[] = [
     available: true,
     requiresPremium: true,
     lessons: [
-      {
-        id: "lesson1",
-        title: "Adjective Suffixes \"–am\" & \"–i\"",
-        description: "Learn how to form 'I am...' and 'you are...' with adjectives using suffixes",
-        emoji: "📚",
-        progress: 0,
-        locked: false,
-        grammarLesson: true,
-        vocabulary: [
-          {
-            id: "khoob",
-            en: "Good",
-            fa: "خوب",
-            finglish: "Khoob",
-            phonetic: "khoob",
-            lessonId: "module1-lesson2"
-          }
-        ],
-        steps: [
-          {
-            type: "welcome",
-            title: "Review: Adjective Suffixes \"–am\" & \"–i\"",
-            description: "Let's practice what you learned! You already know how to add -am (I am) and -i (you are) to adjectives. This lesson will help you use these suffixes more confidently in conversations.",
-            points: 0,
-            data: {
-              objectives: [
-                "Review the -am and -i suffix patterns",
-                "Practice forming sentences with adjective suffixes", 
-                "Use suffixes naturally in conversations"
+      // Module 2 Lesson 1: Introducing Yourself with Ezafe
+      (() => {
+        // No vocabulary needed - names are used as plain strings, not grammar forms
+        const vocabulary: VocabularyItem[] = [];
+
+        return {
+          id: "lesson1",
+          title: "Introducing Yourself",
+          description: "Today you'll learn how to introduce yourself in Persian using \"esme man … e\" and reinforce the identity-question pattern introduced in Module 1.",
+          emoji: "👋",
+          progress: 0,
+          locked: false,
+          vocabulary,
+          steps: [
+            // 1. Welcome Intro
+            {
+              type: "welcome",
+              title: "Introducing Yourself",
+              description: "Today you'll learn how to introduce yourself in Persian. You already know how to ask, \"What is your name?\" Now it's time to answer it naturally like a native.",
+              points: 0,
+              data: {
+                objectives: [
+                  "Learn the ezafe connector (-e)",
+                  "Say \"my name is...\" naturally",
+                  "Answer \"What is your name?\" confidently",
+                  "Use names in introductions"
+                ],
+                lessonType: "introductions"
+              }
+            },
+            // 2. Audio Sequence: Salam, esm|e shoma chiye
+            audioSequence(
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
               ],
-              lessonType: "review"
-            }
-          },
-          // REVIEW: Grammar Fill Blank (word + suffix) - More complex than Module 1
-          {
-            type: "grammar-fill-blank",
-            points: 1,
-            data: {
-              conceptId: "suffix-am",
-              label: "FILL IN THE BLANKS",
-              subtitle: "Complete the sentence with word and suffix",
-              exercises: [
-                {
-                  sentence: "___ merci, khoob-___",
-                  translation: "No thank you, I am good",
-                  blanks: [
-                    {
-                      index: 0,
-                      type: "word",
-                      correctAnswer: "na"
-                    },
-                    {
-                      index: 1,
-                      type: "suffix",
-                      correctAnswer: "am"
-                    }
-                  ],
-                  wordOptions: [
-                    { id: "word-na", text: "na" },
-                    { id: "word-baleh", text: "baleh" },
-                    { id: "word-man", text: "man" },
-                    { id: "word-shoma", text: "shoma" }
-                  ],
-                  suffixOptions: [
-                    { id: "suffix-am", text: "-am" },
-                    { id: "suffix-i", text: "-i" },
-                    { id: "suffix-e", text: "-e" },
-                    { id: "suffix-et", text: "-et" }
+              "Hello what is your name"
+            ),
+            // 3. Matching: Man, Shoma, Chi, Chiye
+            matching(["man", "shoma", "chi", "chiye"]),
+            // 4. Audio Meaning: Khodafez
+            audioMeaning("khodafez"),
+            // 5. Grammar Intro: Ezafe -e
+            {
+              type: "grammar-intro",
+              points: 1,
+              data: {
+                conceptId: "ezafe-e",
+                title: "Ezafe: -e = belonging",
+                description: "In Persian, you add -e to connect words that belong together. For example: esm → esme ('name of'), esme man ('my name'), esme shoma ('your name').",
+                rule: "Add -e to connect words that belong together",
+                visualType: "tree",
+                visualData: {
+                  base: "esm",
+                  transformations: [
+                    { label: "-e", result: "esme", meaning: "name of" },
+                    { label: "-e + man", result: "esme man", meaning: "my name" },
+                    { label: "-e + shoma", result: "esme shoma", meaning: "your name" }
                   ]
                 }
+              }
+            },
+            // 6. Grammar Fill in the Blank: Esm-___ man (testing for -e)
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+              data: {
+                conceptId: "ezafe-e-esm",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
+                exercises: [
+                  {
+                    sentence: "Esm-___ man",
+                    translation: "My name",
+                    blankPosition: 4,
+                    correctAnswer: "e",
+                    suffixOptions: [
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            // 7. Audio Meaning: Esm|e
+            audioMeaning({ kind: "suffix", baseId: "esm", suffixId: "e" } as const),
+            // 8. Text Sequence: Esm|e Man
+            textSequence(
+              "Esme Man",
+              "My name",
+              [{ kind: "suffix", baseId: "esm", suffixId: "e" } as const, "man"]
+            ),
+            // 9. Audio Meaning: Esm|e Shoma
+            audioMeaning({ kind: "suffix", baseId: "esm", suffixId: "e" } as const),
+            // 10. Text Sequence: Esm|e Shoma Chiye
+            textSequence(
+              "Esme Shoma Chiye",
+              "What is your name",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
               ]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type the Persian (phonetic) for 'I am good.'",
-              answer: "khoob-am"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam khoobi?",
-              expectedTranslation: "Hello are you good?",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Khoobi?",
-              expectedTranslation: "Are you good?",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "chetori", text: "Chetori", translation: "How are you" },
-                { id: "khoobam", text: "khoobam", translation: "I am good" },
-                { id: "khoobi", text: "khoobi", translation: "Are you good" }
+            ),
+            // 11. Text Sequence: Esm|e Man Amir-e (name as plain string, no grammar tracking)
+            textSequence(
+              "Esme Man Amir-e",
+              "My name is Amir",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man"
+                // Note: "Amir-e" is just text, not tracked as grammar form
+              ]
+            ),
+            // 12. Matching: Baleh, Na, Esm|e, Esm
+            matching([
+              "baleh",
+              "na",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "esm"
+            ]),
+            // 13. MC Quiz: What does "esm|e man" mean
+            {
+              type: "quiz",
+              points: 2,
+              data: {
+                prompt: "What does 'Esme man' mean?",
+                options: ["My name", "Your name", "Name", "What is your name"],
+                correct: 0,
+                quizType: "grammar",
+                lexemeRef: { kind: "suffix", baseId: "esm", suffixId: "e" } as const
+              }
+            },
+            // 14. Reverse MC: Which phrase means "your name"
+            vocabQuiz(
+              vocabulary,
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "vocab-reverse"
+            ),
+            // 15. Audio Sequence: Salam chetori Khoob|am merci
+            audioSequence(
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
               ],
-              targetWords: ["salam", "chetori", "khoobam", "khoobi"],
+              "Hello how are you I'm good thank you"
+            ),
+            // 16. Input: Esm
+            input(
+              "How do you say 'name' in Persian?",
+              "Esm",
+              2,
+              "esm"
+            ),
+            // 17. Audio Meaning: Bad|am
+            audioMeaning({ kind: "suffix", baseId: "bad", suffixId: "am" } as const),
+            // 18. Input: Khoob
+            input(
+              "How do you say 'good' in Persian?",
+              "Khoob",
+              2,
+              "khoob"
+            ),
+            // 19. Text Sequence: Esm|e man chiye
+            textSequence(
+              "Esme Man Chiye",
+              "What is my name",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man",
+                "chiye"
+              ]
+            ),
+            // 20. Matching: Esm, Esm|e, Man, Shoma
+            matching([
+              "esm",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "man",
+              "shoma"
+            ]),
+            // 21. Final Challenge: Salam Esm|e Shoma chiye, esm|e man sara-e Khodafez (name as plain string)
+            final(vocabulary, [
+              "salam",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "shoma",
+              "chiye",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "man",
+              "sara-e", // Plain string for name (not tracked as grammar form)
+              "khodafez"
+            ], {
               conversationFlow: {
-                description: "A conversation with adjective suffixes",
-                expectedPhrase: "Hello, how are you? I am good, are you good?",
-                persianSequence: ["salam", "chetori", "khoobam", "khoobi"]
+                description: "A complete introduction conversation",
+                expectedPhrase: "Hello, what is your name? My name is Sara, goodbye"
               },
-              title: "Grammar Practice",
-              successMessage: "Excellent! You understand adjective suffixes!",
-              incorrectMessage: "Almost there—let's practice that suffix pattern again!"
-            }
-          }
-        ]
-      },
+              title: "Your Introduction"
+            })
+          ]
+        };
+      })(),
       {
         id: "lesson2",
         title: "Basic Responses Continued",

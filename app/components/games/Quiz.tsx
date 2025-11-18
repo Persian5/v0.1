@@ -84,9 +84,21 @@ export function Quiz({
   const startTime = useRef(Date.now())
   
   // PHASE 8 FIX: Generate prompt at runtime if empty (avoids circular dependency during curriculum init)
+  // PHASE 6 FIX: Use resolvedLexeme for grammar forms
   const prompt = useMemo(() => {
     if (rawPrompt && rawPrompt.trim() !== '') {
       return rawPrompt; // Use provided prompt if exists
+    }
+    
+    // PHASE 6 FIX: Check resolvedLexeme first (for grammar forms)
+    if (resolvedLexeme) {
+      if (quizType === 'vocab-reverse') {
+        // English prompt → Persian options: "Which means 'Name of'?"
+        return `Which means '${resolvedLexeme.en}'?`;
+      } else {
+        // vocab-normal (default): Persian prompt → English options: "What does Esme mean?"
+        return `What does ${resolvedLexeme.finglish} mean?`;
+      }
     }
     
     // Generate prompt from vocabularyId + quizType
@@ -108,7 +120,7 @@ export function Quiz({
       // vocab-normal (default): Persian prompt → English options
       return `What does ${vocab.finglish} mean?`;
     }
-  }, [rawPrompt, vocabularyId, quizType]);
+  }, [rawPrompt, vocabularyId, quizType, resolvedLexeme]);
   
   // Reset tracking flag when vocabulary changes (new step)
   useEffect(() => {
@@ -158,26 +170,62 @@ export function Quiz({
         vocabularyBank.length > 0) {
       
       // Step 1: Get vocabulary ID (required for vocab quizzes)
+      // PHASE 5 FIX: Resolve lexemeRef if provided (for grammar forms)
       let correctVocabId = vocabularyId;
       
+      if (!correctVocabId && resolvedLexeme) {
+        // Use resolved grammar form ID (e.g., "esm|e")
+        correctVocabId = resolvedLexeme.id;
+      }
+      
       if (!correctVocabId) {
-        console.warn('[QUIZ] vocab-normal/vocab-reverse quiz missing vocabularyId, falling back to curriculum options');
+        console.warn('[QUIZ] vocab-normal/vocab-reverse quiz missing vocabularyId and lexemeRef, falling back to curriculum options');
         // Fall through to old behavior
       } else {
         // Step 2: Find the correct vocabulary item
-        const correctVocab = vocabularyBank.find(v => v.id === correctVocabId);
+        // PHASE 5 FIX: Use resolvedLexeme if available (for grammar forms), otherwise lookup in vocabularyBank
+        let correctVocab = vocabularyBank.find(v => v.id === correctVocabId);
+        
+        if (!correctVocab && resolvedLexeme) {
+          // Grammar form not in vocabularyBank - create VocabularyItem from resolvedLexeme
+          correctVocab = {
+            id: resolvedLexeme.id,
+            en: resolvedLexeme.en,
+            fa: resolvedLexeme.fa,
+            finglish: resolvedLexeme.finglish,
+            phonetic: resolvedLexeme.phonetic || '',
+            lessonId: resolvedLexeme.lessonId || '',
+            semanticGroup: resolvedLexeme.semanticGroup
+          };
+        }
+
+        // PHASE 9 FIX: Create expanded vocabulary bank for WordBankService
+        // This ensures that if we are quizzing a grammar form (e.g. esm|e), it exists in the bank
+        // so WordBankService can find its English translation ("Name of")
+        const expandedVocabularyBank = resolvedLexeme ? 
+          (vocabularyBank.some(v => v.id === resolvedLexeme.id) ? vocabularyBank : [...vocabularyBank, {
+            id: resolvedLexeme.id,
+            en: resolvedLexeme.en,
+            fa: resolvedLexeme.fa,
+            finglish: resolvedLexeme.finglish,
+            phonetic: resolvedLexeme.phonetic || '',
+            lessonId: resolvedLexeme.lessonId || '',
+            semanticGroup: resolvedLexeme.semanticGroup
+          }]) 
+          : vocabularyBank;
         
         if (!correctVocab) {
-          console.warn(`[QUIZ] Vocabulary ID "${correctVocabId}" not found in vocabulary bank, falling back to curriculum options`);
+          console.warn(`[QUIZ] Vocabulary ID "${correctVocabId}" not found in vocabulary bank and no resolvedLexeme, falling back to curriculum options`);
           // Fall through to old behavior
         } else {
           // Step 3: Generate unified options using WordBankService
           // Use default maxSize of 4 if options array is empty (from vocabQuiz helper)
           const maxSize = options.length > 0 ? options.length : 4;
           
+          // PHASE 9 FIX: Use expandedVocabularyBank which includes resolved grammar forms
           const wordBankResult = WordBankService.generateWordBank({
             expectedTranslation: undefined, // Quiz doesn't have translation context
-            vocabularyBank,
+            vocabularyBank: expandedVocabularyBank, // Use expanded bank
             sequenceIds: [correctVocabId], // Correct answer
             maxSize, // Default to 4 if options array is empty
             distractorStrategy: 'semantic',

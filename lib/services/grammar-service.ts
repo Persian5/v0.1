@@ -42,10 +42,13 @@ const SUFFIX_DEFINITIONS: Record<string, {
   'am': {
     faScript: 'م',          // Persian "م"
     meaningPrefix: "I'm "   // "I'm good", "I'm bad", etc.
+  },
+  'e': {
+    faScript: 'ه',          // Persian "ه" (ezafe connector)
+    meaningPrefix: ''       // No prefix - ezafe is a connector, not a meaning modifier
   }
   // Future suffixes:
   // 'i': { faScript: 'ی', meaningPrefix: "You're " },      // informal you
-  // 'e': { faScript: 'ه', meaningPrefix: '' },              // ezafe connector
   // 'im': { faScript: 'یم', meaningPrefix: "We're " },     // we are
   // 'et': { faScript: 'ت', meaningPrefix: "Your " },        // possessive your
   // 'and': { faScript: 'ند', meaningPrefix: "They're " },   // they are
@@ -139,7 +142,16 @@ export function resolve(ref: LexemeRef): ResolvedLexeme {
     const compositeFa = `${baseVocab.fa}${suffixDef.faScript}`;
     
     // Generate English meaning (e.g., "I'm good" from "good" + "-am")
-    const compositeEn = `${suffixDef.meaningPrefix}${baseVocab.en.toLowerCase()}`;
+    // Special handling for ezafe (-e): append " of" (e.g., "name" → "Name of")
+    let compositeEn: string;
+    if (suffixId === 'e') {
+      // Ezafe connector: "name" → "Name of"
+      const baseEn = baseVocab.en.charAt(0).toUpperCase() + baseVocab.en.slice(1).toLowerCase();
+      compositeEn = `${baseEn} of`;
+    } else {
+      // Other suffixes: use meaningPrefix (e.g., "I'm " + "good")
+      compositeEn = `${suffixDef.meaningPrefix}${baseVocab.en.toLowerCase()}`;
+    }
     
     // Generate phonetic (e.g., "khoob-AM" from "khoob" + "-am")
     // Capitalize suffix for emphasis

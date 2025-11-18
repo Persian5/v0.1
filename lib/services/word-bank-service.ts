@@ -231,7 +231,12 @@ export class WordBankService {
       const learnedSet = new Set(learnedVocabIds);
       const filtered = vocabularyBank.filter(v => {
         // ALWAYS include items required for the sequence (e.g. grammar forms not in learned set yet)
-        if (sequenceIds && sequenceIds.includes(v.id)) return true;
+        if (sequenceIds) {
+          if (sequenceIds.includes(v.id)) return true;
+          // PHASE 9 FIX: Also include base vocabulary for grammar forms in the filter
+          // This ensures "esm" is kept if "esm|e" is the target, even if "esm" isn't "learned" yet (or vice versa)
+          if (sequenceIds.some(seqId => seqId.startsWith(v.id + '|'))) return true;
+        }
         return learnedSet.has(v.id);
       });
       
@@ -366,8 +371,14 @@ export class WordBankService {
     // ✅ FIX: Filter vocabularyBank to ONLY vocab in sequence (current step)
     // This prevents future vocab (like "esmet" from Module 2) appearing in Module 1
     // PHASE 4: Use filteredVocabularyBank (learned-aware) instead of vocabularyBank
+    // PHASE 9 FIX: Also include base vocabulary for grammar forms (e.g. include "esm" if "esm|e" is in sequence)
     const availableVocab = sequenceIds && sequenceIds.length > 0
-      ? filteredVocabularyBank.filter(v => sequenceIds.includes(v.id))
+      ? filteredVocabularyBank.filter(v => {
+          if (sequenceIds.includes(v.id)) return true;
+          // Check if this vocab is the base for any grammar form in the sequence
+          // Grammar IDs format: "baseId|suffixId"
+          return sequenceIds.some(seqId => seqId.startsWith(v.id + '|'));
+        })
       : filteredVocabularyBank;
 
     // Step 1: Extract semantic units from expectedTranslation (PRIMARY source)
@@ -424,14 +435,25 @@ export class WordBankService {
       }
     } else if (sequenceIds && sequenceIds.length > 0) {
       // AudioSequence: Get English translations from availableVocab
+      // PHASE 3 FIX: Prioritize grammar forms (composite IDs) over base vocabulary
+      // Sort sequenceIds so grammar forms (with |) come before base vocab
+      const sortedSequenceIds = [...sequenceIds].sort((a, b) => {
+        const aIsGrammar = a.includes('|');
+        const bIsGrammar = b.includes('|');
+        if (aIsGrammar && !bIsGrammar) return -1; // Grammar forms first
+        if (!aIsGrammar && bIsGrammar) return 1;
+        return 0;
+      });
+      
       // Normalize slash-separated translations (use first part)
-      const correctWords = sequenceIds
+      const correctWords = sortedSequenceIds
         .map(id => availableVocab.find(v => v.id === id))
         .filter((v): v is VocabularyItem => v !== undefined)
         .map(v => this.normalizeVocabEnglish(v.en));
       
       // Match words to vocabularyBank items (smart phrase detection)
-      correctWordBankItems = this.matchWordsToVocabulary(correctWords, availableVocab, expectedTranslation).map(item => ({
+      // PHASE 3 FIX: Use sorted sequenceIds to ensure grammar forms are matched first
+      correctWordBankItems = this.matchWordsToVocabulary(correctWords, availableVocab, expectedTranslation, sortedSequenceIds).map(item => ({
         ...item,
         isCorrect: true
       }));
@@ -919,12 +941,14 @@ export class WordBankService {
    * @param words - Words to match
    * @param vocabularyBank - Available vocabulary items
    * @param expectedTranslation - Original expected translation (for phrase detection)
+   * @param sequenceIds - Optional: Vocabulary IDs in order (for prioritizing grammar forms)
    * @returns Array of word bank items with metadata
    */
   private static matchWordsToVocabulary(
     words: string[],
     vocabularyBank: VocabularyItem[],
-    expectedTranslation?: string
+    expectedTranslation?: string,
+    sequenceIds?: string[]
   ): WordBankItem[] {
     const matchedItems: WordBankItem[] = [];
     const usedVocabIds = new Set<string>();
@@ -998,6 +1022,11 @@ export class WordBankService {
         return;
       }
       
+      const normalizedWord = word.toLowerCase().trim();
+      if (normalizedWord === 'name' && FLAGS.LOG_WORDBANK) {
+        console.log(`[matchWordsToVocabulary] START checking "Name" (index ${index}). SequenceIds: ${sequenceIds?.join(',')}`);
+      }
+      
       // Also skip if word text already exists in matched items (additional safety check)
       if (matchedItems.some(item => item.wordText.toLowerCase().replace(/[?.,!]/g, '') === word.toLowerCase())) {
         return;
@@ -1006,7 +1035,6 @@ export class WordBankService {
       // CONTEXTUAL FILTERING: Check if this word's vocab is already covered by a matched phrase
       // Example: If "live" (from "zendegi mikonam") is matched as a phrase, skip "I do" from "mikonam"
       // First, normalize the word for comparison
-      const normalizedWord = word.toLowerCase().trim();
       
       // Find ALL vocab candidates that match this word (including ones already used in phrases)
       const allVocabCandidates = vocabularyBank.filter(v => {
@@ -1026,31 +1054,58 @@ export class WordBankService {
       }
 
       // Try exact match first (normalize for comparison with contraction expansion)
-      // IMPORTANT: For single-word matching, we need to check if this word matches any vocab
-      // BUT we must handle multi-word vocabs correctly - a single word can't match a multi-word phrase
-      const exactMatch = vocabularyBank.find(v => {
-        if (usedVocabIds.has(v.id)) return false;
-        
-        // Get normalized vocab variants
-        const vocabVariants = this.normalizeForValidation(v.en);
-        
-        // For single-word matching, check if:
-        // 1. The vocab is a single word AND matches this word exactly
-        // 2. OR the vocab is a multi-word phrase AND this word is part of it
-        // BUT we should only match if it's a single-word vocab (phrases should be caught by detectPhrases)
-        
-        // Check if vocab is single-word (no space in normalized variants)
-        const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
-        
-        if (isSingleWordVocab) {
-          // Single-word vocab: check exact match
-          return vocabVariants.some(variant => variant === normalizedWord);
-        } else {
-          // Multi-word vocab: this single word shouldn't match it
-          // Phrases should be caught by detectPhrases() which runs first
+      // PHASE 3 FIX: Prioritize grammar forms when sequenceIds provided
+      let exactMatch: VocabularyItem | undefined;
+      
+      if (normalizedWord === 'name') {
+         if (FLAGS.LOG_WORDBANK) console.log(`[matchWordsToVocabulary] Checking "Name". SequenceIds: ${sequenceIds?.join(',')}`);
+      }
+
+      if (sequenceIds && sequenceIds.length > 0) {
+        // First, try to match grammar forms (composite IDs with |)
+        const grammarFormIds = sequenceIds.filter(id => id.includes('|'));
+        exactMatch = vocabularyBank.find(v => {
+          if (usedVocabIds.has(v.id)) return false;
+          if (!grammarFormIds.includes(v.id)) return false;
+          const vocabVariants = this.normalizeForValidation(v.en);
+          const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
+          if (isSingleWordVocab) {
+            return vocabVariants.some(variant => variant === normalizedWord);
+          }
           return false;
+        });
+        
+        // If no grammar form match, try base vocabulary
+        if (!exactMatch) {
+          if (normalizedWord === 'name' && FLAGS.LOG_WORDBANK) console.log('[matchWordsToVocabulary] No grammar match for "Name", trying base.');
+          exactMatch = vocabularyBank.find(v => {
+            if (usedVocabIds.has(v.id)) return false;
+            if (v.id.includes('|')) return false; // Skip grammar forms
+            const vocabVariants = this.normalizeForValidation(v.en);
+            
+            if (normalizedWord === 'name' && v.id === 'esm' && FLAGS.LOG_WORDBANK) {
+                 console.log(`[matchWordsToVocabulary] Checking esm: variants=${vocabVariants.join(',')}, word=${normalizedWord}`);
+            }
+
+            const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
+            if (isSingleWordVocab) {
+              return vocabVariants.some(variant => variant === normalizedWord);
+            }
+            return false;
+          });
         }
-      });
+      } else {
+        // No sequenceIds - use original logic
+        exactMatch = vocabularyBank.find(v => {
+          if (usedVocabIds.has(v.id)) return false;
+          const vocabVariants = this.normalizeForValidation(v.en);
+          const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
+          if (isSingleWordVocab) {
+            return vocabVariants.some(variant => variant === normalizedWord);
+          }
+          return false;
+        });
+      }
 
       if (exactMatch) {
         matchedItems.push({
@@ -1477,6 +1532,15 @@ export class WordBankService {
   }): Array<{ vocabularyId: string, wordText: string, isCorrect: boolean }> {
     const { userAnswer, expectedTranslation, vocabularyBank, sequenceIds } = params;
 
+    // DEBUG LOG
+    if (FLAGS.LOG_WORDBANK) {
+      console.log('[validateUserAnswer] Start', {
+        userAnswer,
+        sequenceIds,
+        grammarFormsInSequence: sequenceIds?.filter(id => id.includes('|'))
+      });
+    }
+
     // Step 1: Generate word bank to get expected semantic units
     const wordBankResult = this.generateWordBank({
       expectedTranslation,
@@ -1485,13 +1549,33 @@ export class WordBankService {
     });
 
     // Step 2: Extract expected units (correct answers only)
+    // PHASE 4 FIX: Map base IDs to grammar form IDs when sequenceIds contains grammar forms
+    const grammarFormMap = new Map<string, string>(); // baseId -> compositeId
+    if (sequenceIds) {
+      sequenceIds.forEach(id => {
+        if (id.includes('|')) {
+          const [baseId] = id.split('|');
+          grammarFormMap.set(baseId, id);
+        }
+      });
+    }
+    
     const expectedUnits = wordBankResult.wordBankItems
       .filter(item => item.isCorrect)
-      .map(item => ({
-        vocabularyId: item.vocabularyId || '',
-        wordText: item.wordText,
-        normalized: this.normalizeForValidation(item.wordText)
-      }));
+      .map(item => {
+        // PHASE 4 FIX: Replace base ID with grammar form ID if it exists in sequenceIds
+        let vocabularyId = item.vocabularyId || '';
+        
+        if (vocabularyId && grammarFormMap.has(vocabularyId)) {
+          vocabularyId = grammarFormMap.get(vocabularyId)!;
+        }
+        
+        return {
+          vocabularyId,
+          wordText: item.wordText,
+          normalized: this.normalizeForValidation(item.wordText)
+        };
+      });
 
     // Step 3: Normalize user answer (flatten arrays since each word returns string[])
     const userUnits = userAnswer.flatMap(word => this.normalizeForValidation(word));
