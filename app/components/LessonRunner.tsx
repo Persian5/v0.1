@@ -560,6 +560,69 @@ export function LessonRunner({
   const step = idx < steps.length ? steps[idx] : null;
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CRITICAL: All hooks MUST be before early returns
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // PHASE 8 FIX: Memoize matching step resolution to prevent constant re-shuffling
+  // MUST be called before any early returns to satisfy React hooks rules
+  const matchingStepData = useMemo(() => {
+    if (!step || step.type !== 'matching') return null;
+    const matchingStep = step as MatchingStep;
+    const { GrammarService } = require('@/lib/services/grammar-service');
+    
+    if (matchingStep.data.lexemeRefs) {
+      return {
+        words: matchingStep.data.lexemeRefs.map((ref, index) => {
+          const resolved = GrammarService.resolve(ref);
+          return {
+            id: resolved.id,  // Use actual vocabulary ID (e.g., "bad|am")
+            text: resolved.finglish,
+            slotId: `slot${index + 1}`,
+            vocabularyId: resolved.id,  // Store for tracking
+            wordText: resolved.en  // Store for tracking
+          };
+        }),
+        slots: matchingStep.data.lexemeRefs.map((ref, index) => {
+          const resolved = GrammarService.resolve(ref);
+          return {
+            id: `slot${index + 1}`,
+            text: resolved.en
+          };
+        })
+      };
+    }
+    return {
+      words: matchingStep.data.words,
+      slots: matchingStep.data.slots
+    };
+  }, [idx, step?.type, (step as MatchingStep)?.data?.lexemeRefs, (step as MatchingStep)?.data?.words]);
+
+  // PHASE 8 FIX: Memoize final step resolution to show actual words instead of IDs
+  const finalStepData = useMemo(() => {
+    if (!step || step.type !== 'final') return null;
+    const finalStep = step as FinalStep;
+    const { GrammarService } = require('@/lib/services/grammar-service');
+    
+    if (finalStep.data.lexemeRefs) {
+      const resolved = finalStep.data.lexemeRefs.map(ref => GrammarService.resolve(ref));
+      return {
+        words: resolved.map((lexeme, index) => ({
+          id: lexeme.id,
+          text: lexeme.finglish,
+          translation: lexeme.en
+        })),
+        targetWords: resolved.map(lexeme => lexeme.id),
+        persianSequence: resolved.map(lexeme => lexeme.id)
+      };
+    }
+    return {
+      words: finalStep.data.words,
+      targetWords: finalStep.data.targetWords,
+      persianSequence: finalStep.data.conversationFlow?.persianSequence || []
+    };
+  }, [idx, step?.type, (step as FinalStep)?.data?.lexemeRefs, (step as FinalStep)?.data?.words]);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Early returns (after all hooks)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -801,63 +864,6 @@ export function LessonRunner({
     // Reset navigation guard after 300ms
     setTimeout(() => setIsNavigating(false), 300);
   };
-
-  // PHASE 8 FIX: Memoize matching step resolution to prevent constant re-shuffling
-  // MUST be called before any early returns to satisfy React hooks rules
-  const matchingStepData = useMemo(() => {
-    if (!step || step.type !== 'matching') return null;
-    const matchingStep = step as MatchingStep;
-    const { GrammarService } = require('@/lib/services/grammar-service');
-    
-    if (matchingStep.data.lexemeRefs) {
-      return {
-        words: matchingStep.data.lexemeRefs.map((ref, index) => {
-          const resolved = GrammarService.resolve(ref);
-          return {
-            id: `word${index + 1}`,
-            text: resolved.finglish,
-            slotId: `slot${index + 1}`
-          };
-        }),
-        slots: matchingStep.data.lexemeRefs.map((ref, index) => {
-          const resolved = GrammarService.resolve(ref);
-          return {
-            id: `slot${index + 1}`,
-            text: resolved.en
-          };
-        })
-      };
-    }
-    return {
-      words: matchingStep.data.words,
-      slots: matchingStep.data.slots
-    };
-  }, [idx, step?.type, (step as MatchingStep)?.data?.lexemeRefs, (step as MatchingStep)?.data?.words]);
-
-  // PHASE 8 FIX: Memoize final step resolution to show actual words instead of IDs
-  const finalStepData = useMemo(() => {
-    if (!step || step.type !== 'final') return null;
-    const finalStep = step as FinalStep;
-    const { GrammarService } = require('@/lib/services/grammar-service');
-    
-    if (finalStep.data.lexemeRefs) {
-      const resolved = finalStep.data.lexemeRefs.map(ref => GrammarService.resolve(ref));
-      return {
-        words: resolved.map((lexeme, index) => ({
-          id: lexeme.id,
-          text: lexeme.finglish,
-          translation: lexeme.en
-        })),
-        targetWords: resolved.map(lexeme => lexeme.id),
-        persianSequence: resolved.map(lexeme => lexeme.id)
-      };
-    }
-    return {
-      words: finalStep.data.words,
-      targetWords: finalStep.data.targetWords,
-      persianSequence: finalStep.data.conversationFlow?.persianSequence || []
-    };
-  }, [idx, step?.type, (step as FinalStep)?.data?.lexemeRefs, (step as FinalStep)?.data?.words]);
 
   // Render remediation content (AFTER hooks to satisfy React rules)
   if (isInRemediation && remediationQueue.length > 0) {
@@ -1148,6 +1154,7 @@ export function LessonRunner({
           key={idx}
           finglishText={(step as TextSequenceStep).data.finglishText}
           expectedTranslation={(step as TextSequenceStep).data.expectedTranslation}
+          lexemeSequence={(step as TextSequenceStep).data.lexemeSequence} // GRAMMAR FORMS: Pass lexemeSequence (same as AudioSequence)
           vocabularyBank={allVocab}
           points={step.points}
           learnedSoFar={learnedCache[idx]} // PHASE 4: Pass learned vocabulary state

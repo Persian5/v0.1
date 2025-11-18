@@ -8,7 +8,7 @@ import { WordBankService } from "@/lib/services/word-bank-service"
 import { shuffle } from "@/lib/utils"
 
 interface MatchingGameProps {
-  words: { id: string; text: string; slotId: string }[]  // words to match
+  words: { id: string; text: string; slotId: string; vocabularyId?: string; wordText?: string }[]  // words to match (vocabularyId/wordText for grammar forms)
   slots:  { id: string; text: string }[]                // match targets
   points: number
   vocabularyBank?: VocabularyItem[] // Optional: for vocabulary tracking
@@ -210,25 +210,37 @@ export function MatchingGame({
     // Track this match attempt immediately (correct or incorrect)
     const matchKey = `${wordId}-${slotId}`;
     if (onVocabTrack && !trackedMatches.has(matchKey)) {
-      // Find vocabulary ID for this pair
-      const vocabMatch = findVocabularyId(selectedWord.text, selectedSlot.text);
-      
-      if (vocabMatch) {
-        // Record when this match attempt happened
+      // Check if word has vocabularyId and wordText pre-stored (for grammar forms)
+      if (selectedWord.vocabularyId && selectedWord.wordText) {
+        // Use pre-stored values (from resolved lexemes)
         const attemptTime = Date.now();
         setMatchAttemptTimes(prev => ({ ...prev, [matchKey]: attemptTime }));
-        
-        // Calculate time spent: from game start to this attempt
         const timeSpentMs = attemptTime - startTime;
         
         onVocabTrack(
-          vocabMatch.vocabularyId,
-          vocabMatch.wordText,
+          selectedWord.vocabularyId,
+          selectedWord.wordText,
           correct,
           timeSpentMs
         );
-        // Mark this pair as tracked
         setTrackedMatches(prev => new Set(prev).add(matchKey));
+      } else {
+        // Fallback: Find vocabulary ID for this pair (for base vocabulary)
+        const vocabMatch = findVocabularyId(selectedWord.text, selectedSlot.text);
+        
+        if (vocabMatch) {
+          const attemptTime = Date.now();
+          setMatchAttemptTimes(prev => ({ ...prev, [matchKey]: attemptTime }));
+          const timeSpentMs = attemptTime - startTime;
+          
+          onVocabTrack(
+            vocabMatch.vocabularyId,
+            vocabMatch.wordText,
+            correct,
+            timeSpentMs
+          );
+          setTrackedMatches(prev => new Set(prev).add(matchKey));
+        }
       }
     }
     

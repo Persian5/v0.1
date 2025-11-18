@@ -311,6 +311,7 @@ export interface TextSequenceStep {
     finglishText: string; // Finglish phrase to display (e.g., "Esme pedare shoma chiye")
     expectedTranslation: string; // English translation to build (e.g., "What is your father's name")
     maxWordBankSize?: number; // Maximum number of options in word bank (default: 10)
+    lexemeSequence?: LexemeRef[]; // Optional: Lexeme references for grammar forms (same as AudioSequence)
   };
 }
 

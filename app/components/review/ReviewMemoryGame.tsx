@@ -11,6 +11,7 @@ import { VocabularyTrackingService } from "@/lib/services/vocabulary-tracking-se
 import { VocabularyItem } from "@/lib/types"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { AudioService } from "@/lib/services/audio-service"
+import { GrammarService } from "@/lib/services/grammar-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { Heart, RotateCcw, Star, X, TrendingUp, TrendingDown, Home, BookOpen } from "lucide-react"
 import { useSmartXp } from "@/hooks/use-smart-xp"
@@ -83,7 +84,37 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
         // Convert to VocabularyItem[] by looking up each word
         const vocabItems: VocabularyItem[] = []
         for (const word of words) {
-          const vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+          let vocabItem: VocabularyItem | null = null
+          
+          // Check if this is a grammar form (contains "|")
+          if (word.vocabulary_id.includes('|')) {
+            // Grammar form - resolve using GrammarService
+            try {
+              const parts = word.vocabulary_id.split('|')
+              const resolved = GrammarService.resolve({
+                kind: 'suffix',
+                baseId: parts[0],
+                suffixId: parts[1]
+              })
+              
+              // Convert ResolvedLexeme to VocabularyItem format
+              vocabItem = {
+                id: resolved.id,
+                en: resolved.en,
+                fa: resolved.fa,
+                finglish: resolved.finglish,
+                phonetic: resolved.phonetic || '',
+                lessonId: resolved.lessonId || '',
+                semanticGroup: resolved.semanticGroup
+              }
+            } catch (error) {
+              console.warn(`Failed to resolve grammar form: ${word.vocabulary_id}`, error)
+            }
+          } else {
+            // Base vocabulary - lookup in curriculum
+            vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+          }
+          
           if (vocabItem) {
             vocabItems.push(vocabItem)
           }

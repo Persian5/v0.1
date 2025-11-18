@@ -397,8 +397,12 @@ export const curriculumData: Module[] = [
             ]),
             // 11. Audio Meaning: Badam
             audioMeaning({ kind: "suffix", baseId: "bad", suffixId: "am" } as const),
-            // 12. Text Sequence: Na, Badam
-            textSequence("Na, Badam", "No, I'm bad"),
+            // 12. Text Sequence: Na, Badam (GRAMMAR FORMS: Now uses lexemeRef)
+            textSequence(
+              "Na, Badam", 
+              "No, I'm bad",
+              [{ kind: "suffix", baseId: "bad", suffixId: "am" } as const]
+            ),
             // 13. Audio Meaning: Khoobam
             audioMeaning({ kind: "suffix", baseId: "khoob", suffixId: "am" } as const),
             // 14. Audio Sequence: Khoobam, Merci

@@ -121,7 +121,8 @@ export function resolve(ref: LexemeRef): ResolvedLexeme {
     const suffixDef = SUFFIX_DEFINITIONS[suffixId];
     
     // Generate grammar form fields
-    const compositeId = `${baseVocab.id}${suffixId}`;
+    // Use pipe delimiter to separate base and suffix for tracking
+    const compositeId = `${baseVocab.id}|${suffixId}`;
     const compositeFinglish = `${baseVocab.finglish}${suffixId}`;
     const compositeFa = `${baseVocab.fa}${suffixDef.faScript}`;
     

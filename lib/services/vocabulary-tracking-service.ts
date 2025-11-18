@@ -25,7 +25,7 @@ import { StreakService } from './streak-service'
 export interface VocabularyPerformance {
   id: string
   user_id: string
-  vocabulary_id: string
+  vocabulary_id: string  // "khoob|am" or "salam"
   word_text: string
   total_attempts: number
   total_correct: number
@@ -37,6 +37,14 @@ export interface VocabularyPerformance {
   next_review_at: string | null
   created_at: string
   updated_at: string
+  
+  // NEW: Grammar form fields (added 2025-01-18)
+  base_vocab_id?: string | null       // "khoob" (for "khoob|am")
+  suffix_id?: string | null            // "am" (for "khoob|am")
+  is_grammar_form: boolean             // true for grammar forms, false for base vocab
+  prefix_id?: string | null            // For future use (Module 5+)
+  suffix_ids?: string[] | null         // For future compound suffixes
+  grammar_metadata?: any | null        // For future grammar types
 }
 
 export interface VocabularyAttempt {
@@ -91,6 +99,55 @@ const SRS_SCHEDULE = {
 } as const
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Parse grammar form ID to extract components
+ * 
+ * Format: "base|suffix" (e.g., "khoob|am")
+ * 
+ * @param vocabularyId - Vocabulary ID (e.g., "khoob|am" or "salam")
+ * @returns Parsed grammar form components
+ * 
+ * @example
+ * parseGrammarFormId("khoob|am")
+ * // Returns: { baseVocabId: "khoob", suffixId: "am", isGrammarForm: true }
+ * 
+ * parseGrammarFormId("salam")
+ * // Returns: { baseVocabId: null, suffixId: null, isGrammarForm: false }
+ */
+function parseGrammarFormId(vocabularyId: string): {
+  baseVocabId: string | null
+  suffixId: string | null
+  isGrammarForm: boolean
+} {
+  // Check if this is a grammar form (contains delimiter)
+  if (vocabularyId.includes('|')) {
+    const parts = vocabularyId.split('|')
+    
+    if (parts.length === 2) {
+      return {
+        baseVocabId: parts[0],   // e.g., "khoob"
+        suffixId: parts[1],       // e.g., "am"
+        isGrammarForm: true
+      }
+    }
+    
+    // Future: Handle complex forms like "prefix|base|suffix"
+    // For now, treat as invalid and return as base vocab
+    console.warn(`⚠️ Invalid grammar form ID format: ${vocabularyId}`)
+  }
+  
+  // Base vocabulary (no grammar)
+  return {
+    baseVocabId: null,
+    suffixId: null,
+    isGrammarForm: false
+  }
+}
+
+// ============================================================================
 // SERVICE
 // ============================================================================
 
@@ -117,6 +174,9 @@ export class VocabularyTrackingService {
         contextData
       } = params
 
+      // Parse grammar form (if applicable)
+      const { baseVocabId, suffixId, isGrammarForm } = parseGrammarFormId(vocabularyId)
+
       // 1. Log the detailed attempt
       const { error: attemptError } = await supabase
         .from('vocabulary_attempts')
@@ -129,7 +189,13 @@ export class VocabularyTrackingService {
           module_id: moduleId,
           lesson_id: lessonId,
           step_uid: stepUid,
-          context_data: contextData
+          context_data: {
+            // Grammar form metadata (for analytics)
+            base_vocab_id: baseVocabId,
+            suffix_id: suffixId,
+            is_grammar_form: isGrammarForm,
+            ...contextData
+          }
         })
 
       if (attemptError) {
@@ -142,7 +208,10 @@ export class VocabularyTrackingService {
         userId,
         vocabularyId,
         wordText,
-        isCorrect
+        isCorrect,
+        baseVocabId,
+        suffixId,
+        isGrammarForm
       )
 
       if (!updated) {
@@ -173,12 +242,16 @@ export class VocabularyTrackingService {
    * - Updating consecutive streak
    * - Calculating mastery level
    * - Setting next review date (SRS)
+   * - Grammar form metadata
    */
   private static async updatePerformance(
     userId: string,
     vocabularyId: string,
     wordText: string,
-    isCorrect: boolean
+    isCorrect: boolean,
+    baseVocabId: string | null,
+    suffixId: string | null,
+    isGrammarForm: boolean
   ): Promise<boolean> {
     try {
       // Fetch current performance
@@ -211,7 +284,15 @@ export class VocabularyTrackingService {
           consecutive_correct: isCorrect ? 1 : 0,
           mastery_level: newMasteryLevel,
           last_seen_at: now,
-          next_review_at: nextReviewAt
+          next_review_at: nextReviewAt,
+          // Grammar form fields
+          base_vocab_id: baseVocabId,
+          suffix_id: suffixId,
+          is_grammar_form: isGrammarForm,
+          // Future fields (null for now)
+          prefix_id: null,
+          suffix_ids: null,
+          grammar_metadata: null
         }
         
         // Set last_correct_at if first attempt is correct
@@ -252,7 +333,11 @@ export class VocabularyTrackingService {
         consecutive_correct: newConsecutive,
         mastery_level: newMasteryLevel,
         last_seen_at: now,
-        next_review_at: nextReviewAt
+        next_review_at: nextReviewAt,
+        // Grammar form fields (update in case they changed)
+        base_vocab_id: baseVocabId,
+        suffix_id: suffixId,
+        is_grammar_form: isGrammarForm
       }
       
       // Set last_correct_at if answer is correct (for decay system)

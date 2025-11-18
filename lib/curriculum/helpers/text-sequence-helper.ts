@@ -1,4 +1,4 @@
-import { TextSequenceStep } from "../../types";
+import { TextSequenceStep, LexemeRef } from "../../types";
 
 /**
  * Internal helper function to generate text-sequence steps
@@ -15,13 +15,18 @@ import { TextSequenceStep } from "../../types";
  * PHASE 8 FIX: Strips punctuation from expectedTranslation (commas, periods, etc.)
  * to ensure clean word matching without punctuation.
  * 
+ * GRAMMAR FORMS SUPPORT: Now accepts optional lexemeSequence parameter (same as AudioSequence)
+ * to support grammar forms like { kind: "suffix", baseId: "bad", suffixId: "am" }
+ * 
  * @param finglishText - Finglish phrase to display (e.g., "Salam chetori")
  * @param expectedTranslation - English translation to build (e.g., "Hello, how are you" → "Hello how are you")
- * @returns TextSequenceStep with finglishText and cleaned expectedTranslation
+ * @param lexemeSequence - Optional: Lexeme references for grammar forms (e.g., [{ kind: "suffix", baseId: "bad", suffixId: "am" }])
+ * @returns TextSequenceStep with finglishText, cleaned expectedTranslation, and lexemeSequence
  */
 export function textSequenceHelper(
   finglishText: string,
-  expectedTranslation: string
+  expectedTranslation: string,
+  lexemeSequence?: LexemeRef[]
 ): TextSequenceStep {
   // PHASE 8 FIX: Remove punctuation from expected translation
   // Removes commas, periods, question marks, exclamation marks, etc.
@@ -36,7 +41,8 @@ export function textSequenceHelper(
     data: {
       finglishText,
       expectedTranslation: cleanedTranslation,
-      maxWordBankSize: 10 // Consistent default
+      maxWordBankSize: 10, // Consistent default
+      lexemeSequence // GRAMMAR FORMS: Pass lexemeSequence to component
     }
   };
 }

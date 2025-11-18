@@ -1,18 +1,20 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Type, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
-import { VocabularyItem } from "@/lib/types"
+import { VocabularyItem, LexemeRef } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { FLAGS } from "@/lib/flags"
 import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
+import { GrammarService } from "@/lib/services/grammar-service"
 
 interface TextSequenceProps {
   finglishText: string // Finglish phrase to display
   expectedTranslation: string // English translation to build
   vocabularyBank: VocabularyItem[] // All available vocabulary for this lesson
+  lexemeSequence?: LexemeRef[] // GRAMMAR FORMS: Optional lexeme references for grammar forms (same as AudioSequence)
   points?: number
   maxWordBankSize?: number // Maximum number of options in word bank
   learnedSoFar?: LearnedSoFar // PHASE 4: Learned vocabulary state for filtering word bank
@@ -27,6 +29,7 @@ export function TextSequence({
   finglishText,
   expectedTranslation,
   vocabularyBank,
+  lexemeSequence, // GRAMMAR FORMS: Lexeme references (same as AudioSequence)
   points = 3,
   maxWordBankSize = 10,
   learnedSoFar, // PHASE 4: Learned vocabulary state
@@ -36,6 +39,19 @@ export function TextSequence({
   onXpStart,
   onVocabTrack
 }: TextSequenceProps) {
+  
+  // GRAMMAR FORMS: Resolve lexemeSequence to get vocabulary IDs (same as AudioSequence)
+  const resolvedLexemes = useMemo(() => {
+    if (!lexemeSequence) return [];
+    return lexemeSequence.map(ref => GrammarService.resolve(ref));
+  }, [lexemeSequence]);
+
+  // GRAMMAR FORMS: Extract vocabulary IDs from resolved lexemes (e.g., ["bad|am"])
+  const sequenceIds = useMemo(() => 
+    resolvedLexemes.map(r => r.id), 
+    [resolvedLexemes]
+  );
+
   const [userOrder, setUserOrder] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
   const [showXp, setShowXp] = useState(false)
@@ -71,6 +87,7 @@ export function TextSequence({
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
       vocabularyBank,
+      sequenceIds: sequenceIds.length > 0 ? sequenceIds : undefined, // GRAMMAR FORMS: Pass vocabulary IDs (e.g., ["bad|am"])
       maxSize: maxWordBankSize,
       distractorStrategy: 'semantic',
       // PHASE 4: Pass learned vocab IDs if feature flag is enabled
@@ -104,7 +121,8 @@ export function TextSequence({
     // Get correct semantic units from WordBankService
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
-      vocabularyBank
+      vocabularyBank,
+      sequenceIds: sequenceIds.length > 0 ? sequenceIds : undefined // GRAMMAR FORMS: Pass vocabulary IDs for tracking
     });
     
     // Extract expected semantic units (normalized with contractions and punctuation)

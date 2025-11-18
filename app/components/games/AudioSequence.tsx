@@ -430,9 +430,9 @@ export function AudioSequence({
       });
     } else if (onVocabTrack) {
       // Fallback: If no expectedTranslation, use resolved lexemes for tracking
-      // Track baseId (e.g., "bad" not "badam") to track base vocab performance
+      // Track resolved.id (e.g., "khoob|am" for grammar forms, "salam" for base vocab)
       resolvedLexemes.forEach(resolved => {
-        onVocabTrack(resolved.baseId, resolved.en, correct, timeSpentMs);
+        onVocabTrack(resolved.id, resolved.en, correct, timeSpentMs);
       });
     }
 

@@ -368,10 +368,10 @@ export function AudioMeaning({
     // Track vocabulary performance to Supabase
     // In review mode: track every attempt (wrong or correct)
     // hasTracked prevents duplicate tracking within same answer selection
-    // Use baseId for tracking (e.g., "bad" not "badam") to track base vocab performance
+    // Track resolved.id (e.g., "khoob|am" for grammar forms, "salam" for base vocab)
     if (onVocabTrack && resolvedLexeme && !hasTracked) {
       setHasTracked(true) // Mark as tracked for this attempt
-      onVocabTrack(resolvedLexeme.baseId, resolvedLexeme.en, correct, timeSpentMs);
+      onVocabTrack(resolvedLexeme.id, resolvedLexeme.en, correct, timeSpentMs);
     }
 
     if (correct) {
