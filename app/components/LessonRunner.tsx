@@ -598,7 +598,37 @@ export function LessonRunner({
     const { GrammarService } = require('@/lib/services/grammar-service');
     
     if (finalStep.data.lexemeRefs) {
-      const resolved = finalStep.data.lexemeRefs.map(ref => GrammarService.resolve(ref));
+      const resolved = finalStep.data.lexemeRefs.map(ref => {
+        // Handle plain strings that aren't vocabulary IDs (e.g., "sara-e", "amir-e")
+        // These are just text strings, not grammar forms or vocab items
+        if (typeof ref === 'string') {
+          // Check if it's a grammar form ID (contains |) or a valid vocab ID
+          if (ref.includes('|')) {
+            // Grammar form ID (e.g., "esm|e") - resolve it
+            return GrammarService.resolve(ref);
+          }
+          // Try to resolve as vocabulary ID
+          try {
+            return GrammarService.resolve(ref);
+          } catch (error) {
+            // Not a valid vocab ID - treat as plain string
+            // Return a simple lexeme object for plain strings
+            return {
+              id: ref,
+              en: ref, // Use the string as-is for English
+              fa: ref, // Use the string as-is for Persian
+              finglish: ref, // Use the string as-is for Finglish
+              phonetic: '',
+              lessonId: '',
+              semanticGroup: undefined,
+              isGrammarForm: false,
+              baseId: null
+            };
+          }
+        }
+        // LexemeRef object (e.g., { kind: "suffix", baseId: "esm", suffixId: "e" })
+        return GrammarService.resolve(ref);
+      });
       return {
         words: resolved.map((lexeme, index) => ({
           id: lexeme.id,
