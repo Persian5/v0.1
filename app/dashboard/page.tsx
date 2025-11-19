@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
@@ -45,6 +46,7 @@ interface DashboardStats {
 
 function DashboardContent() {
   const { user } = useAuth()
+  const pathname = usePathname()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -281,7 +283,7 @@ function DashboardContent() {
           {/* Leaderboard */}
           <div className="mb-6 sm:mb-8">
             <WidgetErrorBoundary>
-              <LeaderboardWidget />
+              <LeaderboardWidget key={pathname} />
             </WidgetErrorBoundary>
           </div>
         </div>
