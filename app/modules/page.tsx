@@ -1,15 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock, CheckCircle, PlayCircle, Clock, Crown, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
-import { useXp } from "@/hooks/use-xp"
+import { useSmartXp } from "@/hooks/use-smart-xp"
 import { useProgress } from "@/hooks/use-progress"
 import { useAuth } from "@/components/auth/AuthProvider"
+import { usePremium } from "@/hooks/use-premium"
+import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import type { Module } from "@/lib/types"
@@ -28,44 +30,55 @@ interface ModuleWithAccessStatus extends Module {
 }
 
 export default function ModulesPage() {
-  const [mounted, setMounted] = useState(false)
-  const [hasPremium, setHasPremium] = useState(false)
   const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [selectedModuleTitle, setSelectedModuleTitle] = useState<string>("")
   const router = useRouter()
-  const { xp } = useXp()
-  const { user, isEmailVerified } = useAuth()
+  const { xp } = useSmartXp()
+  const { user, isEmailVerified, isLoading: authLoading } = useAuth()
+  const { hasPremium: hookHasPremium, isLoading: premiumLoading } = usePremium()
   const { progressData, isProgressLoading } = useProgress()
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Check premium status client-side via API
-  useEffect(() => {
-    const checkPremiumStatus = async () => {
-      if (!user) {
-        setHasPremium(false)
-        return
-      }
-
-      try {
-        const response = await fetch('/api/check-premium')
-        const data = await response.json()
-        setHasPremium(data.hasPremium || false)
-      } catch (error) {
-        console.error('Failed to check premium status:', error)
-        setHasPremium(false)
-      }
-    }
-
-    if (mounted && user) {
-      checkPremiumStatus()
-    }
-  }, [mounted, user])
+  // OPTIMISTIC RENDERING: Read cached data directly from cache (synchronous, no race condition)
+  const cachedProfile = SmartAuthService.getCachedProfile()
+  const cachedProgress = SmartAuthService.getUserProgress()
+  const cachedHasPremium = SmartAuthService.getHasPremium()
+  const cacheState = SmartAuthService.getSessionState()
+  const effectiveProgressData = progressData.length > 0 ? progressData : cachedProgress
 
   // Calculate authentication status
   const isAuthenticated = user && isEmailVerified
+
+  // CRITICAL: Read premium status directly from cache to avoid race condition
+  // usePremium() hook has async state updates, causing component to render with stale value
+  // Reading directly from cache ensures we get the correct value synchronously
+  // CRITICAL FIX: If user exists, ONLY use cache value - never hook fallback
+  // On refresh, user exists but cache doesn't yet - if we use hook, hasPremium is wrong
+  // If user exists but cache doesn't, hasPremium will be wrong, but we won't render (skeleton shows)
+  // Once cache loads, hasPremium will be correct and we'll render
+  const hasPremium = cachedProfile ? cachedHasPremium : (user ? false : hookHasPremium)
+
+  // Check if data is loaded (auth + premium ready)
+  // CRITICAL: On refresh, if user exists, cache MUST exist before rendering
+  // Problem: On refresh, user exists but cache doesn't yet, causing wrong hasPremium
+  // Solution: If user exists, wait for cache to exist AND initialization complete
+  const hasUser = !!user
+  const cacheExists = !!cachedProfile
+  const initializationComplete = cacheState.isReady // false when isInitializing = true
+  
+  // CRITICAL: If user exists, cache MUST exist AND hasPremium must be confirmed before rendering
+  // This prevents showing wrong state when cache exists but hasPremium hasn't been set yet
+  // getHasPremium() returns false if cache doesn't exist, but also returns false if user doesn't have premium
+  // So we need to ensure cache exists AND initialization is complete (which sets hasPremium)
+  const hasPremiumConfirmed = cachedProfile ? (cachedHasPremium !== undefined) : true // If cache exists, hasPremium must be set
+  const cacheReady = !hasUser || (cacheExists && initializationComplete && hasPremiumConfirmed && !premiumLoading)
+  
+  // If authenticated, wait for progress data (cached or fresh) to prevent flash
+  const hasProgressData = effectiveProgressData.length > 0
+  const progressReady = !isProgressLoading || hasProgressData
+  
+  // Render only when: auth ready AND premium ready AND cache ready AND (not authenticated OR progress ready)
+  // CRITICAL: If user exists but cache doesn't, DON'T render (show skeleton)
+  const isLoaded = !authLoading && !premiumLoading && cacheReady && (!isAuthenticated || progressReady)
 
   // Handler for premium module click
   const handlePremiumClick = (moduleTitle: string) => {
@@ -91,11 +104,16 @@ export default function ModulesPage() {
     // Otherwise, allow normal navigation (will be handled by Link component)
   }
 
-  const modules = getModules().map((module, index) => {
-    // Compute access status client-side
+  // CRITICAL: Only calculate modules when data is loaded to prevent wrong hasPremium calculation
+  // On refresh, hasPremium might be wrong until cache loads, causing wrong button states
+  const modules = useMemo(() => {
+    if (!isLoaded) return [] // Don't calculate if not loaded (prevents wrong hasPremium)
+    
+    return getModules().map((module, index) => {
+    // Compute access status client-side using cached data
     const requiresPremium = module.requiresPremium ?? false
     const prerequisitesComplete = isAuthenticated ? 
-      LessonProgressService.isModuleCompletedFast(index > 0 ? getModules()[index - 1].id : 'module1', progressData) :
+      LessonProgressService.isModuleCompletedFast(index > 0 ? getModules()[index - 1].id : 'module1', effectiveProgressData) :
       true // Non-authenticated users see everything as "accessible" (will be gated on click)
     
     const showPremiumBadge = requiresPremium && !hasPremium
@@ -111,9 +129,9 @@ export default function ModulesPage() {
       showCompletionLock
     }
     
-    // Get module completion info using fast methods (no API calls)
+    // Get module completion info using fast methods (no API calls) - use cached data
     const moduleCompletionInfo = isAuthenticated ? 
-      LessonProgressService.getModuleCompletionInfoFast(module.id, progressData) :
+      LessonProgressService.getModuleCompletionInfoFast(module.id, effectiveProgressData) :
       { isCompleted: false, completionPercentage: 0, durationMs: null, durationFormatted: null }
 
     // Determine button text and style based on access and completion status
@@ -158,10 +176,37 @@ export default function ModulesPage() {
       buttonIcon,
       buttonClass
     }
-  })
+    })
+  }, [isLoaded, hasPremium, isAuthenticated, effectiveProgressData])
 
-  if (!mounted) {
-    return null
+  // OPTIMISTIC RENDERING: Show skeleton only if data not loaded yet
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <main className="flex-1 bg-primary/5">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <div className="text-center mb-8 sm:mb-12">
+              <div className="h-12 bg-gray-200 rounded w-64 mx-auto mb-4 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="bg-white">
+                  <CardHeader className="pb-4">
+                    <div className="h-16 bg-gray-200 rounded mb-3 animate-pulse"></div>
+                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-20 bg-gray-200 rounded mb-4 animate-pulse"></div>
+                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -203,7 +248,7 @@ export default function ModulesPage() {
                   </p>
 
                   {/* Progress Information for Authenticated Users */}
-                  {isAuthenticated && !isProgressLoading && module.available && (
+                  {isAuthenticated && module.available && (
                     <div className="mb-4 space-y-2">
                       {/* Progress Bar */}
                       <div className="w-full bg-gray-200 rounded-full h-2">

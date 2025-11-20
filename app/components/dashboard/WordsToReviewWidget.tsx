@@ -57,7 +57,7 @@ export function WordsToReviewWidget({ wordsToReview, isLoading }: WordsToReviewW
     }
 
     loadDefinitions()
-  }, [wordsToReview, displayedCount, vocabDefinitions])
+  }, [wordsToReview, displayedCount])
 
   const handleLoadMore = () => {
     setDisplayedCount(prev => Math.min(prev + 5, wordsToReview.length))
@@ -124,20 +124,25 @@ export function WordsToReviewWidget({ wordsToReview, isLoading }: WordsToReviewW
             const english = vocab?.en || 'Loading...'
             
             return (
-              <div
+              <Link
                 key={word.vocabulary_id}
-                className="flex items-start justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors min-h-[48px]"
+                href={`/review?word=${word.vocabulary_id}`}
+                className="block"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-gray-900 truncate">{finglish}</div>
-                  <div className="text-xs text-muted-foreground mt-1 truncate">
-                    {english}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {Math.round(word.accuracy)}% accuracy
+                <div
+                  className="flex items-start justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors min-h-[48px] cursor-pointer"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">{finglish}</div>
+                    <div className="text-xs text-muted-foreground mt-1 truncate">
+                      {english}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {Math.round(word.accuracy)}% accuracy
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>

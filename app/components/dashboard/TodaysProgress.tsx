@@ -8,8 +8,14 @@ import { useState, useEffect, useCallback } from "react"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
+import { UserLessonProgress } from "@/lib/supabase/database"
 
-export function TodaysProgress() {
+interface TodaysProgressProps {
+  sharedProgress?: UserLessonProgress[] | null
+  isLoading?: boolean
+}
+
+export function TodaysProgress({ sharedProgress, isLoading: externalLoading }: TodaysProgressProps) {
   const { progress: dailyProgress, isLoading: goalLoading } = useDailyGoal()
   const { user } = useAuth()
   const [lessonsToday, setLessonsToday] = useState(0)
@@ -20,6 +26,30 @@ export function TodaysProgress() {
     if (!user?.id) {
       if (isMounted()) setLessonsLoading(false)
       return
+    }
+
+    // Use shared progress if available
+    if (sharedProgress && sharedProgress.length > 0) {
+      try {
+        const userTimezone = SmartAuthService.getUserTimezone()
+        
+        // Cache the counts (timezone-aware)
+        SmartAuthService.cacheLessonProgressCounts(sharedProgress, userTimezone)
+        
+        // Get from cache (now populated)
+        const count = SmartAuthService.getCachedLessonsCompletedToday() ?? 0
+        if (isMounted()) {
+          setLessonsToday(count)
+          setLessonsLoading(false)
+        }
+        return
+      } catch (error) {
+        console.error('Failed to process shared progress:', error)
+        if (isMounted()) {
+          setLessonsLoading(false)
+        }
+        return
+      }
     }
 
     // Check cache first (timezone-aware, auto-invalidates at midnight)
@@ -37,6 +67,8 @@ export function TodaysProgress() {
       console.warn('Cache access failed, fetching from API:', error)
     }
 
+    // Fallback: fetch if no shared progress and not externally loading
+    if (externalLoading !== false) {
     if (isMounted()) setLessonsLoading(true)
     
     try {
@@ -64,7 +96,13 @@ export function TodaysProgress() {
         setLessonsLoading(false)
       }
     }
-  }, [user?.id])
+    } else {
+      // External loading is false - just stop loading
+      if (isMounted()) {
+        setLessonsLoading(false)
+      }
+    }
+  }, [user?.id, sharedProgress, externalLoading])
 
   // Initial load with mount guard
   useEffect(() => {

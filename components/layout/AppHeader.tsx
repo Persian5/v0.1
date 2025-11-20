@@ -6,7 +6,7 @@ import { Star, Menu, X, ArrowLeft, Crown } from 'lucide-react'
 import { useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { usePremium } from '@/hooks/use-premium'
-import { useXp } from '@/hooks/use-xp'
+import { useSmartXp } from '@/hooks/use-smart-xp'
 import { AccountDropdown } from './AccountDropdown'
 import { MobileMenu } from './MobileMenu'
 import { Button } from '@/components/ui/button'
@@ -30,9 +30,9 @@ interface AppHeaderProps {
 export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const { hasPremium, isLoading: premiumLoading } = usePremium()
-  const { xp } = useXp()
+  const { xp } = useSmartXp()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
 
@@ -42,6 +42,9 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
     () => isLoggedIn && !hasPremium && !premiumLoading,
     [isLoggedIn, hasPremium, premiumLoading]
   )
+  
+  // FLICKER FIX: Show skeleton/nothing while auth is loading to prevent flash of "logged out" state
+  const isAuthReady = useMemo(() => !authLoading, [authLoading])
 
   // Memoize isActive function
   const isActive = useCallback(
@@ -92,29 +95,56 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               </button>
 
               <div className="flex items-center gap-3">
-                {/* XP Badge - Always visible on all screen sizes */}
-                {isLoggedIn && (
-                  <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold">
-                    <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
-                    <span>{xp.toLocaleString()}</span>
-                  </div>
+                {/* FLICKER FIX: Show skeleton while auth is loading */}
+                {!isAuthReady ? (
+                  <>
+                    {/* Loading skeleton for XP badge */}
+                    <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gray-100 animate-pulse">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-200" />
+                      <div className="w-12 h-4 bg-gray-200 rounded" />
+                    </div>
+                    {/* Loading skeleton for account dropdown */}
+                    <div className="hidden md:block w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
+                    {/* Mobile menu toggle (always show) */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setMobileMenuOpen(!mobileMenuOpen)
+                      }}
+                      className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
+                      aria-label="Toggle menu"
+                    >
+                      {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* XP Badge - Always visible on all screen sizes */}
+                    {isLoggedIn && (
+                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold shadow-[0_0_4px_rgba(255,193,7,0.3)]">
+                        <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
+                        <span>{xp.toLocaleString()}</span>
+                      </div>
+                    )}
+
+                    {/* Account Dropdown - Desktop only */}
+                    {isLoggedIn && <div className="hidden md:block"><AccountDropdown /></div>}
+
+                    {/* Mobile Menu Toggle - MINIMAL VARIANT */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setMobileMenuOpen(!mobileMenuOpen)
+                      }}
+                      className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
+                      aria-label="Toggle menu"
+                    >
+                      {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                  </>
                 )}
-
-                {/* Account Dropdown - Desktop only */}
-                {isLoggedIn && <div className="hidden md:block"><AccountDropdown /></div>}
-
-                {/* Mobile Menu Toggle - MINIMAL VARIANT */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setMobileMenuOpen(!mobileMenuOpen)
-                  }}
-                  className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
-                  aria-label="Toggle menu"
-                >
-                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                </button>
               </div>
             </>
           )}
@@ -197,55 +227,82 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
 
               {/* Right Side Actions */}
               <div className="flex items-center gap-3">
-                {/* XP Badge - Show for logged in users on all screen sizes */}
-                {isLoggedIn && (
-                  <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold">
-                    <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
-                    <span>{xp.toLocaleString()}</span>
-                  </div>
-                )}
-
-                {/* Upgrade Button - Free Users Only - PROMINENT */}
-                {showUpgradeButton && (
-                  <Link href="/pricing" aria-label="Upgrade to premium">
-                    <Button 
-                      size="sm" 
-                      className="hidden sm:flex bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 text-white font-bold shadow-lg animate-pulse hover:animate-none transition-all"
+                {/* FLICKER FIX: Show skeleton while auth is loading */}
+                {!isAuthReady ? (
+                  <>
+                    {/* Loading skeleton for XP badge */}
+                    <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gray-100 animate-pulse">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-200" />
+                      <div className="w-12 h-4 bg-gray-200 rounded" />
+                    </div>
+                    {/* Loading skeleton for account button */}
+                    <div className="hidden md:block w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
+                    {/* Mobile menu toggle (always show) */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setMobileMenuOpen(!mobileMenuOpen)
+                      }}
+                      className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
+                      aria-label="Toggle menu"
                     >
-                      <Crown className="w-4 h-4 mr-1.5" />
-                      Upgrade
-                    </Button>
-                  </Link>
-                )}
-
-                {/* Account Dropdown - Desktop */}
-                {isLoggedIn ? (
-                  <div className="hidden md:block">
-                    <AccountDropdown />
-                  </div>
+                      {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                  </>
                 ) : (
-                  <Button 
-                    size="sm" 
-                    className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-semibold shadow-sm"
-                    onClick={() => setAuthModalOpen(true)}
-                    aria-label="Sign in to Finglish"
-                  >
-                    Sign In
-                  </Button>
-                )}
+                  <>
+                    {/* XP Badge - Show for logged in users on all screen sizes */}
+                    {isLoggedIn && (
+                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold shadow-[0_0_4px_rgba(255,193,7,0.3)]">
+                        <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
+                        <span>{xp.toLocaleString()}</span>
+                      </div>
+                    )}
 
-                {/* Mobile Menu Toggle - DEFAULT VARIANT */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setMobileMenuOpen(!mobileMenuOpen)
-                  }}
-                  className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
-                  aria-label="Toggle menu"
-                >
-                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                </button>
+                    {/* Upgrade Button - Free Users Only - PROMINENT */}
+                    {showUpgradeButton && (
+                      <Link href="/pricing" aria-label="Upgrade to premium">
+                        <Button 
+                          size="sm" 
+                          className="hidden sm:flex bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:from-purple-700 hover:via-purple-600 hover:to-pink-600 text-white font-bold shadow-lg animate-pulse hover:animate-none transition-all"
+                        >
+                          <Crown className="w-4 h-4 mr-1.5" />
+                          Upgrade
+                        </Button>
+                      </Link>
+                    )}
+
+                    {/* Account Dropdown - Desktop */}
+                    {isLoggedIn ? (
+                      <div className="hidden md:block">
+                        <AccountDropdown />
+                      </div>
+                    ) : (
+                      <Button 
+                        size="sm" 
+                        className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white font-semibold shadow-sm"
+                        onClick={() => setAuthModalOpen(true)}
+                        aria-label="Sign in to Finglish"
+                      >
+                        Sign In
+                      </Button>
+                    )}
+
+                    {/* Mobile Menu Toggle - DEFAULT VARIANT */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setMobileMenuOpen(!mobileMenuOpen)
+                      }}
+                      className="md:hidden p-2 text-gray-600 hover:text-primary transition-colors"
+                      aria-label="Toggle menu"
+                    >
+                      {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                  </>
+                )}
               </div>
             </>
           )}

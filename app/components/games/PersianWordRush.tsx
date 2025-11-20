@@ -112,7 +112,7 @@ export function PersianWordRush({
           
           // Convert to VocabularyItem[]
           for (const word of words) {
-            const vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+            const vocabItem = ReviewSessionService.toVocabularyItem(word) // Use unified helper
             if (vocabItem) {
               userVocabulary.push(vocabItem)
             }
@@ -289,9 +289,16 @@ export function PersianWordRush({
               isCorrect: false,
               contextData: { reviewMode: true }
             }).catch(console.error)
-          } else {
-            // Regular mode: use legacy tracking
-            VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+          } else if (user?.id) {
+            // Regular mode: use VocabularyTrackingService
+            VocabularyTrackingService.storeAttempt({
+              userId: user.id,
+              vocabularyId: currentWord.word.id,
+              wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+              gameType: 'persian-word-rush',
+              isCorrect: false,
+              contextData: { reviewMode: false }
+            }).catch(console.error)
           }
 
           // Check game over or shake word red
@@ -370,10 +377,40 @@ export function PersianWordRush({
         }).catch(console.error)
         
         // Award review XP (1 XP per correct)
-        ReviewSessionService.awardReviewXp(user.id, 1).catch(console.error)
-      } else {
-        // Regular mode: use legacy tracking
-        VocabularyService.recordCorrectAnswer(currentWord.word.id)
+        // Idempotency: review:word-rush:[vocabId]:[timestamp-minute]
+        // We use a minute-resolution timestamp to allow replaying same word but not spamming
+        const actionId = `${currentWord.word.id}-${Math.floor(Date.now() / 60000)}`
+        
+        ReviewSessionService.awardReviewXp(user.id, 1, {
+          gameType: 'word-rush',
+          actionId: actionId,
+          metadata: {
+            vocabId: currentWord.word.id,
+            word: currentWord.word.en
+          }
+        }).catch(console.error)
+      } else if (user?.id) {
+        // Regular mode: use VocabularyTrackingService
+        VocabularyTrackingService.storeAttempt({
+          userId: user.id,
+          vocabularyId: currentWord.word.id,
+          wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+          gameType: 'persian-word-rush',
+          isCorrect: true,
+          contextData: { reviewMode: false }
+        }).catch(console.error)
+
+        // PHASE 3 FIX: Award XP for regular mode too (it's still practice)
+        const actionId = `${currentWord.word.id}-${Math.floor(Date.now() / 60000)}`
+        ReviewSessionService.awardReviewXp(user.id, 1, {
+          gameType: 'word-rush',
+          actionId: actionId,
+          metadata: {
+             vocabId: currentWord.word.id,
+             word: currentWord.word.en,
+             mode: 'regular'
+          }
+        }).catch(console.error)
       }
 
       // Shake word green and then start next word
@@ -406,9 +443,16 @@ export function PersianWordRush({
           isCorrect: false,
           contextData: { reviewMode: true }
         }).catch(console.error)
-      } else {
-        // Regular mode: use legacy tracking
-        VocabularyService.recordIncorrectAnswer(currentWord.word.id)
+      } else if (user?.id) {
+        // Regular mode: use VocabularyTrackingService
+        VocabularyTrackingService.storeAttempt({
+          userId: user.id,
+          vocabularyId: currentWord.word.id,
+          wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
+          gameType: 'persian-word-rush',
+          isCorrect: false,
+          contextData: { reviewMode: false }
+        }).catch(console.error)
       }
 
       // Check game over or shake word red

@@ -8,6 +8,7 @@ import { ReviewSessionService } from "@/lib/services/review-session-service"
 import { VocabularyTrackingService } from "@/lib/services/vocabulary-tracking-service"
 import { VocabularyItem } from "@/lib/types"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
+import { GrammarService } from "@/lib/services/grammar-service"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { X, TrendingUp, TrendingDown, Star, Heart, RotateCcw, Home, BookOpen } from "lucide-react"
@@ -61,7 +62,9 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
         // Convert to VocabularyItem[] by looking up each word
         const vocabItems: VocabularyItem[] = []
         for (const word of words) {
-          const vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+          // Use unified helper for vocabulary resolution
+          const vocabItem = ReviewSessionService.toVocabularyItem(word);
+          
           if (vocabItem) {
             vocabItems.push(vocabItem)
           }
@@ -192,7 +195,13 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
       setCorrectCount(prev => prev + 1)
       
       // Award XP (1 XP per correct answer)
-      const result = await ReviewSessionService.awardReviewXp(user.id, 1)
+      const result = await ReviewSessionService.awardReviewXp(user.id, 1, {
+        gameType: 'audio-definitions',
+        actionId: `${vocabulary[currentIndex]?.id}-${Date.now()}`,
+        metadata: {
+          vocabId: vocabulary[currentIndex]?.id
+        }
+      })
       if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
         setXpCapReached(true)
         setXpCapShown(true)

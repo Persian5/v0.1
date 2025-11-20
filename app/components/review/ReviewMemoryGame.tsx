@@ -11,6 +11,7 @@ import { VocabularyTrackingService } from "@/lib/services/vocabulary-tracking-se
 import { VocabularyItem } from "@/lib/types"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { AudioService } from "@/lib/services/audio-service"
+import { GrammarService } from "@/lib/services/grammar-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { Heart, RotateCcw, Star, X, TrendingUp, TrendingDown, Home, BookOpen } from "lucide-react"
 import { useSmartXp } from "@/hooks/use-smart-xp"
@@ -83,7 +84,9 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
         // Convert to VocabularyItem[] by looking up each word
         const vocabItems: VocabularyItem[] = []
         for (const word of words) {
-          const vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+          // Use unified helper for vocabulary resolution
+          const vocabItem = ReviewSessionService.toVocabularyItem(word);
+          
           if (vocabItem) {
             vocabItems.push(vocabItem)
           }
@@ -288,7 +291,13 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
 
       // Award XP (1 XP per correct match)
       if (user?.id) {
-        ReviewSessionService.awardReviewXp(user.id, 1).then(result => {
+        ReviewSessionService.awardReviewXp(user.id, 1, {
+          gameType: 'memory-game',
+          actionId: `${card1.vocabularyId}-${Date.now()}`, // Unique action per match
+          metadata: {
+            vocabId: card1.vocabularyId
+          }
+        }).then(result => {
           if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
             setXpCapReached(true)
             setXpCapShown(true)

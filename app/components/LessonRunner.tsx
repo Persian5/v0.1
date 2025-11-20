@@ -16,7 +16,6 @@ import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
 import { VocabularyTrackingService } from '@/lib/services/vocabulary-tracking-service'
-import { PhraseTrackingService } from '@/lib/services/phrase-tracking-service'
 import { getLessonVocabulary } from '@/lib/config/curriculum'
 import { ModuleProgressService } from '@/lib/services/module-progress-service'
 import { SyncService } from '@/lib/services/sync-service'
@@ -30,6 +29,7 @@ import { SmartAuthService } from '@/lib/services/smart-auth-service'
 import { verifyLessonCompletionInCache } from '@/lib/utils/cache-verification'
 import { safeTelemetry } from '@/lib/utils/telemetry-safe'
 import { getCurriculumLexicon, buildLearnedCache, type LearnedCache } from '@/lib/utils/curriculum-lexicon'
+import { FLAGS } from '@/lib/flags'
 
 interface LessonRunnerProps {
   steps: LessonStep[];
@@ -83,6 +83,8 @@ export function LessonRunner({
   const pendingRemediationRef = useRef<string[]>([]);
   const remediationTriggeredRef = useRef<Set<string>>(new Set()); // Prevent duplicate remediation triggers
   const currentStepTrackedRef = useRef<Set<string>>(new Set()); // Prevent retry counting on same step
+  // PHASE 1 FIX: Add debouncing for XP awards
+  const isAwardingXpRef = useRef(false);
   
   // Sync refs with state for re-render consistency
   useEffect(() => {
@@ -191,6 +193,19 @@ export function LessonRunner({
       }
     };
   }, []);
+
+  // Learned vocabulary logging (only when step index changes)
+  useEffect(() => {
+    if (FLAGS.LOG_LEARNED_VOCAB) {
+      const learned = learnedCache[idx]?.vocabIds || [];
+      console.log("%c[LEARNED VOCAB]", "color:#4CAF50;font-weight:bold;", {
+        moduleId,
+        lessonId,
+        stepIndex: idx,
+        learned,
+      });
+    }
+  }, [idx]);
 
   // Update progress when step changes
   useEffect(() => {
@@ -363,43 +378,49 @@ export function LessonRunner({
   // Returns Promise<boolean>: true if XP was granted, false if already completed
   const createStepXpHandler = () => {
     return async (): Promise<boolean> => {
+      // PHASE 1 FIX: Debounce rapid clicks
+      if (isAwardingXpRef.current) return false;
+      
       const currentStep = steps[idx];
       if (!currentStep || !user?.id) {
         console.warn('No current step or user available for XP', { idx, userId: user?.id });
         return false; // No XP granted
       }
 
-      // Derive stable step UID
-      const stepUid = deriveStepUid(currentStep, idx, moduleId, lessonId);
-      
-      // Get XP amount from curriculum
-      const xpReward = XpService.getStepXp(currentStep);
-      
-      // Award XP idempotently (database enforces once-per-step)
-      const result = await XpService.awardXpOnce({
-        userId: user.id,
-        moduleId,
-        lessonId,
-        stepUid,
-        amount: xpReward.amount,
-        source: xpReward.source,
-        metadata: {
-          activityType: currentStep.type,
-          stepIndex: idx,
-          isRemediation: isInRemediation
+      isAwardingXpRef.current = true;
+
+      try {
+        // Derive stable step UID
+        const stepUid = deriveStepUid(currentStep, idx, moduleId, lessonId);
+        
+        // Get XP amount from curriculum
+        const xpReward = XpService.getStepXp(currentStep);
+        
+        // Award XP idempotently (database enforces once-per-step)
+        const result = await XpService.awardXpOnce({
+          userId: user.id,
+          moduleId,
+          lessonId,
+          stepUid,
+          amount: xpReward.amount,
+          source: xpReward.source,
+          metadata: {
+            activityType: currentStep.type,
+            stepIndex: idx,
+            isRemediation: isInRemediation
+          }
+        });
+        
+        // Log if step was already completed
+        if (!result.granted) {
+          console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
         }
-      });
-      
-      // XP is already handled by awardXpOnce (optimistic update + RPC)
-      // No need to call addXp here - would be a duplicate
-      
-      // Log if step was already completed
-      if (!result.granted) {
-        console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
+        
+        // Return whether XP was granted (true = new XP, false = already done)
+        return result.granted;
+      } finally {
+        isAwardingXpRef.current = false;
       }
-      
-      // Return whether XP was granted (true = new XP, false = already done)
-      return result.granted;
     };
   };
   
@@ -528,14 +549,110 @@ export function LessonRunner({
         console.log(`✅ Correct answer for "${vocabularyId}" - counter unchanged`);
       }
       
-      // Keep localStorage tracking for backwards compatibility
-      if (isCorrect) {
-        VocabularyService.recordCorrectAnswer(vocabularyId);
-      } else {
-        VocabularyService.recordIncorrectAnswer(vocabularyId);
-      }
+      // LocalStorage tracking removed (Phase 1 Cleanup)
     };
   }, [idx, steps, user?.id, moduleId, lessonId, isInRemediation, incorrectAttempts]);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Get current step BEFORE hooks (needed for useMemo hooks)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  // CRITICAL: Define step BEFORE useMemo hooks that reference it
+  // Guard against idx >= steps.length to prevent undefined access
+  const step = idx < steps.length ? steps[idx] : null;
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CRITICAL: All hooks MUST be before early returns
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // PHASE 8 FIX: Memoize matching step resolution to prevent constant re-shuffling
+  // MUST be called before any early returns to satisfy React hooks rules
+  const matchingStepData = useMemo(() => {
+    if (!step || step.type !== 'matching') return null;
+    const matchingStep = step as MatchingStep;
+    const { GrammarService } = require('@/lib/services/grammar-service');
+    
+    if (matchingStep.data.lexemeRefs) {
+      return {
+        words: matchingStep.data.lexemeRefs.map((ref, index) => {
+          const resolved = GrammarService.resolve(ref);
+          return {
+            id: resolved.id,  // Use actual vocabulary ID (e.g., "bad|am")
+            text: resolved.finglish,
+            slotId: `slot${index + 1}`,
+            vocabularyId: resolved.id,  // Store for tracking
+            wordText: resolved.en  // Store for tracking
+          };
+        }),
+        slots: matchingStep.data.lexemeRefs.map((ref, index) => {
+          const resolved = GrammarService.resolve(ref);
+          return {
+            id: `slot${index + 1}`,
+            text: resolved.en
+          };
+        })
+      };
+    }
+    return {
+      words: matchingStep.data.words,
+      slots: matchingStep.data.slots
+    };
+  }, [idx, step?.type, (step as MatchingStep)?.data?.lexemeRefs, (step as MatchingStep)?.data?.words]);
+
+  // PHASE 8 FIX: Memoize final step resolution to show actual words instead of IDs
+  const finalStepData = useMemo(() => {
+    if (!step || step.type !== 'final') return null;
+    const finalStep = step as FinalStep;
+    const { GrammarService } = require('@/lib/services/grammar-service');
+    
+    if (finalStep.data.lexemeRefs) {
+      const resolved = finalStep.data.lexemeRefs.map(ref => {
+        // Handle plain strings that aren't vocabulary IDs (e.g., "sara-e", "amir-e")
+        // These are just text strings, not grammar forms or vocab items
+        if (typeof ref === 'string') {
+          // Check if it's a grammar form ID (contains |) or a valid vocab ID
+          if (ref.includes('|')) {
+            // Grammar form ID (e.g., "esm|e") - resolve it
+            return GrammarService.resolve(ref);
+          }
+          // Try to resolve as vocabulary ID
+          try {
+            return GrammarService.resolve(ref);
+          } catch (error) {
+            // Not a valid vocab ID - treat as plain string
+            // Return a simple lexeme object for plain strings
+            return {
+              id: ref,
+              en: ref, // Use the string as-is for English
+              fa: ref, // Use the string as-is for Persian
+              finglish: ref, // Use the string as-is for Finglish
+              phonetic: '',
+              lessonId: '',
+              semanticGroup: undefined,
+              isGrammarForm: false,
+              baseId: null
+            };
+          }
+        }
+        // LexemeRef object (e.g., { kind: "suffix", baseId: "esm", suffixId: "e" })
+        return GrammarService.resolve(ref);
+      });
+      return {
+        words: resolved.map((lexeme, index) => ({
+          id: lexeme.id,
+          text: lexeme.finglish,
+          translation: lexeme.en
+        })),
+        targetWords: resolved.map(lexeme => lexeme.id),
+        persianSequence: resolved.map(lexeme => lexeme.id)
+      };
+    }
+    return {
+      words: finalStep.data.words,
+      targetWords: finalStep.data.targetWords,
+      persianSequence: finalStep.data.conversationFlow?.persianSequence || []
+    };
+  }, [idx, step?.type, (step as FinalStep)?.data?.lexemeRefs, (step as FinalStep)?.data?.words]);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Early returns (after all hooks)
@@ -545,8 +662,6 @@ export function LessonRunner({
   if (idx >= steps.length && !isInRemediation && !storyCompleted) {
     return null;
   }
-
-  const step = steps[idx]
   
   // Guard: if step is undefined (edge case during navigation), return null
   if (!step) {
@@ -782,7 +897,7 @@ export function LessonRunner({
     setTimeout(() => setIsNavigating(false), 300);
   };
 
-  // Render remediation content
+  // Render remediation content (AFTER hooks to satisfy React rules)
   if (isInRemediation && remediationQueue.length > 0) {
     const currentWord = remediationQueue[0];
     const vocabItem = findVocabularyById(currentWord);
@@ -889,6 +1004,7 @@ export function LessonRunner({
               ? safeFindVocabularyById((step as FlashcardStep).data.vocabularyId)
               : undefined
           }
+          vocabularyId={(step as FlashcardStep).data.vocabularyId} // PHASE 8 FIX: Pass ID for runtime lookup fallback
           points={step.points}
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
@@ -901,9 +1017,15 @@ export function LessonRunner({
           options={(step as QuizStep).data.options}
           correct={(step as QuizStep).data.correct}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
+          vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for lookup
+          quizType={(step as QuizStep).data.quizType} // NEW: Pass quizType from step data
+          vocabularyId={(step as QuizStep).data.vocabularyId || extractVocabularyFromFailedQuiz(step)} // NEW: Prefer step.data.vocabularyId, fallback to extraction
+          lexemeRef={(step as QuizStep).data.lexemeRef} // NEW: Pass lexemeRef for grammar forms
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
-          vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'reverse-quiz' ? (
@@ -913,9 +1035,15 @@ export function LessonRunner({
           options={(step as ReverseQuizStep).data.options}
           correct={(step as ReverseQuizStep).data.correct}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
+          vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for lookup
+          quizType={(step as ReverseQuizStep).data.quizType} // NEW: Pass quizType from step data
+          vocabularyId={(step as ReverseQuizStep).data.vocabularyId || extractVocabularyFromFailedQuiz(step)} // NEW: Prefer step.data.vocabularyId, fallback to extraction
+          lexemeRef={(step as ReverseQuizStep).data.lexemeRef} // NEW: Pass lexemeRef for grammar forms
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
-          vocabularyId={extractVocabularyFromFailedQuiz(step)}
           onVocabTrack={createVocabularyTracker()}
         />
       ) : step.type === 'input' ? (
@@ -927,30 +1055,36 @@ export function LessonRunner({
           onComplete={(wasCorrect) => handleItemComplete(wasCorrect)}
           onXpStart={createStepXpHandler()}
           vocabularyId={getStepVocabularyId(step)}
+          lexemeRef={(step as InputStep).data.lexemeRef} // NEW: Pass lexemeRef for grammar forms
           onVocabTrack={createVocabularyTracker()}
         />
-      ) : step.type === 'matching' ? (
+      ) : step.type === 'matching' && matchingStepData ? (
         <MatchingGame
           key={`matching-${idx}`}
-          words={(step as MatchingStep).data.words}
-          slots={(step as MatchingStep).data.slots}
+          words={matchingStepData.words}
+          slots={matchingStepData.slots}
           points={step.points}
           vocabularyBank={allCurriculumVocab}
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
         />
-      ) : step.type === 'final' ? (
+      ) : step.type === 'final' && finalStepData ? (
         <FinalChallenge
           key={`final-${idx}`}
-          words={(step as FinalStep).data.words}
-          targetWords={(step as FinalStep).data.targetWords}
-          title={(step as FinalStep).data.title}
-          description={(step as FinalStep).data.description}
-          successMessage={(step as FinalStep).data.successMessage}
-          incorrectMessage={(step as FinalStep).data.incorrectMessage}
-          conversationFlow={(step as FinalStep).data.conversationFlow}
+          words={finalStepData.words}
+          targetWords={finalStepData.targetWords}
+          title={(step as FinalStep).title}
+          description={(step as FinalStep).description}
+          successMessage={(step as FinalStep).successMessage}
+          incorrectMessage={(step as FinalStep).incorrectMessage}
+          conversationFlow={{
+            ...(step as FinalStep).data.conversationFlow,
+            persianSequence: finalStepData.persianSequence
+          }}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
+          vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for filtering
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
         />
@@ -1020,10 +1154,14 @@ export function LessonRunner({
         <AudioMeaning
           key={`audio-meaning-${idx}`}
           vocabularyId={(step as AudioMeaningStep).data.vocabularyId}
+          lexemeRef={(step as AudioMeaningStep).data.lexemeRef} // NEW: Pass LexemeRef for grammar forms
           distractors={(step as AudioMeaningStep).data.distractors}
           vocabularyBank={allCurriculumVocab}
           points={step.points}
           autoPlay={(step as AudioMeaningStep).data.autoPlay}
+          learnedSoFar={learnedCache[idx]} // PHASE 5: Pass learned vocabulary state
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
@@ -1032,12 +1170,16 @@ export function LessonRunner({
         <AudioSequence
           key={`audio-sequence-${idx}`}
           sequence={(step as AudioSequenceStep).data.sequence}
+          lexemeSequence={(step as AudioSequenceStep).data.lexemeSequence} // NEW: Pass LexemeRef[] for grammar forms
           vocabularyBank={allVocab}
           points={step.points}
           autoPlay={(step as AudioSequenceStep).data.autoPlay}
           expectedTranslation={(step as AudioSequenceStep).data.expectedTranslation}
           targetWordCount={(step as AudioSequenceStep).data.targetWordCount}
           maxWordBankSize={(step as AudioSequenceStep).data.maxWordBankSize}
+          learnedSoFar={learnedCache[idx]} // PHASE 4: Pass learned vocabulary state
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
@@ -1047,8 +1189,12 @@ export function LessonRunner({
           key={idx}
           finglishText={(step as TextSequenceStep).data.finglishText}
           expectedTranslation={(step as TextSequenceStep).data.expectedTranslation}
+          lexemeSequence={(step as TextSequenceStep).data.lexemeSequence} // GRAMMAR FORMS: Pass lexemeSequence (same as AudioSequence)
           vocabularyBank={allVocab}
           points={step.points}
+          learnedSoFar={learnedCache[idx]} // PHASE 4: Pass learned vocabulary state
+          moduleId={moduleId} // For tiered fallback
+          lessonId={lessonId} // For tiered fallback
           onContinue={() => handleItemComplete(true)}
           onXpStart={createStepXpHandler()}
           maxWordBankSize={(step as TextSequenceStep).data.maxWordBankSize}

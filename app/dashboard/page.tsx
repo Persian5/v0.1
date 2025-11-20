@@ -1,18 +1,19 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { usePathname } from "next/navigation"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
-import { DashboardHero } from "@/app/components/dashboard/DashboardHero"
-import { QuickActions } from "@/app/components/dashboard/QuickActions"
+import { WelcomeCard } from "@/app/components/dashboard/WelcomeCard"
 import { ResumeLearning } from "@/app/components/dashboard/ResumeLearning"
-import { TodaysProgress } from "@/app/components/dashboard/TodaysProgress"
-import { ProgressOverview } from "@/app/components/dashboard/ProgressOverview"
-import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
-import { WordsToReviewWidget } from "@/app/components/dashboard/WordsToReviewWidget"
+import { DailyGoalIndicator } from "@/app/components/dashboard/DailyGoalIndicator"
+import { TodayStatsSection } from "@/app/components/dashboard/TodayStatsSection"
+import { WordsNeedingPractice } from "@/app/components/dashboard/WordsNeedingPractice"
+import { ProgressSummarySection } from "@/app/components/dashboard/ProgressSummarySection"
 import { LeaderboardWidget } from "@/components/widgets/LeaderboardWidget"
-import { Loader2, AlertCircle } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
+import { UserLessonProgress } from "@/lib/supabase/database"
 import WidgetErrorBoundary from "@/components/errors/WidgetErrorBoundary"
 
 interface DashboardStats {
@@ -41,68 +42,152 @@ interface DashboardStats {
   }>
 }
 
+interface DashboardData {
+  progress: UserLessonProgress[]
+  nextLesson: {
+    moduleId: string
+    lessonId: string
+    moduleTitle: string
+    lessonTitle: string
+    description?: string
+    status: 'not_started' | 'completed'
+    allLessonsCompleted?: boolean
+  } | null
+  stats: DashboardStats
+  xp: number
+  level: number
+  streakCount: number
+  dailyGoalXp: number
+  dailyGoalProgress: number
+  lessonsCompletedToday: number
+  xpEarnedToday: number
+}
+
+import { getGreetingParts } from "@/lib/utils/greeting"
+import { Hand } from "lucide-react"
+import { getLevelInfo } from "@/lib/utils/leveling"
+import { useDashboardAnimations } from "@/hooks/use-dashboard-animations"
+
 function DashboardContent() {
   const { user } = useAuth()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const pathname = usePathname()
+  const { shouldAnimate, markAnimated } = useDashboardAnimations()
+  
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchStats = useCallback(async () => {
+  // Get user's first name for greeting
+  const firstName = useMemo(() => {
+    // Try cached profile first
+    const cachedProfile = SmartAuthService.getCachedProfile()
+    if (cachedProfile?.first_name) {
+      return cachedProfile.first_name
+    }
+    // Fallback to user metadata
+    if (user?.user_metadata?.first_name) {
+      return user.user_metadata.first_name
+    }
+    return null
+  }, [user])
+
+  // Single unified fetch for all dashboard data
+  useEffect(() => {
     if (!user?.id) {
       setIsLoading(false)
       return
     }
 
-    setIsLoading(true)
-    setError(null)
+    let isMounted = true
 
-    try {
-      // Check cache first for instant display
-      const cached = SmartAuthService.getCachedDashboardStats()
-      if (cached) {
-        setStats({
-          wordsLearned: cached.wordsLearned,
-          masteredWords: cached.masteredWords,
-          hardWords: cached.hardWords,
-          unclassifiedWords: cached.unclassifiedWords,
-          wordsToReview: cached.wordsToReview
-        })
+    // Check cache first for instant render
+    const cachedDashboard = SmartAuthService.getCachedDashboard()
+    if (cachedDashboard && isMounted) {
+      setDashboard(cachedDashboard)
+      setIsLoading(false)
+    }
+
+    // Always fetch fresh data
+    fetch('/api/dashboard')
+      .then(response => {
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Please sign in to view your dashboard.')
+          } else if (response.status === 500) {
+            throw new Error('Something went wrong on our end. Please try again in a moment.')
+          } else {
+            throw new Error('Unable to load your dashboard. Please refresh the page.')
+          }
+        }
+        return response.json()
+      })
+      .then((data: DashboardData) => {
+        if (!isMounted) return
+        
+        // Cache the fresh data
+        SmartAuthService.cacheDashboard(data)
+        // Update state (silent update if cache was shown)
+        setDashboard(data)
         setIsLoading(false)
-        return
-      }
-
-      // No cache - fetch fresh data
-      const response = await fetch('/api/user-stats')
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data: DashboardStats = await response.json()
-      
-      // Cache the stats
-      SmartAuthService.cacheDashboardStats(data)
-      
-      setStats(data)
-      setIsLoading(false)
-    } catch (err) {
-      console.error('Error fetching dashboard stats:', err)
-      setError('Failed to load dashboard stats. Please refresh the page.')
-      setIsLoading(false)
+      })
+      .catch((err) => {
+        if (!isMounted) return
+        
+        console.error('Error fetching dashboard:', err)
+        
+        // Only show error if we don't have cached data
+        if (!cachedDashboard) {
+          let errorMessage = 'Unable to load your dashboard. Please try again.'
+          if (err instanceof Error) {
+            if (err.message.includes('sign in')) {
+              errorMessage = err.message
+            } else if (err.message.includes('Something went wrong')) {
+              errorMessage = err.message
+            }
+          }
+          setError(errorMessage)
+        }
+        setIsLoading(false)
+      })
+    
+    return () => {
+      isMounted = false
     }
   }, [user?.id])
 
-  // Initial load only - refreshes when navigating to dashboard (not on tab switch)
-  useEffect(() => {
-    if (user?.id) {
-      fetchStats()
-    }
-  }, [user?.id])
+  // Check if user has any progress
+  const hasProgress = useMemo(() => {
+    if (!dashboard) return false
+    return dashboard.stats.wordsLearned > 0 || 
+           dashboard.progress.length > 0 ||
+           dashboard.xp > 0
+  }, [dashboard])
 
-  if (isLoading && !stats) {
+  // Calculate level progress using progressive curve
+  const levelInfo = useMemo(() => {
+    if (!dashboard) return null
+    return getLevelInfo(dashboard.xp)
+  }, [dashboard])
+
+  // Show loading skeleton only if no cache exists
+  if (isLoading && !dashboard) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-screen flex-col bg-background">
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
+            <div className="text-center mb-6 sm:mb-8">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary mb-2">
+                Your Learning Hub
+              </h1>
+              <p className="text-lg sm:text-xl text-muted-foreground">
+                Track your progress and maximize your potential
+              </p>
+            </div>
+            <div className="flex items-center justify-center min-h-[400px]">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -110,89 +195,175 @@ function DashboardContent() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex-1">
-        <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
+        <div className="container mx-auto px-4 py-8 md:py-12 max-w-7xl">
           {/* Page Header */}
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary mb-2">
-              Your Learning Hub
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-xl md:text-2xl font-medium text-neutral-500 mb-2 flex items-center justify-center gap-2 flex-wrap">
+              {(() => {
+                const { greeting, name } = getGreetingParts(firstName)
+                return (
+                  <>
+                    <span>{greeting}{name ? `, ${name}!` : '!'}</span>
+                    {name && <Hand className="w-5 h-5 md:w-6 md:h-6 text-neutral-400" />}
+                  </>
+                )
+              })()}
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground">
-              Track your progress and maximize your potential
-            </p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 mb-6">
+              Your Learning Hub
+            </h2>
+            
+            {/* Level Indicator */}
+            {hasProgress && dashboard && levelInfo && (
+              <div className="max-w-xs mx-auto">
+                <div className="flex flex-col mb-2">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Level {levelInfo.level}</span>
+                    <span className="text-xs font-medium text-neutral-400">{dashboard.xp.toLocaleString()} XP Total</span>
+                  </div>
+                  <div className="flex justify-end mt-1">
+                    <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">
+                      {Math.round(levelInfo.progressPercent)}% to Level {levelInfo.nextLevel}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-2.5 w-full bg-neutral-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
+                    style={{ width: `${levelInfo.progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Section Divider */}
+          <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2 text-yellow-800">
+            <div className="mb-8 p-4 bg-amber-50 border border-amber-200/50 rounded-2xl flex items-center gap-3 text-amber-900">
               <AlertCircle className="h-5 w-5" />
-              <span className="text-sm">{error}</span>
+              <span className="text-sm font-medium">{error}</span>
             </div>
           )}
 
-          {/* Action-First Layout: Resume Learning (Primary Action) */}
-          <div className="mb-6 md:mb-8">
-            <WidgetErrorBoundary>
-              <ResumeLearning />
-            </WidgetErrorBoundary>
-          </div>
+          {/* NEW USER: Show Welcome Card Only */}
+          {!isLoading && !hasProgress && (
+            <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <WidgetErrorBoundary>
+                <WelcomeCard nextLesson={dashboard?.nextLesson || null} />
+              </WidgetErrorBoundary>
+            </div>
+          )}
 
-          {/* Today's Progress - Daily Feedback Loop */}
-          <div className="mb-6 md:mb-8">
-            <WidgetErrorBoundary>
-              <TodaysProgress />
-            </WidgetErrorBoundary>
-          </div>
+          {/* RETURNING USER: Show Full Dashboard */}
+          {(isLoading || hasProgress) && (
+            <div className="space-y-6 md:space-y-8">
+              
+              {/* SECTION 1: Primary Action - Resume Learning + Daily Goal */}
+              <section className="space-y-6 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                <WidgetErrorBoundary>
+                  <ResumeLearning nextLesson={dashboard?.nextLesson || null} />
+                </WidgetErrorBoundary>
+                <WidgetErrorBoundary>
+                  <DailyGoalIndicator
+                    earned={dashboard?.xpEarnedToday || 0}
+                    goal={dashboard?.dailyGoalXp || 50}
+                    percentage={(dashboard?.dailyGoalProgress || 0) * 100}
+                    isLoading={isLoading}
+                  />
+                </WidgetErrorBoundary>
+              </section>
 
-          {/* Hero Section - Level, XP, Streak, Daily Goal */}
-          <div className="mb-6 md:mb-8">
-            <WidgetErrorBoundary>
-              <DashboardHero />
-            </WidgetErrorBoundary>
-          </div>
+              {/* Section Divider */}
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
 
-          {/* Quick Actions */}
-          <div className="mb-6 md:mb-8">
-            <QuickActions />
-          </div>
+              {/* SECTION 2: Today's Stats */}
+              <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+                <div className="mb-3 md:mb-4 px-4">
+                  <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mb-1">
+                    Today
+                  </h2>
+                  <p className="text-sm text-neutral-500 font-medium">
+                    Your daily activity summary
+                  </p>
+                </div>
+              <WidgetErrorBoundary>
+                <TodayStatsSection
+                  xpEarned={dashboard?.xpEarnedToday || 0}
+                  lessonsCompleted={dashboard?.lessonsCompletedToday || 0}
+                  streak={dashboard?.streakCount || 0}
+                  isLoading={isLoading}
+                  shouldAnimate={shouldAnimate}
+                  onAnimationComplete={markAnimated}
+                />
+              </WidgetErrorBoundary>
+              </section>
 
-          {/* Progress Overview - Stats Grid */}
-          <div className="mb-6 md:mb-8">
-            <WidgetErrorBoundary>
-              <ProgressOverview 
-                wordsLearned={stats?.wordsLearned || 0}
-                masteredWords={stats?.masteredWords || 0}
-                wordsToReview={stats?.wordsToReview?.length || 0}
-                isLoading={isLoading}
-              />
-            </WidgetErrorBoundary>
-          </div>
+              {/* Section Divider */}
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
 
-          {/* Words to Review Section */}
-          <div className="mb-6 sm:mb-8">
-            <WidgetErrorBoundary>
-              <WordsToReviewWidget 
-                wordsToReview={stats?.wordsToReview || []} 
-                isLoading={isLoading} 
-              />
-            </WidgetErrorBoundary>
-          </div>
+              {/* SECTION 3: Words Needing Practice */}
+              <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                <div className="mb-3 md:mb-4 px-4">
+                  <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mb-1">
+                    Words That Need Practice
+                  </h2>
+                  <p className="text-sm text-neutral-500 font-medium">
+                    Strengthen words you're struggling with
+                  </p>
+                </div>
+              <WidgetErrorBoundary>
+                <WordsNeedingPractice
+                  wordsToReview={dashboard?.stats?.wordsToReview || []}
+                  hardWords={dashboard?.stats?.hardWords || []}
+                  isLoading={isLoading}
+                  shouldAnimate={shouldAnimate}
+                  onAnimationComplete={markAnimated}
+                />
+              </WidgetErrorBoundary>
+              </section>
 
-          {/* Words to Strengthen Section */}
-          <div className="mb-6 sm:mb-8">
-            <WidgetErrorBoundary>
-              <HardWordsWidget 
-                hardWords={stats?.hardWords || []} 
-                isLoading={isLoading} 
-              />
-            </WidgetErrorBoundary>
-          </div>
+              {/* Section Divider */}
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
 
-          {/* Leaderboard */}
-          <div className="mb-6 sm:mb-8">
-            <WidgetErrorBoundary>
-              <LeaderboardWidget />
-            </WidgetErrorBoundary>
-          </div>
+              {/* SECTION 4: Progress Summary */}
+              <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
+                <div className="mb-3 md:mb-4 px-4">
+                  <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mb-1">
+                    Your Progress
+                  </h2>
+                  <p className="text-sm text-neutral-500 font-medium">
+                    Track your long-term growth
+                  </p>
+                </div>
+              <WidgetErrorBoundary>
+                <ProgressSummarySection
+                  wordsLearned={dashboard?.stats?.wordsLearned || 0}
+                  masteredWords={dashboard?.stats?.masteredWords || 0}
+                  lessonsCompleted={dashboard?.progress?.length || 0}
+                  isLoading={isLoading}
+                  shouldAnimate={shouldAnimate}
+                  onAnimationComplete={markAnimated}
+                />
+              </WidgetErrorBoundary>
+              </section>
+
+              {/* Section Divider */}
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
+
+              {/* SECTION 5: Leaderboard */}
+              <section className="max-w-3xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
+                <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mb-6 px-1 text-center">
+                  Leaderboard
+                </h2>
+                <WidgetErrorBoundary>
+                  <LeaderboardWidget key={pathname} />
+                </WidgetErrorBoundary>
+              </section>
+            </div>
+          )}
         </div>
       </main>
     </div>

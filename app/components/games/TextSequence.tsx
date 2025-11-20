@@ -1,18 +1,26 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Type, RotateCcw } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
-import { VocabularyItem } from "@/lib/types"
+import { VocabularyItem, LexemeRef } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
 import { motion } from "framer-motion"
 import { WordBankService } from "@/lib/services/word-bank-service"
+import { FLAGS } from "@/lib/flags"
+import { VocabularyService } from "@/lib/services/vocabulary-service"
+import { GrammarService } from "@/lib/services/grammar-service"
+import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
 
 interface TextSequenceProps {
   finglishText: string // Finglish phrase to display
   expectedTranslation: string // English translation to build
   vocabularyBank: VocabularyItem[] // All available vocabulary for this lesson
+  lexemeSequence?: LexemeRef[] // GRAMMAR FORMS: Optional lexeme references for grammar forms (same as AudioSequence)
   points?: number
   maxWordBankSize?: number // Maximum number of options in word bank
+  learnedSoFar?: LearnedSoFar // PHASE 4: Learned vocabulary state for filtering word bank
+  moduleId?: string // For tiered fallback in WordBankService
+  lessonId?: string // For tiered fallback in WordBankService
   onContinue: () => void
   onXpStart?: () => Promise<boolean> // Returns true if XP granted, false if already completed
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
@@ -22,12 +30,74 @@ export function TextSequence({
   finglishText,
   expectedTranslation,
   vocabularyBank,
+  lexemeSequence, // GRAMMAR FORMS: Lexeme references (same as AudioSequence)
   points = 3,
   maxWordBankSize = 10,
+  learnedSoFar, // PHASE 4: Learned vocabulary state
+  moduleId, // For tiered fallback
+  lessonId, // For tiered fallback
   onContinue,
   onXpStart,
   onVocabTrack
 }: TextSequenceProps) {
+  
+  // GRAMMAR FORMS: Resolve lexemeSequence to get vocabulary IDs (same as AudioSequence)
+  const resolvedLexemes = useMemo(() => {
+    if (!lexemeSequence) return [];
+    return lexemeSequence.map(ref => GrammarService.resolve(ref));
+  }, [lexemeSequence]);
+
+  // GRAMMAR FORMS: Extract vocabulary IDs from resolved lexemes (e.g., ["bad|am"])
+  const sequenceIds = useMemo(() => 
+    resolvedLexemes.map(r => r.id), 
+    [resolvedLexemes]
+  );
+
+  // GRAMMAR FORMS: Inject resolved lexemes into vocabularyBank so WordBankService can match them
+  // This ensures "bad|am" (meaning "I'm bad") is found during phrase detection
+  // Also include base forms for grammar items to ensure matching works (e.g. "Name" matches base "esm")
+  const expandedVocabularyBank = useMemo(() => {
+    if (!resolvedLexemes.length) return vocabularyBank;
+
+    const grammarVocabItems = resolvedLexemes.map(resolved => ({
+      id: resolved.id,
+      en: resolved.en,
+      fa: resolved.fa,
+      finglish: resolved.finglish,
+      phonetic: resolved.phonetic || '',
+      lessonId: resolved.lessonId || '',
+      semanticGroup: resolved.semanticGroup
+    }));
+    
+    // Also add base vocab items for grammar forms (if not already in bank)
+    const baseVocabItems = resolvedLexemes
+      .filter(r => r.isGrammarForm && r.baseId)
+      .map(resolved => {
+        // Check if base vocab is in the bank first
+        const existing = vocabularyBank.find(v => v.id === resolved.baseId);
+        if (existing) return existing;
+        
+        // If not in bank, look it up using VocabularyService
+        if (resolved.baseId) {
+          try {
+            const baseVocab = VocabularyService.findVocabularyById(resolved.baseId);
+            if (baseVocab) return baseVocab;
+          } catch (e) {
+            console.warn(`[TextSequence] Failed to lookup base vocab for ${resolved.id}`, e);
+          }
+        }
+        
+        return null;
+      })
+      .filter((v): v is VocabularyItem => v !== null);
+    
+    // Avoid duplicates (if base vocab is already in bank)
+    const bankIds = new Set(vocabularyBank.map(v => v.id));
+    const uniqueItems = [...grammarVocabItems, ...baseVocabItems].filter(v => !bankIds.has(v.id));
+    
+    return [...vocabularyBank, ...uniqueItems];
+  }, [vocabularyBank, resolvedLexemes]);
+
   const [userOrder, setUserOrder] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
   const [showXp, setShowXp] = useState(false)
@@ -41,16 +111,38 @@ export function TextSequence({
   // Calculate expected semantic unit count (phrases count as 1, words count as 1)
   const expectedWordCount = WordBankService.getSemanticUnits({
     expectedTranslation,
-    vocabularyBank
+    vocabularyBank: expandedVocabularyBank, // ✅ Use expanded bank
+    sequenceIds // ✅ Pass sequenceIds for phrase matching
   });
 
   // WORD BANK: Use WordBankService for unified, consistent generation
   const [wordBankOptions] = useState<string[]>(() => {
+    // PHASE 4: Sanity logging before calling generateWordBank
+    if (FLAGS.LOG_WORDBANK) {
+      console.log(
+        "%c[TEXT SEQUENCE - PRE WORDBANK]",
+        "color: #00BCD4; font-weight: bold;",
+        {
+          stepType: 'text-sequence',
+          learnedVocabIds: learnedSoFar?.vocabIds || [],
+          learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
+          vocabularyBankSize: vocabularyBank.length,
+        }
+      );
+    }
+    
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
-      vocabularyBank,
+      vocabularyBank: expandedVocabularyBank, // ✅ Use expanded bank
+      sequenceIds: sequenceIds.length > 0 ? sequenceIds : undefined, // GRAMMAR FORMS: Pass vocabulary IDs (e.g., ["bad|am"])
       maxSize: maxWordBankSize,
-      distractorStrategy: 'semantic'
+      distractorStrategy: 'semantic',
+      // PHASE 4: Pass learned vocab IDs if feature flag is enabled
+      learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
+        ? learnedSoFar.vocabIds
+        : undefined,
+      moduleId, // For tiered fallback
+      lessonId, // For tiered fallback
     })
     
     // WordBankService returns normalized, shuffled words ready for display
@@ -76,7 +168,8 @@ export function TextSequence({
     // Get correct semantic units from WordBankService
     const wordBankResult = WordBankService.generateWordBank({
       expectedTranslation,
-      vocabularyBank
+      vocabularyBank: expandedVocabularyBank, // ✅ Use expanded bank
+      sequenceIds: sequenceIds.length > 0 ? sequenceIds : undefined // GRAMMAR FORMS: Pass vocabulary IDs for tracking
     });
     
     // Extract expected semantic units (normalized with contractions and punctuation)
@@ -117,7 +210,7 @@ export function TextSequence({
 
     // Track vocabulary performance PER-WORD (accurate tracking for multi-word games)
     if (onVocabTrack) {
-      // Convert user's word keys back to actual word text (strip index suffix)
+      // Convert user's word keys back to actual word text
       const userAnswerWords = userOrder.map(wordKey => 
         wordKey.split('-').slice(0, -1).join('-')
       );
@@ -126,15 +219,47 @@ export function TextSequence({
       const perWordResults = WordBankService.validateUserAnswer({
         userAnswer: userAnswerWords,
         expectedTranslation,
-        vocabularyBank
+        vocabularyBank: expandedVocabularyBank,
+        sequenceIds // Pass all sequence IDs (including grammar forms)
       });
       
-      // Track each word with its individual result
+      // PHASE 2 FIX: Map base IDs to grammar form IDs when lexemeSequence has grammar forms
+      if (resolvedLexemes.length > 0) {
+        // Create map: baseId -> compositeId for grammar forms
+        const baseIdToCompositeId = new Map<string, string>();
+        const baseIdToResolved = new Map<string, typeof resolvedLexemes[0]>();
+        
+        resolvedLexemes.forEach(resolved => {
+          if (resolved.isGrammarForm && resolved.baseId) {
+            baseIdToCompositeId.set(resolved.baseId, resolved.id);
+            baseIdToResolved.set(resolved.baseId, resolved);
+          }
+        });
+        
+        // Track each word, replacing base IDs with composite IDs for grammar forms
+        perWordResults.forEach((result, index) => {
+          if (result.vocabularyId) {
+            // Check if this vocabularyId is a base ID of a grammar form
+            const compositeId = baseIdToCompositeId.get(result.vocabularyId);
+            const resolved = baseIdToResolved.get(result.vocabularyId);
+            
+            if (compositeId && resolved) {
+              // This is a grammar form - track with composite ID
+              onVocabTrack(compositeId, resolved.en, result.isCorrect, timeSpentMs);
+            } else {
+              // Base vocabulary - track as-is
+              onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
+            }
+          }
+        });
+      } else {
+        // No grammar forms - track as-is
       perWordResults.forEach(result => {
         if (result.vocabularyId) {
           onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
         }
       });
+      }
     }
 
     if (correct) {

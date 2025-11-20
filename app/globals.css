@@ -14,6 +14,22 @@
       padding-bottom: 56px; /* Height of bottom nav */
     }
   }
+  
+  /* PHASE 5: Success animation for email verification */
+  .animate-scale-in {
+    animation: scale-in 0.5s ease-out;
+  }
+  
+  @keyframes scale-in {
+    from {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 }
 
 @layer base {

@@ -1,6 +1,8 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
 import { ConversationFlowService } from "../services/conversation-flow-service";
 import { generateGrammarOptions } from "../utils/grammar-options";
+import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence, matching, final } from "./curriculum-helpers";
+import { createVocabulary } from "./vocabulary-builder";
 
 // Define all modules, lessons, and their content
 export const curriculumData: Module[] = [
@@ -9,1209 +11,441 @@ export const curriculumData: Module[] = [
     title: "Module 1: Greetings & Politeness",
     description: "Start a conversation the right way. Learn how to say hello, goodbye, thank you, please, and the difference between formal and casual tone.",
     emoji: "👋",
-    lessonCount: 5,
-    estimatedTime: "25 minutes",
+    lessonCount: 6,
+    estimatedTime: "30 minutes",
     available: true,
     lessons: [
-      {
-        id: "lesson1",
-        title: "Basic Persian Greetings",
-        description: "Learn essential greetings and how to say hello in different contexts",
-        emoji: "👋",
-        progress: 0,
-        locked: false,
-        vocabulary: [
-          {
-            id: "salam",
-            en: "Hello",
-            fa: "سلام",
-            finglish: "Salam",
-            phonetic: "sah-LUHM",
-            lessonId: "module1-lesson1"
-          },
-          {
-            id: "chetori",
-            en: "How Are You?",
-            fa: "چطوری",
-            finglish: "Chetori",
-            phonetic: "che-TOH-ree",
-            lessonId: "module1-lesson1"
-          },
-          {
-            id: "khosh_amadid",
-            en: "Welcome",
-            fa: "خوش آمدید",
-            finglish: "Khosh Amadid",
-            phonetic: "khosh uh-mah-DEED",
-            lessonId: "module1-lesson1"
-          },
-          {
-            id: "khodafez",
-            en: "Goodbye",
-            fa: "خداحافظ",
-            finglish: "Khodafez",
-            phonetic: "kho-DUH-fez",
-            lessonId: "module1-lesson1"
-          }
-        ],
+      // Module 1 Lesson 1
+      (() => {
+        const vocabulary = createVocabulary("module1-lesson1", {
+          ids: ["salam", "chetori", "khodafez", "merci"],
+          en: ["Hello", "How Are You?", "Goodbye", "Thank You"],
+          fa: ["سلام", "چطوری", "خداحافظ", "مرسی"],
+          finglish: ["Salam", "Chetori", "Khodafez", "Merci"],
+          phonetic: ["sah-LUHM", "che-TOH-ree", "kho-DUH-fez", "mer-SEE"]
+        });
+        
+        return {
+          id: "lesson1",
+          title: "Basic Persian Greetings",
+          description: "Learn essential greetings and how to say hello in different contexts",
+          emoji: "",
+          progress: 0,
+          locked: false,
+          vocabulary,
         steps: [
           {
             type: "welcome",
-            title: "Basic Greetings",
-            description: "Learn common Persian greetings used in everyday conversations.",
+            title: "Basic Persian Greetings",
+            description: "Learn the four essential Persian greetings used in everyday interactions.",
             points: 0,
             data: {
               objectives: [
-                "Say hello and greet someone",
-                "Ask how someone is doing",
-                "Welcome someone",
-                "Say goodbye properly"
+                "Say hello",
+                "Ask how are you",
+                "Say thank you",
+                "Say goodbye",
+                "Recognize these phrases when you hear them"
               ],
-              lessonType: "greetings"
+              lessonType: "greetings",
+              sectionDescription: "By the end of this lesson You'll be able to understand and use the core greetings Iranians say every day, the perfect foundation before building real conversations."
             }
           },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "salam"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following words mean 'Hello'?",
-              options: ["Salam", "Chetori", "Khosh Amadid", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "chetori"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam chetori",
-              expectedTranslation: "Hello How are you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'How are you?' in Persian?",
-              answer: "Chetori"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following words mean 'How are you?'?",
-              options: ["Chetori", "Salam", "Khosh Amadid", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khosh_amadid"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "salam",
-              distractors: ["chetori", "khosh_amadid", "khodafez"]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'How are you?' in Persian?",
-              options: ["Chetori", "Salam", "Khodafez", "Khosh Amadid"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khosh_amadid",
-              distractors: ["salam", "chetori", "khodafez"]
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Chetori", slotId: "slot2" },
-                { id: "word3", text: "Khosh Amadid", slotId: "slot3" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "How are you?" },
-                { id: "slot3", text: "Welcome" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam khosh amadid chetori",
-              expectedTranslation: "Hello Welcome How are you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "chetori"],
-              expectedTranslation: "Hello How are you"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khodafez"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'goodbye' in Persian?",
-              options: ["Khodafez", "Salam", "Khosh Amadid", "Chetori"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "khosh_amadid", "chetori"],
-              expectedTranslation: "Hello Welcome How are you"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "You're welcoming guests into your home. What do you say?",
-              options: ["Khosh Amadid", "Salam", "Chetori", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Khosh Amadid", slotId: "slot2" },
-                { id: "word3", text: "Chetori", slotId: "slot3" },
-                { id: "word4", text: "Khodafez", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "Welcome" },
-                { id: "slot3", text: "How are you?" },
-                { id: "slot4", text: "Goodbye" }
-              ]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type how you say 'Goodbye' in Persian",
-              answer: "Khodafez"
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "khosh_amadid", text: "Khosh Amadid", translation: "Welcome" },
-                { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
-              ],
-              targetWords: ["salam", "khosh_amadid", "chetori", "khodafez"],
-              conversationFlow: {
-                description: "A polite introduction conversation",
-                expectedPhrase: "Hello, welcome, how are you, goodbye",
-                persianSequence: ["salam", "khosh_amadid", "chetori", "khodafez"]
-              },
-              title: "Your First Conversation",
-              successMessage: "You're a natural—you made a great impression!",
-              incorrectMessage: "Almost there—let's try that conversation order again!"
-            }
-          }
+          flashcard(vocabulary, "salam"),
+          flashcard(vocabulary, "chetori"),
+          vocabQuiz(vocabulary, "salam", "vocab-reverse"),
+          textSequence("Salam chetori", "Hello how are you"),
+          audioMeaning("chetori"),
+        vocabQuiz(vocabulary, "salam", "vocab-normal"),
+          flashcard(vocabulary, "khodafez"),
+          audioMeaning("salam"),
+          textSequence("Salam khodafez", "Hello goodbye"),
+          audioMeaning("khodafez"),
+        vocabQuiz(vocabulary, "chetori", "vocab-reverse"),
+        flashcard(vocabulary, "merci"),
+        audioMeaning("merci"),
+        audioSequence(["merci", "khodafez"], "Thank you goodbye"),
+          input("How do you say 'Goodbye' in Persian?", "Khodafez"),
+          matching(["merci", "khodafez", "salam", "chetori"]),
+          final(vocabulary, ["salam", "chetori", "merci", "khodafez"], {
+            conversationFlow: {
+              description: "A polite greeting conversation",
+              expectedPhrase: "Hello, how are you, thank you, goodbye"
+            },
+            title: "Your First Conversation"
+          })
         ]
-      },
-      {
-        id: "lesson2",
-        title: "Basic Politeness and Essential Responses",
-        description: "Master polite responses and common conversational phrases",
-        emoji: "🙏",
-        progress: 0,
-        locked: false,
-        reviewVocabulary: ["salam", "chetori"],
-        vocabulary: [
-          {
-            id: "khoob",
-            en: "Good",
-            fa: "خوب",
-            finglish: "Khoob",
-            phonetic: "khoob",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "khoobam",
-            en: "I'm Good",
-            fa: "خوبم",
-            finglish: "Khoobam",
-            phonetic: "khoo-BAHM",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "khoobi",
-            en: "You Are Good",
-            fa: "خوبی",
-            finglish: "Khoobi",
-            phonetic: "khoo-BEE",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "khoobi-question",
-            en: "Are You Good?",
-            fa: "خوبی؟",
-            finglish: "Khoobi?",
-            phonetic: "khoo-BEE?",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "merci",
-            en: "Thank You",
-            fa: "مرسی",
-            finglish: "Merci",
-            phonetic: "mer-SEE",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "baleh",
-            en: "Yes",
-            fa: "بله",
-            finglish: "Baleh",
-            phonetic: "bah-LEH",
-            lessonId: "module1-lesson2"
-          },
-          {
-            id: "na",
-            en: "No",
-            fa: "نه",
-            finglish: "Na",
-            phonetic: "nah",
-            lessonId: "module1-lesson2"
-          }
-        ],
+        };
+      })(),
+      // Module 1 Lesson 2
+      (() => {
+        const vocabulary = createVocabulary("module1-lesson2", {
+          ids: ["khoob", "khoobam"],
+          en: ["Good", "I'm Good"],
+          fa: ["خوب", "خوبم"],
+          finglish: ["Khoob", "Khoobam"],
+          phonetic: ["Kh-oob", "khoo-BAHM"]
+        });
+        
+        return {
+          id: "lesson2",
+          title: "Basic Responses",
+          description: "Today you'll learn how to answer Chetori? ('How are you?') like a native Persian speaker. By the end of this lesson, you can tell someone you're good and understand when they say it to you.",
+          emoji: "🙏",
+          progress: 0,
+          locked: false,
+          vocabulary,
         steps: [
-          // PHASE 1: FOUNDATION REVIEW
           {
             type: "welcome",
-            title: "Politeness & Responses",
-            description: "Master essential polite responses and learn to answer basic questions like a native Persian speaker.",
+            title: "Basic Responses",
+            description: "Today you'll learn how to answer Chetori? ('How are you?') like a native Persian speaker. By the end of this lesson, you can tell someone you're good and understand when they say it to you.",
             points: 0,
             data: {
               objectives: [
-                "Respond when someone asks how you are",
-                "Say thank you properly in Persian",
-                "Answer yes and no questions confidently",
-                "Build simple conversations using greetings"
+                "Learn the word \"khoob\" (good)",
+                "Learn \"khoobam\" (I'm good)",
+                "Respond naturally to \"chetori?\"",
+                "Continue reviewing Lesson 1 greetings"
               ],
-              lessonType: "politeness"
+              lessonType: "responses"
             }
           },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Chetori", slotId: "slot2" },
-                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
-                { id: "word4", text: "Khodafez", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "How are you?" },
-                { id: "slot3", text: "Welcome" },
-                { id: "slot4", text: "Goodbye" }
-              ]
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chetori",
-              distractors: ["salam", "khosh_amadid", "khodafez"]
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "khosh_amadid"],
-              expectedTranslation: "Hello Welcome"
-            }
-          },
-          
-          // PHASE 2: INTRODUCE BASE ADJECTIVE - "khoob"
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoob"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khodafez",
-              distractors: ["salam", "chetori", "khosh_amadid"]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'khoob' mean?",
-              options: ["Good", "Bad", "Hello", "Thank you"],
-              correct: 0
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'good' in Persian?",
-              answer: "Khoob"
-            }
-          },
-          
-          // PHASE 3: INTRODUCE "merci" & YES/NO
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "merci"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khosh_amadid",
-              distractors: ["salam", "chetori", "khodafez"]
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "merci",
-              distractors: ["salam", "salam", "khodafez"]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'Thank you' in Persian?",
-              answer: "Merci"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "baleh"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "na"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following words mean 'Thank you'?",
-              options: ["Merci", "Baleh", "Na", "Khoob"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "baleh",
-              distractors: ["na", "merci", "salam"]
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Baleh", slotId: "slot1" },
-                { id: "word2", text: "Na", slotId: "slot2" }
-              ],
-              slots: [
-                { id: "slot1", text: "Yes" },
-                { id: "slot2", text: "No" },
-                { id: "slot3", text: "Maybe" },
-                { id: "slot4", text: "Hello" }
-              ]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'No, thank you' in Persian?",
-              options: ["Na, merci", "Baleh, merci", "Salam, merci", "Salam"],
-              correct: 0
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'Yes' in Persian?",
-              answer: "Baleh"
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["khoobam", "merci"],
-              expectedTranslation: "I am good thank you"
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "khoobam", text: "Khoobam", translation: "I'm good" },
-                { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
-              ],
-              targetWords: ["salam", "chetori", "khoobam", "merci", "khodafez"],
-              conversationFlow: {
-                description: "A polite conversation",
-                expectedPhrase: "Hello, how are you? I'm good, thank you, goodbye",
-                persianSequence: ["salam", "chetori", "khoobam", "merci", "khodafez"]
-              },
-              title: "Your Polite Conversation",
-              successMessage: "Perfect! You handled that polite conversation beautifully!",
-              incorrectMessage: "Almost there—let's practice that conversation flow again!"
-            }
-          }
+          // Review Lesson 1 vocabulary - VocabularyService looks it up automatically
+          matching(["salam", "chetori", "merci", "khodafez"]),
+          audioMeaning("chetori"),
+          audioSequence(["salam", "chetori"], "Hello how are you"),
+        flashcard(vocabulary, "khoob"),
+        vocabQuiz(vocabulary, "khoob", "vocab-reverse"),
+        audioMeaning("salam"),
+        flashcard(vocabulary, "khoobam"),
+        vocabQuiz(vocabulary, "khoobam", "vocab-normal"),
+        audioMeaning("khoobam"),
+        matching(["khoob", "khoobam"]),
+          textSequence("Salam chetori khoobam", "Hello how are you I'm good"),
+          audioSequence(["khoobam", "merci"], "I'm good thank you"),
+          vocabQuiz(vocabulary, "khoobam", "vocab-reverse"),
+          matching(["khoob", "khoobam", "chetori", "salam"]),
+        audioMeaning("merci"),
+          final(vocabulary, ["salam", "chetori", "khoobam", "merci", "khodafez"], {
+            conversationFlow: {
+              description: "A polite conversation",
+              expectedPhrase: "Hello, how are you? I'm good, thank you, goodbye"
+            },
+            title: "Your Polite Conversation"
+          })
         ]
-      },
-      {
-        id: "lesson3",
-        title: "Basic Pronouns and Question Words",
-        description: "Master essential pronouns (I, You) and question words (What, Name)",
-        emoji: "🧑‍💼",
-        progress: 0,
-        locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi", "khosh_amadid", "khodafez", "baleh", "na", "esme", "chiye"],
-        vocabulary: [
-          {
-            id: "man",
-            en: "I / Me",
-            fa: "من",
-            finglish: "Man",
-            phonetic: "man",
-            lessonId: "module1-lesson3"
-          },
-          {
-            id: "shoma",
-            en: "You",
-            fa: "شما",
-            finglish: "Shoma",
-            phonetic: "sho-MAH",
-            lessonId: "module1-lesson3"
-          },
-          {
-            id: "esm",
-            en: "Name",
-            fa: "اسم",
-            finglish: "Esm",
-            phonetic: "esm",
-            lessonId: "module1-lesson3"
-          },
-          {
-            id: "esme",
-            en: "Name of",
-            fa: "اسمه",
-            finglish: "Esme",
-            phonetic: "es-MEH",
-            lessonId: "module1-lesson3"
-          },
-          {
-            id: "chi",
-            en: "What",
-            fa: "چی",
-            finglish: "Chi",
-            phonetic: "chee",
-            lessonId: "module1-lesson3"
-          },
-          {
-            id: "chiye",
-            en: "What is it?",
-            fa: "چیه",
-            finglish: "Chiye",
-            phonetic: "chee-YEH",
-            lessonId: "module1-lesson3"
-          }
-        ],
+        };
+      })(),
+      // Module 1 Lesson 3
+      (() => {
+        const vocabulary = createVocabulary("module1-lesson3", {
+          ids: ["baleh", "na"],
+          en: ["Yes", "No"],
+          fa: ["بله", "نه"],
+          finglish: ["Baleh", "Na"],
+          phonetic: ["ba-LEH", "nah"]
+        });
+        
+        return {
+          id: "lesson3",
+          title: "Yes, No & Basic Responses",
+          description: "Today you'll learn how to say yes and no in Persian, and use them in everyday conversations.",
+          emoji: "👋",
+          progress: 0,
+          locked: false,
+          vocabulary,
         steps: [
           {
             type: "welcome",
-            title: "Basic Pronouns & Question Words",
-            description: "Learn essential pronouns and question words that form the foundation of Persian conversation.",
+            title: "Yes, No & Basic Responses",
+            description: "Today you'll learn how to say yes and no in Persian, and use them in everyday conversations.",
             points: 0,
             data: {
               objectives: [
-                "Learn basic pronouns: I/Me and You",
-                "Use 'Name' and 'What' in conversations",
-                "Build simple sentences with basic words",
-                "Practice combining pronouns with greetings"
+                "Learn 'yes' and 'no'",
+                "Use basic responses",
+                "Combine yes/no with greetings",
+                "Practice natural conversation flow"
+              ],
+              lessonType: "responses"
+            }
+          },
+          textSequence("Salam, Chetori, Khoobam, Merci", "Hello, how are you, I'm good, thank you"),
+          audioMeaning("khodafez"),
+          flashcard(vocabulary, "baleh"),
+          flashcard(vocabulary, "na"),
+          matching(["baleh", "na"]),
+          audioMeaning("baleh"),
+          matching(["khodafez", "salam", "khoobam", "chetori"]),
+          audioMeaning("na"),
+          vocabQuiz(vocabulary, "baleh", "vocab-normal"),
+          audioSequence(["baleh", "merci"], "Yes thank you"),
+          audioMeaning("khoob"),
+          input("How do you say 'Yes' in Persian?", "Baleh"),
+          vocabQuiz(vocabulary, "na", "vocab-normal"),
+          audioSequence(["na", "merci"], "No thank you"),
+          textSequence("Salam Chetori", "Hello how are you"),
+          audioSequence(["khoobam", "merci"], "I'm good thank you"),
+          vocabQuiz(vocabulary, "khoob", "vocab-reverse"),
+          matching(["baleh", "na", "chetori", "khodafez"]),
+          textSequence("Na Merci Khoobam", "No thank you I'm good"),
+          final(vocabulary, ["salam", "na", "merci", "khoobam", "khodafez"], {
+            conversationFlow: {
+              description: "A conversation using yes, no, and basic responses",
+              expectedPhrase: "Hello, no, thank you, I'm good, goodbye"
+            },
+            title: "Your Basic Conversation"
+          })
+        ]
+        };
+      })(),
+      // Module 1 Lesson 4
+      (() => {
+        const vocabulary = createVocabulary("module1-lesson4", {
+          ids: ["man", "shoma", "esm", "esme", "chi", "chiye"],
+          en: ["I / Me", "You", "Name", "Name of", "What", "What is / What is it"],
+          fa: ["من", "شما", "اسم", "اسمه", "چی", "چیه"],
+          finglish: ["Man", "Shoma", "Esm", "Esme", "Chi", "Chiye"],
+          phonetic: ["man", "sho-MUH", "esm", "es-MEH", "chee", "chee-YEH"]
+        });
+        
+        return {
+          id: "lesson4",
+          title: "Basic Pronouns and Question Words",
+          description: "Today you'll learn how to introduce yourself in Persian using simple words like \"I,\" \"you,\" and \"name.\" By the end of this lesson, you'll understand and respond to the question, \"What is your name?\"",
+          emoji: "🧑‍💼",
+          progress: 0,
+          locked: false,
+          vocabulary,
+        steps: [
+          {
+            type: "welcome",
+            title: "Basic Pronouns and Question Words",
+            description: "Today you'll learn how to introduce yourself in Persian using simple words like \"I,\" \"you,\" and \"name.\" By the end of this lesson, you'll understand and respond to the question, \"What is your name?\"",
+            points: 0,
+            data: {
+              objectives: [
+                "Learn pronouns I and You",
+                "Learn question words What and Name",
+                "Ask and answer 'What is your name?'",
+                "Build simple introduction sentences"
               ],
               lessonType: "introductions"
             }
           },
-          // PHASE 1: INTRODUCE BASIC VOCABULARY FIRST
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "man"
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "man", "khoobam"],
-              expectedTranslation: "Hello I am good"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam Khosh Amadid Chetori?",
-              expectedTranslation: "Hello Welcome How are You",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "shoma"
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Man", slotId: "slot1" },
-                { id: "word2", text: "Shoma", slotId: "slot2" }
-              ],
-              slots: [
-                { id: "slot1", text: "I / Me" },
-                { id: "slot2", text: "You" },
-                { id: "slot3", text: "Name" },
-                { id: "slot4", text: "What" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam shoma khoobi?",
-              expectedTranslation: "Hello are you good",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "shoma",
-              distractors: ["man", "esm", "chi"]
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "esm"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "man",
-              distractors: ["shoma", "chi", "khoobam"]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following words mean 'You'?",
-              options: ["Shoma", "Man", "Esm", "Chi"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "esm",
-              distractors: ["esme", "shoma", "man"]
-            }
-          },
-          // PHASE 2: GRAMMAR - EZAFE CONNECTOR (3 NEW STEPS)
-          // Step 1: Grammar Intro
-          {
-            type: "grammar-intro",
-            points: 1,
-            data: {
-              conceptId: "ezafe-connector",
-              title: "Connecting Words: The –e Sound",
-              description: "In Persian, you can't just say 'esm man' to mean 'my name.' You need to add a small 'e' sound between the words. This connector sound links words together, like adding 'of' in English. So 'esm' becomes 'esme' when you want to connect it to another word.",
-              rule: "Add –e between two words to connect them and show possession or relationship.",
-              visualType: "comparison",
-              visualData: {
-                before: "esm man",
-                after: "esme man"
+          audioSequence(["salam", "chetori", "khoobam", "merci"], "Hello how are you I'm good thank you"),
+          matching(["baleh", "na", "khodafez", "khoob"]),
+          audioMeaning("chetori"),
+          flashcard(vocabulary, "man"),
+          flashcard(vocabulary, "shoma"),
+          vocabQuiz(vocabulary, "man", "vocab-normal"),
+          matching(["man", "shoma", "salam", "merci"]),
+          audioMeaning("shoma"),
+          flashcard(vocabulary, "esm"),
+          flashcard(vocabulary, "esme"),
+          matching(["man", "shoma", "esm", "esme"]),
+          audioSequence(["esme", "man"], "My name"),
+          textSequence("Esme Shoma", "Your name"),
+          audioMeaning("esm"),
+          flashcard(vocabulary, "chi"),
+          vocabQuiz(vocabulary, "chi", "vocab-reverse"),
+          flashcard(vocabulary, "chiye"),
+          vocabQuiz(vocabulary, "chiye", "vocab-normal"),
+          matching(["esme", "shoma", "chiye", "man"]),
+          textSequence("Esme Shoma Chiye", "What is your name"),
+          audioSequence(["esme", "shoma", "chiye"], "What is your name"),
+          textSequence("Esme Man", "My name"),
+          input("How do you say 'I' in Persian?", "Man"),
+          audioMeaning("khodafez"),
+          final(vocabulary, ["salam", "esme", "shoma", "chiye"], {
+            conversationFlow: {
+              description: "A polite introduction conversation asking for a name",
+              expectedPhrase: "Hello, what is your name?"
+            },
+            title: "Your Introduction"
+          })
+        ]
+        };
+      })(),
+      // Module 1 Lesson 5 - The -am Ending (I Am)
+      (() => {
+        const vocabulary = createVocabulary("module1-lesson5", {
+          ids: ["bad"],
+          en: ["Bad"],
+          fa: ["بد"],
+          finglish: ["Bad"],
+          phonetic: ["bad"]
+        });
+
+        // Add semantic group for "bad"
+        vocabulary[0].semanticGroup = "feelings";
+
+        return {
+          id: "lesson5",
+          title: "Lesson 5: The -am Ending (I Am)",
+          description: "Today, you'll learn the Persian ending –am, which means 'I am.' By the end of this lesson, you'll be able to say 'I'm good' and 'I'm bad' naturally.",
+          emoji: "😊",
+          progress: 0,
+          locked: false,
+          vocabulary,
+          steps: [
+            // 1. Welcome Intro
+            {
+              type: "welcome",
+              title: "The -am Ending (I Am)",
+              description: "Today, you'll learn the Persian ending –am, which means 'I am.' By the end of this lesson, you'll be able to say 'I'm good' and 'I'm bad' naturally.",
+              points: 0,
+              data: {
+                objectives: [
+                  "Learn the Persian ending –am (\"I am\")",
+                  "Say \"I'm good\" and \"I'm bad\"",
+                  "Review greetings and basic conversation flow"
+                ],
+                lessonType: "grammar"
               }
-            }
-          },
-          // Step 2: Grammar Fill Blank (suffix only)
-          {
-            type: "grammar-fill-blank",
-            points: 1,
-            data: {
-              conceptId: "suffix-e",
-              label: "FILL IN THE SUFFIX",
-              subtitle: "Choose the correct connector",
-              exercises: [
-                {
-                  sentence: "esm-___ man",
-                  translation: "my name",
-                  blankPosition: 4,
-                  correctAnswer: "e",
-                  suffixOptions: [
-                    { id: "suffix-e", text: "-e" },
-                    { id: "suffix-am", text: "-am" },
-                    { id: "suffix-i", text: "-i" },
-                    { id: "suffix-et", text: "-et" }
-                  ],
-                  distractors: [
-                    { id: "suffix-ye", text: "-ye" }
+            },
+            // 2. Audio Sequence: Salam, Chetori
+            audioSequence(["salam", "chetori"], "Hello, how are you"),
+            // 3. Matching: Salam Merci Khodafez Chetori
+            matching(["salam", "merci", "khodafez", "chetori"]),
+            // 4. Flashcard: Bad
+            flashcard(vocabulary, "bad"),
+            // 5. MC Reverse: Bad (What does "bad" mean)
+            vocabQuiz(vocabulary, "bad", "vocab-normal"),
+            // 6. Matching: Bad Khoob Na Baleh
+            matching(["bad", "khoob", "na", "baleh"]),
+            // 7. Grammar Intro: -am = I am
+            {
+              type: "grammar-intro",
+              points: 1,
+              data: {
+                conceptId: "suffix-am",
+                title: "-am = I am",
+                description: "In Persian, you add –am to adjectives to say 'I am …'. For example: khoob → khoobam ('I'm good'), bad → badam ('I'm bad').",
+                rule: "Add -am to adjectives to say 'I am'",
+                visualType: "tree",
+                visualData: {
+                  base: "khoob",
+                  transformations: [
+                    { label: "-am", result: "khoobam", meaning: "I'm good" },
+                    { label: "-am (bad)", result: "badam", meaning: "I'm bad" }
                   ]
                 }
-              ]
-            }
-          },
-          // Step 3: Grammar Fill Blank (suffix + word)
-          {
-            type: "grammar-fill-blank",
-            points: 1,
-            data: {
-              conceptId: "suffix-e",
-              label: "FILL IN THE BLANKS",
-              subtitle: "Complete the sentence with suffix and word",
-              exercises: [
-                {
-                  sentence: "esm-___ ___ chiye?",
-                  translation: "What is your name?",
-                  blanks: [
-                    {
-                      index: 0,
-                      type: "suffix",
-                      correctAnswer: "e"
-                    },
-                    {
-                      index: 1,
-                      type: "word",
-                      correctAnswer: "shoma",
-                      expectedSemanticGroup: "pronouns"  // SEMANTIC FILTER: Only show pronouns as distractors
-                    }
-                  ],
-                  suffixOptions: [
-                    { id: "suffix-e", text: "-e" },
-                    { id: "suffix-am", text: "-am" },
-                    { id: "suffix-i", text: "-i" },
-                    { id: "suffix-et", text: "-et" }
-                  ],
-                  wordOptions: [
-                    { id: "word-shoma", text: "shoma" },
-                    { id: "word-man", text: "man" },
-                    { id: "word-esm", text: "esm" },
-                    { id: "word-chi", text: "chi" }
-                  ],
-                  distractors: [
-                    { id: "suffix-ye", text: "-ye" }
-                  ]
-                }
-              ]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following words mean 'Name'?",
-              options: ["Esm", "Esm-e", "Man", "Shoma"],
-              correct: 0
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Esme shoma",
-              expectedTranslation: "Your name",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Esm", slotId: "slot1" },
-                { id: "word2", text: "Man", slotId: "slot2" },
-                { id: "word3", text: "Khosh Amadid", slotId: "slot3" },
-                { id: "word4", text: "Khodafez", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Name" },
-                { id: "slot2", text: "I / Me" },
-                { id: "slot3", text: "Welcome" },
-                { id: "slot4", text: "Goodbye" }
-              ]
-            }
-          },
-          // PHASE 3: CHI VOCABULARY AND VERB CONTRACTION
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "chi"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man khoobam shoma chi?",
-              expectedTranslation: "I am good what about you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type how you ask 'What' in Persian?",
-              answer: "chi"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Esme shoma chiye?",
-              expectedTranslation: "What is your name",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chiye",
-              distractors: ["esme", "chi", "shoma"]
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which of the following phrases means 'What is your name?'?",
-              options: ["Esme shoma chiye?", "Esme man chiye?", "Esme chiye?", "Esm chiye?"],
-              correct: 0
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Esme shoma", slotId: "slot1" },
-                { id: "word2", text: "Esme man", slotId: "slot2" },
-                { id: "word3", text: "Esme", slotId: "slot3" },
-                { id: "word4", text: "Esm", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Your Name" },
-                { id: "slot2", text: "My Name" },
-                { id: "slot3", text: "Name Of" },
-                { id: "slot4", text: "Name" }
-              ]
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "esme", "shoma", "chiye"],
-              expectedTranslation: "Hello what is your name"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Esme man Amir-e khodafez",
-              expectedTranslation: "My name is Amir goodbye",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "How do you say 'my name is Sara, thank you' in Persian?",
-              options: ["Esme man Sara-e, merci", "Esme shoma Sara-e, merci", "Man esm Sara-e, merci", "Shoma esm Sara-e, merci"],
-              correct: 0
-            }
-          },
-          // PHASE 6: REVIEW AUDIO SEQUENCE
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["esme", "man", "chiye"],
-              expectedTranslation: "What is my name"
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "esme", text: "Esme", translation: "Name of" },
-                { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "chiye", text: "Chiye", translation: "What is it?" },
-                { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
-              ],
-              targetWords: ["salam", "esme", "shoma", "chiye", "merci", "khodafez"],
+              }
+            },
+            // 8. Grammar Fill in the suffix (Bad) - (am) suffix empty
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+              data: {
+                conceptId: "suffix-am-bad",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
+                exercises: [
+                  {
+                    sentence: "Bad-___",
+                    translation: "I'm bad",
+                    blankPosition: 4,
+                    correctAnswer: "am",
+                    suffixOptions: [
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            // 9. Grammar Fill in the Suffix + Vocab (Khoob) + (Am) both empty
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+              data: {
+                conceptId: "suffix-am-khoob",
+                label: "FILL IN THE SUFFIX + VOCAB",
+                subtitle: "Choose the correct word and ending",
+                exercises: [
+                  {
+                    sentence: "___-___",
+                    translation: "I'm good",
+                    blankPosition: 0,
+                    correctAnswer: "Khoob-am",
+                    grammarBaseWord: "Khoob",
+                    grammarSuffix: "am",
+                    suffixOptions: [
+                      { id: "word-khoob", text: "Khoob" },
+                      { id: "word-bad", text: "Bad" }
+                    ],
+                    vocabOptions: [
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            // 10. Matching: Man Shoma Khoobam Badam
+            matching([
+              "man",
+              "shoma",
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+              { kind: "suffix", baseId: "bad", suffixId: "am" } as const
+            ]),
+            // 11. Audio Meaning: Badam
+            audioMeaning({ kind: "suffix", baseId: "bad", suffixId: "am" } as const),
+            // 12. Text Sequence: Na, Badam (GRAMMAR FORMS: Now uses lexemeRef)
+            textSequence(
+              "Na, Badam", 
+              "No, I'm bad",
+              ["na", { kind: "suffix", baseId: "bad", suffixId: "am" } as const]
+            ),
+            // 13. Audio Meaning: Khoobam
+            audioMeaning({ kind: "suffix", baseId: "khoob", suffixId: "am" } as const),
+            // 14. Audio Sequence: Khoobam, Merci
+            audioSequence([
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+              "merci"
+            ], "I'm good, thank you"),
+            // 15. Matching: Chi, Chetori, Esm, Esme
+            matching(["chi", "chetori", "esm", "esme"]),
+            // 16. MC Quiz: Khoob
+            vocabQuiz(vocabulary, "khoob", "vocab-normal"),
+            // 17. MC Quiz: Khoobam - IMPORTANT: This uses grammar quiz for "I'm good"
+            {
+              type: "quiz",
+              points: 2,
+              data: {
+                prompt: "What does 'Khoobam' mean?",
+                options: ["I'm good", "I'm bad", "Good", "You're good"],
+                correct: 0,
+                vocabularyId: "khoob",
+                quizType: "grammar"
+              }
+            },
+            // 18. Audio Meaning: Man
+            audioMeaning("man"),
+            // 19. Final Challenge: Salam, chetori? Khoobam merci
+            final(vocabulary, [
+              "salam",
+              "chetori",
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+              "merci"
+            ], {
               conversationFlow: {
-                description: "A polite introduction conversation",
-                expectedPhrase: "Hello, what is your name, thank you, goodbye",
-                persianSequence: ["salam", "esme", "shoma", "chiye", "merci", "khodafez"]
+                description: "Greet someone and respond that you're doing well.",
+                expectedPhrase: "Hello, how are you? I'm good, thank you"
               },
-              title: "Your Perfect Introduction",
-              successMessage: "Incredible! You can now have complete, polite conversations!",
-              incorrectMessage: "Almost there—let's practice that introduction conversation again!"
-            }
-          }
-        ]
-      },
+              title: "Your Mini Conversation"
+            })
+          ]
+        };
+      })(),
       {
-        id: "lesson4",
-        title: "Complete Conversations & Meeting People",
-        description: "Put it all together! Practice full conversations and learn to end introductions politely",
-        emoji: "💬",
-        progress: 0,
-        locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "chi", "khosh_amadid", "khodafez", "baleh", "na", "esme", "chiye"],
-        vocabulary: [
-          {
-            id: "khoshbakhtam",
-            en: "Nice to Meet You",
-            fa: "خوشبختم",
-            finglish: "Khoshbakhtam",
-            phonetic: "khosh-BAHKH-tam",
-            lessonId: "module1-lesson4"
-          }
-        ],
-        steps: [
-          {
-            type: "welcome",
-            title: "Complete Conversations & Meeting People",
-            description: "Master full conversations by combining everything you've learned with one essential new phrase.",
-            points: 0,
-            data: {
-              objectives: [
-                "Complete full introduction conversations",
-                "Review all vocabulary from lessons 1-3",
-                "Learn to end conversations politely",
-                "Practice natural conversation flow"
-              ],
-              lessonType: "conversations"
-            }
-          },
-          // NEW ORDER: 3) flashcard is now first after welcome intro
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoshbakhtam"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khoshbakhtam",
-              distractors: ["khoobam", "khosh_amadid", "khodafez"]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam esme shoma chiye?",
-              expectedTranslation: "Hello What is your name",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "chetori", "man", "khoobam"],
-              expectedTranslation: "Hello How are you I am good"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Baleh merci",
-              expectedTranslation: "Yes thank you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Salam esme man Sara-e khoshbakhtam",
-              expectedTranslation: "Hello my name is Sara nice to meet you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["salam", "khosh_amadid", "chetori"],
-              expectedTranslation: "Hello Welcome How are you"
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["esme", "shoma", "chiye", "khoshbakhtam"],
-              expectedTranslation: "What is your name nice to meet you"
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Salam", slotId: "slot1" },
-                { id: "word2", text: "Khodafez", slotId: "slot2" },
-                { id: "word3", text: "Khoshbakhtam", slotId: "slot3" },
-                { id: "word4", text: "Chetori", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Hello" },
-                { id: "slot2", text: "Goodbye" },
-                { id: "slot3", text: "Nice to meet you" },
-                { id: "slot4", text: "How are you?" }
-              ]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type the suffix for 'you are' after the word 'khoob': khoob-___",
-              answer: "i"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which Persian phrase means 'What is your name?'?",
-              options: ["Esme shoma chiye?", "Man khoobam", "Khoshbakhtam", "Khosh amadid"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["na", "merci", "khoobam"],
-              expectedTranslation: "no thank you I am good"
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["khosh_amadid", "khodafez"],
-              expectedTranslation: "welcome goodbye"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What does 'esme man' mean?",
-              options: ["My name", "Your name", "What name", "Name is"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which Persian word means 'Yes'?",
-              options: ["Baleh", "Na", "Merci", "Chi"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which Persian word means 'Nice to meet you'?",
-              options: ["Khoshbakhtam", "Khosh amadid", "Merci", "Khodafez"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "khosh_amadid",
-              distractors: ["salam", "khodafez", "khoshbakhtam"]
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["esme", "man"],
-              expectedTranslation: "My name"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which Persian phrase means 'No, thank you'?",
-              options: ["Na merci", "Baleh", "merci", "Chetori", "Khosh amadid"],
-              correct: 0
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "chetori",
-              distractors: ["salam", "khoobam", "khodafez"]
-            }
-          },
-          // final challenge organize the sentence Hello, what is your name? How Are you? Im good, thank you. goodbye
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "esme", text: "Esme", translation: "Name of" },
-                { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "chiye", text: "Chiye", translation: "What is it?" },
-                { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "khoobam", text: "Khoobam", translation: "I'm good" },
-                { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
-              ],
-              targetWords: ["salam", "esme", "shoma", "chiye", "chetori", "khoobam", "merci", "khodafez"],
-              conversationFlow: {
-                description: "A complete polite conversation",
-                expectedPhrase: "Hello, what is your name? How are you? I'm good, thank you. Goodbye",
-                persianSequence: ["salam", "esme", "shoma", "chiye", "chetori", "khoobam", "merci", "khodafez"]
-              },
-              title: "Your Perfect Introduction",
-              successMessage: "Amazing! You can now have full, natural conversations in Persian!",
-              incorrectMessage: "Almost perfect—let's practice that conversation flow one more time!"
-            }
-          }
-        ]
-      },
-      {
-        id: "lesson5",
+        id: "lesson6",
         title: "Story Mode: Meeting Someone New",
         description: "Practice your greetings in a real conversation with Sara at a friend's house",
         emoji: "🗣️",
@@ -1423,256 +657,212 @@ export const curriculumData: Module[] = [
     available: true,
     requiresPremium: true,
     lessons: [
-      {
+      // Module 2 Lesson 1: Introducing Yourself with Ezafe
+      (() => {
+        // No vocabulary needed - names are used as plain strings, not grammar forms
+        const vocabulary: VocabularyItem[] = [];
+
+        return {
         id: "lesson1",
-        title: "Adjective Suffixes \"–am\" & \"–i\"",
-        description: "Learn how to form 'I am...' and 'you are...' with adjectives using suffixes",
-        emoji: "📚",
+          title: "Introducing Yourself",
+          description: "Today you'll learn how to introduce yourself in Persian using \"esme man … e\" and reinforce the identity-question pattern introduced in Module 1.",
+          emoji: "👋",
         progress: 0,
         locked: false,
-        grammarLesson: true,
-        reviewVocabulary: ["salam", "esme", "man", "shoma", "chi", "chiye", "chetori", "khoshbakhtam", "merci", "khoobam", "baleh", "na", "khodafez", "khosh_amadid", "esm"],
-        vocabulary: [
-          {
-            id: "khoob",
-            en: "Good",
-            fa: "خوب",
-            finglish: "Khoob",
-            phonetic: "khoob",
-            lessonId: "module2-lesson1"
-          },
-          {
-            id: "khoobi",
-            en: "You Are Good",
-            fa: "خوبی",
-            finglish: "Khoob-i",
-            phonetic: "khoob-ee",
-            lessonId: "module2-lesson1"
-          }
-        ],
+          vocabulary,
         steps: [
+            // 1. Welcome Intro
           {
             type: "welcome",
-            title: "Adjective Suffixes \"–am\" & \"–i\"",
-            description: "This rule applies only to adjectives, not nouns (we'll do noun possession later). We take the adjective khoob (\"good\") and attach: –am (\"I am …\") → khoob‑am, –i (\"you are …\") → khoob‑i",
+              title: "Introducing Yourself",
+              description: "Today you'll learn how to introduce yourself in Persian. You already know how to ask, \"What is your name?\" Now it's time to answer it naturally like a native.",
             points: 0,
             data: {
               objectives: [
-                "Recognize the base adjective khoob",
-                "Form khoob‑am and khoob‑i correctly", 
-                "Distinguish between \"I am good\" and \"you are good\""
-              ],
-              lessonType: "grammar"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoob"
-            }
-          },
-          // GRAMMAR: Personal Endings - Part 1 (State)
-          // Step 1: Grammar Intro
-          {
-            type: "grammar-intro",
-            points: 1,
-            data: {
-              conceptId: "adjective-suffixes",
-              title: "I Am / You Are: Personal Endings",
-              description: "You've been using khoobam! Let me show you the pattern. In Persian, you add endings to words to say 'I am' or 'you are.' Add -am for 'I am' and -i for 'you are.' These same endings work with ANY adjective.",
-              rule: "Add -am (I am) or -i (you are) to adjectives",
-              visualType: "comparison",
-              visualData: {
-                before: "khoob",
-                after: "khoob-am"
+                  "Learn the ezafe connector (-e)",
+                  "Say \"my name is...\" naturally",
+                  "Answer \"What is your name?\" confidently",
+                  "Use names in introductions"
+                ],
+                lessonType: "introductions"
               }
-            }
-          },
-          // Step 2: Grammar Fill Blank (suffix only)
+            },
+            // 2. Audio Sequence: Salam, esm|e shoma chiye
+            audioSequence(
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
+              ],
+              "Hello what is your name"
+            ),
+            // 3. Matching: Man, Shoma, Chi, Chiye
+            matching(["man", "shoma", "chi", "chiye"]),
+            // 4. Audio Meaning: Khodafez
+            audioMeaning("khodafez"),
+            // 5. Grammar Intro: Ezafe -e
+            {
+              type: "grammar-intro",
+              points: 1,
+              data: {
+                conceptId: "ezafe-e",
+                title: "Ezafe: -e = belonging",
+                description: "In Persian, you add -e to connect words that belong together. For example: esm → esme ('name of'), esme man ('my name'), esme shoma ('your name').",
+                rule: "Add -e to connect words that belong together",
+                visualType: "tree",
+                visualData: {
+                  base: "esm",
+                  transformations: [
+                    { label: "-e", result: "esme", meaning: "name of" },
+                    { label: "-e + man", result: "esme man", meaning: "my name" },
+                    { label: "-e + shoma", result: "esme shoma", meaning: "your name" }
+                  ]
+                }
+              }
+            },
+            // 6. Grammar Fill in the Blank: Esm-___ man (testing for -e)
           {
             type: "grammar-fill-blank",
             points: 1,
             data: {
-              conceptId: "suffix-am",
-              label: "FILL IN THE SUFFIX",
-              subtitle: "Choose the correct ending",
+                conceptId: "ezafe-e-esm",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
               exercises: [
                 {
-                  sentence: "khoob-___",
-                  translation: "I am good",
-                  blankPosition: 6,
-                  correctAnswer: "am",
+                    sentence: "Esm-___ man",
+                    translation: "My name",
+                    blankPosition: 4,
+                    correctAnswer: "e",
                   suffixOptions: [
+                      { id: "suffix-e", text: "-e" },
                     { id: "suffix-am", text: "-am" },
                     { id: "suffix-i", text: "-i" },
-                    { id: "suffix-e", text: "-e" },
                     { id: "suffix-et", text: "-et" }
                   ]
                 }
               ]
             }
           },
-          // Step 3: Grammar Fill Blank (word + suffix)
-          {
-            type: "grammar-fill-blank",
-            points: 1,
-            data: {
-              conceptId: "suffix-am",
-              label: "FILL IN THE BLANKS",
-              subtitle: "Complete the sentence with word and suffix",
-              exercises: [
-                {
-                  sentence: "___ merci, khoob-___",
-                  translation: "No thank you, I am good",
-                  blanks: [
-                    {
-                      index: 0,
-                      type: "word",
-                      correctAnswer: "na"
-                    },
-                    {
-                      index: 1,
-                      type: "suffix",
-                      correctAnswer: "am"
-                    }
-                  ],
-                  wordOptions: [
-                    { id: "word-na", text: "na" },
-                    { id: "word-baleh", text: "baleh" },
-                    { id: "word-man", text: "man" },
-                    { id: "word-shoma", text: "shoma" }
-                  ],
-                  suffixOptions: [
-                    { id: "suffix-am", text: "-am" },
-                    { id: "suffix-i", text: "-i" },
-                    { id: "suffix-e", text: "-e" },
-                    { id: "suffix-et", text: "-et" }
-                  ]
-                }
+            // 7. Audio Meaning: Esm|e
+            audioMeaning({ kind: "suffix", baseId: "esm", suffixId: "e" } as const),
+            // 8. Text Sequence: Esm|e Man
+            textSequence(
+              "Esme Man",
+              "My name",
+              [{ kind: "suffix", baseId: "esm", suffixId: "e" } as const, "man"]
+            ),
+            // 9. Audio Meaning: Esm|e Shoma
+            audioMeaning({ kind: "suffix", baseId: "esm", suffixId: "e" } as const),
+            // 10. Text Sequence: Esm|e Shoma Chiye
+            textSequence(
+              "Esme Shoma Chiye",
+              "What is your name",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
               ]
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoobam"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "khoobi"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which form means \"I am good\"?",
-              options: ["khoobi", "khoobam", "khoob", "khodafez"],
-              correct: 1
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which form means \"you are good\"?",
-              options: ["khoobam", "khoob", "khoobi", "merci"],
-              correct: 2
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "khoob", slotId: "slot1" },
-                { id: "word2", text: "khoobam", slotId: "slot2" },
-                { id: "word3", text: "khoobi", slotId: "slot3" }
-              ],
-              slots: [
-                { id: "slot1", text: "good" },
-                { id: "slot2", text: "I am good" },
-                { id: "slot3", text: "You are good" },
-                { id: "slot4", text: "Very good" }
+            ),
+            // 11. Text Sequence: Esm|e Man Amir-e (name as plain string, no grammar tracking)
+            textSequence(
+              "Esme Man Amir-e",
+              "My name is Amir",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man"
+                // Note: "Amir-e" is just text, not tracked as grammar form
               ]
+            ),
+            // 12. Matching: Baleh, Na, Esm|e, Esm
+            matching([
+              "baleh",
+              "na",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "esm"
+            ]),
+            // 13. MC Quiz: What does "esm|e man" mean
+            {
+              type: "quiz",
+            points: 2,
+            data: {
+                prompt: "What does 'Esme man' mean?",
+                options: ["My name", "Your name", "Name", "What is your name"],
+                correct: 0,
+                quizType: "grammar",
+                lexemeRef: { kind: "suffix", baseId: "esm", suffixId: "e" } as const
             }
           },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "-am", slotId: "slot1" },
-                { id: "word2", text: "-i", slotId: "slot2" }
+            // 14. Reverse MC: Which phrase means "your name"
+            vocabQuiz(
+              vocabulary,
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "vocab-reverse"
+            ),
+            // 15. Audio Sequence: Salam chetori Khoob|am merci
+            audioSequence(
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
               ],
-              slots: [
-                { id: "slot1", text: "I am" },
-                { id: "slot2", text: "You are" },
-                { id: "slot3", text: "Good" },
-                { id: "slot4", text: "Hello" }
+              "Hello how are you I'm good thank you"
+            ),
+            // 16. Input: Esm
+            input(
+              "How do you say 'name' in Persian?",
+              "Esm",
+              2,
+              "esm"
+            ),
+            // 17. Audio Meaning: Bad|am
+            audioMeaning({ kind: "suffix", baseId: "bad", suffixId: "am" } as const),
+            // 18. Input: Khoob
+            input(
+              "How do you say 'good' in Persian?",
+              "Khoob",
+              2,
+              "khoob"
+            ),
+            // 19. Text Sequence: Esm|e man chiye
+            textSequence(
+              "Esme Man Chiye",
+              "What is my name",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man",
+                "chiye"
               ]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type the Persian (phonetic) for 'I am good.'",
-              answer: "khoob-am"
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type the Persian (phonetic) for 'you are good.'",
-              answer: "khoob-i"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "man khoob-am",
-              expectedTranslation: "I am good"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "khoobi?",
-              expectedTranslation: "are you good?"
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "chetori", text: "Chetori", translation: "How are you" },
-                { id: "khoobam", text: "khoobam", translation: "I am good" },
-                { id: "khoobi", text: "khoobi", translation: "Are you good" }
-              ],
-              targetWords: ["salam", "chetori", "khoobam", "khoobi"],
+            ),
+            // 20. Matching: Esm, Esm|e, Man, Shoma
+            matching([
+              "esm",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "man",
+              "shoma"
+            ]),
+            // 21. Final Challenge: Salam Esm|e Shoma chiye, esm|e man sara-e Khodafez (name as plain string)
+            final(vocabulary, [
+              "salam",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "shoma",
+              "chiye",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "man",
+              "sara-e", // Plain string for name (not tracked as grammar form)
+              "khodafez"
+            ], {
               conversationFlow: {
-                description: "A conversation with adjective suffixes",
-                expectedPhrase: "Hello, how are you? I am good, are you good?",
-                persianSequence: ["salam", "chetori", "khoobam", "khoobi"]
+                description: "A complete introduction conversation",
+                expectedPhrase: "Hello, what is your name? My name is Sara, goodbye"
               },
-              title: "Grammar Practice",
-              successMessage: "Excellent! You understand adjective suffixes!",
-              incorrectMessage: "Almost there—let's practice that suffix pattern again!"
-            }
-          }
+              title: "Your Introduction"
+            })
         ]
-      },
+        };
+      })(),
       {
         id: "lesson2",
         title: "Basic Responses Continued",
@@ -1680,7 +870,6 @@ export const curriculumData: Module[] = [
         emoji: "🌍",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "esme", "man", "shoma", "chetori", "merci", "khodafez", "khoob", "khoobam", "khoobi"],
         vocabulary: [
           {
             id: "hast",
@@ -1831,16 +1020,18 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man kheily khoob hastam",
-              expectedTranslation: "I am very good"
+              finglishText: "Man kheily khoobam",
+              expectedTranslation: "I am very good",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "khoob neestam",
-              expectedTranslation: "I am not good"
+              finglishText: "Khoob neestam",
+              expectedTranslation: "I am not good",
+              maxWordBankSize: 10
             }
           },
           {
@@ -1855,8 +1046,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme man James neest",
-              expectedTranslation: "My name is not James"
+              finglishText: "Esme man James neest",
+              expectedTranslation: "My name is not James",
+              maxWordBankSize: 10
             }
           },
           {
@@ -1881,8 +1073,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man James hastam",
-              expectedTranslation: "I am James"
+              finglishText: "Man James hastam",
+              expectedTranslation: "I am James",
+              maxWordBankSize: 10
             }
           },
           {
@@ -1892,21 +1085,19 @@ export const curriculumData: Module[] = [
               words: [
                 { id: "salam", text: "Salam", translation: "Hello" },
                 { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "man", text: "Man", translation: "I" },
-                { id: "kheily", text: "Kheily", translation: "Very" },
                 { id: "khoob", text: "Khoob", translation: "Good" },
-                { id: "hastam", text: "Hastam", translation: "I am" },
+                { id: "neestam", text: "Neestam", translation: "I am not" },
                 { id: "merci", text: "Merci", translation: "Thank you" },
                 { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
               ],
-              targetWords: ["salam", "chetori", "man", "kheily", "khoob", "hastam", "merci", "khodafez"],
+              targetWords: ["salam", "chetori", "khoob", "neestam", "merci", "khodafez"],
               title: "Complete Conversation Practice",
               successMessage: "Excellent! You can now express complex states and responses!",
               incorrectMessage: "Almost there—let's practice that conversation flow again!",
               conversationFlow: {
                 description: "A complete conversation with complex responses",
-                expectedPhrase: "Hello, how are you? I am very good, thank you, goodbye",
-                persianSequence: ["salam", "chetori", "man", "kheily", "khoob", "hastam", "merci", "khodafez"]
+                expectedPhrase: "Hello, how are you? I am not good, thank you, goodbye",
+                persianSequence: ["salam", "chetori", "khoob", "neestam", "merci", "khodafez"]
               }
             }
           }
@@ -1919,7 +1110,6 @@ export const curriculumData: Module[] = [
         emoji: "🌍",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "baleh", "hasti"],
         vocabulary: [
           {
             id: "koja",
@@ -1974,8 +1164,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "koja hasti?",
-              expectedTranslation: "where are you"
+              finglishText: "Koja hasti?",
+              expectedTranslation: "Where are you?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2041,24 +1232,27 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man khoobam shoma chi",
-              expectedTranslation: "I am good what about you"
+              finglishText: "Man khoobam shoma chi",
+              expectedTranslation: "I am good what about you",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma ahle koja hasti",
-              expectedTranslation: "where are you from"
+              finglishText: "Shoma ahle koja hasti",
+              expectedTranslation: "Where are you from?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ahle Iran hastam",
-              expectedTranslation: "I am from Iran"
+              finglishText: "Man ahle Iran hastam",
+              expectedTranslation: "I am from Iran",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2066,7 +1260,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["shoma", "ahle", "koja", "hasti"],
-              expectedTranslation: "where are you from"
+              expectedTranslation: "Where are you from?"
             }
           },
           {
@@ -2103,12 +1297,11 @@ export const curriculumData: Module[] = [
         emoji: "🏠",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "koja", "ahle", "man", "shoma", "khoobam"],
         vocabulary: [
           {
             id: "zendegi",
             en: "Life",
-            fa: "",
+            fa: "زندگی",
             finglish: "Zendegi",
             phonetic: "zen-deh-GEE",
             lessonId: "module2-lesson4"
@@ -2116,7 +1309,7 @@ export const curriculumData: Module[] = [
           {
             id: "mikonam",
             en: "I do",
-            fa: "",
+            fa: "می کنم",
             finglish: "Mikonam",
             phonetic: "MEE-ko-nam",
             lessonId: "module2-lesson4"
@@ -2124,7 +1317,7 @@ export const curriculumData: Module[] = [
           {
             id: "mikoni",
             en: "You do",
-            fa: "",
+            fa: "می کنی",
             finglish: "Mikoni",
             phonetic: "MEE-kon-ee",
             lessonId: "module2-lesson4"
@@ -2132,7 +1325,7 @@ export const curriculumData: Module[] = [
           {
             id: "dar",
             en: "In",
-            fa: "",
+            fa: "در",
             finglish: "Dar",
             phonetic: "dahr",
             lessonId: "module2-lesson4"
@@ -2140,7 +1333,7 @@ export const curriculumData: Module[] = [
           {
             id: "amrika",
             en: "America",
-            fa: "",
+            fa: "آمریکا",
             finglish: "Amrika",
             phonetic: "uhm-ree-ka",
             lessonId: "module2-lesson4"
@@ -2253,8 +1446,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man dar amrika zendegi mikonam",
-              expectedTranslation: "I live in America"
+              finglishText: "Man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2279,8 +1473,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni",
-              expectedTranslation: "where do you live"
+              finglishText: "Shoma koja zendegi mikoni",
+              expectedTranslation: "Where do you live?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2319,7 +1514,6 @@ export const curriculumData: Module[] = [
         emoji: "🔗",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"],
         vocabulary: [
           {
             id: "va",
@@ -2331,7 +1525,7 @@ export const curriculumData: Module[] = [
           },
           {
             id: "ham",
-            en: "Also",
+            en: "Also / Too",
             fa: "هم",
             finglish: "Ham",
             phonetic: "hahm",
@@ -2472,12 +1666,12 @@ export const curriculumData: Module[] = [
                   wordOptions: [
                     ...generateGrammarOptions('connector', 'ham', [
                       { id: "va", en: "And", fa: "و", finglish: "Va", phonetic: "vah", lessonId: "module2-lesson5" },
-                      { id: "ham", en: "Also", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
+                      { id: "ham", en: "Also / Too", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
                       { id: "vali", en: "But", fa: "ولی", finglish: "Vali", phonetic: "vah-LEE", lessonId: "module2-lesson5" }
                     ], ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"]),
                     ...generateGrammarOptions('word', 'khoobam', [
                       { id: "va", en: "And", fa: "و", finglish: "Va", phonetic: "vah", lessonId: "module2-lesson5" },
-                      { id: "ham", en: "Also", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
+                      { id: "ham", en: "Also / Too", fa: "هم", finglish: "Ham", phonetic: "hahm", lessonId: "module2-lesson5" },
                       { id: "vali", en: "But", fa: "ولی", finglish: "Vali", phonetic: "vah-LEE", lessonId: "module2-lesson5" }
                     ], ["salam", "chetori", "khoobam", "merci", "man", "shoma", "esm", "baleh", "na", "khoob", "hast", "neest", "hastam", "hasti", "kheily", "koja", "ahle", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "khoshbakhtam", "chiye"], ['khoobi', 'esmam'])
                   ]
@@ -2498,8 +1692,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man khoobam vali khoob neestam",
-              expectedTranslation: "I am good but not good"
+              finglishText: "Man khoobam vali khoob neestam",
+              expectedTranslation: "I am good but not good",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2550,16 +1745,18 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ham khoobam",
-              expectedTranslation: "I am good too"
+              finglishText: "Man ham khoobam",
+              expectedTranslation: "I am also good",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man dar amrika zendegi mikonam",
-              expectedTranslation: "I live in America"
+              finglishText: "Man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2593,8 +1790,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ahle iran hastam vali dar amrika zendegi mikonam",
-              expectedTranslation: "I am from Iran but I live in America"
+              finglishText: "Man ahle iran hastam vali dar amrika zendegi mikonam",
+              expectedTranslation: "I am from Iran but I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2632,7 +1830,6 @@ export const curriculumData: Module[] = [
         emoji: "🔄",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "khodafez", "baleh", "na", "man", "shoma", "khoob", "hastam", "hasti", "neestam", "neesti", "kheily", "va", "ham", "vali", "ahle", "koja", "dar", "zendegi", "mikonam", "mikoni", "iran", "amrika", "esme", "chiye", "khoshbakhtam"],
         vocabulary: [],
         steps: [
           {
@@ -2700,7 +1897,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "chetori", "man", "khoobam", "merci", "khodafez"],
-              expectedTranslation: "hello how are you I am good thank you goodbye"
+              expectedTranslation: "Hello how are you I am good thank you goodbye"
             }
           },
           {
@@ -2716,16 +1913,18 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man kheily khoob hastam shoma chi",
-              expectedTranslation: "I am very good what about you"
+              finglishText: "Man kheily khoob hastam shoma chi",
+              expectedTranslation: "I am very good what about you",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni",
-              expectedTranslation: "where do you live"
+              finglishText: "Shoma koja zendegi mikoni",
+              expectedTranslation: "Where do you live?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2758,8 +1957,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma ahle koja hasti",
-              expectedTranslation: "where are you from"
+              finglishText: "Shoma ahle koja hasti",
+              expectedTranslation: "Where are you from?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2793,15 +1993,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "shoma", "chiye"],
-              expectedTranslation: "what is your name"
+              expectedTranslation: "What is your name?"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme man Bob-e khoshbakhtam",
-              expectedTranslation: "my name is Bob nice to meet you"
+              finglishText: "Esme man Bob-e khoshbakhtam",
+              expectedTranslation: "My name is Bob nice to meet you",
+              maxWordBankSize: 10
             }
           },
           {
@@ -2899,7 +2100,6 @@ export const curriculumData: Module[] = [
         emoji: "💬",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "khoobam", "merci", "kheily", "esme", "chiye", "ahle", "koja", "hasti", "iran", "vali", "dar", "amrika", "zendegi", "mikonam", "ham", "khoshbakhtam", "khodafez"],
         vocabulary: [],
         steps: [
           {
@@ -3164,7 +2364,6 @@ export const curriculumData: Module[] = [
         emoji: "🔄",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["salam", "chetori", "man", "shoma", "merci", "esm", "esmam", "chi", "chiye", "ahle", "koja", "dar", "iran", "amrika", "mikonam", "mikoni", "zendegi", "hast", "neest", "hastam", "hasti", "neestam", "neesti", "khoob", "kheily", "va", "ham", "vali", "khodafez"],
         vocabulary: [],
         steps: [
           {
@@ -3214,7 +2413,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["salam", "chetori"],
-              expectedTranslation: "hello how are you"
+              expectedTranslation: "Hello how are you"
             }
           },
           {
@@ -3222,7 +2421,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "chetori", "man", "khoobam", "merci"],
-              expectedTranslation: "hello how are you I am good thank you"
+              expectedTranslation: "Hello how are you I am good thank you"
             }
           },
           {
@@ -3256,8 +2455,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esmam Bob-e, esmet chiye",
-              expectedTranslation: "my name is Bob what is your name"
+              finglishText: "Esmam Bob-e, esmet chiye",
+              expectedTranslation: "My name is Bob what is your name",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3309,8 +2509,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni? man dar amrika zendegi mikonam",
-              expectedTranslation: "where do you live I live in America"
+              finglishText: "Shoma koja zendegi mikoni? man dar amrika zendegi mikonam",
+              expectedTranslation: "Where do you live I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3396,8 +2597,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man ahle iran hastam vali dar amrika zendegi mikonam",
-              expectedTranslation: "I am from Iran but I live in America"
+              finglishText: "Man ahle iran hastam vali dar amrika zendegi mikonam",
+              expectedTranslation: "I am from Iran but I live in America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3405,7 +2607,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "man", "khoob", "neestam", "shoma", "khodafez"],
-              expectedTranslation: "hello I am not good what about you goodbye"
+              expectedTranslation: "Hello I am not good what about you goodbye"
             }
           }
         ]
@@ -3417,7 +2619,6 @@ export const curriculumData: Module[] = [
         emoji: "👤",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["esm", "va", "vali", "ham"],
         vocabulary: [
           {
             id: "esmam",
@@ -3425,7 +2626,7 @@ export const curriculumData: Module[] = [
             fa: "اسمم",
             finglish: "esmam",
             phonetic: "es-MAM",
-            lessonId: "lesson2"
+            lessonId: "module3-lesson2"
           },
           {
             id: "esmet",
@@ -3433,15 +2634,7 @@ export const curriculumData: Module[] = [
             fa: "اسمت",
             finglish: "esmet",
             phonetic: "es-MET",
-            lessonId: "lesson2"
-          },
-          {
-            id: "hast",
-            en: "is",
-            fa: "هست",
-            finglish: "hast",
-            phonetic: "hast",
-            lessonId: "lesson2"
+            lessonId: "module3-lesson2"
           },
           {
             id: "in",
@@ -3449,7 +2642,7 @@ export const curriculumData: Module[] = [
             fa: "این",
             finglish: "in",
             phonetic: "een",
-            lessonId: "lesson2"
+            lessonId: "module3-lesson2"
           }
         ],
         steps: [
@@ -3603,8 +2796,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esmam Bob-e, esme shoma chiye",
-              expectedTranslation: "my name is Bob what is your name"
+              finglishText: "Esmam Bob-e, esme shoma chiye",
+              expectedTranslation: "My name is Bob what is your name",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3629,8 +2823,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme man Bob hast",
-              expectedTranslation: "my name is Bob"
+              finglishText: "Esme man Bob hast",
+              expectedTranslation: "My name is Bob",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3672,8 +2867,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esmet Bob-e",
-              expectedTranslation: "your name is Bob"
+              finglishText: "Esmet Bob-e",
+              expectedTranslation: "Your name is Bob",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3681,7 +2877,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["esmam"],
-              expectedTranslation: "my name"
+              expectedTranslation: "My name"
             }
           },
           {
@@ -3689,7 +2885,7 @@ export const curriculumData: Module[] = [
             points: 2,
             data: {
               sequence: ["esmet"],
-              expectedTranslation: "your name"
+              expectedTranslation: "Your name"
             }
           },
           {
@@ -3697,7 +2893,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "esme", "shoma", "chiye", "khoshbakhtam"],
-              expectedTranslation: "hello what is your name nice to meet you"
+              expectedTranslation: "Hello what is your name nice to meet you"
             }
           }
         ]
@@ -3709,7 +2905,6 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["in", "hast", "va", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "mikoni", "esm", "esmam", "esmet"],
         vocabulary: [
           {
             id: "madar",
@@ -3717,7 +2912,7 @@ export const curriculumData: Module[] = [
             fa: "مادر",
             finglish: "madar",
             phonetic: "MAH-dar",
-            lessonId: "lesson3"
+            lessonId: "module3-lesson3"
           },
           {
             id: "pedar",
@@ -3725,7 +2920,7 @@ export const curriculumData: Module[] = [
             fa: "پدر",
             finglish: "pedar",
             phonetic: "peh-DAR",
-            lessonId: "lesson3"
+            lessonId: "module3-lesson3"
           }
         ],
         steps: [
@@ -3805,8 +3000,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "in pedare shoma hast?",
-              expectedTranslation: "is this your father"
+              finglishText: "In pedare shoma hast?",
+              expectedTranslation: "Is this your father?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3839,8 +3035,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaret va pedaret",
-              expectedTranslation: "your mother and your father"
+              finglishText: "Madaret va pedaret",
+              expectedTranslation: "Your mother and your father",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3865,24 +3062,27 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "shoma koja zendegi mikoni",
-              expectedTranslation: "where do you live"
+              finglishText: "Shoma koja zendegi mikoni",
+              expectedTranslation: "Where do you live?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "man dar amrika zendegi mikonam",
-              expectedTranslation: "I live in America"
+              finglishText: "Man dar amrika zendegi mikonam",
+              expectedTranslation: "I live in America",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "pedaram ahle iran hast vali madaram ahle amrika hast",
-              expectedTranslation: "my father is from Iran but my mother is from America"
+              finglishText: "Pedaram ahle iran hast vali madaram ahle amrika hast",
+              expectedTranslation: "My father is from Iran but my mother is from America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -3918,7 +3118,6 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👦‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "salam", "khodafez", "chetori", "merci", "baleh", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "hastam", "va", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "mikonam", "khoob"],
         vocabulary: [],
         steps: [
           {
@@ -3957,7 +3156,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "va", "pedar"],
-              expectedTranslation: "mother and father"
+              expectedTranslation: "Mother and father"
             }
           },
           {
@@ -3990,32 +3189,36 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme madare shoma chiye?",
-              expectedTranslation: "what is your mother's name"
+              finglishText: "Esme madare shoma chiye?",
+              expectedTranslation: "What is your mother's name?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme madaram Sara-e",
-              expectedTranslation: "my mother's name is Sara"
+              finglishText: "Esme madaram Sara-e",
+              expectedTranslation: "My mother's name is Sara",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "pedare shoma ahle koja hast?",
-              expectedTranslation: "where is your father from"
+              finglishText: "Pedare shoma ahle koja hast?",
+              expectedTranslation: "Where is your father from?",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "in madare shoma hast?",
-              expectedTranslation: "is this your mother"
+              finglishText: "In madare shoma hast?",
+              expectedTranslation: "Is this your mother?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4023,15 +3226,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "ahle", "iran", "hast"],
-              expectedTranslation: "mother is from Iran"
+              expectedTranslation: "Mother is from Iran"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaret khoob hast?",
-              expectedTranslation: "is your mother good"
+              finglishText: "Madaret khoob hast?",
+              expectedTranslation: "Is your mother good?",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4057,7 +3261,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["pedar", "ahle", "amrika", "hast"],
-              expectedTranslation: "father is from America"
+              expectedTranslation: "Father is from America"
             }
           },
           {
@@ -4065,7 +3269,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["madar", "ahle", "amrika", "hast", "vali", "pedar", "ahle", "iran", "hast"],
-              expectedTranslation: "mother is from America but father is from Iran"
+              expectedTranslation: "Mother is from America but father is from Iran"
             }
           },
           {
@@ -4101,7 +3305,6 @@ export const curriculumData: Module[] = [
         emoji: "👫",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ham", "ahle", "koja", "zendegi"],
         vocabulary: [
           {
             id: "baradar",
@@ -4109,7 +3312,7 @@ export const curriculumData: Module[] = [
             fa: "برادر",
             finglish: "baradar",
             phonetic: "bah-rah-DAR",
-            lessonId: "lesson5"
+            lessonId: "module3-lesson5"
           },
           {
             id: "khahar",
@@ -4117,7 +3320,7 @@ export const curriculumData: Module[] = [
             fa: "خواهر",
             finglish: "khahar",
             phonetic: "khah-HAR",
-            lessonId: "lesson5"
+            lessonId: "module3-lesson5"
           }
         ],
         steps: [
@@ -4187,7 +3390,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["pedar", "va", "baradar"],
-              expectedTranslation: "father and brother"
+              expectedTranslation: "Father and brother"
             }
           },
           {
@@ -4221,7 +3424,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "esme baradare shoma chiye?",
-              expectedTranslation: "what is your brother's name"
+              expectedTranslation: "What is your brother's name?"
             }
           },
           {
@@ -4229,15 +3432,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "baradar", "Amir-e"],
-              expectedTranslation: "my brother's name is Amir"
+              expectedTranslation: "My brother's name is Amir"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "esme baradaram Amir neest",
-              expectedTranslation: "my brother's name is not Amir"
+              finglishText: "Esme baradaram Amir neest",
+              expectedTranslation: "My brother's name is not Amir",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4245,15 +3449,16 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["khahar", "khoob", "hast"],
-              expectedTranslation: "sister is good"
+              expectedTranslation: "Sister is good"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "baradaram khoob hast vali khaharam khoob neest",
-              expectedTranslation: "my brother is good but my sister is not good"
+              finglishText: "Baradaram khoob hast vali khaharam khoob neest",
+              expectedTranslation: "My brother is good but my sister is not good",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4313,7 +3518,6 @@ export const curriculumData: Module[] = [
         emoji: "👨‍👩‍👧‍👦",
         progress: 0,
         locked: false,
-        reviewVocabulary: ["madar", "pedar", "baradar", "khahar", "salam", "khodafez", "merci", "khoshbakhtam", "esm", "esmam", "esmet", "in", "hast", "khoob", "neest", "va", "vali", "ahle", "koja", "dar", "iran", "amrika", "zendegi", "kheily", "na", "baleh"],
         vocabulary: [],
         steps: [
           {
@@ -4379,7 +3583,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["esme", "madar", "Sara-e", "vali", "esme", "pedar", "Bob-e"],
-              expectedTranslation: "my mother's name is Sara but my father's name is Bob"
+              expectedTranslation: "My mother's name is Sara but my father's name is Bob"
             }
           },
           {
@@ -4421,8 +3625,9 @@ export const curriculumData: Module[] = [
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaret va khaharet",
-              expectedTranslation: "your mother and your sister"
+              finglishText: "Madaret va khaharet",
+              expectedTranslation: "Your mother and your sister",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4455,7 +3660,7 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               finglishText: "esme baradare shoma chiye?",
-              expectedTranslation: "what is your brother's name"
+              expectedTranslation: "What is your brother's name?"
             }
           },
           {
@@ -4490,23 +3695,25 @@ export const curriculumData: Module[] = [
             points: 3,
             data: {
               sequence: ["salam", "in", "pedar", "man", "hast"],
-              expectedTranslation: "hello this is my father"
+              expectedTranslation: "Hello this is my father"
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "baradaram khoob hast vali madaram khoob neest",
-              expectedTranslation: "my brother is good but my mother is not good"
+              finglishText: "Baradaram khoob hast vali madaram khoob neest",
+              expectedTranslation: "My brother is good but my mother is not good",
+              maxWordBankSize: 10
             }
           },
           {
             type: "text-sequence",
             points: 3,
             data: {
-              finglishText: "madaram ahle iran hast vali pedaram ahle amrika hast",
-              expectedTranslation: "my mother is from Iran but my father is from America"
+              finglishText: "Madaram ahle iran hast vali pedaram ahle amrika hast",
+              expectedTranslation: "My mother is from Iran but my father is from America",
+              maxWordBankSize: 10
             }
           },
           {
@@ -4680,7 +3887,7 @@ function createConversationFlow(
  * @param currentLessonNumber - The current lesson number (e.g., 4 for lesson4)
  * @returns Array of all vocabulary IDs from previous lessons in the module
  */
-function generateCompleteReviewVocabulary(moduleId: string, currentLessonNumber: number): string[] {
+export function generateCompleteReviewVocabulary(moduleId: string, currentLessonNumber: number): string[] {
   const module = getModule(moduleId);
   if (!module) return [];
   

@@ -77,6 +77,7 @@ export class SmartAuthService {
   private static syncQueue: BackgroundSyncOperation[] = []
   private static syncInterval: NodeJS.Timeout | null = null
   private static isInitializing = false
+  private static hasAttemptedInitialization = false // Track if we've checked for a session
   
   // Auth listener guard - prevents multiple registrations
   private static authListenerUnsubscribe: (() => void) | null = null
@@ -157,6 +158,8 @@ export class SmartAuthService {
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.user) {
+        // No session - mark initialization as complete
+        this.hasAttemptedInitialization = true
         this.isInitializing = false
         return { user: null, isEmailVerified: false, isReady: true }
       }
@@ -212,11 +215,13 @@ export class SmartAuthService {
       // Start background sync
       this.startBackgroundSync()
       
+      this.hasAttemptedInitialization = true
       this.isInitializing = false
       return this.getSessionState()
       
     } catch (error) {
       console.error('Session initialization failed:', error)
+      this.hasAttemptedInitialization = true
       this.isInitializing = false
       return { user: null, isEmailVerified: false, isReady: true }
     }
@@ -230,12 +235,24 @@ export class SmartAuthService {
     isEmailVerified: boolean
     isReady: boolean
   } {
+    // CRITICAL FIX: During initialization, always return isReady: false
+    // This ensures skeleton shows until initialization completes
     if (this.isInitializing) {
       return { user: null, isEmailVerified: false, isReady: false }
     }
     
+    // CRITICAL FIX: On refresh, cache doesn't exist yet, but we might have a session
+    // Don't return isReady: true until we've checked for a session
+    // This prevents premature rendering with wrong state
     if (!this.sessionCache || this.isSessionExpired()) {
-      return { user: null, isEmailVerified: false, isReady: true }
+      // Only return isReady: true if we've already attempted initialization
+      // This means we checked and found no session (logged-out state)
+      // Otherwise, return false to wait for initialization
+      return { 
+        user: null, 
+        isEmailVerified: false, 
+        isReady: this.hasAttemptedInitialization // Only ready if we've checked
+      }
     }
     
     return {
@@ -553,32 +570,9 @@ export class SmartAuthService {
     }
   }
   
-  /**
-   * Add XP with optimistic update - replaces XpService calls
-   */
-  static async addUserXp(amount: number, source: string, metadata?: any): Promise<void> {
-    if (!this.sessionCache) return
-    
-    const oldXp = this.sessionCache.totalXp
-    
-    // Optimistic update for instant UI
-    this.sessionCache.totalXp += amount
-    
-    // Emit event for reactive UI updates
-    this.emitEvent('xp-updated', { 
-      newXp: this.sessionCache.totalXp, 
-      oldXp, 
-      delta: amount,
-      source,
-      metadata 
-    })
-    
-    // ⚠️ DEPRECATED: Old SyncService path - now using XpService.awardXpOnce for idempotent awards
-    // Keeping this method for compatibility with legacy code, but it only does optimistic UI updates
-    // The actual XP persistence happens via XpService.awardXpOnce in LessonRunner
-    
-    // No background sync needed - idempotent system handles it at award time
-  }
+  // PHASE 4.1 CLEANUP: addUserXp removed.
+  // XP is now only awarded through XpService.awardXpOnce → award_xp_unified
+  // This prevents duplicate counting and race conditions.
   
   /**
    * Add XP optimistically (immediate UI feedback before DB confirms)
@@ -1078,6 +1072,139 @@ export class SmartAuthService {
     if (!this.sessionCache) return
     
     delete this.sessionCache.dashboardStats
+    // Also invalidate unified dashboard cache
+    delete (this.sessionCache as any).dashboardCache
+  }
+
+  /**
+   * Invalidate dashboard cache (call after lesson completion)
+   * Dashboard will refresh on next visit, not immediately
+   */
+  static invalidateDashboardCache(): void {
+    if (!this.sessionCache) return
+    
+    delete (this.sessionCache as any).dashboardCache
+  }
+
+  /**
+   * Get cached dashboard data (unified)
+   */
+  static getCachedDashboard(): {
+    progress: UserLessonProgress[]
+    nextLesson: {
+      moduleId: string
+      lessonId: string
+      moduleTitle: string
+      lessonTitle: string
+      description?: string
+      status: 'not_started' | 'completed'
+      allLessonsCompleted?: boolean
+    } | null
+    stats: {
+      wordsLearned: number
+      masteredWords: number
+      hardWords: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+      unclassifiedWords?: number
+      wordsToReview?: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+    }
+    xp: number
+    level: number
+    streakCount: number
+    dailyGoalXp: number
+    dailyGoalProgress: number
+    lessonsCompletedToday: number
+    xpEarnedToday: number
+  } | null {
+    if (!this.sessionCache) return null
+    
+    // Check if dashboard cache exists and is valid
+    const dashboardCache = (this.sessionCache as any).dashboardCache
+    if (!dashboardCache) return null
+    
+    const now = Date.now()
+    const cacheAge = now - dashboardCache.cachedAt
+    const TTL = 5 * 60 * 1000 // 5 minutes
+    
+    if (cacheAge > TTL) {
+      // Cache expired
+      return null
+    }
+    
+    return dashboardCache.data
+  }
+
+  /**
+   * Cache dashboard data (unified)
+   */
+  static cacheDashboard(data: {
+    progress: UserLessonProgress[]
+    nextLesson: {
+      moduleId: string
+      lessonId: string
+      moduleTitle: string
+      lessonTitle: string
+      description?: string
+      status: 'not_started' | 'completed'
+      allLessonsCompleted?: boolean
+    } | null
+    stats: {
+      wordsLearned: number
+      masteredWords: number
+      hardWords: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+      unclassifiedWords?: number
+      wordsToReview?: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+    }
+    xp: number
+    level: number
+    streakCount: number
+    dailyGoalXp: number
+    dailyGoalProgress: number
+    lessonsCompletedToday: number
+    xpEarnedToday: number
+  }): void {
+    if (!this.sessionCache) return
+    
+    // Store dashboard cache
+    ;(this.sessionCache as any).dashboardCache = {
+      data,
+      cachedAt: Date.now()
+    }
   }
 
   /**

@@ -5,6 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { TrendingUp, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect } from "react"
+import { VocabularyService } from "@/lib/services/vocabulary-service"
+import type { VocabularyItem } from "@/lib/types"
 
 interface HardWord {
   vocabulary_id: string
@@ -23,6 +26,35 @@ interface HardWordsWidgetProps {
 }
 
 export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) {
+  const [vocabDefinitions, setVocabDefinitions] = useState<Map<string, VocabularyItem>>(new Map())
+
+  // Load vocabulary definitions for displayed words (same pattern as WordsToReviewWidget)
+  useEffect(() => {
+    if (hardWords.length === 0) return
+
+    const loadDefinitions = () => {
+      const definitions = new Map<string, VocabularyItem>()
+      const wordsToLoad = hardWords.slice(0, 10)
+      
+      setVocabDefinitions(prev => {
+        const updated = new Map(prev)
+        
+        for (const word of wordsToLoad) {
+          if (!updated.has(word.vocabulary_id)) {
+            const vocab = VocabularyService.findVocabularyById(word.vocabulary_id)
+            if (vocab) {
+              updated.set(word.vocabulary_id, vocab)
+            }
+          }
+        }
+        
+        return updated
+      })
+    }
+
+    loadDefinitions()
+  }, [hardWords])
+
   if (isLoading) {
     return (
       <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
@@ -81,24 +113,33 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {hardWords.slice(0, 10).map((word) => (
-            <div
-              key={word.vocabulary_id}
-              className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors min-h-[48px]"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-gray-900 truncate">{word.word_text}</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {Math.round(word.accuracy)}% accuracy
+          {hardWords.slice(0, 10).map((word) => {
+            const vocab = vocabDefinitions.get(word.vocabulary_id)
+            const finglish = vocab?.finglish || word.word_text || 'Loading...'
+            const english = vocab?.en || word.word_text || 'Loading...'
+            
+            return (
+              <div
+                key={word.vocabulary_id}
+                className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200 hover:bg-neutral-100 transition-colors min-h-[48px]"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-gray-900 truncate">{finglish}</div>
+                  <div className="text-xs text-muted-foreground mt-1 truncate">
+                    {english}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {Math.round(word.accuracy)}% accuracy
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 ml-4">
+                  <div className="text-xs text-primary font-medium whitespace-nowrap">
+                    {word.consecutive_correct < 2 ? "Keep practicing" : "Getting stronger"}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 ml-4">
-                <div className="text-xs text-primary font-medium whitespace-nowrap">
-                  {word.consecutive_correct < 2 ? "Keep practicing" : "Getting stronger"}
-                </div>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
         <div className="mt-4 pt-4 border-t border-neutral-200">
           <Link href="/review?filter=hard-words" className="block">

@@ -23,6 +23,56 @@ export interface VocabularyItem {
   semanticGroup?: string; // Semantic group for distractor generation (e.g., "greetings", "pronouns")
 }
 
+// ============================================================================
+// LEXEME & GRAMMAR TYPES (PHASE 1)
+// ============================================================================
+// Support for grammar-generated forms (e.g., "khoobam" = "khoob" + "-am")
+// Backward compatible: All existing string vocab IDs remain valid
+
+/**
+ * Base vocabulary ID (e.g., "khoob", "salam")
+ */
+export type VocabId = string;
+
+/**
+ * Grammar reference for morphological forms
+ * Example: { kind: "suffix", baseId: "khoob", suffixId: "am" } → "khoobam" (I'm good)
+ */
+export interface GrammarRef {
+  kind: "suffix";
+  baseId: VocabId;
+  suffixId: string; // e.g., "am", "i", "e", "im", "et", "and"
+}
+
+/**
+ * Lexeme reference - union type supporting both base vocab and grammar forms
+ * - string: Base vocabulary ID (existing behavior, backward compatible)
+ * - GrammarRef: Grammar-generated form (new)
+ */
+export type LexemeRef = VocabId | GrammarRef;
+
+/**
+ * Resolved lexeme with all fields populated
+ * Returned by GrammarService.resolve()
+ */
+export interface ResolvedLexeme {
+  id: string;           // Surface ID (e.g., "khoobam" for grammar form, "salam" for base)
+  baseId: string;       // Base vocabulary ID (e.g., "khoob")
+  en: string;           // English meaning (e.g., "I'm good")
+  fa: string;           // Persian script (e.g., "خوبم")
+  finglish: string;     // Finglish (e.g., "Khoobam")
+  phonetic?: string;    // Pronunciation guide (e.g., "khoob-AM")
+  lessonId?: string;    // Lesson where base vocab was introduced
+  semanticGroup?: string; // Semantic group of base vocab
+  isGrammarForm: boolean; // true if generated from GrammarRef, false if base vocab
+  grammar?: {
+    kind: "suffix";
+    suffixId: string;   // The suffix used (e.g., "am")
+  };
+}
+
+// ============================================================================
+
 // Lesson types
 export interface Lesson {
   id: string;
@@ -79,8 +129,11 @@ export interface QuizStep extends BaseStep {
   type: 'quiz';
   data: {
     prompt: string;
-    options: string[];
+    options: string[]; // Generic string options (for QuizOption object array, component handles casting)
     correct: number;
+    quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Distinguishes quiz types
+    vocabularyId?: string; // For vocab quizzes, specifies which vocabulary item to test
+    lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   };
 }
 
@@ -91,6 +144,9 @@ export interface ReverseQuizStep extends BaseStep {
     prompt: string;       // English prompt: "How do you say 'Hello' in Persian?"
     options: string[];    // Persian options: ["سلام", "خداحافظ", "مرسی", "بله"]
     correct: number;      // Index of correct Persian option
+    quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Distinguishes quiz types
+    vocabularyId?: string; // For vocab quizzes, specifies which vocabulary item to test
+    lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   };
 }
 
@@ -100,6 +156,8 @@ export interface InputStep extends BaseStep {
   data: {
     question: string;
     answer: string;
+    vocabularyId?: string; // NEW: Track performance
+    lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   };
 }
 
@@ -109,6 +167,7 @@ export interface MatchingStep extends BaseStep {
   data: {
     words: { id: string; text: string; slotId: string }[];
     slots: { id: string; text: string }[];
+    lexemeRefs?: LexemeRef[];  // NEW: Raw LexemeRef[] for runtime resolution (avoids circular init)
   };
 }
 
@@ -122,6 +181,7 @@ export interface FinalStep extends BaseStep {
       translation: string;
     }[];
     targetWords: string[];
+    lexemeRefs?: LexemeRef[];  // NEW: Raw LexemeRef[] for runtime resolution (avoids circular init)
     // Optional content configuration
     title?: string;
     description?: string;
@@ -226,9 +286,11 @@ export interface GrammarFillBlankStep extends BaseStep {
 export interface AudioMeaningStep extends BaseStep {
   type: 'audio-meaning';
   data: {
-    vocabularyId: string;  // The target vocabulary item to test
-    distractors: string[]; // Other vocabulary IDs to use as wrong answers
-    autoPlay?: boolean;    // Whether to auto-play audio on load (default: true)
+    vocabularyId: string;     // The target vocabulary item to test (base vocab for tracking, backward compat)
+    lexemeId?: string;         // DEPRECATED: surface form ID for grammar forms (e.g., "khoobam")
+    lexemeRef?: LexemeRef;     // NEW: Raw LexemeRef for runtime resolution (avoids circular init)
+    distractors: string[];     // Other vocabulary IDs to use as wrong answers
+    autoPlay?: boolean;        // Whether to auto-play audio on load (default: true)
   };
 }
 
@@ -236,11 +298,12 @@ export interface AudioMeaningStep extends BaseStep {
 export interface AudioSequenceStep extends BaseStep {
   type: 'audio-sequence';
   data: {
-    sequence: string[];       // Array of vocabulary IDs in the order they should be played
-    autoPlay?: boolean;       // Whether to auto-play audio sequence on load (default: false)
-    expectedTranslation?: string; // Custom English meaning override for phrases (e.g., "My name" for "esme man")
-    targetWordCount?: number; // Number of English words expected (overrides sequence.length when provided)
-    maxWordBankSize?: number; // Maximum number of options in word bank (default: 12, prevents crowding while allowing variety)
+    sequence: string[];             // Array of vocabulary IDs (backward compat, legacy)
+    lexemeSequence?: LexemeRef[];   // NEW: Raw LexemeRef[] for runtime resolution (avoids circular init)
+    autoPlay?: boolean;             // Whether to auto-play audio sequence on load (default: false)
+    expectedTranslation?: string;   // Custom English meaning override for phrases (e.g., "My name" for "esme man")
+    targetWordCount?: number;       // Number of English words expected (overrides sequence.length when provided)
+    maxWordBankSize?: number;       // Maximum number of options in word bank (default: 12, prevents crowding while allowing variety)
   };
 }
 
@@ -252,6 +315,7 @@ export interface TextSequenceStep {
     finglishText: string; // Finglish phrase to display (e.g., "Esme pedare shoma chiye")
     expectedTranslation: string; // English translation to build (e.g., "What is your father's name")
     maxWordBankSize?: number; // Maximum number of options in word bank (default: 10)
+    lexemeSequence?: LexemeRef[]; // Optional: Lexeme references for grammar forms (same as AudioSequence)
   };
 }
 

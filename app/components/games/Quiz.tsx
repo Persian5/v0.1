@@ -6,6 +6,11 @@ import { XpAnimation } from "./XpAnimation"
 import { playSuccessSound } from "./Flashcard"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { shuffle } from "@/lib/utils"
+import { FLAGS } from "@/lib/flags"
+import { WordBankService } from "@/lib/services/word-bank-service"
+import { type LearnedSoFar } from "@/lib/utils/curriculum-lexicon"
+import { type VocabularyItem, type LexemeRef } from "@/lib/types"
+import { GrammarService } from "@/lib/services/grammar-service"
 
 type QuizOption = {
   text: string;
@@ -19,24 +24,56 @@ export interface QuizProps {
   points?: number;
   onComplete: (correct: boolean) => void;
   onXpStart?: () => Promise<boolean>; // Returns true if XP granted, false if already completed
-  vocabularyId?: string; // Optional: for tracking vocabulary performance
+  vocabularyId?: string; // Optional: for tracking vocabulary performance OR from step.data.vocabularyId
+  lexemeRef?: LexemeRef; // NEW: For grammar forms (e.g., { kind: "suffix", ... })
   onVocabTrack?: (vocabularyId: string, wordText: string, isCorrect: boolean, timeSpentMs?: number) => void; // Track vocabulary performance
   label?: string; // Optional custom label (e.g., "PRACTICE AGAIN" for remediation)
   subtitle?: string; // Optional custom subtitle
+  learnedSoFar?: LearnedSoFar; // PHASE 4A: Learned vocabulary state for filtering
+  vocabularyBank?: VocabularyItem[]; // PHASE 4A: All vocabulary for WordBankService lookup
+  quizType?: 'vocab-normal' | 'vocab-reverse' | 'phrase' | 'grammar'; // NEW: Quiz type from step.data.quizType
+  moduleId?: string; // For tiered fallback in WordBankService
+  lessonId?: string; // For tiered fallback in WordBankService
 }
 
 export function Quiz({ 
-  prompt,
+  prompt: rawPrompt,
   options,
   correct = 0,
   points = 2,
   onComplete,
   onXpStart,
   vocabularyId,
+  lexemeRef, // NEW
   onVocabTrack,
   label = "QUICK QUIZ",
-  subtitle = "Test what you've learned"
+  subtitle = "Test what you've learned",
+  learnedSoFar, // PHASE 4A: Learned vocabulary state
+  vocabularyBank, // PHASE 4A: Vocabulary bank for lookup
+  quizType, // NEW: Quiz type to determine distractor generation strategy
+  moduleId, // For tiered fallback
+  lessonId // For tiered fallback
 }: QuizProps) {
+  
+  // Resolve grammar form if provided
+  const resolvedLexeme = useMemo(() => {
+    if (lexemeRef) {
+      try {
+        return GrammarService.resolve(lexemeRef);
+      } catch (e) {
+        console.warn("Failed to resolve lexemeRef in Quiz", e);
+        return null;
+      }
+    }
+    return null;
+  }, [lexemeRef]);
+
+  const trackingId = resolvedLexeme ? resolvedLexeme.id : vocabularyId;
+  // Use resolved English meaning for tracking if available, otherwise fallback to prompt (will be resolved below)
+  // Note: We use rawPrompt here if available, but the actual prompt used in UI is resolved below.
+  // For tracking, we want the English meaning if possible.
+  const trackingText = resolvedLexeme ? resolvedLexeme.en : (rawPrompt || '');
+
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [quizState, setQuizState] = useState<'selecting' | 'showing-result' | 'completed'>('selecting')
   const [isCorrectAnswer, setIsCorrectAnswer] = useState(false)
@@ -45,6 +82,45 @@ export function Quiz({
   
   // Time tracking for analytics
   const startTime = useRef(Date.now())
+  
+  // PHASE 8 FIX: Generate prompt at runtime if empty (avoids circular dependency during curriculum init)
+  // PHASE 6 FIX: Use resolvedLexeme for grammar forms
+  const prompt = useMemo(() => {
+    if (rawPrompt && rawPrompt.trim() !== '') {
+      return rawPrompt; // Use provided prompt if exists
+    }
+    
+    // PHASE 6 FIX: Check resolvedLexeme first (for grammar forms)
+    if (resolvedLexeme) {
+      if (quizType === 'vocab-reverse') {
+        // English prompt → Persian options: "Which means 'Name of'?"
+        return `Which means '${resolvedLexeme.en}'?`;
+      } else {
+        // vocab-normal (default): Persian prompt → English options: "What does Esme mean?"
+        return `What does ${resolvedLexeme.finglish} mean?`;
+      }
+    }
+    
+    // Generate prompt from vocabularyId + quizType
+    if (!vocabularyId) {
+      return "Select the correct answer"; // Fallback
+    }
+    
+    const vocab = VocabularyService.findVocabularyById(vocabularyId);
+    if (!vocab) {
+      console.warn(`[Quiz] Vocabulary ID "${vocabularyId}" not found`);
+      return "Select the correct answer"; // Fallback
+    }
+    
+    // Generate prompt based on quiz type
+    if (quizType === 'vocab-reverse') {
+      // English prompt → Persian options
+      return `Which means '${vocab.en}'?`;
+    } else {
+      // vocab-normal (default): Persian prompt → English options
+      return `What does ${vocab.finglish} mean?`;
+    }
+  }, [rawPrompt, vocabularyId, quizType, resolvedLexeme]);
   
   // Reset tracking flag when vocabulary changes (new step)
   useEffect(() => {
@@ -67,16 +143,219 @@ export function Quiz({
     startTime.current = Date.now()
   }, [prompt, optionsHash])
 
-  // Randomize options ONCE when content changes
+  // PHASE 4A: Stable signatures for useMemo dependencies (prevents infinite re-renders)
+  const learnedSignature = learnedSoFar
+    ? learnedSoFar.vocabIds.join(",")
+    : "";
+  const vocabBankSignature = vocabularyBank
+    ? vocabularyBank.map(v => v.id).join(",")
+    : "";
+
+  // PHASE 4A: Unified distractor generation OR old behavior (flag-gated + quizType-aware)
   const shuffledOptions = useMemo(() => {
+    // Skip WordBankService for phrase/grammar quizzes (use curriculum options as-is)
+    if (quizType === 'phrase' || quizType === 'grammar') {
+      // Convert string[] to QuizOption[] if needed
+      const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
+        ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
+        : options as QuizOption[];
+      return shuffle(formattedOptions);
+    }
+    
+    // PHASE 4A: Unified WordBankService path (flag ON + vocab quiz type)
+    if (FLAGS.USE_LEARNED_VOCAB_IN_QUIZ && 
+        (quizType === 'vocab-normal' || quizType === 'vocab-reverse') &&
+        learnedSoFar && 
+        vocabularyBank && 
+        vocabularyBank.length > 0) {
+      
+      // Step 1: Get vocabulary ID (required for vocab quizzes)
+      // PHASE 5 FIX: Resolve lexemeRef if provided (for grammar forms)
+      let correctVocabId = vocabularyId;
+      
+      if (!correctVocabId && resolvedLexeme) {
+        // Use resolved grammar form ID (e.g., "esm|e")
+        correctVocabId = resolvedLexeme.id;
+      }
+      
+      if (!correctVocabId) {
+        console.warn('[QUIZ] vocab-normal/vocab-reverse quiz missing vocabularyId and lexemeRef, falling back to curriculum options');
+        // Fall through to old behavior
+      } else {
+        // Step 2: Find the correct vocabulary item
+        // PHASE 5 FIX: Use resolvedLexeme if available (for grammar forms), otherwise lookup in vocabularyBank
+        let correctVocab = vocabularyBank.find(v => v.id === correctVocabId);
+        
+        if (!correctVocab && resolvedLexeme) {
+          // Grammar form not in vocabularyBank - create VocabularyItem from resolvedLexeme
+          correctVocab = {
+            id: resolvedLexeme.id,
+            en: resolvedLexeme.en,
+            fa: resolvedLexeme.fa,
+            finglish: resolvedLexeme.finglish,
+            phonetic: resolvedLexeme.phonetic || '',
+            lessonId: resolvedLexeme.lessonId || '',
+            semanticGroup: resolvedLexeme.semanticGroup
+          };
+        }
+
+        // PHASE 9 FIX: Create expanded vocabulary bank for WordBankService
+        // This ensures that if we are quizzing a grammar form (e.g. esm|e), it exists in the bank
+        // so WordBankService can find its English translation ("Name of")
+        const expandedVocabularyBank = resolvedLexeme ? 
+          (vocabularyBank.some(v => v.id === resolvedLexeme.id) ? vocabularyBank : [...vocabularyBank, {
+            id: resolvedLexeme.id,
+            en: resolvedLexeme.en,
+            fa: resolvedLexeme.fa,
+            finglish: resolvedLexeme.finglish,
+            phonetic: resolvedLexeme.phonetic || '',
+            lessonId: resolvedLexeme.lessonId || '',
+            semanticGroup: resolvedLexeme.semanticGroup
+          }]) 
+          : vocabularyBank;
+        
+        if (!correctVocab) {
+          console.warn(`[QUIZ] Vocabulary ID "${correctVocabId}" not found in vocabulary bank and no resolvedLexeme, falling back to curriculum options`);
+          // Fall through to old behavior
+        } else {
+          // Step 3: Generate unified options using WordBankService
+          // Use default maxSize of 4 if options array is empty (from vocabQuiz helper)
+          const maxSize = options.length > 0 ? options.length : 4;
+          
+          // PHASE 9 FIX: Use expandedVocabularyBank which includes resolved grammar forms
+          const wordBankResult = WordBankService.generateWordBank({
+            expectedTranslation: undefined, // Quiz doesn't have translation context
+            vocabularyBank: expandedVocabularyBank, // Use expanded bank
+            sequenceIds: [correctVocabId], // Correct answer
+            maxSize, // Default to 4 if options array is empty
+            distractorStrategy: 'semantic',
+            learnedVocabIds: FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedSoFar
+              ? learnedSoFar.vocabIds
+              : undefined,
+            moduleId, // For tiered fallback
+            lessonId, // For tiered fallback
+          });
+          
+          // Step 4: Extract unified options based on quiz type
+          const { correctWords, distractors: distractorWords } = wordBankResult;
+          
+          if (correctWords.length > 0 && distractorWords.length > 0) {
+            let unifiedOptionsText: string[] = [];
+            
+            if (quizType === 'vocab-normal') {
+              // vocab-normal: Persian prompt → English options
+              // WordBankService returns English translations
+              unifiedOptionsText = [
+                correctWords[0], // Correct English translation
+                ...distractorWords
+              ].slice(0, maxSize);
+            } else if (quizType === 'vocab-reverse') {
+              // vocab-reverse: English prompt → Persian/Finglish options
+              // Need to map English distractors back to Persian/Finglish
+              const correctFinglish = correctVocab.finglish || correctVocab.id;
+              
+              // Find Persian/Finglish for distractors
+              const distractorFinglish = distractorWords.map(englishText => {
+                // Find vocab item with matching English translation
+                const vocabItem = vocabularyBank.find(v => {
+                  const normalizedVocabEn = WordBankService.normalizeVocabEnglish(v.en).toLowerCase();
+                  const normalizedDistractorEn = WordBankService.normalizeVocabEnglish(englishText).toLowerCase();
+                  return normalizedVocabEn === normalizedDistractorEn;
+                });
+                return vocabItem?.finglish || vocabItem?.id || englishText; // Fallback to English if not found
+              });
+              
+              unifiedOptionsText = [
+                correctFinglish, // Correct Persian/Finglish
+                ...distractorFinglish
+              ].slice(0, maxSize);
+            }
+            
+            // Transform to QuizOption[] format
+            const unifiedOptions: QuizOption[] = unifiedOptionsText.map((text, index) => ({
+              text: text,
+              correct: index === 0 // First option is always correct
+            }));
+            
+            // Shuffle for display (preserve correct flag)
+            const shuffledUnified = shuffle(unifiedOptions);
+            
+            // PHASE 4A: Debug logging
+            if (FLAGS.LOG_WORDBANK) {
+              console.log(
+                "%c[QUIZ - UNIFIED WORDBANK]",
+                "color: #9C27B0; font-weight: bold;",
+                {
+                  quizType,
+                  vocabularyId: correctVocabId,
+                  correctVocab: {
+                    id: correctVocab.id,
+                    en: correctVocab.en,
+                    finglish: correctVocab.finglish
+                  },
+                  learnedVocabCount: learnedSoFar?.vocabIds?.length || 0,
+                  vocabularyBankSize: vocabularyBank.length,
+                  unifiedOptions: unifiedOptionsText,
+                  usingUnifiedWordBank: true,
+                }
+              );
+            }
+            
+            return shuffledUnified;
+          } else {
+            console.warn('[QUIZ] WordBankService returned empty options, falling back to curriculum options');
+            // Fall through to old behavior
+          }
+        }
+      }
+    }
+    
+    // OLD BEHAVIOR: Flag OFF or fallback (curriculum options)
     // Convert string[] to QuizOption[] if needed
     const formattedOptions: QuizOption[] = Array.isArray(options) && typeof options[0] === 'string'
       ? (options as string[]).map((opt, i) => ({ text: opt, correct: i === correct }))
       : options as QuizOption[];
+    
+    // Safety check: If options are empty (from vocabQuiz helper) and flag is OFF,
+    // we need to generate options manually as fallback
+    if (formattedOptions.length === 0 && quizType && (quizType === 'vocab-normal' || quizType === 'vocab-reverse') && vocabularyId && vocabularyBank) {
+      console.warn('[QUIZ] Empty options array with vocab quiz type - generating fallback options');
+      const vocab = vocabularyBank.find(v => v.id === vocabularyId);
+      if (vocab) {
+        // Generate simple fallback: correct answer + 3 random distractors
+        const distractors = vocabularyBank
+          .filter(v => v.id !== vocabularyId)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3);
+        
+        if (quizType === 'vocab-normal') {
+          // English options
+          const fallbackOptions: QuizOption[] = [
+            { text: vocab.en, correct: true },
+            ...distractors.map(v => ({ text: v.en, correct: false }))
+          ];
+          return shuffle(fallbackOptions);
+        } else {
+          // vocab-reverse: Persian/Finglish options
+          const fallbackOptions: QuizOption[] = [
+            { text: vocab.finglish || vocab.id, correct: true },
+            ...distractors.map(v => ({ text: v.finglish || v.id, correct: false }))
+          ];
+          return shuffle(fallbackOptions);
+        }
+      }
+    }
 
     // Fisher-Yates shuffle for proper randomization
     return shuffle(formattedOptions);
-  }, [optionsHash]); // Only re-shuffle if content actually changes
+  }, [
+    optionsHash,
+    vocabularyId,
+    learnedSignature,
+    vocabBankSignature,
+    quizType, // NEW: Include quizType in dependencies
+    FLAGS.USE_LEARNED_VOCAB_IN_QUIZ
+  ]); // Stable signatures prevent infinite re-renders
 
   const handleSelect = async (index: number) => {
     // Prevent multiple selections
@@ -105,8 +384,8 @@ export function Quiz({
         const timeSpentMs = Date.now() - startTime.current
         
         // Track vocabulary performance to Supabase
-        if (vocabularyId && onVocabTrack) {
-          onVocabTrack(vocabularyId, prompt, true, timeSpentMs);
+        if (trackingId && onVocabTrack) {
+          onVocabTrack(trackingId, trackingText, true, timeSpentMs);
         }
         
         setQuizState('completed');
@@ -118,8 +397,8 @@ export function Quiz({
       const timeSpentMs = Date.now() - startTime.current
       
       // For incorrect answers, track immediately since we're not advancing
-      if (vocabularyId && onVocabTrack) {
-        onVocabTrack(vocabularyId, prompt, false, timeSpentMs);
+      if (trackingId && onVocabTrack) {
+        onVocabTrack(trackingId, trackingText, false, timeSpentMs);
       }
       
       // NOTE: Remediation is handled automatically by onVocabTrack

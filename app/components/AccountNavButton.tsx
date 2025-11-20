@@ -7,8 +7,16 @@ import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthModal } from "@/components/auth/AuthModal"
 
 export function AccountNavButton({ size = "sm" }: { size?: "sm" | "default" }) {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const [open, setOpen] = useState(false)
+  
+  // FLICKER FIX: Show skeleton while auth is loading
+  if (isLoading) {
+    return (
+      <div className={`rounded-md animate-pulse bg-gray-200 ${size === "sm" ? "h-9 w-24" : "h-10 w-28"}`} />
+    )
+  }
+  
   if (user) {
     return (
       <Link href="/account">

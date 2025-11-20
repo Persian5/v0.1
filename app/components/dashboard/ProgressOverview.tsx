@@ -10,15 +10,18 @@ import { useAuth } from "@/components/auth/AuthProvider"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { useState, useEffect } from "react"
+import { UserLessonProgress } from "@/lib/supabase/database"
 
 interface ProgressOverviewProps {
   wordsLearned: number
   masteredWords: number
   wordsToReview?: number
   isLoading?: boolean
+  sharedProgress?: UserLessonProgress[] | null
+  progressLoading?: boolean
 }
 
-export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 0, isLoading }: ProgressOverviewProps) {
+export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 0, isLoading, sharedProgress, progressLoading }: ProgressOverviewProps) {
   const { level, progress, isLoading: levelLoading } = useLevel()
   const { user } = useAuth()
   const [lessonsCompleted, setLessonsCompleted] = useState(0)
@@ -31,6 +34,30 @@ export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 
       if (!user?.id) {
         if (isMounted) setLessonsLoading(false)
         return
+      }
+
+      // Use shared progress if available
+      if (sharedProgress && sharedProgress.length > 0) {
+        try {
+          const userTimezone = SmartAuthService.getUserTimezone()
+          
+          // Cache the counts (timezone-aware, shared with TodaysProgress)
+          SmartAuthService.cacheLessonProgressCounts(sharedProgress, userTimezone)
+          
+          // Get from cache (now populated)
+          const count = SmartAuthService.getCachedLessonsCompletedTotal() ?? 0
+          if (isMounted) {
+            setLessonsCompleted(count)
+            setLessonsLoading(false)
+          }
+          return
+        } catch (error) {
+          console.error('Failed to process shared progress:', error)
+          if (isMounted) {
+            setLessonsLoading(false)
+          }
+          return
+        }
       }
 
       // Check cache first (shared with TodaysProgress)
@@ -48,6 +75,8 @@ export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 
         console.warn('Cache access failed, fetching from API:', error)
       }
 
+      // Fallback: fetch if no shared progress and not externally loading
+      if (progressLoading !== false) {
       try {
         const allProgress = await LessonProgressService.getUserLessonProgress()
         
@@ -69,6 +98,12 @@ export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 
           setLessonsCompleted(0)
         }
       } finally {
+          if (isMounted) {
+            setLessonsLoading(false)
+          }
+        }
+      } else {
+        // External loading is false - just stop loading
         if (isMounted) {
           setLessonsLoading(false)
         }
@@ -80,7 +115,7 @@ export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 
     return () => {
       isMounted = false
     }
-  }, [user?.id])
+  }, [user?.id, sharedProgress, progressLoading])
 
   const isAnyLoading = isLoading || levelLoading || lessonsLoading
 

@@ -8,6 +8,7 @@ import { ReviewSessionService } from "@/lib/services/review-session-service"
 import { VocabularyTrackingService } from "@/lib/services/vocabulary-tracking-service"
 import { VocabularyItem } from "@/lib/types"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
+import { GrammarService } from "@/lib/services/grammar-service"
 import { WordBankService } from "@/lib/services/word-bank-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { X, Heart, Target, Star } from "lucide-react"
@@ -61,7 +62,9 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
         // Convert to VocabularyItem[] by looking up each word
         const vocabItems: VocabularyItem[] = []
         for (const word of words) {
-          const vocabItem = VocabularyService.findVocabularyById(word.vocabulary_id)
+          // Use unified helper for vocabulary resolution
+          const vocabItem = ReviewSessionService.toVocabularyItem(word);
+          
           if (vocabItem) {
             vocabItems.push(vocabItem)
           }
@@ -240,7 +243,13 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
     if (!user?.id || !allCorrect) return
 
     // Award XP for completing round (1 XP per round completion)
-    const result = await ReviewSessionService.awardReviewXp(user.id, 1)
+    const result = await ReviewSessionService.awardReviewXp(user.id, 1, {
+      gameType: 'matching-marathon',
+      actionId: `round-${round}-${Date.now()}`,
+      metadata: {
+        round
+      }
+    })
     if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
       setXpCapReached(true)
       setXpCapShown(true)

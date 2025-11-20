@@ -67,6 +67,13 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     isOnline: boolean
   }>({ pendingCount: 0, isSyncing: false, isOnline: true })
 
+  // Deprecation warning
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("useXp is deprecated — use useSmartXp instead")
+    }
+  }, [])
+
   // Load XP from Supabase for authenticated users
   useEffect(() => {
     if (xpCtx) {
@@ -135,60 +142,10 @@ export function useXp(config: Partial<XpConfig> = {}): UseXpReturn {
     source: string, 
     metadata: Partial<XpTransaction> = {}
   ) => {
-    if (isLoading) return
-
-    const transaction: XpTransaction = {
-      amount,
-      source,
-      timestamp: Date.now(),
-      ...metadata,
-    }
-
-    // Validate transaction
-    if (!XpService.validateTransaction(transaction)) {
-      console.warn('Invalid XP transaction:', transaction)
-      return
-    }
-
-    // Only update XP for authenticated users
-    if (user && isEmailVerified) {
-      // Store transaction for display
-      setLastTransaction(transaction)
-
-      if (xpCtx) {
-        // Use SmartAuthService for optimistic updates + reactive events
-        // This handles both the optimistic update and the background sync
-        await SmartAuthService.addUserXp(amount, source, {
-          lessonId: metadata.lessonId,
-          moduleId: metadata.moduleId,
-          activityType: metadata.activityType
-        })
-      } else {
-        // Fallback to local state + XpService for non-context usage
-        setXpState((currentXp: number) => {
-          const newXp = Math.max(
-            xpConfig.minValue!,
-            Math.min(xpConfig.maxValue!, currentXp + amount)
-          )
-          return newXp
-        })
-
-        // Add XP via service (will queue for Supabase sync)
-        try {
-          await XpService.addUserXp(amount, source, {
-            lessonId: metadata.lessonId,
-            moduleId: metadata.moduleId,
-            activityType: metadata.activityType
-          })
-        } catch (error) {
-          console.error('Failed to add XP via service:', error)
-          // XP is already updated in UI, so this is non-critical
-        }
-      }
-    }
-    // Unauthenticated users: no XP tracking
-
-  }, [isLoading, user, isEmailVerified, xpConfig.minValue, xpConfig.maxValue, xpCtx])
+    // PHASE 4.2 FIX: Deprecate and disable addXp to prevent double counting
+    // XP is now handled via XpService.awardXpOnce (unified pipeline)
+    console.warn('useXp.addXp is deprecated and disabled. Use XpService.awardXpOnce instead.')
+  }, [])
 
   // Set XP directly (for authenticated users only)
   const setXp = useCallback((value: number) => {

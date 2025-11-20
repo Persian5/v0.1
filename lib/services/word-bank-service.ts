@@ -12,6 +12,8 @@
 
 import { VocabularyItem } from '../types';
 import { getSemanticGroup, getRelatedGroups, getVocabIdsInGroup } from '../config/semantic-groups';
+import { FLAGS } from '../flags';
+import { VocabularyService } from './vocabulary-service';
 
 /**
  * Options for word bank generation
@@ -22,6 +24,9 @@ export interface WordBankOptions {
   sequenceIds?: string[]; // Vocabulary IDs in correct order (for AudioSequence)
   maxSize?: number; // Maximum word bank size (overrides dynamic calculation)
   distractorStrategy?: 'semantic' | 'random'; // Distractor selection strategy
+  learnedVocabIds?: string[]; // PHASE 4: Filter vocabularyBank to only learned vocab (optional)
+  moduleId?: string; // Optional: For tiered fallback (current lesson → current module → previous modules)
+  lessonId?: string; // Optional: For tiered fallback (current lesson vocab)
 }
 
 /**
@@ -199,34 +204,256 @@ export class WordBankService {
    * @returns Complete word bank with correct words and distractors
    */
   static generateWordBank(options: WordBankOptions): WordBankResult {
-    const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic' } = options;
+    const { expectedTranslation, vocabularyBank, sequenceIds, maxSize, distractorStrategy = 'semantic', learnedVocabIds, moduleId, lessonId } = options;
+
+    if (FLAGS.LOG_WORDBANK) {
+      console.log(
+        "%c[WORDBANK INPUT]",
+        "color: #00BCD4; font-weight: bold;",
+        {
+          expectedTranslation,
+          vocabularyBankSize: vocabularyBank?.length,
+          sequence: sequenceIds,
+          learnedVocabIdsCount: learnedVocabIds?.length || 0,
+        }
+      );
+    }
+
+    // TIERED FALLBACK SYSTEM: Progressive expansion when learned vocab is insufficient
+    // 1. Try learned vocab first
+    // 2. Fallback 1: Current lesson vocab
+    // 3. Fallback 2: Current module vocab
+    // 4. Fallback 3: Previous modules (should never reach)
+    let filteredVocabularyBank = vocabularyBank;
+    let fallbackLevel = 'none';
+    
+    if (FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedVocabIds && learnedVocabIds.length > 0) {
+      const learnedSet = new Set(learnedVocabIds);
+      const filtered = vocabularyBank.filter(v => {
+        // ALWAYS include items required for the sequence (e.g. grammar forms not in learned set yet)
+        if (sequenceIds) {
+          if (sequenceIds.includes(v.id)) return true;
+          // PHASE 9 FIX: Also include base vocabulary for grammar forms in the filter
+          // This ensures "esm" is kept if "esm|e" is the target, even if "esm" isn't "learned" yet (or vice versa)
+          if (sequenceIds.some(seqId => seqId.startsWith(v.id + '|'))) return true;
+        }
+        return learnedSet.has(v.id);
+      });
+      
+      // Minimum viable bank: ensure we have at least correct words + 3 distractors
+      const minRequired = (sequenceIds?.length || 0) + 3;
+      
+      if (filtered.length >= minRequired) {
+        // ✅ Learned vocab is sufficient
+        filteredVocabularyBank = filtered;
+        fallbackLevel = 'learned';
+        
+        if (FLAGS.LOG_WORDBANK) {
+          console.log(
+            "%c[WORDBANK LEARNED FILTER]",
+            "color: #9C27B0; font-weight: bold;",
+            {
+              originalBankSize: vocabularyBank.length,
+              filteredBankSize: filtered.length,
+              minRequired,
+              filterApplied: true,
+            }
+          );
+        }
+      } else {
+        // ❌ Learned vocab insufficient - try tiered fallbacks
+        if (moduleId && lessonId) {
+          // FALLBACK 1: Current lesson vocab
+          const currentLessonVocab = VocabularyService.getLessonVocabulary(moduleId, lessonId);
+          if (currentLessonVocab.length >= minRequired) {
+            filteredVocabularyBank = currentLessonVocab;
+            fallbackLevel = 'current-lesson';
+            
+            if (FLAGS.LOG_WORDBANK) {
+              console.log(
+                "%c[WORDBANK FALLBACK 1 - CURRENT LESSON]",
+                "color: #FF9800; font-weight: bold;",
+                {
+                  learnedVocabSize: filtered.length,
+                  currentLessonVocabSize: currentLessonVocab.length,
+                  minRequired,
+                  reason: 'Learned vocab insufficient, using current lesson vocab',
+                }
+              );
+            }
+          } else {
+            // FALLBACK 2: Current module vocab
+            const currentModuleVocab = VocabularyService.getModuleVocabulary(moduleId);
+            if (currentModuleVocab.length >= minRequired) {
+              filteredVocabularyBank = currentModuleVocab;
+              fallbackLevel = 'current-module';
+              
+              if (FLAGS.LOG_WORDBANK) {
+                console.log(
+                  "%c[WORDBANK FALLBACK 2 - CURRENT MODULE]",
+                  "color: #F44336; font-weight: bold;",
+                  {
+                    learnedVocabSize: filtered.length,
+                    currentLessonVocabSize: currentLessonVocab.length,
+                    currentModuleVocabSize: currentModuleVocab.length,
+                    minRequired,
+                    reason: 'Current lesson vocab insufficient, using current module vocab',
+                  }
+                );
+              }
+            } else {
+              // FALLBACK 3: Previous modules (should never reach here)
+              // Get all vocab from previous modules
+              const allModules = require('../config/curriculum').getModules();
+              const previousModulesVocab: VocabularyItem[] = [];
+              
+              const currentModuleIndex = allModules.findIndex((m: any) => m.id === moduleId);
+              if (currentModuleIndex > 0) {
+                for (let i = 0; i < currentModuleIndex; i++) {
+                  const module = allModules[i];
+                  if (module.lessons) {
+                    for (const lesson of module.lessons) {
+                      if (lesson.vocabulary) {
+                        previousModulesVocab.push(...lesson.vocabulary);
+                      }
+                    }
+                  }
+                }
+              }
+              
+              // Combine: learned + current lesson + current module + previous modules
+              const combinedVocab = [
+                ...filtered, // Learned vocab
+                ...currentLessonVocab.filter(v => !learnedSet.has(v.id)), // Current lesson (deduped)
+                ...currentModuleVocab.filter(v => !learnedSet.has(v.id) && !currentLessonVocab.some(lv => lv.id === v.id)), // Current module (deduped)
+                ...previousModulesVocab.filter(v => !learnedSet.has(v.id) && !currentModuleVocab.some(mv => mv.id === v.id)), // Previous modules (deduped)
+              ];
+              
+              filteredVocabularyBank = combinedVocab;
+              fallbackLevel = 'previous-modules';
+              
+              console.warn(
+                "%c[WORDBANK FALLBACK 3 - PREVIOUS MODULES]",
+                "color: #E91E63; font-weight: bold;",
+                {
+                  learnedVocabSize: filtered.length,
+                  currentLessonVocabSize: currentLessonVocab.length,
+                  currentModuleVocabSize: currentModuleVocab.length,
+                  previousModulesVocabSize: previousModulesVocab.length,
+                  combinedVocabSize: combinedVocab.length,
+                  minRequired,
+                  reason: '⚠️ Should never reach here - curriculum may need review',
+                }
+              );
+            }
+          }
+        } else {
+          // No moduleId/lessonId provided - fallback to full vocabularyBank
+          fallbackLevel = 'full-bank';
+          
+          if (FLAGS.LOG_WORDBANK) {
+            console.log(
+              "%c[WORDBANK LEARNED FILTER - FALLBACK TO FULL BANK]",
+              "color: #FF9800; font-weight: bold;",
+              {
+                originalBankSize: vocabularyBank.length,
+                filteredBankSize: filtered.length,
+                minRequired,
+                filterApplied: false,
+                reason: 'Filtered bank too small, moduleId/lessonId not provided, using full vocabularyBank',
+              }
+            );
+          }
+        }
+      }
+    }
 
     // ✅ FIX: Filter vocabularyBank to ONLY vocab in sequence (current step)
     // This prevents future vocab (like "esmet" from Module 2) appearing in Module 1
+    // PHASE 4: Use filteredVocabularyBank (learned-aware) instead of vocabularyBank
+    // PHASE 9 FIX: Also include base vocabulary for grammar forms (e.g. include "esm" if "esm|e" is in sequence)
     const availableVocab = sequenceIds && sequenceIds.length > 0
-      ? vocabularyBank.filter(v => sequenceIds.includes(v.id))
-      : vocabularyBank;
+      ? filteredVocabularyBank.filter(v => {
+          if (sequenceIds.includes(v.id)) return true;
+          // Check if this vocab is the base for any grammar form in the sequence
+          // Grammar IDs format: "baseId|suffixId"
+          return sequenceIds.some(seqId => seqId.startsWith(v.id + '|'));
+        })
+      : filteredVocabularyBank;
 
     // Step 1: Extract semantic units from expectedTranslation (PRIMARY source)
     // This ensures all expected words/phrases appear in word bank even if vocabulary matching fails
     let correctWordBankItems: WordBankItem[] = [];
     
     if (expectedTranslation) {
-      // TextSequence: Extract semantic units directly from expectedTranslation
-      correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, availableVocab, sequenceIds).map(item => ({
-        ...item,
-        isCorrect: true
-      }));
+      // CRITICAL FIX: Check if expectedTranslation is a grammar-generated form
+      // Grammar forms have IDs like "badam" that aren't in vocabularyBank
+      // If sequenceId is not in vocabularyBank but expectedTranslation is provided, treat as single unit
+      if (sequenceIds && sequenceIds.length === 1) {
+        const sequenceId = sequenceIds[0];
+        const vocab = vocabularyBank.find(v => v.id === sequenceId);
+        
+        // If vocab not found in vocabularyBank, it's likely a grammar-generated form
+        // Also check if expectedTranslation is multi-word (phrases like "I'm bad")
+        const isMultiWord = expectedTranslation.trim().split(/\s+/).length > 1;
+        
+        if (!vocab && isMultiWord) {
+          // Grammar-generated form - treat expectedTranslation as single semantic unit
+          // Extract baseId from grammar form ID (e.g., "badam" → "bad")
+          const baseId = sequenceId.replace(/am$|i$|e$|im$|et$|and$/, '');
+          const baseVocab = vocabularyBank.find(v => v.id === baseId);
+          
+          correctWordBankItems = [{
+            vocabularyId: sequenceId,
+            wordText: this.normalizeVocabEnglish(expectedTranslation),
+            isPhrase: true,
+            semanticGroup: baseVocab?.semanticGroup || getSemanticGroup(baseId),
+            isCorrect: true
+          }];
+        } else if (vocab && this.normalizeVocabEnglish(vocab.en) === this.normalizeVocabEnglish(expectedTranslation)) {
+          // Matches existing vocab exactly - treat as single unit (could be phrase vocab)
+          correctWordBankItems = [{
+            vocabularyId: sequenceId,
+            wordText: this.normalizeVocabEnglish(expectedTranslation),
+            isPhrase: expectedTranslation.split(' ').length > 1,
+            semanticGroup: vocab.semanticGroup || getSemanticGroup(sequenceId),
+            isCorrect: true
+          }];
+        } else {
+          // Not a grammar form or doesn't match - use normal extraction
+          correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, availableVocab, sequenceIds).map(item => ({
+            ...item,
+            isCorrect: true
+          }));
+        }
+      } else {
+        // Multiple sequenceIds or no sequenceIds - use normal extraction
+        correctWordBankItems = this.extractSemanticUnitsFromExpected(expectedTranslation, availableVocab, sequenceIds).map(item => ({
+          ...item,
+          isCorrect: true
+        }));
+      }
     } else if (sequenceIds && sequenceIds.length > 0) {
       // AudioSequence: Get English translations from availableVocab
+      // PHASE 3 FIX: Prioritize grammar forms (composite IDs) over base vocabulary
+      // Sort sequenceIds so grammar forms (with |) come before base vocab
+      const sortedSequenceIds = [...sequenceIds].sort((a, b) => {
+        const aIsGrammar = a.includes('|');
+        const bIsGrammar = b.includes('|');
+        if (aIsGrammar && !bIsGrammar) return -1; // Grammar forms first
+        if (!aIsGrammar && bIsGrammar) return 1;
+        return 0;
+      });
+      
       // Normalize slash-separated translations (use first part)
-      const correctWords = sequenceIds
+      const correctWords = sortedSequenceIds
         .map(id => availableVocab.find(v => v.id === id))
         .filter((v): v is VocabularyItem => v !== undefined)
         .map(v => this.normalizeVocabEnglish(v.en));
       
       // Match words to vocabularyBank items (smart phrase detection)
-      correctWordBankItems = this.matchWordsToVocabulary(correctWords, availableVocab, expectedTranslation).map(item => ({
+      // PHASE 3 FIX: Use sorted sequenceIds to ensure grammar forms are matched first
+      correctWordBankItems = this.matchWordsToVocabulary(correctWords, availableVocab, expectedTranslation, sortedSequenceIds).map(item => ({
         ...item,
         isCorrect: true
       }));
@@ -253,9 +480,10 @@ export class WordBankService {
     // Step 4: Generate distractors
     // ✅ Use vocabularyBank (all lesson vocab) for distractors, NOT availableVocab
     // This allows distractors from vocab taught in previous steps
+    // PHASE 4: Use filteredVocabularyBank (learned-aware) instead of vocabularyBank
     let distractorItems = distractorStrategy === 'semantic'
-      ? this.generateSemanticDistractors(correctWordBankItems, vocabularyBank, targetSize - correctWordBankItems.length)
-      : this.generateRandomDistractors(correctWordBankItems, vocabularyBank, targetSize - correctWordBankItems.length);
+      ? this.generateSemanticDistractors(correctWordBankItems, filteredVocabularyBank, targetSize - correctWordBankItems.length)
+      : this.generateRandomDistractors(correctWordBankItems, filteredVocabularyBank, targetSize - correctWordBankItems.length);
 
     // STEP: Remove redundant single-word distractors from multi-word correct vocab items
     // Example: If "I'm good" is correct, remove "good", "I'm", "I", "am" as distractors
@@ -525,6 +753,18 @@ export class WordBankService {
       ...finalDistractorItems
     ];
 
+    if (FLAGS.LOG_WORDBANK) {
+      console.log(
+        "%c[WORDBANK OUTPUT]",
+        "color: #2196F3; font-weight: bold;",
+        {
+          correctWords: normalizedCorrect,
+          distractors: normalizedDistractors,
+          allOptions: shuffled,
+        }
+      );
+    }
+
     return {
       correctWords: normalizedCorrect,
       distractors: normalizedDistractors,
@@ -550,7 +790,8 @@ export class WordBankService {
   ): WordBankItem[] {
     const semanticUnits: WordBankItem[] = [];
     const usedVocabIds = new Set<string>();
-    const words = expectedTranslation.split(' ').filter(w => w.length > 0);
+    // PHASE 8 FIX: Strip punctuation from words after splitting (commas, periods, etc.)
+    const words = expectedTranslation.split(' ').filter(w => w.length > 0).map(w => w.replace(/[,\.!?;:]/g, ''));
     const matchedIndices = new Set<number>();
 
     // Step 1: Detect phrases from expectedTranslation FIRST (4-word, 3-word, 2-word)
@@ -700,12 +941,14 @@ export class WordBankService {
    * @param words - Words to match
    * @param vocabularyBank - Available vocabulary items
    * @param expectedTranslation - Original expected translation (for phrase detection)
+   * @param sequenceIds - Optional: Vocabulary IDs in order (for prioritizing grammar forms)
    * @returns Array of word bank items with metadata
    */
   private static matchWordsToVocabulary(
     words: string[],
     vocabularyBank: VocabularyItem[],
-    expectedTranslation?: string
+    expectedTranslation?: string,
+    sequenceIds?: string[]
   ): WordBankItem[] {
     const matchedItems: WordBankItem[] = [];
     const usedVocabIds = new Set<string>();
@@ -779,6 +1022,11 @@ export class WordBankService {
         return;
       }
       
+      const normalizedWord = word.toLowerCase().trim();
+      if (normalizedWord === 'name' && FLAGS.LOG_WORDBANK) {
+        console.log(`[matchWordsToVocabulary] START checking "Name" (index ${index}). SequenceIds: ${sequenceIds?.join(',')}`);
+      }
+      
       // Also skip if word text already exists in matched items (additional safety check)
       if (matchedItems.some(item => item.wordText.toLowerCase().replace(/[?.,!]/g, '') === word.toLowerCase())) {
         return;
@@ -787,7 +1035,6 @@ export class WordBankService {
       // CONTEXTUAL FILTERING: Check if this word's vocab is already covered by a matched phrase
       // Example: If "live" (from "zendegi mikonam") is matched as a phrase, skip "I do" from "mikonam"
       // First, normalize the word for comparison
-      const normalizedWord = word.toLowerCase().trim();
       
       // Find ALL vocab candidates that match this word (including ones already used in phrases)
       const allVocabCandidates = vocabularyBank.filter(v => {
@@ -807,31 +1054,58 @@ export class WordBankService {
       }
 
       // Try exact match first (normalize for comparison with contraction expansion)
-      // IMPORTANT: For single-word matching, we need to check if this word matches any vocab
-      // BUT we must handle multi-word vocabs correctly - a single word can't match a multi-word phrase
-      const exactMatch = vocabularyBank.find(v => {
+      // PHASE 3 FIX: Prioritize grammar forms when sequenceIds provided
+      let exactMatch: VocabularyItem | undefined;
+      
+      if (normalizedWord === 'name') {
+         if (FLAGS.LOG_WORDBANK) console.log(`[matchWordsToVocabulary] Checking "Name". SequenceIds: ${sequenceIds?.join(',')}`);
+      }
+
+      if (sequenceIds && sequenceIds.length > 0) {
+        // First, try to match grammar forms (composite IDs with |)
+        const grammarFormIds = sequenceIds.filter(id => id.includes('|'));
+        exactMatch = vocabularyBank.find(v => {
         if (usedVocabIds.has(v.id)) return false;
+          if (!grammarFormIds.includes(v.id)) return false;
+          const vocabVariants = this.normalizeForValidation(v.en);
+          const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
+          if (isSingleWordVocab) {
+            return vocabVariants.some(variant => variant === normalizedWord);
+          }
+          return false;
+        });
         
-        // Get normalized vocab variants
+        // If no grammar form match, try base vocabulary
+        if (!exactMatch) {
+          if (normalizedWord === 'name' && FLAGS.LOG_WORDBANK) console.log('[matchWordsToVocabulary] No grammar match for "Name", trying base.');
+          exactMatch = vocabularyBank.find(v => {
+            if (usedVocabIds.has(v.id)) return false;
+            if (v.id.includes('|')) return false; // Skip grammar forms
         const vocabVariants = this.normalizeForValidation(v.en);
         
-        // For single-word matching, check if:
-        // 1. The vocab is a single word AND matches this word exactly
-        // 2. OR the vocab is a multi-word phrase AND this word is part of it
-        // BUT we should only match if it's a single-word vocab (phrases should be caught by detectPhrases)
-        
-        // Check if vocab is single-word (no space in normalized variants)
+            if (normalizedWord === 'name' && v.id === 'esm' && FLAGS.LOG_WORDBANK) {
+                 console.log(`[matchWordsToVocabulary] Checking esm: variants=${vocabVariants.join(',')}, word=${normalizedWord}`);
+            }
+
         const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
-        
         if (isSingleWordVocab) {
-          // Single-word vocab: check exact match
           return vocabVariants.some(variant => variant === normalizedWord);
-        } else {
-          // Multi-word vocab: this single word shouldn't match it
-          // Phrases should be caught by detectPhrases() which runs first
+            }
           return false;
+          });
         }
+      } else {
+        // No sequenceIds - use original logic
+        exactMatch = vocabularyBank.find(v => {
+          if (usedVocabIds.has(v.id)) return false;
+          const vocabVariants = this.normalizeForValidation(v.en);
+          const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
+          if (isSingleWordVocab) {
+            return vocabVariants.some(variant => variant === normalizedWord);
+          }
+          return false;
       });
+      }
 
       if (exactMatch) {
         matchedItems.push({
@@ -897,7 +1171,8 @@ export class WordBankService {
   ): { matchedItems: WordBankItem[]; matchedVocabIds: string[]; matchedIndices: Set<number> } {
     const matchedItems: WordBankItem[] = [];
     const matchedVocabIds: string[] = [];
-    const words = expectedTranslation.split(' ').filter(w => w.length > 0);
+    // PHASE 8 FIX: Strip punctuation from words after splitting (commas, periods, etc.)
+    const words = expectedTranslation.split(' ').filter(w => w.length > 0).map(w => w.replace(/[,\.!?;:]/g, ''));
     const matchedIndices = new Set<number>();
 
     // CRITICAL: Try 4-word phrases FIRST (for "Nice to Meet You")
@@ -1257,6 +1532,15 @@ export class WordBankService {
   }): Array<{ vocabularyId: string, wordText: string, isCorrect: boolean }> {
     const { userAnswer, expectedTranslation, vocabularyBank, sequenceIds } = params;
 
+    // DEBUG LOG
+    if (FLAGS.LOG_WORDBANK) {
+      console.log('[validateUserAnswer] Start', {
+        userAnswer,
+        sequenceIds,
+        grammarFormsInSequence: sequenceIds?.filter(id => id.includes('|'))
+      });
+    }
+
     // Step 1: Generate word bank to get expected semantic units
     const wordBankResult = this.generateWordBank({
       expectedTranslation,
@@ -1265,13 +1549,33 @@ export class WordBankService {
     });
 
     // Step 2: Extract expected units (correct answers only)
+    // PHASE 4 FIX: Map base IDs to grammar form IDs when sequenceIds contains grammar forms
+    const grammarFormMap = new Map<string, string>(); // baseId -> compositeId
+    if (sequenceIds) {
+      sequenceIds.forEach(id => {
+        if (id.includes('|')) {
+          const [baseId] = id.split('|');
+          grammarFormMap.set(baseId, id);
+        }
+      });
+    }
+    
     const expectedUnits = wordBankResult.wordBankItems
       .filter(item => item.isCorrect)
-      .map(item => ({
-        vocabularyId: item.vocabularyId || '',
+      .map(item => {
+        // PHASE 4 FIX: Replace base ID with grammar form ID if it exists in sequenceIds
+        let vocabularyId = item.vocabularyId || '';
+        
+        if (vocabularyId && grammarFormMap.has(vocabularyId)) {
+          vocabularyId = grammarFormMap.get(vocabularyId)!;
+        }
+        
+        return {
+          vocabularyId,
         wordText: item.wordText,
         normalized: this.normalizeForValidation(item.wordText)
-      }));
+        };
+      });
 
     // Step 3: Normalize user answer (flatten arrays since each word returns string[])
     const userUnits = userAnswer.flatMap(word => this.normalizeForValidation(word));

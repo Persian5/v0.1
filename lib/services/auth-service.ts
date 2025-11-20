@@ -25,14 +25,20 @@ export class AuthService {
   // Sign up a new user
   static async signUp({ email, password, firstName, lastName }: SignUpData): Promise<{ user: User | null; error: AuthError | null }> {
     try {
+      const normalizedEmail = email.trim().toLowerCase()
+      console.log('[AUTH] signup_start', { email: normalizedEmail })
+      
       // Generate display name in correct format: "FirstName LastInitial."
       // If generation fails (no first name), use null (will be handled by getOrCreateUserProfile)
       const displayName = generateDefaultDisplayName(firstName, lastName) || null
 
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
         options: {
+          emailRedirectTo: typeof window !== 'undefined' 
+            ? `${window.location.origin}/?verify=true`
+            : undefined,
           data: {
             first_name: firstName,
             last_name: lastName,
@@ -42,12 +48,17 @@ export class AuthService {
       })
 
       if (error) {
+        console.log('[AUTH] signup_failed', { email: normalizedEmail, error: error.message })
         return { user: null, error: { message: error.message, code: error.message } }
       }
 
       // Note: User profile will be created when they first sign in after email verification
+      if (data.user) {
+        console.log('[AUTH] signup_success', { userId: data.user.id })
+      }
       return { user: data.user, error: null }
-    } catch (error) {
+    } catch (error: any) {
+      console.log('[AUTH] signup_failed', { email: email.trim().toLowerCase(), error: error?.message || 'An unexpected error occurred during sign up' })
       return { 
         user: null, 
         error: { message: 'An unexpected error occurred during sign up' } 
@@ -58,12 +69,16 @@ export class AuthService {
   // Sign in an existing user
   static async signIn({ email, password }: SignInData): Promise<{ user: User | null; error: AuthError | null }> {
     try {
+      const normalizedEmail = email.trim().toLowerCase()
+      console.log('[AUTH] signin_start', { email: normalizedEmail })
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password
       })
 
       if (error) {
+        console.log('[AUTH] signin_failed', { email: normalizedEmail, error: error.message })
         return { user: null, error: { message: error.message, code: error.message } }
       }
 
@@ -75,10 +90,12 @@ export class AuthService {
           console.error('Failed to create/update user profile:', profileError)
           // Don't fail sign-in for profile issues
         }
+        console.log('[AUTH] signin_success', { userId: data.user.id })
       }
 
       return { user: data.user, error: null }
-    } catch (error) {
+    } catch (error: any) {
+      console.log('[AUTH] signin_failed', { email: email.trim().toLowerCase(), error: error?.message || 'An unexpected error occurred during sign in' })
       return { 
         user: null, 
         error: { message: 'An unexpected error occurred during sign in' } 
@@ -117,20 +134,67 @@ export class AuthService {
     return DatabaseService.isEmailVerified(user)
   }
 
+  // Cooldown tracking
+  private static resendCooldowns = new Map<string, number>()
+
   // Resend email verification
   static async resendEmailVerification(email: string): Promise<{ error: AuthError | null }> {
+    const normalizedEmail = email.trim().toLowerCase()
+    console.log('[AUTH] resend_verification_start', { email: normalizedEmail })
+
+    // CRITICAL: Check cooldown
+    const lastSent = this.resendCooldowns.get(normalizedEmail)
+    const now = Date.now()
+    const COOLDOWN_MS = 5 * 60 * 1000 // 5 minutes
+    
+    if (lastSent && (now - lastSent) < COOLDOWN_MS) {
+      const remainingMinutes = Math.ceil((COOLDOWN_MS - (now - lastSent)) / 1000 / 60)
+      console.log('[AUTH] resend_verification_rate_limited', { email: normalizedEmail })
+      return { 
+        error: { 
+          message: `Please wait ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} before requesting another email`,
+          code: 'rate_limited'
+        } 
+      }
+    }
+
     try {
+      const redirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}/?verify=true`
+        : undefined
+
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email
+        email: normalizedEmail,
+        options: {
+          emailRedirectTo: redirectTo
+        }
       })
 
       if (error) {
+        // Check if Supabase rate limited us
+        if (error.message.toLowerCase().includes('rate limit') ||
+            error.message.toLowerCase().includes('too many requests')) {
+          // Set cooldown even on Supabase rate limit
+          this.resendCooldowns.set(normalizedEmail, now)
+          console.log('[AUTH] resend_verification_rate_limited', { email: normalizedEmail })
+          return { 
+            error: { 
+              message: 'Too many requests. Please wait 5 minutes before trying again.',
+              code: 'rate_limited'
+            } 
+          }
+        }
+        console.log('[AUTH] resend_verification_failed', { email: normalizedEmail, error: error.message })
         return { error: { message: error.message, code: error.message } }
       }
 
+      // Success - set cooldown
+      this.resendCooldowns.set(normalizedEmail, now)
+      console.log('[AUTH] resend_verification_success', { email: normalizedEmail })
       return { error: null }
-    } catch (error) {
+    } catch (error: any) {
+      console.log('[AUTH] resend_verification_failed', { email: normalizedEmail, error: error?.message || 'Failed to resend verification email' })
       return { error: { message: 'Failed to resend verification email' } }
     }
   }
@@ -138,14 +202,26 @@ export class AuthService {
   // Send password reset email
   static async sendPasswordReset(email: string): Promise<{ error: AuthError | null }> {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      const normalizedEmail = email.trim().toLowerCase()
+      console.log('[AUTH] password_reset_request_start', { email: normalizedEmail })
+      
+      const redirectTo = typeof window !== 'undefined' 
+        ? `${window.location.origin}/auth/reset-password`
+        : undefined
+
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo
+      })
 
       if (error) {
+        console.log('[AUTH] password_reset_request_failed', { email: normalizedEmail, error: error.message })
         return { error: { message: error.message, code: error.message } }
       }
 
+      console.log('[AUTH] password_reset_request_success', { email: normalizedEmail })
       return { error: null }
-    } catch (error) {
+    } catch (error: any) {
+      console.log('[AUTH] password_reset_request_failed', { email: email.trim().toLowerCase(), error: error?.message || 'Failed to send password reset email' })
       return { error: { message: 'Failed to send password reset email' } }
     }
   }
@@ -187,24 +263,6 @@ export class AuthService {
     } catch (err: any) {
       return { error: { message: 'Failed to change password' } }
     }
-  }
-
-  // Listen to auth state changes
-  static onAuthStateChange(callback: (user: User | null) => void) {
-    return supabase.auth.onAuthStateChange(async (event, session) => {
-      const user = session?.user || null
-      
-      // Handle user profile creation on sign in
-      if (event === 'SIGNED_IN' && user) {
-        try {
-          await DatabaseService.getOrCreateUserProfile(user)
-        } catch (profileError) {
-          console.error('Failed to create/update user profile:', profileError)
-        }
-      }
-      
-      callback(user)
-    })
   }
 
   // Check if browser supports localStorage (for fallback logic)

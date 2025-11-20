@@ -16,6 +16,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   resendVerification: (email: string) => Promise<{ error: string | null }>
+  sendPasswordReset: (email: string) => Promise<{ error: string | null }> // Added sendPasswordReset
   changePassword: (email: string, currentPassword: string, newPassword: string) => Promise<{ error: string | null }>
 }
 
@@ -26,19 +27,31 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function SmartAuthProvider({ children }: AuthProviderProps) {
+  // FLICKER FIX: Initialize state synchronously from cache if available
+  const initialState = SmartAuthService.getSessionState()
+  
   // Single loading state - replaces multiple loading states
-  const [isReady, setIsReady] = useState(false)
+  const [isReady, setIsReady] = useState(initialState.isReady)
   const [sessionState, setSessionState] = useState<{
     user: User | null
     isEmailVerified: boolean
   }>({
-    user: null,
-    isEmailVerified: false
+    user: initialState.user,
+    isEmailVerified: initialState.isEmailVerified
   })
 
   // Reactive state for XP and Progress - updated via events
-  const [xpState, setXpState] = useState<number>(0)
-  const [progressState, setProgressState] = useState<UserLessonProgress[]>([])
+  // FLICKER FIX: Initialize from cache synchronously if user is verified
+  const [xpState, setXpState] = useState<number>(
+    initialState.user && initialState.isEmailVerified 
+      ? SmartAuthService.getUserXp() 
+      : 0
+  )
+  const [progressState, setProgressState] = useState<UserLessonProgress[]>(
+    initialState.user && initialState.isEmailVerified 
+      ? SmartAuthService.getUserProgress() 
+      : []
+  )
 
   // Initialize session on mount
   useEffect(() => {
@@ -167,6 +180,18 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  const sendPasswordReset = async (email: string): Promise<{ error: string | null }> => {
+    try {
+      const { error } = await AuthService.sendPasswordReset(email)
+      if (error) {
+        return { error: error.message }
+      }
+      return { error: null }
+    } catch (error) {
+      return { error: 'Failed to send password reset email' }
+    }
+  }
+
   const changePassword = async (email: string, currentPassword: string, newPassword: string): Promise<{ error: string | null }> => {
     // Use existing AuthService for password operations
     const { error } = await AuthService.changePassword({ email, currentPassword, newPassword })
@@ -181,6 +206,7 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
     signUp,
     signOut,
     resendVerification,
+    sendPasswordReset,
     changePassword
   }
 

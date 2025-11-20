@@ -6,11 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Mail, Eye, EyeOff, X } from 'lucide-react'
+import { Loader2, Mail, Eye, EyeOff, X, XCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from './AuthProvider'
 import { supabase } from '@/lib/supabase/client'
 import WidgetErrorBoundary from '@/components/errors/WidgetErrorBoundary'
 import { useModalScrollLock } from '@/hooks/use-modal-scroll-lock'
+import { verificationLog } from '@/lib/utils/verification-logger'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -18,21 +19,28 @@ interface AuthModalProps {
   onSuccess?: () => void
   title?: string
   description?: string
+  // PHASE 2: Verification params for email link flow
+  initialMode?: AuthMode
+  verificationToken?: string
+  verificationType?: string
 }
 
-type AuthMode = 'signin' | 'signup' | 'verify' | 'success'
+type AuthMode = 'signin' | 'signup' | 'verify' | 'success' | 'forgot_password'
 
 export function AuthModal({ 
   isOpen, 
   onClose, 
   onSuccess,
   title = "Sign up to continue learning Persian",
-  description = "Join thousands learning to reconnect with their roots"
+  description = "Join thousands learning to reconnect with their roots",
+  initialMode,
+  verificationToken,
+  verificationType
 }: AuthModalProps) {
   const router = useRouter()
-  const { signIn, signUp, resendVerification, user, isEmailVerified } = useAuth()
+  const { signIn, signUp, resendVerification, sendPasswordReset, user, isEmailVerified } = useAuth() // Added sendPasswordReset
   
-  const [mode, setMode] = useState<AuthMode>('signup')
+  const [mode, setMode] = useState<AuthMode>(initialMode || 'signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -41,10 +49,23 @@ export function AuthModal({
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
   const [passwordValid, setPasswordValid] = useState(false)
   const [passwordsMatch, setPasswordsMatch] = useState(true)
+  
+  // PHASE 2: Store verification params for Phase 3 usage
+  const [storedVerificationToken, setStoredVerificationToken] = useState<string | undefined>(verificationToken)
+  const [storedVerificationType, setStoredVerificationType] = useState<string | undefined>(verificationType)
+  
+  // PHASE 3: Track verification state
+  const [isVerifying, setIsVerifying] = useState(false)
+  
+  // PHASE 5: Manual refresh and resend cooldown
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState<number>(0)
 
   // Auto-switch to verify mode if user exists but email not verified
   useEffect(() => {
@@ -54,47 +75,191 @@ export function AuthModal({
     }
   }, [user, isEmailVerified])
 
-  // Auto-poll for email verification when in verify mode (every 3 seconds)
+  // PHASE 3: Auto-verify with token when available
   useEffect(() => {
-    if (mode === 'verify' && user && !isEmailVerified && isOpen) {
-      const pollInterval = setInterval(async () => {
-        try {
-          // CRITICAL: Force refresh session from server (not cached)
-          // This ensures we get the latest verification status
+    // Only run if in verify mode with token and type
+    if (mode !== 'verify') return
+    if (!storedVerificationToken || !storedVerificationType) return
+    if (isVerifying) return // Prevent duplicate calls
+    
+    verificationLog('Auto-verifying email with token')
+    verifyEmail()
+  }, [mode, storedVerificationToken, storedVerificationType])
+
+  // PHASE 3: Token-based email verification
+  const verifyEmail = async () => {
+    if (!storedVerificationToken || !storedVerificationType) {
+      verificationLog('Cannot verify: missing token or type')
+      return
+    }
+    
+    setIsVerifying(true)
+    setIsLoading(true)
+    setError(null)
+    
+    verificationLog('Calling supabase.auth.verifyOtp', {
+      type: storedVerificationType,
+      token: storedVerificationToken.substring(0, 10) + '...'
+    })
+    
+    try {
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: storedVerificationToken,
+        type: storedVerificationType as any
+      })
+      
+      if (verifyError) {
+        verificationLog('Verification failed:', verifyError)
+        
+        // Handle specific error cases
+        const errorMsg = verifyError.message?.toLowerCase() || ''
+        
+        if (errorMsg.includes('expired') || errorMsg.includes('token has expired')) {
+          setError('This link has expired. Please request a new one.')
+        } else if (errorMsg.includes('invalid') || errorMsg.includes('token not found')) {
+          setError('Invalid verification link. Try resending the verification email.')
+        } else if (errorMsg.includes('already') || errorMsg.includes('email already confirmed')) {
+          // Already verified - treat as success
+          verificationLog('Email already verified')
+          await handleVerificationSuccess()
+          return
+        } else {
+          setError('Verification failed. Please try again or request a new link.')
+        }
+        
+        setIsVerifying(false)
+        setIsLoading(false)
+        // Clear stored token so user can retry with resend
+        setStoredVerificationToken(undefined)
+        setStoredVerificationType(undefined)
+        return
+      }
+      
+      // Success!
+      verificationLog('Verification successful:', data)
+      await handleVerificationSuccess()
+      
+    } catch (error: any) {
+      verificationLog('Verification error:', error)
+      setError('An unexpected error occurred. Please try again.')
+      setIsVerifying(false)
+      setIsLoading(false)
+      setStoredVerificationToken(undefined)
+      setStoredVerificationType(undefined)
+    }
+  }
+  
+  // PHASE 3: Handle successful verification
+  const handleVerificationSuccess = async () => {
+    verificationLog('Verification success - refreshing session')
+    
+    try {
+      // Refresh auth session to get latest user state
+      const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
+      await SmartAuthService.initializeSession()
+      
+      // Wait briefly for context to propagate
+      await new Promise(resolve => setTimeout(resolve, 400))
+      
+      // Clear verification state
+      setStoredVerificationToken(undefined)
+      setStoredVerificationType(undefined)
+      setIsVerifying(false)
+      setIsLoading(false)
+      
+      // Switch to success mode briefly
+      setMode('success')
+      
+      // Close modal and trigger success callback
+      setTimeout(() => {
+        onSuccess?.()
+        onClose()
+      }, 1500)
+      
+    } catch (error) {
+      verificationLog('Failed to refresh session after verification:', error)
+      // Still close modal even if refresh fails
+      setIsVerifying(false)
+      setIsLoading(false)
+      onSuccess?.()
+      onClose()
+    }
+  }
+
+  // PHASE 5: Manual refresh verification status (replaces polling)
+  const handleRefreshVerificationStatus = async () => {
+    if (isRefreshingStatus) return
+    
+    setIsRefreshingStatus(true)
+    setError(null)
+    
+    try {
+      verificationLog('Manual refresh verification status')
+      
+      // Force refresh session from server
           const { data: { session }, error } = await supabase.auth.refreshSession()
           
           if (error) {
-            console.error('Error refreshing session during polling:', error)
+        verificationLog('Error refreshing session:', error)
+        setError('Failed to check verification status. Please try again.')
+        setIsRefreshingStatus(false)
             return
           }
           
           if (session?.user?.email_confirmed_at) {
-            // Email verified! Switch to success mode
-            console.log('Email verified - refreshing auth context')
-            setMode('success')
-            clearInterval(pollInterval)
+        verificationLog('Email verified via manual refresh')
+        
+        // Ensure this tab gets the fresh auth token
+        await supabase.auth.refreshSession()
             
-            // Refresh the page to ensure auth context picks up the verified session
-            // This ensures all components get the updated auth state
-            setTimeout(() => {
-              window.location.reload()
-            }, 1500)
+        // Force full session reloading + user context update
+        const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
+        await SmartAuthService.initializeSession()
+        
+        await handleVerificationSuccess()
+        return
+      } else {
+        verificationLog('Email not yet verified')
+        setError('Email not yet verified. Please check your inbox and click the verification link.')
           }
         } catch (error) {
-          console.error('Error polling for email verification:', error)
+      verificationLog('Error during manual refresh:', error)
+      setError('An error occurred. Please try again.')
+    } finally {
+      setIsRefreshingStatus(false)
         }
-      }, 3000) // Poll every 3 seconds
+  }
 
-      return () => clearInterval(pollInterval)
-    }
-  }, [mode, user, isEmailVerified, isOpen])
+  // PHASE 5: Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    
+    const id = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) {
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    
+    return () => clearInterval(id)
+  }, [resendCooldown])
 
   // Freeze background scroll when modal open
   useModalScrollLock(isOpen)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isProcessing) {
+      return
+    }
+    
+    setIsProcessing(true)
     setError(null)
+    
+    const normalizedEmail = email.trim().toLowerCase()
     
     // ✅ SECURITY: Client-side validation (UX only - server still validates)
     if (mode === 'signup') {
@@ -102,47 +267,56 @@ export function AuthModal({
       if (!firstName.trim()) {
         setError('First name is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!lastName.trim()) {
         setError('Last name is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
-      if (!email.trim()) {
+      if (!normalizedEmail) {
         setError('Email is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!password) {
         setError('Password is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!confirmPassword) {
         setError('Please confirm your password')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (password !== confirmPassword) {
         setError('Passwords do not match')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!passwordValid) {
         setError('Password must be at least 6 characters and include a number')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
     } else if (mode === 'signin') {
-      if (!email.trim()) {
+      if (!normalizedEmail) {
         setError('Email is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!password) {
         setError('Password is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
     }
@@ -152,10 +326,35 @@ export function AuthModal({
     try {
       if (mode === 'signup') {
         // ✅ SECURITY: Only send password to server, NEVER send confirmPassword
-        const { error } = await signUp(email, password, firstName, lastName)
+        const { error } = await signUp(normalizedEmail, password, firstName, lastName)
         if (error) {
+          // CRITICAL: Detect duplicate account errors
+          const errorLower = error.toLowerCase()
+          if (errorLower.includes('user already registered') ||
+              errorLower.includes('email address already in use') ||
+              errorLower.includes('duplicate key value') ||
+              errorLower.includes('already exists')) {
+            setError('This email is already registered. Please sign in instead.')
+            // Auto-switch to signin mode after 3 seconds
+            setTimeout(() => {
+              setEmail(normalizedEmail) // Keep email filled
+              setPassword('') // Clear password
+              setConfirmPassword('')
+              setFirstName('')
+              setLastName('')
+              switchMode('signin')
+            }, 3000)
+          } else if (errorLower.includes('too many requests') ||
+              errorLower.includes('rate limit') ||
+              errorLower.includes('429') ||
+              errorLower.includes('exceeded')) {
+            setError('Too many attempts. Please wait a minute before trying again.')
+          } else {
           setError(error)
+          }
         } else {
+          // 2.6: Signup success state
+          setError(null)
           // Clear confirmPassword from memory after successful signup
           setConfirmPassword('')
           // Keep user in modal and switch to verify mode instead of redirecting
@@ -163,9 +362,26 @@ export function AuthModal({
           // Don't close modal - keep them in the verification flow
         }
       } else if (mode === 'signin') {
-        const { error } = await signIn(email, password)
+        const { error } = await signIn(normalizedEmail, password)
         if (error) {
+          // 2.4: Sign-in error specificity
+          const errorLower = error.toLowerCase()
+          if (errorLower.includes('invalid login') || errorLower.includes('invalid credentials')) {
+            setError('Incorrect email or password. Please check both and try again.')
+          } else if (errorLower.includes('email not confirmed') || errorLower.includes('not verified')) {
+            setError('Please verify your email first. Check your inbox for the verification link.')
+            setTimeout(() => {
+              setMode('verify')
+            }, 2000)
+          } else if (errorLower.includes('rate limit') || errorLower.includes('429')) {
+            setError('Too many sign-in attempts. Please wait a minute.')
+          } else if (errorLower.includes('too many requests') ||
+              errorLower.includes('rate limit') ||
+              errorLower.includes('429')) {
+            setError('Too many sign-in attempts. Please wait a minute before trying again.')
+          } else {
           setError('Incorrect email or password. Please try again.')
+          }
         } else {
           // Fetch fresh user to inspect email_confirmed_at once after sign-in
           const { data: fresh } = await supabase.auth.getUser();
@@ -184,30 +400,104 @@ export function AuthModal({
           }
         }
       }
-    } catch (error) {
-      setError('An unexpected error occurred')
+    } catch (error: any) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setError('Network error. Please check your internet connection and try again.')
+      } else if (error.message?.includes('rate limit') || error.message?.includes('429') || error.message?.includes('too many requests')) {
+        setError('Too many attempts. Please wait a minute before trying again.')
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
+      setIsProcessing(false)
     }
   }
 
   const handleResendVerification = async () => {
+    if (isProcessing || isResendingVerification) {
+      return
+    }
+
+    setIsProcessing(true)
     setIsResendingVerification(true)
     setError(null)
+    setResendSuccess(false)
+    setResendCooldown(0) // Reset cooldown
 
     try {
-      const { error } = await resendVerification(email)
+      const normalizedEmail = email.trim().toLowerCase()
+      const { error } = await resendVerification(normalizedEmail)
       if (error) {
+        // PHASE 5: Parse cooldown from error message
+        // Example: "Please wait X minutes" or "after 39 seconds"
+        const errorLower = error.toLowerCase()
+        
+        if (errorLower.includes('wait') || errorLower.includes('after')) {
+          // Try to extract seconds
+          const secondsMatch = errorLower.match(/(\d+)\s*second/i)
+          const minutesMatch = errorLower.match(/(\d+)\s*minute/i)
+          
+          if (secondsMatch) {
+            setResendCooldown(parseInt(secondsMatch[1], 10))
+          } else if (minutesMatch) {
+            setResendCooldown(parseInt(minutesMatch[1], 10) * 60)
+          }
+        }
+        
         setError(error)
+        setResendSuccess(false)
       } else {
+        setResendSuccess(true)
         setError(null)
         // Show success message briefly
-        setTimeout(() => setError(null), 3000)
+        setTimeout(() => setResendSuccess(false), 5000)
       }
     } catch (error) {
       setError('Failed to resend verification email')
+      setResendSuccess(false)
     } finally {
       setIsResendingVerification(false)
+      setIsProcessing(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (isProcessing) return
+    
+    setIsProcessing(true)
+    setError(null)
+    
+    const normalizedEmail = email.trim().toLowerCase()
+    
+    if (!normalizedEmail) {
+      setError('Please enter your email address')
+      setIsProcessing(false)
+      return
+    }
+    
+    try {
+      const { error } = await sendPasswordReset(normalizedEmail)
+      if (error) {
+        const errorLower = error.toLowerCase()
+        if (errorLower.includes('rate limit') || errorLower.includes('too many requests')) {
+           setError('Too many attempts. Please wait a minute.')
+        } else {
+           setError(error)
+        }
+      } else {
+        setError(null)
+        // Show success message
+        setResendSuccess(true) // Reuse this state for success banner
+        setTimeout(() => {
+           setResendSuccess(false)
+           switchMode('signin')
+        }, 5000)
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -273,44 +563,87 @@ export function AuthModal({
             <DialogTitle className="text-center text-xl font-bold">
               {mode === 'signup' && title}
               {mode === 'signin' && 'Welcome back!'}
-              {mode === 'verify' && 'Check your email'}
+              {mode === 'verify' && (isVerifying ? 'Verifying your email...' : 'Check your email')}
               {mode === 'success' && 'Welcome to Persian Learning!'}
+              {mode === 'forgot_password' && 'Reset Password'}
             </DialogTitle>
             <DialogDescription className="text-center">
               {mode === 'signup' && description}
               {mode === 'signin' && 'Sign in to continue your Persian learning journey'}
-              {mode === 'verify' && 'We sent you a verification link. Please check your email and click the link to continue.'}
+              {mode === 'verify' && (isVerifying ? 'Please wait while we confirm your account.' : 'We sent you a verification link. Please check your email and click the link to continue.')}
               {mode === 'success' && 'Your account is ready. Starting your lesson...'}
+              {mode === 'forgot_password' && "Enter your email and we'll send you a link to reset your password."}
             </DialogDescription>
           </DialogHeader>
 
         {mode === 'verify' && (
           <div className="space-y-4">
+            {/* PHASE 3: Show verification progress when token is present */}
+            {isVerifying ? (
+              <>
+                <div className="flex justify-center">
+                  <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="font-medium">Verifying your email...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Please wait while we confirm your account.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
             <div className="flex justify-center">
               <Mail className="h-12 w-12 text-primary" />
             </div>
+                
+                {/* PHASE 5: Always show email if available, hide if not */}
+                {(user?.email || email) && (
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
                 Verification email sent to:
               </p>
-              <p className="font-medium">{email}</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                We'll automatically detect when you verify your email...
+                    <p className="font-medium break-words px-4 text-sm sm:text-base">
+                      {((user?.email || email).length > 40) ? (
+                        <span title={user?.email || email} className="truncate block">
+                          {(user?.email || email).substring(0, 40)}...
+                        </span>
+                      ) : (
+                        user?.email || email
+                      )}
+                    </p>
+                  </div>
+                )}
+                
+                {/* PHASE 5: Expired token UI */}
+                {error && error.toLowerCase().includes('expired') && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <XCircle className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-medium text-red-900 text-sm">
+                          This verification link has expired
+                        </p>
+                        <p className="text-red-700 text-xs mt-1">
+                          You can request a new verification email below.
               </p>
+                      </div>
             </div>
             <div className="space-y-2">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                        className="w-full border-red-300 hover:bg-red-50"
                 onClick={handleResendVerification}
-                disabled={isResendingVerification}
+                        disabled={isResendingVerification || resendCooldown > 0}
               >
                 {isResendingVerification ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Sending...
                   </>
+                        ) : resendCooldown > 0 ? (
+                          `Resend available in ${Math.floor(resendCooldown / 60)}:${String(resendCooldown % 60).padStart(2, '0')}`
                 ) : (
                   'Resend verification email'
                 )}
@@ -319,6 +652,71 @@ export function AuthModal({
                 type="button"
                 variant="ghost"
                 className="w-full text-sm"
+                        onClick={() => switchMode('signin')}
+                      >
+                        Back to sign in
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* PHASE 5: Other errors (non-expired) */}
+                {error && !error.toLowerCase().includes('expired') && (
+                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3 text-center">
+                    {error}
+                  </div>
+                )}
+                
+                {resendSuccess && (
+                  <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md p-2 text-center">
+                    ✅ Verification email resent! Check your inbox.
+                  </div>
+                )}
+
+                {/* PHASE 5: Show buttons when not verifying and no expired error */}
+                {!isVerifying && !storedVerificationToken && !error?.toLowerCase().includes('expired') && (
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleResendVerification}
+                      disabled={isResendingVerification || resendCooldown > 0}
+                    >
+                      {isResendingVerification ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : resendCooldown > 0 ? (
+                        `Resend available in ${Math.floor(resendCooldown / 60)}:${String(resendCooldown % 60).padStart(2, '0')}`
+                      ) : (
+                        'Resend verification email'
+                      )}
+                    </Button>
+                    
+                    {/* PHASE 5: Manual refresh button (replaces polling) */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full text-sm"
+                      onClick={handleRefreshVerificationStatus}
+                      disabled={isRefreshingStatus}
+                    >
+                      {isRefreshingStatus ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        'Refresh verification status'
+                      )}
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full text-sm text-muted-foreground"
                 onClick={() => {
                   resetForm()
                   switchMode('signup')
@@ -327,15 +725,81 @@ export function AuthModal({
                 Try a different email
               </Button>
             </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
         {mode === 'success' && (
           <div className="text-center space-y-4">
-            <div className="text-4xl">🎉</div>
+            {/* PHASE 5: Enhanced success screen with animation */}
+            <div className="flex justify-center">
+              <div className="animate-scale-in">
+                <CheckCircle2 className="h-16 w-16 text-green-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-green-700">Email Verified!</h3>
             <p className="text-sm text-muted-foreground">
-              Redirecting to your lesson...
-            </p>
+                Welcome to Finglish 🎉
+              </p>
+            </div>
+          </div>
+        )}
+
+        {mode === 'forgot_password' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isProcessing || resendSuccess}
+              />
+            </div>
+            
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                {error}
+              </div>
+            )}
+            
+            {resendSuccess && (
+              <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md p-3">
+                ✅ Password reset link sent! Check your email.
+              </div>
+            )}
+
+            <Button 
+              type="button" 
+              className="w-full" 
+              onClick={handleForgotPassword}
+              disabled={isProcessing || !email || resendSuccess}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                'Send Reset Link'
+              )}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => switchMode('signin')}
+              disabled={isProcessing}
+            >
+              Back to Sign In
+            </Button>
           </div>
         )}
 
@@ -384,7 +848,19 @@ export function AuthModal({
             </div>
             
             <div className="space-y-2">
+              <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={() => switchMode('forgot_password')}
+                    className="text-xs text-primary hover:underline"
+                    tabIndex={-1}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Input
                   id="password"
@@ -481,7 +957,7 @@ export function AuthModal({
               type="submit" 
               className="w-full" 
               disabled={
-                isLoading || 
+                isLoading || isProcessing ||
                 (mode === 'signup' && (!passwordValid || !passwordsMatch || !confirmPassword))
               }
             >
