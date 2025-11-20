@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthModal } from './AuthModal'
 import { useAuth } from './AuthProvider'
+import { verificationLog } from '@/lib/utils/verification-logger'
 
 /**
  * PHASE 2: Email Verification Detector
@@ -45,14 +46,14 @@ export function EmailVerificationDetector() {
     
     // PHASE 2: Don't open modal if user is already verified
     if (user && isEmailVerified) {
-      console.log('[EmailVerificationDetector] User already verified, skipping modal')
+      verificationLog('User already verified, skipping modal')
       // Clean up URL
       const cleanUrl = window.location.pathname
       router.replace(cleanUrl)
       return
     }
     
-    console.log('[EmailVerificationDetector] Verification params detected:', {
+    verificationLog('Verification params detected:', {
       verify,
       token: token.substring(0, 10) + '...',
       type

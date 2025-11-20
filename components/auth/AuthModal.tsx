@@ -11,6 +11,7 @@ import { useAuth } from './AuthProvider'
 import { supabase } from '@/lib/supabase/client'
 import WidgetErrorBoundary from '@/components/errors/WidgetErrorBoundary'
 import { useModalScrollLock } from '@/hooks/use-modal-scroll-lock'
+import { verificationLog } from '@/lib/utils/verification-logger'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -77,14 +78,14 @@ export function AuthModal({
     if (!storedVerificationToken || !storedVerificationType) return
     if (isVerifying) return // Prevent duplicate calls
     
-    console.log('[AUTH] Auto-verifying email with token')
+    verificationLog('Auto-verifying email with token')
     verifyEmail()
   }, [mode, storedVerificationToken, storedVerificationType])
 
   // PHASE 3: Token-based email verification
   const verifyEmail = async () => {
     if (!storedVerificationToken || !storedVerificationType) {
-      console.error('[AUTH] Cannot verify: missing token or type')
+      verificationLog('Cannot verify: missing token or type')
       return
     }
     
@@ -92,7 +93,7 @@ export function AuthModal({
     setIsLoading(true)
     setError(null)
     
-    console.log('[AUTH] Calling supabase.auth.verifyOtp', {
+    verificationLog('Calling supabase.auth.verifyOtp', {
       type: storedVerificationType,
       token: storedVerificationToken.substring(0, 10) + '...'
     })
@@ -104,7 +105,7 @@ export function AuthModal({
       })
       
       if (verifyError) {
-        console.error('[AUTH] Verification failed:', verifyError)
+        verificationLog('Verification failed:', verifyError)
         
         // Handle specific error cases
         const errorMsg = verifyError.message?.toLowerCase() || ''
@@ -115,7 +116,7 @@ export function AuthModal({
           setError('Invalid verification link. Try resending the verification email.')
         } else if (errorMsg.includes('already') || errorMsg.includes('email already confirmed')) {
           // Already verified - treat as success
-          console.log('[AUTH] Email already verified')
+          verificationLog('Email already verified')
           await handleVerificationSuccess()
           return
         } else {
@@ -131,11 +132,11 @@ export function AuthModal({
       }
       
       // Success!
-      console.log('[AUTH] Verification successful:', data)
+      verificationLog('Verification successful:', data)
       await handleVerificationSuccess()
       
     } catch (error: any) {
-      console.error('[AUTH] Verification error:', error)
+      verificationLog('Verification error:', error)
       setError('An unexpected error occurred. Please try again.')
       setIsVerifying(false)
       setIsLoading(false)
@@ -146,7 +147,7 @@ export function AuthModal({
   
   // PHASE 3: Handle successful verification
   const handleVerificationSuccess = async () => {
-    console.log('[AUTH] Verification success - refreshing session')
+    verificationLog('Verification success - refreshing session')
     
     try {
       // Refresh auth session to get latest user state
@@ -172,7 +173,7 @@ export function AuthModal({
       }, 1500)
       
     } catch (error) {
-      console.error('[AUTH] Failed to refresh session after verification:', error)
+      verificationLog('Failed to refresh session after verification:', error)
       // Still close modal even if refresh fails
       setIsVerifying(false)
       setIsLoading(false)
@@ -193,7 +194,7 @@ export function AuthModal({
     if (!user || isEmailVerified) return
     if (!isOpen) return
     
-    console.log('[AUTH] Starting polling for manual verification')
+    verificationLog('Starting polling for manual verification')
     
     const pollInterval = setInterval(async () => {
       try {
@@ -201,22 +202,22 @@ export function AuthModal({
         const { data: { session }, error } = await supabase.auth.refreshSession()
         
         if (error) {
-          console.error('[AUTH] Error refreshing session during polling:', error)
+          verificationLog('Error refreshing session during polling:', error)
           return
         }
         
         if (session?.user?.email_confirmed_at) {
-          console.log('[AUTH] Email verified via polling')
+          verificationLog('Email verified via polling')
           clearInterval(pollInterval)
           await handleVerificationSuccess()
         }
       } catch (error) {
-        console.error('[AUTH] Error polling for email verification:', error)
+        verificationLog('Error polling for email verification:', error)
       }
     }, 5000) // Poll every 5 seconds
 
     return () => {
-      console.log('[AUTH] Stopping polling')
+      verificationLog('Stopping polling')
       clearInterval(pollInterval)
     }
   }, [mode, storedVerificationToken, user, isEmailVerified, isOpen, onSuccess, onClose])
