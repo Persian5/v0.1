@@ -173,16 +173,16 @@ export class OnboardingService {
       // Instead, fetch profile directly without any auto-generation logic
       let currentProfile = SmartAuthService.getCachedProfile()
       
-      // If cache miss, fetch directly from database (don't use getOrCreateUserProfile)
+      // FLICKER FIX: If cache miss, get user from SmartAuthService (not direct Supabase call)
       if (!currentProfile) {
         try {
-          const { data: user } = await supabase.auth.getUser()
-          if (user.user) {
+          const sessionState = SmartAuthService.getSessionState()
+          if (sessionState.user) {
             // Fetch profile directly - don't use getOrCreateUserProfile which might overwrite
             const { data: profile, error } = await supabase
               .from('user_profiles')
               .select('*')
-              .eq('id', user.user.id)
+              .eq('id', sessionState.user.id)
               .single()
             
             if (!error && profile) {

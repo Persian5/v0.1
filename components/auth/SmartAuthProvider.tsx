@@ -27,19 +27,31 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function SmartAuthProvider({ children }: AuthProviderProps) {
+  // FLICKER FIX: Initialize state synchronously from cache if available
+  const initialState = SmartAuthService.getSessionState()
+  
   // Single loading state - replaces multiple loading states
-  const [isReady, setIsReady] = useState(false)
+  const [isReady, setIsReady] = useState(initialState.isReady)
   const [sessionState, setSessionState] = useState<{
     user: User | null
     isEmailVerified: boolean
   }>({
-    user: null,
-    isEmailVerified: false
+    user: initialState.user,
+    isEmailVerified: initialState.isEmailVerified
   })
 
   // Reactive state for XP and Progress - updated via events
-  const [xpState, setXpState] = useState<number>(0)
-  const [progressState, setProgressState] = useState<UserLessonProgress[]>([])
+  // FLICKER FIX: Initialize from cache synchronously if user is verified
+  const [xpState, setXpState] = useState<number>(
+    initialState.user && initialState.isEmailVerified 
+      ? SmartAuthService.getUserXp() 
+      : 0
+  )
+  const [progressState, setProgressState] = useState<UserLessonProgress[]>(
+    initialState.user && initialState.isEmailVerified 
+      ? SmartAuthService.getUserProgress() 
+      : []
+  )
 
   // Initialize session on mount
   useEffect(() => {
