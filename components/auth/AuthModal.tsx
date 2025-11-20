@@ -156,7 +156,7 @@ export function AuthModal({
     try {
       // Refresh auth session to get latest user state
       const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
-      await SmartAuthService.refreshSession()
+      await SmartAuthService.initializeSession()
       
       // Wait briefly for context to propagate
       await new Promise(resolve => setTimeout(resolve, 400))
