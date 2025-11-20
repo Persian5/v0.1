@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Medal, Star, Sparkles, ArrowRight } from "lucide-react"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
-import { useXp } from "@/hooks/use-xp"
+import { useSmartXp } from "@/hooks/use-smart-xp"
 import { CountUpXP } from "@/app/components/CountUpXP"
 import { getModule } from "@/lib/config/curriculum"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
@@ -28,7 +28,7 @@ export default function CompletionView({
   handleViewSummary
 }: CompletionViewProps) {
   const router = useRouter()
-  const { xp: totalXp } = useXp()
+  const { xp: totalXp } = useSmartXp()
   const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [premiumModuleTitle, setPremiumModuleTitle] = useState<string | undefined>(undefined)
   

@@ -8,7 +8,7 @@ import { Trophy, Medal, ChevronDown, Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { SmartAuthService } from '@/lib/services/smart-auth-service'
-import { useXp } from '@/hooks/use-xp'
+import { useSmartXp } from '@/hooks/use-smart-xp'
 
 interface LeaderboardEntry {
   rank: number
@@ -33,7 +33,7 @@ interface LeaderboardResponse {
 
 export default function LeaderboardPage() {
   const { user } = useAuth() // Get current user
-  const { xp: userXp } = useXp() // Get user's actual XP from cache
+  const { xp: userXp } = useSmartXp() // Get user's actual XP from cache
   const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)

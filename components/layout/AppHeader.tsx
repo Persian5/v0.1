@@ -6,7 +6,7 @@ import { Star, Menu, X, ArrowLeft, Crown } from 'lucide-react'
 import { useState, useMemo, useCallback } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { usePremium } from '@/hooks/use-premium'
-import { useXp } from '@/hooks/use-xp'
+import { useSmartXp } from '@/hooks/use-smart-xp'
 import { AccountDropdown } from './AccountDropdown'
 import { MobileMenu } from './MobileMenu'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
   const { hasPremium, isLoading: premiumLoading } = usePremium()
-  const { xp } = useXp()
+  const { xp } = useSmartXp()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
 

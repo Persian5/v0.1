@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Lock, CheckCircle, PlayCircle, Clock, Crown, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
-import { useXp } from "@/hooks/use-xp"
+import { useSmartXp } from "@/hooks/use-smart-xp"
 import { useProgress } from "@/hooks/use-progress"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { usePremium } from "@/hooks/use-premium"
@@ -33,7 +33,7 @@ export default function ModulesPage() {
   const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [selectedModuleTitle, setSelectedModuleTitle] = useState<string>("")
   const router = useRouter()
-  const { xp } = useXp()
+  const { xp } = useSmartXp()
   const { user, isEmailVerified, isLoading: authLoading } = useAuth()
   const { hasPremium, isLoading: premiumLoading } = usePremium()
   const { progressData, isProgressLoading } = useProgress()

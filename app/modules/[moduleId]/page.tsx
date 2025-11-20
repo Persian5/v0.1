@@ -13,7 +13,7 @@ import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { useParams, useRouter } from "next/navigation"
 import { UserLessonProgress } from "@/lib/supabase/database"
-import { useXp } from "@/hooks/use-xp"
+import { useSmartXp } from "@/hooks/use-smart-xp"
 import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
@@ -35,7 +35,7 @@ export default function ModulePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { xp } = useXp()
+  const { xp } = useSmartXp()
 
   // Get data from config
   const module = getModule(moduleId as string)
