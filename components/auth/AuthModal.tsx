@@ -18,6 +18,10 @@ interface AuthModalProps {
   onSuccess?: () => void
   title?: string
   description?: string
+  // PHASE 2: Verification params for email link flow
+  initialMode?: AuthMode
+  verificationToken?: string
+  verificationType?: string
 }
 
 type AuthMode = 'signin' | 'signup' | 'verify' | 'success' | 'forgot_password'
@@ -27,12 +31,15 @@ export function AuthModal({
   onClose, 
   onSuccess,
   title = "Sign up to continue learning Persian",
-  description = "Join thousands learning to reconnect with their roots"
+  description = "Join thousands learning to reconnect with their roots",
+  initialMode,
+  verificationToken,
+  verificationType
 }: AuthModalProps) {
   const router = useRouter()
   const { signIn, signUp, resendVerification, sendPasswordReset, user, isEmailVerified } = useAuth() // Added sendPasswordReset
   
-  const [mode, setMode] = useState<AuthMode>('signup')
+  const [mode, setMode] = useState<AuthMode>(initialMode || 'signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -47,6 +54,13 @@ export function AuthModal({
   const [isResendingVerification, setIsResendingVerification] = useState(false)
   const [passwordValid, setPasswordValid] = useState(false)
   const [passwordsMatch, setPasswordsMatch] = useState(true)
+  
+  // PHASE 2: Store verification params for Phase 3 usage
+  const [storedVerificationToken, setStoredVerificationToken] = useState<string | undefined>(verificationToken)
+  const [storedVerificationType, setStoredVerificationType] = useState<string | undefined>(verificationType)
+  
+  // PHASE 3: Track verification state
+  const [isVerifying, setIsVerifying] = useState(false)
 
   // Auto-switch to verify mode if user exists but email not verified
   useEffect(() => {
@@ -56,49 +70,156 @@ export function AuthModal({
     }
   }, [user, isEmailVerified])
 
-  // Auto-poll for email verification when in verify mode (every 3 seconds)
+  // PHASE 3: Auto-verify with token when available
   useEffect(() => {
-    if (mode === 'verify' && user && !isEmailVerified && isOpen) {
-      const pollInterval = setInterval(async () => {
-        try {
-          // CRITICAL: Force refresh session from server (not cached)
-          // This ensures we get the latest verification status
-          const { data: { session }, error } = await supabase.auth.refreshSession()
-          
-          if (error) {
-            console.error('Error refreshing session during polling:', error)
-            return
-          }
-          
-          if (session?.user?.email_confirmed_at) {
-            // Email verified! Switch to success mode
-            console.log('Email verified - refreshing auth context')
-            setMode('success')
-            clearInterval(pollInterval)
-            
-            // Refresh auth context without page reload
-            try {
-              const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
-              await SmartAuthService.refreshSession()
-              // Wait briefly for context to propagate
-              await new Promise(resolve => setTimeout(resolve, 500))
-            } catch (error) {
-              console.error('Failed to refresh session:', error)
-            }
-            
-            setTimeout(() => {
-              onSuccess?.()
-              onClose()
-            }, 1500)
-          }
-        } catch (error) {
-          console.error('Error polling for email verification:', error)
-        }
-      }, 5000) // Poll every 5 seconds
+    // Only run if in verify mode with token and type
+    if (mode !== 'verify') return
+    if (!storedVerificationToken || !storedVerificationType) return
+    if (isVerifying) return // Prevent duplicate calls
+    
+    console.log('[AUTH] Auto-verifying email with token')
+    verifyEmail()
+  }, [mode, storedVerificationToken, storedVerificationType])
 
-      return () => clearInterval(pollInterval)
+  // PHASE 3: Token-based email verification
+  const verifyEmail = async () => {
+    if (!storedVerificationToken || !storedVerificationType) {
+      console.error('[AUTH] Cannot verify: missing token or type')
+      return
     }
-  }, [mode, user, isEmailVerified, isOpen, onSuccess, onClose])
+    
+    setIsVerifying(true)
+    setIsLoading(true)
+    setError(null)
+    
+    console.log('[AUTH] Calling supabase.auth.verifyOtp', {
+      type: storedVerificationType,
+      token: storedVerificationToken.substring(0, 10) + '...'
+    })
+    
+    try {
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: storedVerificationToken,
+        type: storedVerificationType as any
+      })
+      
+      if (verifyError) {
+        console.error('[AUTH] Verification failed:', verifyError)
+        
+        // Handle specific error cases
+        const errorMsg = verifyError.message?.toLowerCase() || ''
+        
+        if (errorMsg.includes('expired') || errorMsg.includes('token has expired')) {
+          setError('This link has expired. Please request a new one.')
+        } else if (errorMsg.includes('invalid') || errorMsg.includes('token not found')) {
+          setError('Invalid verification link. Try resending the verification email.')
+        } else if (errorMsg.includes('already') || errorMsg.includes('email already confirmed')) {
+          // Already verified - treat as success
+          console.log('[AUTH] Email already verified')
+          await handleVerificationSuccess()
+          return
+        } else {
+          setError('Verification failed. Please try again or request a new link.')
+        }
+        
+        setIsVerifying(false)
+        setIsLoading(false)
+        // Clear stored token so user can retry with resend
+        setStoredVerificationToken(undefined)
+        setStoredVerificationType(undefined)
+        return
+      }
+      
+      // Success!
+      console.log('[AUTH] Verification successful:', data)
+      await handleVerificationSuccess()
+      
+    } catch (error: any) {
+      console.error('[AUTH] Verification error:', error)
+      setError('An unexpected error occurred. Please try again.')
+      setIsVerifying(false)
+      setIsLoading(false)
+      setStoredVerificationToken(undefined)
+      setStoredVerificationType(undefined)
+    }
+  }
+  
+  // PHASE 3: Handle successful verification
+  const handleVerificationSuccess = async () => {
+    console.log('[AUTH] Verification success - refreshing session')
+    
+    try {
+      // Refresh auth session to get latest user state
+      const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
+      await SmartAuthService.refreshSession()
+      
+      // Wait briefly for context to propagate
+      await new Promise(resolve => setTimeout(resolve, 400))
+      
+      // Clear verification state
+      setStoredVerificationToken(undefined)
+      setStoredVerificationType(undefined)
+      setIsVerifying(false)
+      setIsLoading(false)
+      
+      // Switch to success mode briefly
+      setMode('success')
+      
+      // Close modal and trigger success callback
+      setTimeout(() => {
+        onSuccess?.()
+        onClose()
+      }, 1500)
+      
+    } catch (error) {
+      console.error('[AUTH] Failed to refresh session after verification:', error)
+      // Still close modal even if refresh fails
+      setIsVerifying(false)
+      setIsLoading(false)
+      onSuccess?.()
+      onClose()
+    }
+  }
+
+  // PHASE 3: Fallback polling for manual verification (when no token provided)
+  // This is for users who sign up normally and need to click email link separately
+  useEffect(() => {
+    // Only poll if:
+    // 1. In verify mode
+    // 2. No token-based verification in progress
+    // 3. User exists but not verified
+    if (mode !== 'verify') return
+    if (storedVerificationToken) return // Token-based verification active
+    if (!user || isEmailVerified) return
+    if (!isOpen) return
+    
+    console.log('[AUTH] Starting polling for manual verification')
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        // Force refresh session from server (not cached)
+        const { data: { session }, error } = await supabase.auth.refreshSession()
+        
+        if (error) {
+          console.error('[AUTH] Error refreshing session during polling:', error)
+          return
+        }
+        
+        if (session?.user?.email_confirmed_at) {
+          console.log('[AUTH] Email verified via polling')
+          clearInterval(pollInterval)
+          await handleVerificationSuccess()
+        }
+      } catch (error) {
+        console.error('[AUTH] Error polling for email verification:', error)
+      }
+    }, 5000) // Poll every 5 seconds
+
+    return () => {
+      console.log('[AUTH] Stopping polling')
+      clearInterval(pollInterval)
+    }
+  }, [mode, storedVerificationToken, user, isEmailVerified, isOpen, onSuccess, onClose])
 
   // Freeze background scroll when modal open
   useModalScrollLock(isOpen)
@@ -400,14 +521,14 @@ export function AuthModal({
             <DialogTitle className="text-center text-xl font-bold">
               {mode === 'signup' && title}
               {mode === 'signin' && 'Welcome back!'}
-              {mode === 'verify' && 'Check your email'}
+              {mode === 'verify' && (isVerifying ? 'Verifying your email...' : 'Check your email')}
               {mode === 'success' && 'Welcome to Persian Learning!'}
               {mode === 'forgot_password' && 'Reset Password'}
             </DialogTitle>
             <DialogDescription className="text-center">
               {mode === 'signup' && description}
               {mode === 'signin' && 'Sign in to continue your Persian learning journey'}
-              {mode === 'verify' && 'We sent you a verification link. Please check your email and click the link to continue.'}
+              {mode === 'verify' && (isVerifying ? 'Please wait while we confirm your account.' : 'We sent you a verification link. Please check your email and click the link to continue.')}
               {mode === 'success' && 'Your account is ready. Starting your lesson...'}
               {mode === 'forgot_password' && "Enter your email and we'll send you a link to reset your password."}
             </DialogDescription>
@@ -415,65 +536,111 @@ export function AuthModal({
 
         {mode === 'verify' && (
           <div className="space-y-4">
-            <div className="flex justify-center">
-              <Mail className="h-12 w-12 text-primary" />
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Verification email sent to:
-              </p>
-              <p className="font-medium break-words px-4 text-sm sm:text-base">
-                {email.length > 40 ? (
-                  <span title={email} className="truncate block">
-                    {email.substring(0, 40)}...
-                  </span>
-                ) : (
-                  email
+            {/* PHASE 3: Show verification progress when token is present */}
+            {isVerifying ? (
+              <>
+                <div className="flex justify-center">
+                  <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="font-medium">Verifying your email...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Please wait while we confirm your account.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-center">
+                  <Mail className="h-12 w-12 text-primary" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Verification email sent to:
+                  </p>
+                  <p className="font-medium break-words px-4 text-sm sm:text-base">
+                    {email.length > 40 ? (
+                      <span title={email} className="truncate block">
+                        {email.substring(0, 40)}...
+                      </span>
+                    ) : (
+                      email
+                    )}
+                  </p>
+                  {!storedVerificationToken && (
+                    <>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        We'll automatically detect when you verify your email...
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        💡 Didn't receive it? Check your spam folder or try resending.
+                      </p>
+                    </>
+                  )}
+                </div>
+                
+                {resendSuccess && (
+                  <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md p-2 text-center">
+                    ✅ Verification email resent! Check your inbox.
+                  </div>
                 )}
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                We'll automatically detect when you verify your email...
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                💡 Didn't receive it? Check your spam folder or try resending.
-              </p>
-            </div>
-            
-            {resendSuccess && (
-              <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md p-2 text-center">
-                ✅ Verification email resent! Check your inbox.
-              </div>
-            )}
 
-            <div className="space-y-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleResendVerification}
-                disabled={isResendingVerification}
-              >
-                {isResendingVerification ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  'Resend verification email'
+                {/* PHASE 3: Only show resend button when not verifying and no token */}
+                {!isVerifying && !storedVerificationToken && (
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleResendVerification}
+                      disabled={isResendingVerification}
+                    >
+                      {isResendingVerification ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Resend verification email'
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full text-sm"
+                      onClick={() => {
+                        resetForm()
+                        switchMode('signup')
+                      }}
+                    >
+                      Try a different email
+                    </Button>
+                  </div>
                 )}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full text-sm"
-                onClick={() => {
-                  resetForm()
-                  switchMode('signup')
-                }}
-              >
-                Try a different email
-              </Button>
-            </div>
+                
+                {/* PHASE 3: Show resend button after verification fails */}
+                {!isVerifying && storedVerificationToken === undefined && error && (
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleResendVerification}
+                      disabled={isResendingVerification}
+                    >
+                      {isResendingVerification ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Request new verification link'
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 

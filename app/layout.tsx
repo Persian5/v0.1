@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from "@vercel/analytics/next"
 import { SmartAuthProvider } from "@/components/auth/SmartAuthProvider"
+import { EmailVerificationDetector } from "@/components/auth/EmailVerificationDetector"
 import { XpCacheInitializer } from "@/components/XpCacheInitializer"
 import ClientRootBoundary from "@/components/ClientRootBoundary"
 import { CrashTestButton } from "@/components/CrashTestButton"
@@ -47,6 +48,7 @@ export default function RootLayout({
         >
           <XpCacheInitializer />
           <SmartAuthProvider>
+            <EmailVerificationDetector />
             <ClientRootBoundary>
               <ConditionalHeader />
               {children}

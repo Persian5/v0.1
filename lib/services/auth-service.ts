@@ -36,6 +36,9 @@ export class AuthService {
         email: normalizedEmail,
         password,
         options: {
+          emailRedirectTo: typeof window !== 'undefined' 
+            ? `${window.location.origin}/?verify=true`
+            : undefined,
           data: {
             first_name: firstName,
             last_name: lastName,
@@ -156,9 +159,16 @@ export class AuthService {
     }
 
     try {
+      const redirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}/?verify=true`
+        : undefined
+
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: normalizedEmail
+        email: normalizedEmail,
+        options: {
+          emailRedirectTo: redirectTo
+        }
       })
 
       if (error) {
