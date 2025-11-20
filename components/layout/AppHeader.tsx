@@ -122,7 +122,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   <>
                     {/* XP Badge - Always visible on all screen sizes */}
                     {isLoggedIn && (
-                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold">
+                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold shadow-[0_0_4px_rgba(255,193,7,0.3)]">
                         <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
                         <span>{xp.toLocaleString()}</span>
                       </div>
@@ -254,7 +254,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
                   <>
                     {/* XP Badge - Show for logged in users on all screen sizes */}
                     {isLoggedIn && (
-                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold">
+                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs sm:text-sm font-semibold shadow-[0_0_4px_rgba(255,193,7,0.3)]">
                         <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
                         <span>{xp.toLocaleString()}</span>
                       </div>

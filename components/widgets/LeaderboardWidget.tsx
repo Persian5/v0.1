@@ -126,7 +126,7 @@ export function LeaderboardWidget() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`p-4 rounded-xl border transition-all duration-300 flex items-center ${
+              className={`p-3 rounded-2xl border transition-all duration-300 flex items-center hover:bg-gray-50 ${
                 entry.isYou 
                   ? 'bg-primary/5 border-primary/20 shadow-sm' 
                   : 'bg-white border-neutral-100 hover:border-neutral-200'
@@ -166,7 +166,7 @@ export function LeaderboardWidget() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="p-4 rounded-xl border border-primary/20 bg-primary/5 shadow-sm mt-6 flex items-center"
+              className="p-3 rounded-2xl border border-primary/20 bg-primary/5 shadow-sm mt-6 flex items-center hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
@@ -197,7 +197,7 @@ export function LeaderboardWidget() {
             <Link href="/leaderboard">
               <Button 
                 variant="outline" 
-                className="w-full h-12 rounded-xl border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 text-neutral-600 font-medium transition-all"
+                className="w-full h-12 rounded-2xl border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 text-neutral-600 font-medium transition-all"
               >
                 View Full Rankings
                 <ArrowRight className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100" />

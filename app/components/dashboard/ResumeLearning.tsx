@@ -6,6 +6,7 @@ import { Play, BookOpen, CheckCircle2, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getModules } from "@/lib/config/curriculum"
+import { motion } from "framer-motion"
 
 interface NextLesson {
   moduleId: string
@@ -71,32 +72,40 @@ export function ResumeLearning({ nextLesson }: ResumeLearningProps) {
   // Handle "all lessons completed" state
   if (displayLesson.allLessonsCompleted) {
     return (
-      <Card className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-sm">
-        <CardContent className="p-6 md:p-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-start gap-4 flex-1">
-              <div className="p-3 rounded-xl bg-emerald-100 text-emerald-600 flex-shrink-0">
-                <CheckCircle2 className="h-8 w-8" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-sm">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-start gap-4 flex-1">
+                <div className="p-3 rounded-xl bg-emerald-100 text-emerald-600 flex-shrink-0">
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-neutral-900">You're All Caught Up!</h3>
+                  <p className="text-base text-neutral-600">
+                    New lessons coming soon. While you wait, strengthen your vocabulary.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold text-neutral-900">You're All Caught Up!</h3>
-                <p className="text-base text-neutral-600">
-                  New lessons coming soon. While you wait, strengthen your vocabulary.
-                </p>
-              </div>
+              <Link href="/review" className="w-full md:w-auto">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button 
+                    size="lg" 
+                    className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-14 px-8 rounded-xl shadow-sm hover:shadow transition-all"
+                  >
+                    <Play className="h-5 w-5 mr-2 fill-current" />
+                    Review Your Words
+                  </Button>
+                </motion.div>
+              </Link>
             </div>
-            <Link href="/review" className="w-full md:w-auto">
-              <Button 
-                size="lg" 
-                className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-14 px-8 rounded-xl shadow-sm hover:shadow transition-all"
-              >
-                <Play className="h-5 w-5 mr-2 fill-current" />
-                Review Your Words
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
     )
   }
 
@@ -104,47 +113,55 @@ export function ResumeLearning({ nextLesson }: ResumeLearningProps) {
   const formattedTitle = formatLessonTitle(displayLesson.lessonId, displayLesson.lessonTitle)
 
   return (
-    <Card className="bg-gradient-to-br from-amber-50/80 to-white border border-amber-100/50 shadow-sm hover:shadow-md transition-all duration-300 group">
-      <CardContent className="p-6 md:p-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-start gap-5 flex-1 w-full">
-            <div className="p-4 rounded-2xl bg-amber-100/50 text-amber-600 flex-shrink-0 shadow-inner hidden sm:block">
-              <BookOpen className="h-8 w-8" />
-            </div>
-            <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold tracking-wide uppercase">
-                  Next Up
-                </span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card className="bg-gradient-to-br from-amber-50/80 to-white border border-amber-100/50 shadow-sm hover:shadow-md transition-all duration-300 group">
+        <CardContent className="p-6 md:p-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-start gap-5 flex-1 w-full">
+              <div className="p-4 rounded-2xl bg-amber-100/50 text-amber-600 flex-shrink-0 shadow-inner hidden sm:block">
+                <BookOpen className="h-8 w-8" />
               </div>
-              <h3 className="text-2xl font-bold text-neutral-900 tracking-tight leading-tight">
-                {formattedTitle}
-              </h3>
-              <p className="text-base font-medium text-neutral-500 truncate">
-                {displayLesson.moduleTitle}
-              </p>
-              {displayLesson.description && (
-                <p className="text-sm text-neutral-400 line-clamp-2 max-w-xl">
-                  {displayLesson.description}
+              <div className="space-y-2 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold tracking-wide uppercase">
+                    Next Up
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-neutral-900 tracking-tight leading-tight">
+                  {formattedTitle}
+                </h3>
+                <p className="text-base font-medium text-neutral-500 truncate">
+                  {displayLesson.moduleTitle}
                 </p>
-              )}
+                {displayLesson.description && (
+                  <p className="text-sm text-neutral-400 line-clamp-2 max-w-xl">
+                    {displayLesson.description}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-          
-          <Link 
-            href={`/modules/${displayLesson.moduleId}/${displayLesson.lessonId}`}
-            className="w-full md:w-auto flex-shrink-0 mt-2 md:mt-0"
-          >
-            <Button 
-              size="lg" 
-              className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300 text-lg"
+            
+            <Link 
+              href={`/modules/${displayLesson.moduleId}/${displayLesson.lessonId}`}
+              className="w-full md:w-auto flex-shrink-0 mt-2 md:mt-0"
             >
-              Continue Learning
-              <ArrowRight className="h-5 w-5 ml-2 stroke-[3px]" />
-            </Button>
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+                <Button 
+                  size="lg" 
+                  className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 text-lg"
+                >
+                  Continue Learning
+                  <ArrowRight className="h-5 w-5 ml-2 stroke-[3px]" />
+                </Button>
+              </motion.div>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }

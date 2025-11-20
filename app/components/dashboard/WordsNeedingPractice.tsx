@@ -9,6 +9,7 @@ import { useState, useEffect } from "react"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import type { VocabularyItem } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { motion } from "framer-motion"
 
 interface WordNeedingPractice {
   vocabulary_id: string
@@ -108,56 +109,69 @@ export function WordsNeedingPractice({ wordsToReview, hardWords, isLoading }: Wo
   return (
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-        {mergedWords.map((word) => {
+        {mergedWords.map((word, index) => {
           const vocab = vocabDefinitions.get(word.vocabulary_id)
           const finglish = vocab?.finglish || word.word_text || 'Loading...'
           const english = vocab?.en || word.word_text || 'Loading...'
           const accuracy = Math.round(word.accuracy)
           
           return (
-            <Link
+            <motion.div
               key={word.vocabulary_id}
-              href={`/review?word=${word.vocabulary_id}`}
-              className="block group"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 + 0.3 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
             >
-              <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-white hover:border-primary/30 hover:shadow-md transition-all duration-200 h-full flex flex-col justify-center text-center relative overflow-hidden">
-                {/* Accuracy indicator bar */}
-                <div 
-                  className={cn(
-                    "absolute bottom-0 left-0 h-1 transition-all duration-500",
-                    accuracy < 50 ? "bg-red-400" : accuracy < 80 ? "bg-amber-400" : "bg-green-400"
-                  )}
-                  style={{ width: `${accuracy}%` }}
-                />
-                
-                <p className="font-semibold text-neutral-900 mb-1 truncate text-base">
-                  {finglish}
-                </p>
-                <p className="text-xs text-neutral-500 truncate mb-1">
-                  {english}
-                </p>
-                
-                {/* Accuracy Label */}
-                <p className={cn(
-                  "text-[10px] font-medium absolute bottom-2 right-2",
-                  accuracy < 50 ? "text-red-500" : accuracy < 80 ? "text-amber-500" : "text-green-500"
-                )}>
-                  {accuracy}%
-                </p>
-              </div>
-            </Link>
+              <Link
+                href={`/review?word=${word.vocabulary_id}`}
+                className="block group h-full"
+              >
+                <div className="p-4 rounded-2xl border border-neutral-200 bg-neutral-50 hover:bg-white hover:border-primary/30 hover:shadow-md transition-all duration-200 h-full flex flex-col justify-center text-center relative overflow-hidden">
+                  <p className="font-semibold text-neutral-900 mb-1 truncate text-base">
+                    {finglish}
+                  </p>
+                  <p className="text-xs text-neutral-500 truncate mb-3">
+                    {english}
+                  </p>
+                  
+                  {/* Accuracy Label */}
+                  <p className={cn(
+                    "text-[10px] font-medium text-right mb-1",
+                    accuracy < 50 ? "text-red-500" : accuracy < 80 ? "text-amber-500" : "text-green-500"
+                  )}>
+                    Accuracy {accuracy}%
+                  </p>
+
+                  {/* Accuracy indicator bar */}
+                  <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${accuracy}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 + (index * 0.05) }}
+                      className={cn(
+                        "h-full transition-all duration-500 rounded-full",
+                        accuracy < 50 ? "bg-red-400" : accuracy < 80 ? "bg-amber-400" : "bg-green-400"
+                      )}
+                    />
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
           )
         })}
       </div>
 
       <Link href="/review" className="block">
-        <Button 
-          variant="secondary" 
-          className="w-full bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-medium h-12 rounded-xl shadow-sm hover:shadow transition-all"
-        >
-          <Target className="h-4 w-4 mr-2 text-primary" />
-          Practice All Words
-        </Button>
+        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+          <Button 
+            variant="secondary" 
+            className="w-full bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-medium h-12 rounded-2xl shadow-sm hover:shadow transition-all"
+          >
+            <Target className="h-4 w-4 mr-2 text-primary" />
+            Practice All Words
+          </Button>
+        </motion.div>
       </Link>
     </div>
   )

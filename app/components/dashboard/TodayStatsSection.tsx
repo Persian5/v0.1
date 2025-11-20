@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Zap, BookOpen, Flame } from "lucide-react"
 import { useStreak } from "@/hooks/use-streak"
+import { motion } from "framer-motion"
 
 interface TodayStatsSectionProps {
   xpEarned: number
@@ -37,49 +38,62 @@ export function TodayStatsSection({ xpEarned, lessonsCompleted, streak: _unused,
     )
   }
 
+  const stats = [
+    {
+      id: 'xp',
+      icon: <Zap className="w-6 h-6 fill-current" />,
+      bgClass: "bg-amber-100/50 text-amber-600",
+      value: xpEarned,
+      label: "XP Today"
+    },
+    {
+      id: 'lessons',
+      icon: <BookOpen className="w-6 h-6" />,
+      bgClass: "bg-emerald-100/50 text-emerald-600",
+      value: lessonsCompleted,
+      label: "Lessons Today"
+    },
+    {
+      id: 'streak',
+      icon: <Flame className="w-6 h-6 fill-current" />,
+      bgClass: "bg-orange-100/50 text-orange-600",
+      value: streak,
+      label: "Day Streak",
+      suffix: "days",
+      subtext: "Keep going!",
+      subtextClass: "text-orange-500"
+    }
+  ]
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {/* XP Earned Today */}
-      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
-        <CardContent className="p-6 flex items-center gap-4">
-          <div className="p-3.5 rounded-xl bg-amber-100/50 text-amber-600 flex-shrink-0">
-            <Zap className="w-6 h-6 fill-current" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-neutral-900">{xpEarned}</p>
-            <p className="text-sm font-medium text-neutral-500">XP Today</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Lessons Completed Today */}
-      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
-        <CardContent className="p-6 flex items-center gap-4">
-          <div className="p-3.5 rounded-xl bg-emerald-100/50 text-emerald-600 flex-shrink-0">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-neutral-900">{lessonsCompleted}</p>
-            <p className="text-sm font-medium text-neutral-500">Lessons Today</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Streak */}
-      <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
-        <CardContent className="p-6 flex items-center gap-4">
-          <div className="p-3.5 rounded-xl bg-orange-100/50 text-orange-600 flex-shrink-0">
-            <Flame className="w-6 h-6 fill-current" />
-          </div>
-          <div>
-            <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold text-neutral-900">{streak}</p>
-              <p className="text-sm font-medium text-neutral-500">days</p>
-            </div>
-            <p className="text-xs font-medium text-orange-500">Keep going!</p>
-          </div>
-        </CardContent>
-      </Card>
+      {stats.map((stat, index) => (
+        <motion.div
+          key={stat.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: index * 0.1 + 0.2 }}
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
+        >
+          <Card className="bg-white border border-neutral-200/50 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl h-full">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className={`p-3.5 rounded-xl flex-shrink-0 ${stat.bgClass}`}>
+                {stat.icon}
+              </div>
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-bold text-neutral-900">{stat.value}</p>
+                  {stat.suffix && <p className="text-sm font-medium text-neutral-500">{stat.suffix}</p>}
+                </div>
+                <p className="text-sm font-medium text-neutral-500">{stat.label}</p>
+                {stat.subtext && (
+                  <p className={`text-xs font-medium mt-0.5 ${stat.subtextClass}`}>{stat.subtext}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ))}
     </div>
   )
 }

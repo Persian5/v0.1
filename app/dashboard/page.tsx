@@ -215,11 +215,16 @@ function DashboardContent() {
             {/* Level Indicator */}
             {hasProgress && dashboard && (
               <div className="max-w-xs mx-auto">
-                <div className="flex justify-between text-xs font-medium text-neutral-500 mb-2 uppercase tracking-wide">
-                  <span>Level {dashboard.level}</span>
-                  <span>{Math.round(levelProgress.percent)}% to Level {dashboard.level + 1}</span>
+                <div className="flex flex-col mb-2">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Level {dashboard.level}</span>
+                    <span className="text-xs font-medium text-neutral-400">{dashboard.xp.toLocaleString()} XP Total</span>
+                  </div>
+                  <div className="flex justify-end mt-1">
+                    <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">{Math.round(levelProgress.percent)}% to Level {dashboard.level + 1}</span>
+                  </div>
                 </div>
-                <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
+                <div className="h-2.5 w-full bg-neutral-100 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
                     style={{ width: `${levelProgress.percent}%` }}
@@ -228,6 +233,9 @@ function DashboardContent() {
               </div>
             )}
           </div>
+
+          {/* Section Divider */}
+          <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
 
           {/* Error Message */}
           {error && (
@@ -265,9 +273,12 @@ function DashboardContent() {
                 </WidgetErrorBoundary>
               </section>
 
+              {/* Section Divider */}
+              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
+
               {/* SECTION 2: Today's Stats */}
               <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-                <div className="mb-6 px-1">
+                <div className="mb-3 md:mb-4 px-4">
                   <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mb-1">
                     Today
                   </h2>
@@ -285,9 +296,12 @@ function DashboardContent() {
                 </WidgetErrorBoundary>
               </section>
 
+              {/* Section Divider */}
+              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
+
               {/* SECTION 3: Words Needing Practice */}
               <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-                <div className="mb-6 px-1">
+                <div className="mb-3 md:mb-4 px-4">
                   <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mb-1">
                     Words That Need Practice
                   </h2>
@@ -304,9 +318,12 @@ function DashboardContent() {
                 </WidgetErrorBoundary>
               </section>
 
+              {/* Section Divider */}
+              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
+
               {/* SECTION 4: Progress Summary */}
               <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
-                <div className="mb-6 px-1">
+                <div className="mb-3 md:mb-4 px-4">
                   <h2 className="text-2xl font-bold text-neutral-900 tracking-tight mb-1">
                     Your Progress
                   </h2>
@@ -323,6 +340,9 @@ function DashboardContent() {
                   />
                 </WidgetErrorBoundary>
               </section>
+
+              {/* Section Divider */}
+              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
 
               {/* SECTION 5: Leaderboard */}
               <section className="max-w-3xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
