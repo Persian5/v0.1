@@ -265,24 +265,6 @@ export class AuthService {
     }
   }
 
-  // Listen to auth state changes
-  static onAuthStateChange(callback: (user: User | null) => void) {
-    return supabase.auth.onAuthStateChange(async (event, session) => {
-      const user = session?.user || null
-      
-      // Handle user profile creation on sign in
-      if (event === 'SIGNED_IN' && user) {
-        try {
-          await DatabaseService.getOrCreateUserProfile(user)
-        } catch (profileError) {
-          console.error('Failed to create/update user profile:', profileError)
-        }
-      }
-      
-      callback(user)
-    })
-  }
-
   // Check if browser supports localStorage (for fallback logic)
   static isBrowserStorageAvailable(): boolean {
     if (typeof window === 'undefined') return false
