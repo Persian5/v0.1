@@ -1,4 +1,4 @@
-import { getModules, getModule } from '../config/curriculum';
+import { getModules, getModule, type Module } from '../config/curriculum';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
 import { VocabularyProgressService } from './vocabulary-progress-service';
@@ -160,8 +160,10 @@ export class LessonProgressService {
 
     // PHASE 2b: Invalidate dashboard stats cache (CRITICAL for dashboard updates)
     SmartAuthService.invalidateDashboardStats()
+    // PHASE 2c: Invalidate unified dashboard cache (will refresh on next visit)
+    SmartAuthService.invalidateDashboardCache()
     safeTelemetry(() => {
-      console.log(`🧹 [LessonProgress] Dashboard stats cache invalidated`)
+      console.log(`🧹 [LessonProgress] Dashboard cache invalidated`)
     })
 
     // PHASE 3: Update progress cache with verification (blocking with timeout)
@@ -721,6 +723,99 @@ export class LessonProgressService {
         durationMs: null,
         durationFormatted: null
       };
+    }
+  }
+
+  /**
+   * Get the next lesson the user should continue with
+   * Returns the first incomplete lesson, or the last lesson if all are complete
+   * 
+   * IMPORTANT: In our data model, user_lesson_progress contains a row ONLY when
+   * a lesson is completed (status = 'completed', progress_percent = 100, completed_at set).
+   * There is NO row for "not started" or "in progress" lessons.
+   * 
+   * @param progress - User's lesson progress array (only completed lessons)
+   * @param curriculum - All modules from curriculum (ordered)
+   * @returns Next lesson info or null if curriculum is empty
+   */
+  static getNextLesson(
+    progress: UserLessonProgress[],
+    curriculum: Module[]
+  ): {
+    moduleId: string
+    lessonId: string
+    moduleTitle: string
+    lessonTitle: string
+    description?: string
+    status: 'not_started' | 'completed'
+    allLessonsCompleted?: boolean // NEW: Flag for "all completed" state
+  } | null {
+    // 1. Flatten curriculum into ordered list of all lessons
+    const orderedLessons = curriculum.flatMap((m) =>
+      m.lessons.map((l) => ({
+        moduleId: m.id,
+        moduleTitle: m.title,
+        moduleDescription: m.description,
+        lessonId: l.id,
+        lessonTitle: l.title,
+        lessonDescription: l.description,
+      }))
+    )
+
+    if (orderedLessons.length === 0) {
+      return null
+    }
+
+    // 2. Build set of completed lesson keys for O(1) lookup
+    // A lesson is completed if ANY of these are true:
+    // - completed_at is set (most reliable)
+    // - progress_percent = 100
+    // - status = 'completed'
+    const completedSet = new Set<string>()
+    progress.forEach((p) => {
+      const isCompleted = 
+        !!p.completed_at || 
+        p.progress_percent === 100 || 
+        p.status === 'completed'
+      
+      if (isCompleted) {
+        const key = `${p.module_id}-${p.lesson_id}`
+        completedSet.add(key)
+      }
+    })
+
+    // 3. Find the first lesson NOT completed
+    for (const lesson of orderedLessons) {
+      const key = `${lesson.moduleId}-${lesson.lessonId}`
+      
+      if (!completedSet.has(key)) {
+        // This lesson is not completed → this is the next lesson
+        // Description priority: lesson description > module description > undefined
+        const description = lesson.lessonDescription || lesson.moduleDescription || undefined
+        
+        return {
+          moduleId: lesson.moduleId,
+          lessonId: lesson.lessonId,
+          moduleTitle: lesson.moduleTitle,
+          lessonTitle: lesson.lessonTitle,
+          description,
+          status: 'not_started' as const
+        }
+      }
+    }
+
+    // 4. If ALL lessons complete → return last lesson with special flag
+    const last = orderedLessons[orderedLessons.length - 1]
+    const description = last.lessonDescription || last.moduleDescription || undefined
+    
+    return {
+      moduleId: last.moduleId,
+      lessonId: last.lessonId,
+      moduleTitle: last.moduleTitle,
+      lessonTitle: last.lessonTitle,
+      description,
+      status: 'completed' as const,
+      allLessonsCompleted: true // NEW: Flag to show "all caught up" UI
     }
   }
 } 

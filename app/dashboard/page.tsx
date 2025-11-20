@@ -12,9 +12,8 @@ import { ProgressOverview } from "@/app/components/dashboard/ProgressOverview"
 import { HardWordsWidget } from "@/app/components/dashboard/HardWordsWidget"
 import { WordsToReviewWidget } from "@/app/components/dashboard/WordsToReviewWidget"
 import { LeaderboardWidget } from "@/components/widgets/LeaderboardWidget"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
-import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { UserLessonProgress } from "@/lib/supabase/database"
 import WidgetErrorBoundary from "@/components/errors/WidgetErrorBoundary"
 
@@ -44,159 +43,121 @@ interface DashboardStats {
   }>
 }
 
+interface DashboardData {
+  progress: UserLessonProgress[]
+  nextLesson: {
+    moduleId: string
+    lessonId: string
+    moduleTitle: string
+    lessonTitle: string
+    description?: string
+    status: 'not_started' | 'completed'
+    allLessonsCompleted?: boolean
+  } | null
+  stats: DashboardStats
+  xp: number
+  level: number
+  streakCount: number
+  dailyGoalXp: number
+  dailyGoalProgress: number
+  lessonsCompletedToday: number
+  xpEarnedToday: number
+}
+
 function DashboardContent() {
   const { user } = useAuth()
   const pathname = usePathname()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
+  
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [sharedProgress, setSharedProgress] = useState<UserLessonProgress[] | null>(null)
-  const [progressLoading, setProgressLoading] = useState(true)
 
-  // Helper: Fetch with timeout and user-friendly error handling
-  const fetchWithTimeout = useCallback(async (url: string, timeoutMs: number = 10000): Promise<Response> => {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
-    
-    try {
-      const response = await fetch(url, { signal: controller.signal })
-      clearTimeout(timeoutId)
-      return response
-    } catch (error) {
-      clearTimeout(timeoutId)
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('This is taking longer than usual. Please check your connection and try again.')
-      }
-      if (error instanceof Error && error.message.includes('Failed to fetch')) {
-        throw new Error('Unable to connect. Please check your internet connection.')
-      }
-      throw error
-    }
-  }, [])
-
-  // Load shared progress data (used by multiple widgets)
+  // Single unified fetch for all dashboard data
   useEffect(() => {
     if (!user?.id) {
-      setProgressLoading(false)
+      setIsLoading(false)
       return
     }
 
     let isMounted = true
 
-    async function loadSharedProgress() {
-      try {
-        // Check cache first
-        const cached = SmartAuthService.getUserProgress()
-        if (cached && cached.length > 0) {
-          if (isMounted) {
-            setSharedProgress(cached)
-            setProgressLoading(false)
-          }
-          return
-        }
-
-        // Fetch fresh progress
-        const progress = await LessonProgressService.getUserLessonProgress()
-        if (isMounted) {
-          setSharedProgress(progress)
-          setProgressLoading(false)
-        }
-      } catch (error) {
-        console.error('Failed to load progress:', error)
-        if (isMounted) {
-          setProgressLoading(false)
-          // Don't show error - widgets will handle gracefully
-        }
-      }
+    // Check cache first for instant render
+    const cachedDashboard = SmartAuthService.getCachedDashboard()
+    if (cachedDashboard && isMounted) {
+      setDashboard(cachedDashboard)
+      setIsLoading(false)
     }
 
-    loadSharedProgress()
-
+    // Always fetch fresh data
+    fetch('/api/dashboard')
+      .then(response => {
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Please sign in to view your dashboard.')
+          } else if (response.status === 500) {
+            throw new Error('Something went wrong on our end. Please try again in a moment.')
+          } else {
+            throw new Error('Unable to load your dashboard. Please refresh the page.')
+          }
+        }
+        return response.json()
+      })
+      .then((data: DashboardData) => {
+        if (!isMounted) return
+        
+        // Cache the fresh data
+        SmartAuthService.cacheDashboard(data)
+        // Update state (silent update if cache was shown)
+        setDashboard(data)
+        setIsLoading(false)
+      })
+      .catch((err) => {
+        if (!isMounted) return
+        
+        console.error('Error fetching dashboard:', err)
+        
+        // Only show error if we don't have cached data
+        if (!cachedDashboard) {
+          let errorMessage = 'Unable to load your dashboard. Please try again.'
+          if (err instanceof Error) {
+            if (err.message.includes('sign in')) {
+              errorMessage = err.message
+            } else if (err.message.includes('Something went wrong')) {
+              errorMessage = err.message
+            }
+          }
+          setError(errorMessage)
+        }
+        setIsLoading(false)
+      })
+    
     return () => {
       isMounted = false
     }
-  }, [user?.id])
+  }, [user?.id]) // FIXED: Removed cachedDashboard from dependencies
 
-  const fetchStats = useCallback(async () => {
-    if (!user?.id) {
-      setIsLoading(false)
-      return
-    }
-
-    setIsLoading(true)
-    setError(null)
-
-    // Check cache first for instant display (stale-while-revalidate pattern)
-    const cached = SmartAuthService.getCachedDashboardStats()
-    let hasCachedData = false
-
-    try {
-      if (cached) {
-        // Show cached data immediately
-        setStats({
-          wordsLearned: cached.wordsLearned,
-          masteredWords: cached.masteredWords,
-          hardWords: cached.hardWords,
-          unclassifiedWords: cached.unclassifiedWords,
-          wordsToReview: cached.wordsToReview
-        })
-        setIsLoading(false)
-        hasCachedData = true
-        // Continue to fetch fresh data in background (don't return)
-      }
-
-      // Fetch fresh data (either no cache, or background refresh)
-      const response = await fetchWithTimeout('/api/user-stats', 10000)
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Please sign in to view your dashboard.')
-        } else if (response.status === 500) {
-          throw new Error('Something went wrong on our end. Please try again in a moment.')
-        } else {
-          throw new Error('Unable to load your stats. Please refresh the page.')
-        }
-      }
-
-      const data: DashboardStats = await response.json()
-      
-      // Cache the fresh stats
-      SmartAuthService.cacheDashboardStats(data)
-      
-      // Update with fresh data (silent update if cache was shown)
-      setStats(data)
-      setIsLoading(false)
-    } catch (err) {
-      console.error('Error fetching dashboard stats:', err)
-      
-      // User-friendly error messages
-      let errorMessage = 'Unable to load your dashboard. Please try again.'
-      if (err instanceof Error) {
-        if (err.message.includes('taking longer than usual')) {
-          errorMessage = err.message
-        } else if (err.message.includes('Unable to connect')) {
-          errorMessage = err.message
-        } else if (err.message.includes('sign in')) {
-          errorMessage = err.message
-        } else if (err.message.includes('Something went wrong')) {
-          errorMessage = err.message
-        }
-      }
-      
-      // Only show error if we don't have cached data to display
-      if (!hasCachedData) {
-        setError(errorMessage)
-      }
-      setIsLoading(false)
-    }
-  }, [user?.id, fetchWithTimeout])
-
-  // Initial load only - refreshes when navigating to dashboard (not on tab switch)
-  useEffect(() => {
-    if (user?.id) {
-      fetchStats()
-    }
-  }, [user?.id, fetchStats])
+  // Show loading skeleton only if no cache exists
+  if (isLoading && !dashboard) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
+            <div className="text-center mb-6 sm:mb-8">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary mb-2">
+                Your Learning Hub
+              </h1>
+              <p className="text-lg sm:text-xl text-muted-foreground">
+                Track your progress and maximize your potential
+              </p>
+            </div>
+            <div className="flex items-center justify-center min-h-[400px]">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -223,14 +184,14 @@ function DashboardContent() {
           {/* Action-First Layout: Resume Learning (Primary Action) */}
           <div className="mb-6 md:mb-8">
             <WidgetErrorBoundary>
-              <ResumeLearning sharedProgress={sharedProgress} isLoading={progressLoading} />
+              <ResumeLearning nextLesson={dashboard?.nextLesson || null} />
             </WidgetErrorBoundary>
           </div>
 
           {/* Today's Progress - Daily Feedback Loop */}
           <div className="mb-6 md:mb-8">
             <WidgetErrorBoundary>
-              <TodaysProgress sharedProgress={sharedProgress} isLoading={progressLoading} />
+              <TodaysProgress sharedProgress={dashboard?.progress || null} isLoading={isLoading} />
             </WidgetErrorBoundary>
           </div>
 
@@ -250,12 +211,12 @@ function DashboardContent() {
           <div className="mb-6 md:mb-8">
             <WidgetErrorBoundary>
               <ProgressOverview 
-                wordsLearned={stats?.wordsLearned || 0}
-                masteredWords={stats?.masteredWords || 0}
-                wordsToReview={stats?.wordsToReview?.length || 0}
+                wordsLearned={dashboard?.stats?.wordsLearned || 0}
+                masteredWords={dashboard?.stats?.masteredWords || 0}
+                wordsToReview={dashboard?.stats?.wordsToReview?.length || 0}
                 isLoading={isLoading}
-                sharedProgress={sharedProgress}
-                progressLoading={progressLoading}
+                sharedProgress={dashboard?.progress || null}
+                progressLoading={isLoading}
               />
             </WidgetErrorBoundary>
           </div>
@@ -264,7 +225,7 @@ function DashboardContent() {
           <div className="mb-6 sm:mb-8">
             <WidgetErrorBoundary>
               <WordsToReviewWidget 
-                wordsToReview={stats?.wordsToReview || []} 
+                wordsToReview={dashboard?.stats?.wordsToReview || []} 
                 isLoading={isLoading} 
               />
             </WidgetErrorBoundary>
@@ -274,7 +235,7 @@ function DashboardContent() {
           <div className="mb-6 sm:mb-8">
             <WidgetErrorBoundary>
               <HardWordsWidget 
-                hardWords={stats?.hardWords || []} 
+                hardWords={dashboard?.stats?.hardWords || []} 
                 isLoading={isLoading} 
               />
             </WidgetErrorBoundary>

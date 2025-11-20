@@ -1072,6 +1072,139 @@ export class SmartAuthService {
     if (!this.sessionCache) return
     
     delete this.sessionCache.dashboardStats
+    // Also invalidate unified dashboard cache
+    delete (this.sessionCache as any).dashboardCache
+  }
+
+  /**
+   * Invalidate dashboard cache (call after lesson completion)
+   * Dashboard will refresh on next visit, not immediately
+   */
+  static invalidateDashboardCache(): void {
+    if (!this.sessionCache) return
+    
+    delete (this.sessionCache as any).dashboardCache
+  }
+
+  /**
+   * Get cached dashboard data (unified)
+   */
+  static getCachedDashboard(): {
+    progress: UserLessonProgress[]
+    nextLesson: {
+      moduleId: string
+      lessonId: string
+      moduleTitle: string
+      lessonTitle: string
+      description?: string
+      status: 'not_started' | 'completed'
+      allLessonsCompleted?: boolean
+    } | null
+    stats: {
+      wordsLearned: number
+      masteredWords: number
+      hardWords: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+      unclassifiedWords?: number
+      wordsToReview?: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+    }
+    xp: number
+    level: number
+    streakCount: number
+    dailyGoalXp: number
+    dailyGoalProgress: number
+    lessonsCompletedToday: number
+    xpEarnedToday: number
+  } | null {
+    if (!this.sessionCache) return null
+    
+    // Check if dashboard cache exists and is valid
+    const dashboardCache = (this.sessionCache as any).dashboardCache
+    if (!dashboardCache) return null
+    
+    const now = Date.now()
+    const cacheAge = now - dashboardCache.cachedAt
+    const TTL = 5 * 60 * 1000 // 5 minutes
+    
+    if (cacheAge > TTL) {
+      // Cache expired
+      return null
+    }
+    
+    return dashboardCache.data
+  }
+
+  /**
+   * Cache dashboard data (unified)
+   */
+  static cacheDashboard(data: {
+    progress: UserLessonProgress[]
+    nextLesson: {
+      moduleId: string
+      lessonId: string
+      moduleTitle: string
+      lessonTitle: string
+      description?: string
+      status: 'not_started' | 'completed'
+      allLessonsCompleted?: boolean
+    } | null
+    stats: {
+      wordsLearned: number
+      masteredWords: number
+      hardWords: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+      unclassifiedWords?: number
+      wordsToReview?: Array<{
+        vocabulary_id: string
+        word_text: string
+        consecutive_correct: number
+        total_attempts: number
+        total_correct: number
+        total_incorrect: number
+        accuracy: number
+        last_seen_at: string | null
+      }>
+    }
+    xp: number
+    level: number
+    streakCount: number
+    dailyGoalXp: number
+    dailyGoalProgress: number
+    lessonsCompletedToday: number
+    xpEarnedToday: number
+  }): void {
+    if (!this.sessionCache) return
+    
+    // Store dashboard cache
+    ;(this.sessionCache as any).dashboardCache = {
+      data,
+      cachedAt: Date.now()
+    }
   }
 
   /**
