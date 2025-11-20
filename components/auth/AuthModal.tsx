@@ -208,7 +208,16 @@ export function AuthModal({
       
       if (session?.user?.email_confirmed_at) {
         verificationLog('Email verified via manual refresh')
+        
+        // Ensure this tab gets the fresh auth token
+        await supabase.auth.refreshSession()
+        
+        // Force full session reloading + user context update
+        const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
+        await SmartAuthService.initializeSession()
+        
         await handleVerificationSuccess()
+        return
       } else {
         verificationLog('Email not yet verified')
         setError('Email not yet verified. Please check your inbox and click the verification link.')
