@@ -1065,7 +1065,7 @@ export class WordBankService {
         // First, try to match grammar forms (composite IDs with |)
         const grammarFormIds = sequenceIds.filter(id => id.includes('|'));
         exactMatch = vocabularyBank.find(v => {
-          if (usedVocabIds.has(v.id)) return false;
+        if (usedVocabIds.has(v.id)) return false;
           if (!grammarFormIds.includes(v.id)) return false;
           const vocabVariants = this.normalizeForValidation(v.en);
           const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
@@ -1081,17 +1081,17 @@ export class WordBankService {
           exactMatch = vocabularyBank.find(v => {
             if (usedVocabIds.has(v.id)) return false;
             if (v.id.includes('|')) return false; // Skip grammar forms
-            const vocabVariants = this.normalizeForValidation(v.en);
-            
+        const vocabVariants = this.normalizeForValidation(v.en);
+        
             if (normalizedWord === 'name' && v.id === 'esm' && FLAGS.LOG_WORDBANK) {
                  console.log(`[matchWordsToVocabulary] Checking esm: variants=${vocabVariants.join(',')}, word=${normalizedWord}`);
             }
 
-            const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
-            if (isSingleWordVocab) {
-              return vocabVariants.some(variant => variant === normalizedWord);
+        const isSingleWordVocab = vocabVariants.every(variant => !variant.includes(' '));
+        if (isSingleWordVocab) {
+          return vocabVariants.some(variant => variant === normalizedWord);
             }
-            return false;
+          return false;
           });
         }
       } else {
@@ -1104,7 +1104,7 @@ export class WordBankService {
             return vocabVariants.some(variant => variant === normalizedWord);
           }
           return false;
-        });
+      });
       }
 
       if (exactMatch) {
@@ -1572,8 +1572,8 @@ export class WordBankService {
         
         return {
           vocabularyId,
-          wordText: item.wordText,
-          normalized: this.normalizeForValidation(item.wordText)
+        wordText: item.wordText,
+        normalized: this.normalizeForValidation(item.wordText)
         };
       });
 

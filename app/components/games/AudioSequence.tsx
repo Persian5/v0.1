@@ -528,11 +528,11 @@ export function AudioSequence({
         });
       } else {
         // No grammar forms - track as-is
-        perWordResults.forEach(result => {
-          if (result.vocabularyId) {
-            onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
-          }
-        });
+      perWordResults.forEach(result => {
+        if (result.vocabularyId) {
+          onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
+        }
+      });
       }
     } else if (onVocabTrack) {
       // Fallback: If no expectedTranslation, use resolved lexemes for tracking

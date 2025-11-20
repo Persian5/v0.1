@@ -16,6 +16,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   resendVerification: (email: string) => Promise<{ error: string | null }>
+  sendPasswordReset: (email: string) => Promise<{ error: string | null }> // Added sendPasswordReset
   changePassword: (email: string, currentPassword: string, newPassword: string) => Promise<{ error: string | null }>
 }
 
@@ -167,6 +168,18 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  const sendPasswordReset = async (email: string): Promise<{ error: string | null }> => {
+    try {
+      const { error } = await AuthService.sendPasswordReset(email)
+      if (error) {
+        return { error: error.message }
+      }
+      return { error: null }
+    } catch (error) {
+      return { error: 'Failed to send password reset email' }
+    }
+  }
+
   const changePassword = async (email: string, currentPassword: string, newPassword: string): Promise<{ error: string | null }> => {
     // Use existing AuthService for password operations
     const { error } = await AuthService.changePassword({ email, currentPassword, newPassword })
@@ -181,6 +194,7 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
     signUp,
     signOut,
     resendVerification,
+    sendPasswordReset,
     changePassword
   }
 

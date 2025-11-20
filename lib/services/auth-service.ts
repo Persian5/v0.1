@@ -25,12 +25,13 @@ export class AuthService {
   // Sign up a new user
   static async signUp({ email, password, firstName, lastName }: SignUpData): Promise<{ user: User | null; error: AuthError | null }> {
     try {
+      const normalizedEmail = email.trim().toLowerCase()
       // Generate display name in correct format: "FirstName LastInitial."
       // If generation fails (no first name), use null (will be handled by getOrCreateUserProfile)
       const displayName = generateDefaultDisplayName(firstName, lastName) || null
 
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
         options: {
           data: {
@@ -58,8 +59,9 @@ export class AuthService {
   // Sign in an existing user
   static async signIn({ email, password }: SignInData): Promise<{ user: User | null; error: AuthError | null }> {
     try {
+      const normalizedEmail = email.trim().toLowerCase()
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password
       })
 
@@ -117,18 +119,52 @@ export class AuthService {
     return DatabaseService.isEmailVerified(user)
   }
 
+  // Cooldown tracking
+  private static resendCooldowns = new Map<string, number>()
+
   // Resend email verification
   static async resendEmailVerification(email: string): Promise<{ error: AuthError | null }> {
+    const normalizedEmail = email.trim().toLowerCase()
+
+    // CRITICAL: Check cooldown
+    const lastSent = this.resendCooldowns.get(normalizedEmail)
+    const now = Date.now()
+    const COOLDOWN_MS = 5 * 60 * 1000 // 5 minutes
+    
+    if (lastSent && (now - lastSent) < COOLDOWN_MS) {
+      const remainingMinutes = Math.ceil((COOLDOWN_MS - (now - lastSent)) / 1000 / 60)
+      return { 
+        error: { 
+          message: `Please wait ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} before requesting another email`,
+          code: 'rate_limited'
+        } 
+      }
+    }
+
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email
+        email: normalizedEmail
       })
 
       if (error) {
+        // Check if Supabase rate limited us
+        if (error.message.toLowerCase().includes('rate limit') ||
+            error.message.toLowerCase().includes('too many requests')) {
+          // Set cooldown even on Supabase rate limit
+          this.resendCooldowns.set(normalizedEmail, now)
+          return { 
+            error: { 
+              message: 'Too many requests. Please wait 5 minutes before trying again.',
+              code: 'rate_limited'
+            } 
+          }
+        }
         return { error: { message: error.message, code: error.message } }
       }
 
+      // Success - set cooldown
+      this.resendCooldowns.set(normalizedEmail, now)
       return { error: null }
     } catch (error) {
       return { error: { message: 'Failed to resend verification email' } }
@@ -138,7 +174,14 @@ export class AuthService {
   // Send password reset email
   static async sendPasswordReset(email: string): Promise<{ error: AuthError | null }> {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      const normalizedEmail = email.trim().toLowerCase()
+      const redirectTo = typeof window !== 'undefined' 
+        ? `${window.location.origin}/auth/reset-password`
+        : undefined
+
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo
+      })
 
       if (error) {
         return { error: { message: error.message, code: error.message } }

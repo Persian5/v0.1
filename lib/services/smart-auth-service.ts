@@ -553,32 +553,9 @@ export class SmartAuthService {
     }
   }
   
-  /**
-   * Add XP with optimistic update - replaces XpService calls
-   */
-  static async addUserXp(amount: number, source: string, metadata?: any): Promise<void> {
-    if (!this.sessionCache) return
-    
-    const oldXp = this.sessionCache.totalXp
-    
-    // Optimistic update for instant UI
-    this.sessionCache.totalXp += amount
-    
-    // Emit event for reactive UI updates
-    this.emitEvent('xp-updated', { 
-      newXp: this.sessionCache.totalXp, 
-      oldXp, 
-      delta: amount,
-      source,
-      metadata 
-    })
-    
-    // ⚠️ DEPRECATED: Old SyncService path - now using XpService.awardXpOnce for idempotent awards
-    // Keeping this method for compatibility with legacy code, but it only does optimistic UI updates
-    // The actual XP persistence happens via XpService.awardXpOnce in LessonRunner
-    
-    // No background sync needed - idempotent system handles it at award time
-  }
+  // PHASE 4.1 CLEANUP: addUserXp removed.
+  // XP is now only awarded through XpService.awardXpOnce → award_xp_unified
+  // This prevents duplicate counting and race conditions.
   
   /**
    * Add XP optimistically (immediate UI feedback before DB confirms)

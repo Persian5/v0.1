@@ -151,7 +151,7 @@ export function generateGrammarOptions(
   
   // DEBUG LOG: Function entry
   if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-    console.log('🚀 [generateGrammarOptions] Function Called:', {
+  console.log('🚀 [generateGrammarOptions] Function Called:', {
     blankType,
     correctAnswer,
     lessonVocabularyCount: lessonVocabulary.length,
@@ -171,7 +171,7 @@ export function generateGrammarOptions(
       connectorsCount: learnedSoFar.connectors?.length || 0
     } : null,
     expectedSemanticGroup
-    })
+  })
   }
 
   // CORRECT-ANSWER TEXT NORMALIZATION: Derive display text from VocabularyItem
@@ -205,13 +205,13 @@ export function generateGrammarOptions(
       : ['am', 'i', 'e', 'et', 'esh', 'ye']; // Fallback: hardcoded list
     
     if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-      console.log('🔤 [generateGrammarOptions] Suffix Blank:', {
+    console.log('🔤 [generateGrammarOptions] Suffix Blank:', {
       correctAnswer,
       learnedSuffixes: learnedSoFar?.suffixes,
       usingLearnedSuffixes: learnedSoFar?.suffixes && learnedSoFar.suffixes.length > 0,
       suffixPool,
       suffixPoolCount: suffixPool.length
-      })
+    })
     }
     
     for (const suffix of suffixPool) {
@@ -229,13 +229,13 @@ export function generateGrammarOptions(
       : ['vali', 'va', 'ham']; // Fallback: hardcoded list
     
     if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-      console.log('🔗 [generateGrammarOptions] Connector Blank:', {
+    console.log('🔗 [generateGrammarOptions] Connector Blank:', {
       correctAnswer,
       learnedConnectors: learnedSoFar?.connectors,
       usingLearnedConnectors: learnedSoFar?.connectors && learnedSoFar.connectors.length > 0,
       connectorPool,
       connectorPoolCount: connectorPool.length
-      })
+    })
     }
     
     for (const connector of connectorPool) {
@@ -271,7 +271,7 @@ export function generateGrammarOptions(
     
     // DEBUG LOG: After filtering connectors/correct answer
     if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-      console.log('🔍 [generateGrammarOptions] After Filtering Connectors/Correct Answer:', {
+    console.log('🔍 [generateGrammarOptions] After Filtering Connectors/Correct Answer:', {
       originalVocabCount: lessonVocabulary.length,
       afterFilterCount: availableVocab.length,
       filteredOut: lessonVocabulary.length - availableVocab.length,
@@ -280,7 +280,7 @@ export function generateGrammarOptions(
         finglish: v.finglish,
         semanticGroup: v.semanticGroup
       }))
-      })
+    })
     }
     
     // PHASE 4: If learnedSoFar provided, filter to only learned vocab IDs
@@ -293,7 +293,7 @@ export function generateGrammarOptions(
       
       // DEBUG LOG: After learnedSoFar filter
       if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-        console.log('📚 [generateGrammarOptions] After learnedSoFar Filter:', {
+      console.log('📚 [generateGrammarOptions] After learnedSoFar Filter:', {
         beforeCount: beforeLearnedFilter,
         afterCount: availableVocab.length,
         learnedVocabIds: learnedSoFar.vocabIds,
@@ -312,7 +312,7 @@ export function generateGrammarOptions(
           finglish: v.finglish,
           semanticGroup: v.semanticGroup
         }))
-        })
+      })
       }
     }
     
@@ -326,7 +326,7 @@ export function generateGrammarOptions(
       
       // DEBUG LOG: Semantic filtering decision
       if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-        console.log('🎨 [generateGrammarOptions] Semantic Filter Decision:', {
+      console.log('🎨 [generateGrammarOptions] Semantic Filter Decision:', {
         expectedSemanticGroup,
         semanticMatchesCount: semanticMatches.length,
         semanticMatches: semanticMatches.map(v => ({
@@ -338,7 +338,7 @@ export function generateGrammarOptions(
         willUseSemanticFilter: semanticMatches.length >= 3,
         beforeSemanticFilter: availableVocab.length,
         afterSemanticFilter: semanticMatches.length >= 3 ? semanticMatches.length : availableVocab.length
-        })
+      })
       }
       
       // Only use semantic filter if we have enough for 4+ total options (1 correct + 3+ distractors)
@@ -384,7 +384,7 @@ export function generateGrammarOptions(
     
     // DEBUG LOG: Before distractor selection
     if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-      console.log('🎲 [generateGrammarOptions] Before Distractor Selection:', {
+    console.log('🎲 [generateGrammarOptions] Before Distractor Selection:', {
       optionsSoFar: options.length,
       optionsSoFarList: options,
       remainingCount: remaining.length,
@@ -395,14 +395,14 @@ export function generateGrammarOptions(
       })),
       needDistractors: 4 - options.length,
       hasEnoughRemaining: remaining.length >= 3
-      })
+    })
     }
     
     // CRITICAL: Ensure we always have at least 3 distractors (4 total options minimum)
     // If we don't have enough, use ALL learned vocab regardless of semantic filtering
     if (remaining.length < 3 && learnedSoFar?.vocabIds && learnedSoFar.vocabIds.length > 0) {
       if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-        console.log('⚠️ [generateGrammarOptions] FALLBACK: Not enough remaining vocab, using all learned vocab')
+      console.log('⚠️ [generateGrammarOptions] FALLBACK: Not enough remaining vocab, using all learned vocab')
       }
       
       // Fallback: Use all learned vocab to ensure proper word bank
@@ -417,14 +417,14 @@ export function generateGrammarOptions(
       });
       
       if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-        console.log('🔄 [generateGrammarOptions] Fallback Vocab:', {
+      console.log('🔄 [generateGrammarOptions] Fallback Vocab:', {
         fallbackVocabCount: allLearnedVocab.length,
         fallbackVocab: allLearnedVocab.map(v => ({
           id: v.id,
           finglish: v.finglish,
           semanticGroup: v.semanticGroup
         }))
-        })
+      })
       }
       
       // Use all learned vocab if we still don't have enough
@@ -441,7 +441,7 @@ export function generateGrammarOptions(
       } else {
         // Last resort: Use whatever we have
         if (FLAGS.LOG_GRAMMAR_OPTIONS) {
-          console.log('🚨 [generateGrammarOptions] LAST RESORT: Using remaining vocab (< 3 items)')
+        console.log('🚨 [generateGrammarOptions] LAST RESORT: Using remaining vocab (< 3 items)')
         }
         const shuffled = [...remaining].sort(() => Math.random() - 0.5);
         for (const vocab of shuffled) {

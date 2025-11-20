@@ -152,11 +152,18 @@
 ### Database RPC Functions
 
 #### `award_step_xp_idem(p_user_id, p_idempotency_key, p_amount, p_source, p_lesson_id, p_metadata)`
-- **Purpose**: Idempotent XP award - ensures users can only earn XP once per step
+- **Purpose**: Idempotent XP award (LEGACY - use `award_xp_unified`)
 - **Returns**: `jsonb { awarded: boolean, new_xp: integer }`
 - **Logic**: Uses `idempotency_key` constraint to prevent duplicate awards
 - **Security**: Uses `SECURITY DEFINER`, granted to `authenticated`
 - **Updated**: 2025-01-10 - Returns new XP total atomically
+
+#### `award_xp_unified(p_user_id, p_amount, p_source, p_idempotency_key, p_metadata, p_lesson_id)`
+- **Purpose**: Unified XP award - Handles Lesson, Review, and Game XP with idempotency
+- **Returns**: `jsonb { awarded: boolean, new_xp: integer, reason: string }`
+- **Logic**: Inserts into `user_xp_transactions` and atomically updates `user_profiles.total_xp`. Maintains backward compatibility by updating `review_xp_earned_today` if source starts with 'review'.
+- **Security**: Uses `SECURITY DEFINER`, granted to `authenticated`
+- **Added**: 2025-01-19 - Replaces `award_step_xp_idem`
 
 #### `get_all_users_for_leaderboard()`
 - **Purpose**: Fetches all user profiles for leaderboard with guaranteed real-time data
@@ -225,6 +232,7 @@
 - **UNIQUE**: `(user_id, source, lesson_id, created_at)` - Prevents duplicate XP awards (idempotency for retries)
 - **UNIQUE**: `(user_id, idempotency_key)` WHERE `idempotency_key IS NOT NULL` - Ensures once-per-step XP awards (format: moduleId:lessonId:stepUid)
 - **INDEX**: `idx_xp_transactions_lookup` on `(user_id, source, lesson_id)` - Faster lookups
+- **INDEX**: `idx_user_xp_transactions_daily_source` on `(user_id, source, created_at)` - Efficient daily aggregation queries (added 2025-01-19)
 
 ### vocabulary_performance
 - **UNIQUE**: `(user_id, vocabulary_id)` - One performance record per user per word

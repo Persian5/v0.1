@@ -229,7 +229,20 @@ export class ReviewSessionService {
         }
       }
 
-      const currentXp = profile?.review_xp_earned_today || 0
+      // PHASE 2 FIX: Query user_xp_transactions for truth
+      // We use local browser midnight as the "start of day" since the user is active
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const todayStart = today.toISOString()
+      
+      const { data: transactions, error: txError } = await supabase
+        .from('user_xp_transactions')
+        .select('amount')
+        .eq('user_id', userId)
+        .gte('created_at', todayStart)
+        .like('source', 'review-%')
+      
+      const currentXp = transactions?.reduce((sum, row) => sum + row.amount, 0) || 0
       const canAward = currentXp < REVIEW_XP_DAILY_CAP
 
       return {
@@ -252,20 +265,28 @@ export class ReviewSessionService {
 
   /**
    * Award review XP (atomic update with cap enforcement)
+   * Uses unified XP service with idempotency.
    * 
-   * Returns:
-   * - { awarded: true, newXp: number } if XP was awarded
-   * - { awarded: false, reason: string } if cap reached or error
+   * @param userId User ID
+   * @param amount XP amount
+   * @param context Context for idempotency (game type, action ID)
    */
   static async awardReviewXp(
     userId: string,
-    amount: number = REVIEW_XP_PER_CORRECT
+    amount: number = REVIEW_XP_PER_CORRECT,
+    context: {
+      gameType: string,
+      actionId: string,
+      metadata?: any
+    }
   ): Promise<{ awarded: boolean; newXp?: number; reason?: string }> {
     try {
       // First, ensure daily reset is handled if needed
       await this.resetDailyReviewXpIfNeeded(userId)
 
-      // Check current status
+      // Check current status (daily cap)
+      // PHASE 2: This query should eventually use user_xp_transactions sum
+      // For now, we still rely on review_xp_earned_today which is kept in sync by the RPC
       const status = await this.canAwardReviewXp(userId)
       
       if (!status.canAward) {
@@ -286,68 +307,42 @@ export class ReviewSessionService {
         }
       }
 
-      // Atomic update: increment review_xp_earned_today and total_xp
-      // First fetch current total_xp, then update both fields
-      const { data: currentProfile, error: fetchError } = await supabase
-        .from('user_profiles')
-        .select('total_xp')
-        .eq('id', userId)
-        .single()
-
-      if (fetchError) {
-        console.error('Error fetching current XP:', fetchError)
-        return {
-          awarded: false,
-          reason: 'Database error'
+      // Use Unified XP Service
+      // We construct a unique stepUid based on the review action
+      // format: review:[gameType]:[actionId]
+      const stepUid = `review:${context.gameType}:${context.actionId}`
+      
+      const { XpService } = await import('./xp-service')
+      
+      const result = await XpService.awardXpOnce({
+        userId,
+        moduleId: 'review', // Virtual module
+        lessonId: context.gameType, // Virtual lesson
+        stepUid: context.actionId, // Specific action
+        amount: xpToAward,
+        source: `review-${context.gameType}`,
+        metadata: {
+          ...context.metadata,
+          isReview: true,
+          gameType: context.gameType
         }
+      })
+
+      if (!result.granted) {
+         // If already awarded, we consider it "success" from the UI perspective (idempotent)
+         // but return the reason for debugging
+         return {
+           awarded: false,
+           reason: result.reason || 'already_awarded',
+           newXp: result.newXp
+         }
       }
 
-      const newTotalXp = (currentProfile?.total_xp || 0) + xpToAward
-
-      // CRITICAL: Update SmartAuthService cache optimistically BEFORE database update
-      // This gives instant UI feedback and prevents "reconciled" messages
-      try {
-        const { SmartAuthService } = await import('./smart-auth-service')
-        // Optimistic update: increment cache immediately
-        SmartAuthService.addXpOptimistic(xpToAward, 'review-game')
-      } catch (cacheError) {
-        console.warn('Failed to update SmartAuthService cache optimistically (non-critical):', cacheError)
-        // Non-critical - we'll sync after DB update
-      }
-
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .update({
-          review_xp_earned_today: status.currentXp + xpToAward,
-          total_xp: newTotalXp,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId)
-        .select('review_xp_earned_today, total_xp')
-        .single()
-
-      if (error) {
-        console.error('Error awarding review XP:', error)
-        // Rollback optimistic update on error
-        try {
-          const { SmartAuthService } = await import('./smart-auth-service')
-          SmartAuthService.addXpOptimistic(-xpToAward, 'review-game-rollback')
-        } catch (rollbackError) {
-          console.warn('Failed to rollback optimistic XP update:', rollbackError)
-        }
-        return {
-          awarded: false,
-          reason: 'Database error'
-        }
-      }
-
-      // Optimistic update already set cache correctly, no need to reconcile
-      // Cache is now in sync with database
-      console.log(`✅ Review XP awarded: ${xpToAward} XP. Total XP: ${newTotalXp}`)
+      console.log(`✅ Review XP awarded: ${xpToAward} XP via unified service`)
 
       return {
         awarded: true,
-        newXp: data?.review_xp_earned_today || status.currentXp + xpToAward
+        newXp: result.newXp
       }
 
     } catch (error) {

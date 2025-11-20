@@ -370,18 +370,19 @@ export class XpService {
     
     try {
       // Call RPC function - awards XP in database and returns new total for validation
-      const { data, error } = await supabase.rpc('award_step_xp_idem', {
+      // PHASE 2 FIX: Use unified RPC
+      const { data, error } = await supabase.rpc('award_xp_unified', {
         p_user_id: userId,
-        p_idempotency_key: idempotencyKey,
         p_amount: amount,
         p_source: source,
-        p_lesson_id: `${moduleId}/${lessonId}`,
+        p_idempotency_key: idempotencyKey,
         p_metadata: {
           moduleId,
           lessonId,
           stepUid,
           ...metadata
-        }
+        },
+        p_lesson_id: lessonId && moduleId ? `${moduleId}/${lessonId}` : null
       })
       
       if (error) {
@@ -406,26 +407,28 @@ export class XpService {
         // XP awarded successfully - cache already set above
         console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
         
-        // No reconciliation needed - optimistic update is already correct
-        // The RPC confirmed the award, so our optimistic +amount is accurate
+        // PHASE 1 FIX: Use atomic newXp from RPC as source of truth
+        // Unconditionally set the UI to match the database state
+        // This prevents race conditions where optimistic updates might drift
+        if (newXp !== undefined) {
+          try {
+            const { SmartAuthService } = await import('./smart-auth-service')
+            SmartAuthService.setXpDirectly(newXp)
+          } catch (e) {
+            console.warn('Failed to sync XP to UI:', e)
+          }
+        }
       } else {
         // XP already awarded (race condition - cache was empty but DB had it)
         // Cache already set above (correct - prevents future attempts)
         
-        // SMOOTH RECONCILIATION: Only reconcile if DB value differs from optimistic
-        // This prevents flicker if DB value matches our optimistic update
+        // PHASE 1 FIX: Use atomic newXp from RPC as source of truth
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
           if (newXp !== undefined) {
-            // Get current optimistic XP
-            const currentXp = SmartAuthService.getUserXp() || 0
-            // Only reconcile if different (prevents unnecessary UI updates)
-            if (currentXp !== newXp) {
-              SmartAuthService.setXpDirectly(newXp)
-            } else {
-              // Already correct - no reconciliation needed (no flicker)
-              console.log(`⏭️ XP already awarded, but UI already correct: ${idempotencyKey}`)
-            }
+             // Unconditionally set the UI to match the database state
+             // Even if "already awarded", we want the UI to show the correct total
+             SmartAuthService.setXpDirectly(newXp)
           }
         } catch (error) {
           console.warn('Failed to reconcile XP:', error)

@@ -291,7 +291,13 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
 
       // Award XP (1 XP per correct match)
       if (user?.id) {
-        ReviewSessionService.awardReviewXp(user.id, 1).then(result => {
+        ReviewSessionService.awardReviewXp(user.id, 1, {
+          gameType: 'memory-game',
+          actionId: `${card1.vocabularyId}-${Date.now()}`, // Unique action per match
+          metadata: {
+            vocabId: card1.vocabularyId
+          }
+        }).then(result => {
           if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
             setXpCapReached(true)
             setXpCapShown(true)

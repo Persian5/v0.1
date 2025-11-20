@@ -83,6 +83,8 @@ export function LessonRunner({
   const pendingRemediationRef = useRef<string[]>([]);
   const remediationTriggeredRef = useRef<Set<string>>(new Set()); // Prevent duplicate remediation triggers
   const currentStepTrackedRef = useRef<Set<string>>(new Set()); // Prevent retry counting on same step
+  // PHASE 1 FIX: Add debouncing for XP awards
+  const isAwardingXpRef = useRef(false);
   
   // Sync refs with state for re-render consistency
   useEffect(() => {
@@ -376,43 +378,49 @@ export function LessonRunner({
   // Returns Promise<boolean>: true if XP was granted, false if already completed
   const createStepXpHandler = () => {
     return async (): Promise<boolean> => {
+      // PHASE 1 FIX: Debounce rapid clicks
+      if (isAwardingXpRef.current) return false;
+      
       const currentStep = steps[idx];
       if (!currentStep || !user?.id) {
         console.warn('No current step or user available for XP', { idx, userId: user?.id });
         return false; // No XP granted
       }
 
-      // Derive stable step UID
-      const stepUid = deriveStepUid(currentStep, idx, moduleId, lessonId);
-      
-      // Get XP amount from curriculum
-      const xpReward = XpService.getStepXp(currentStep);
-      
-      // Award XP idempotently (database enforces once-per-step)
-      const result = await XpService.awardXpOnce({
-        userId: user.id,
-        moduleId,
-        lessonId,
-        stepUid,
-        amount: xpReward.amount,
-        source: xpReward.source,
-        metadata: {
-          activityType: currentStep.type,
-          stepIndex: idx,
-          isRemediation: isInRemediation
+      isAwardingXpRef.current = true;
+
+      try {
+        // Derive stable step UID
+        const stepUid = deriveStepUid(currentStep, idx, moduleId, lessonId);
+        
+        // Get XP amount from curriculum
+        const xpReward = XpService.getStepXp(currentStep);
+        
+        // Award XP idempotently (database enforces once-per-step)
+        const result = await XpService.awardXpOnce({
+          userId: user.id,
+          moduleId,
+          lessonId,
+          stepUid,
+          amount: xpReward.amount,
+          source: xpReward.source,
+          metadata: {
+            activityType: currentStep.type,
+            stepIndex: idx,
+            isRemediation: isInRemediation
+          }
+        });
+        
+        // Log if step was already completed
+        if (!result.granted) {
+          console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
         }
-      });
-      
-      // XP is already handled by awardXpOnce (optimistic update + RPC)
-      // No need to call addXp here - would be a duplicate
-      
-      // Log if step was already completed
-      if (!result.granted) {
-        console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
+        
+        // Return whether XP was granted (true = new XP, false = already done)
+        return result.granted;
+      } finally {
+        isAwardingXpRef.current = false;
       }
-      
-      // Return whether XP was granted (true = new XP, false = already done)
-      return result.granted;
     };
   };
   

@@ -53,17 +53,24 @@ export function useSmartXp(): UseXpReturn {
     }
 
     // Use SmartAuthService for optimistic updates + background sync
-    await SmartAuthService.addUserXp(amount, source, {
-      lessonId: metadata.lessonId,
-      moduleId: metadata.moduleId,
-      activityType: metadata.activityType,
-      isRemediation: metadata.isRemediation
-    })
+    // PHASE 1 FIX: Remove direct call to addUserXp to prevent double counting
+    // XpService.awardXpOnce is now the single source of truth for XP awards
+    // await SmartAuthService.addUserXp(amount, source, {
+    //   lessonId: metadata.lessonId,
+    //   moduleId: metadata.moduleId,
+    //   activityType: metadata.activityType,
+    //   isRemediation: metadata.isRemediation
+    // })
 
     // Update context immediately for instant UI feedback
-    if (xpCtx?.setXp) {
-      xpCtx.setXp(prev => prev + amount)
-    }
+    // PHASE 1 FIX: Keep context update for UI responsiveness if needed,
+    // but relying on the event from XpService is better.
+    // For now, we disable this too to ensure single source of truth.
+    // if (xpCtx?.setXp) {
+    //   xpCtx.setXp(prev => prev + amount)
+    // }
+    
+    console.warn('useSmartXp.addXp is deprecated. Use XpService.awardXpOnce instead.')
   }, [user, isEmailVerified, xpCtx])
 
   return {

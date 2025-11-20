@@ -663,22 +663,22 @@ export const curriculumData: Module[] = [
         const vocabulary: VocabularyItem[] = [];
 
         return {
-          id: "lesson1",
+        id: "lesson1",
           title: "Introducing Yourself",
           description: "Today you'll learn how to introduce yourself in Persian using \"esme man … e\" and reinforce the identity-question pattern introduced in Module 1.",
           emoji: "👋",
-          progress: 0,
-          locked: false,
+        progress: 0,
+        locked: false,
           vocabulary,
-          steps: [
+        steps: [
             // 1. Welcome Intro
-            {
-              type: "welcome",
+          {
+            type: "welcome",
               title: "Introducing Yourself",
               description: "Today you'll learn how to introduce yourself in Persian. You already know how to ask, \"What is your name?\" Now it's time to answer it naturally like a native.",
-              points: 0,
-              data: {
-                objectives: [
+            points: 0,
+            data: {
+              objectives: [
                   "Learn the ezafe connector (-e)",
                   "Say \"my name is...\" naturally",
                   "Answer \"What is your name?\" confidently",
@@ -722,29 +722,29 @@ export const curriculumData: Module[] = [
               }
             },
             // 6. Grammar Fill in the Blank: Esm-___ man (testing for -e)
-            {
-              type: "grammar-fill-blank",
-              points: 1,
-              data: {
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
                 conceptId: "ezafe-e-esm",
                 label: "FILL IN THE SUFFIX",
                 subtitle: "Choose the correct ending",
-                exercises: [
-                  {
+              exercises: [
+                {
                     sentence: "Esm-___ man",
                     translation: "My name",
                     blankPosition: 4,
                     correctAnswer: "e",
-                    suffixOptions: [
+                  suffixOptions: [
                       { id: "suffix-e", text: "-e" },
-                      { id: "suffix-am", text: "-am" },
-                      { id: "suffix-i", text: "-i" },
-                      { id: "suffix-et", text: "-et" }
-                    ]
-                  }
-                ]
-              }
-            },
+                    { id: "suffix-am", text: "-am" },
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
+            }
+          },
             // 7. Audio Meaning: Esm|e
             audioMeaning({ kind: "suffix", baseId: "esm", suffixId: "e" } as const),
             // 8. Text Sequence: Esm|e Man
@@ -785,15 +785,15 @@ export const curriculumData: Module[] = [
             // 13. MC Quiz: What does "esm|e man" mean
             {
               type: "quiz",
-              points: 2,
-              data: {
+            points: 2,
+            data: {
                 prompt: "What does 'Esme man' mean?",
                 options: ["My name", "Your name", "Name", "What is your name"],
                 correct: 0,
                 quizType: "grammar",
                 lexemeRef: { kind: "suffix", baseId: "esm", suffixId: "e" } as const
-              }
-            },
+            }
+          },
             // 14. Reverse MC: Which phrase means "your name"
             vocabQuiz(
               vocabulary,
@@ -860,7 +860,7 @@ export const curriculumData: Module[] = [
               },
               title: "Your Introduction"
             })
-          ]
+        ]
         };
       })(),
       {

@@ -254,11 +254,11 @@ export function TextSequence({
         });
       } else {
         // No grammar forms - track as-is
-        perWordResults.forEach(result => {
-          if (result.vocabularyId) {
-            onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
-          }
-        });
+      perWordResults.forEach(result => {
+        if (result.vocabularyId) {
+          onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
+        }
+      });
       }
     }
 

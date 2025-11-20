@@ -243,7 +243,13 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
     if (!user?.id || !allCorrect) return
 
     // Award XP for completing round (1 XP per round completion)
-    const result = await ReviewSessionService.awardReviewXp(user.id, 1)
+    const result = await ReviewSessionService.awardReviewXp(user.id, 1, {
+      gameType: 'matching-marathon',
+      actionId: `round-${round}-${Date.now()}`,
+      metadata: {
+        round
+      }
+    })
     if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
       setXpCapReached(true)
       setXpCapShown(true)

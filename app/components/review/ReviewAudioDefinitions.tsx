@@ -195,7 +195,13 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
       setCorrectCount(prev => prev + 1)
       
       // Award XP (1 XP per correct answer)
-      const result = await ReviewSessionService.awardReviewXp(user.id, 1)
+      const result = await ReviewSessionService.awardReviewXp(user.id, 1, {
+        gameType: 'audio-definitions',
+        actionId: `${vocabulary[currentIndex]?.id}-${Date.now()}`,
+        metadata: {
+          vocabId: vocabulary[currentIndex]?.id
+        }
+      })
       if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
         setXpCapReached(true)
         setXpCapShown(true)

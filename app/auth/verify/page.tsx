@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { OnboardingService } from '@/lib/services/onboarding-service'
+import { SmartAuthService } from '@/lib/services/smart-auth-service'
 
 type VerificationStatus = 
   | 'welcome'           // Post-signup, no token - HAPPY STATE
@@ -35,6 +36,19 @@ function VerifyEmailContent() {
       // Get URL parameters
       const token = searchParams.get('token')
       const type = searchParams.get('type')
+      
+      // CRITICAL: Validate required params early
+      if (token && !type) {
+        setError('Invalid verification link: missing type parameter')
+        setStatus('invalid')
+        return
+      }
+      
+      if (type && !token) {
+        setError('Invalid verification link: missing token parameter')
+        setStatus('invalid')
+        return
+      }
       
       // CASE 1: User already verified - redirect them
       if (user && isEmailVerified) {
@@ -75,6 +89,55 @@ function VerifyEmailContent() {
         if (error) {
           console.error('Verification error:', error)
           
+          // CRITICAL: Handle "already used" as success
+          if (error.message.includes('already been used') || 
+              error.message.includes('token has already been used') ||
+              error.message.includes('already verified')) {
+            // Token was already used = email is verified = SUCCESS
+            setStatus('success')
+            setUserEmail(user?.email || '')
+            
+            // Refresh session to get verified state
+            await supabase.auth.refreshSession()
+            try {
+              await SmartAuthService.refreshSession()
+            } catch (e) { console.error('SmartAuth refresh failed', e) }
+            
+            // Check onboarding and redirect
+            try {
+              const needsOnboarding = await OnboardingService.checkNeedsOnboarding(user?.id || '')
+              if (!needsOnboarding) {
+                setTimeout(() => {
+                  router.push('/modules')
+                }, 2000)
+              }
+            } catch (error) {
+              console.error('Failed to check onboarding:', error)
+            }
+            return
+          }
+
+          // CRITICAL: Check for session/cookie/device errors
+          if (error.message.includes('session') || 
+              error.message.includes('cookie') ||
+              error.message.includes('browser') ||
+              error.message.includes('device') ||
+              error.code === 'session_not_found') {
+            
+            // Device mismatch - verify worked but session failed
+            if (error.message.includes('session') || error.message.includes('device')) {
+               setStatus('success')
+               setError('Verification complete! Please sign in to continue.')
+               setUserEmail(user?.email || '')
+               return
+            }
+
+            // Likely cookie issue - show helpful message
+            setError('Having trouble verifying? Please open this link in Chrome or Safari (not inside Gmail, Instagram, or Facebook).')
+            setStatus('invalid')
+            return
+          }
+          
           // Check for specific error types
           if (error.message.includes('expired') || error.message.includes('invalid_token')) {
             setStatus('expired')
@@ -89,35 +152,50 @@ function VerifyEmailContent() {
           setStatus('success')
           setUserEmail(data.user.email || '')
           
-          // ✅ Auto-login: The verifyOtp call already creates a session
-          // The session is now active - user is automatically logged in
+          // CRITICAL: Ensure session is active
+          try {
+            await supabase.auth.refreshSession()
+            await SmartAuthService.refreshSession()
+          } catch (error) {
+            console.error('Failed to refresh session after verification:', error)
+          }
+          
           // Check onboarding status before redirecting
-          // OnboardingGuard will show modal if needed, but we can also check here
-          // to avoid redirecting if onboarding is needed (smoother UX)
           try {
             const needsOnboarding = await OnboardingService.checkNeedsOnboarding(data.user.id)
             if (needsOnboarding) {
               // Don't redirect - OnboardingGuard will show modal on this page
-              // User can complete onboarding and stay here, or navigate freely
               return
             }
           } catch (error) {
             console.error('Failed to check onboarding status:', error)
-            // If check fails, proceed with redirect (guard will catch it)
           }
           
           // Onboarding complete (or check failed) - redirect to lessons
           setTimeout(() => {
-            // Use window.location.href instead of router.push to ensure
-            // full page reload so auth context picks up the new session
-            window.location.href = '/modules'
+            router.push('/modules')
           }, 2600)
         } else {
           setError('Verification failed - no user returned')
           setStatus('invalid')
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Verification error:', error)
+        
+        // CRITICAL: Catch network/cookie errors
+        if (error instanceof TypeError || error.message?.includes('fetch')) {
+          setError('Having trouble verifying? Please open this link in Chrome or Safari (not inside another app).')
+          setStatus('invalid')
+          return
+        }
+
+        // Handle device mismatch in catch block too
+        if (error.message?.includes('session')) {
+          setStatus('success')
+          setError('Verification complete! Please sign in to continue.')
+          return
+        }
+
         setError('An unexpected error occurred')
         setStatus('invalid')
       }
@@ -195,11 +273,12 @@ function VerifyEmailContent() {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          onSuccess={() => {
-            setShowAuthModal(false)
-            // Refresh to re-evaluate state
-            window.location.reload()
-          }}
+        onSuccess={() => {
+          setShowAuthModal(false)
+          // Refresh to re-evaluate state
+          // Context update should trigger useEffect, but refresh ensures
+          router.refresh()
+        }}
         />
       </>
     )
@@ -393,7 +472,8 @@ function VerifyEmailContent() {
         onSuccess={() => {
           setShowAuthModal(false)
           // Refresh to re-evaluate state after new signup/signin
-          window.location.reload()
+          // Context update should trigger useEffect, but refresh ensures
+          router.refresh()
         }}
       />
     </div>

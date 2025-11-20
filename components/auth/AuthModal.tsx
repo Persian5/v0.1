@@ -20,7 +20,7 @@ interface AuthModalProps {
   description?: string
 }
 
-type AuthMode = 'signin' | 'signup' | 'verify' | 'success'
+type AuthMode = 'signin' | 'signup' | 'verify' | 'success' | 'forgot_password'
 
 export function AuthModal({ 
   isOpen, 
@@ -30,7 +30,7 @@ export function AuthModal({
   description = "Join thousands learning to reconnect with their roots"
 }: AuthModalProps) {
   const router = useRouter()
-  const { signIn, signUp, resendVerification, user, isEmailVerified } = useAuth()
+  const { signIn, signUp, resendVerification, sendPasswordReset, user, isEmailVerified } = useAuth() // Added sendPasswordReset
   
   const [mode, setMode] = useState<AuthMode>('signup')
   const [email, setEmail] = useState('')
@@ -41,6 +41,8 @@ export function AuthModal({
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
   const [passwordValid, setPasswordValid] = useState(false)
@@ -74,27 +76,44 @@ export function AuthModal({
             setMode('success')
             clearInterval(pollInterval)
             
-            // Refresh the page to ensure auth context picks up the verified session
-            // This ensures all components get the updated auth state
+            // Refresh auth context without page reload
+            try {
+              const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
+              await SmartAuthService.refreshSession()
+              // Wait briefly for context to propagate
+              await new Promise(resolve => setTimeout(resolve, 500))
+            } catch (error) {
+              console.error('Failed to refresh session:', error)
+            }
+            
             setTimeout(() => {
-              window.location.reload()
+              onSuccess?.()
+              onClose()
             }, 1500)
           }
         } catch (error) {
           console.error('Error polling for email verification:', error)
         }
-      }, 3000) // Poll every 3 seconds
+      }, 5000) // Poll every 5 seconds
 
       return () => clearInterval(pollInterval)
     }
-  }, [mode, user, isEmailVerified, isOpen])
+  }, [mode, user, isEmailVerified, isOpen, onSuccess, onClose])
 
   // Freeze background scroll when modal open
   useModalScrollLock(isOpen)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isProcessing) {
+      return
+    }
+    
+    setIsProcessing(true)
     setError(null)
+    
+    const normalizedEmail = email.trim().toLowerCase()
     
     // ✅ SECURITY: Client-side validation (UX only - server still validates)
     if (mode === 'signup') {
@@ -102,47 +121,56 @@ export function AuthModal({
       if (!firstName.trim()) {
         setError('First name is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!lastName.trim()) {
         setError('Last name is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
-      if (!email.trim()) {
+      if (!normalizedEmail) {
         setError('Email is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!password) {
         setError('Password is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!confirmPassword) {
         setError('Please confirm your password')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (password !== confirmPassword) {
         setError('Passwords do not match')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!passwordValid) {
         setError('Password must be at least 6 characters and include a number')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
     } else if (mode === 'signin') {
-      if (!email.trim()) {
+      if (!normalizedEmail) {
         setError('Email is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
       if (!password) {
         setError('Password is required')
         setIsLoading(false)
+        setIsProcessing(false)
         return
       }
     }
@@ -152,10 +180,35 @@ export function AuthModal({
     try {
       if (mode === 'signup') {
         // ✅ SECURITY: Only send password to server, NEVER send confirmPassword
-        const { error } = await signUp(email, password, firstName, lastName)
+        const { error } = await signUp(normalizedEmail, password, firstName, lastName)
         if (error) {
-          setError(error)
+          // CRITICAL: Detect duplicate account errors
+          const errorLower = error.toLowerCase()
+          if (errorLower.includes('user already registered') ||
+              errorLower.includes('email address already in use') ||
+              errorLower.includes('duplicate key value') ||
+              errorLower.includes('already exists')) {
+            setError('This email is already registered. Please sign in instead.')
+            // Auto-switch to signin mode after 3 seconds
+            setTimeout(() => {
+              setEmail(normalizedEmail) // Keep email filled
+              setPassword('') // Clear password
+              setConfirmPassword('')
+              setFirstName('')
+              setLastName('')
+              switchMode('signin')
+            }, 3000)
+          } else if (errorLower.includes('too many requests') ||
+              errorLower.includes('rate limit') ||
+              errorLower.includes('429') ||
+              errorLower.includes('exceeded')) {
+            setError('Too many attempts. Please wait a minute before trying again.')
+          } else {
+            setError(error)
+          }
         } else {
+          // 2.6: Signup success state
+          setError(null)
           // Clear confirmPassword from memory after successful signup
           setConfirmPassword('')
           // Keep user in modal and switch to verify mode instead of redirecting
@@ -163,9 +216,26 @@ export function AuthModal({
           // Don't close modal - keep them in the verification flow
         }
       } else if (mode === 'signin') {
-        const { error } = await signIn(email, password)
+        const { error } = await signIn(normalizedEmail, password)
         if (error) {
-          setError('Incorrect email or password. Please try again.')
+          // 2.4: Sign-in error specificity
+          const errorLower = error.toLowerCase()
+          if (errorLower.includes('invalid login') || errorLower.includes('invalid credentials')) {
+            setError('Incorrect email or password. Please check both and try again.')
+          } else if (errorLower.includes('email not confirmed') || errorLower.includes('not verified')) {
+            setError('Please verify your email first. Check your inbox for the verification link.')
+            setTimeout(() => {
+              setMode('verify')
+            }, 2000)
+          } else if (errorLower.includes('rate limit') || errorLower.includes('429')) {
+            setError('Too many sign-in attempts. Please wait a minute.')
+          } else if (errorLower.includes('too many requests') ||
+              errorLower.includes('rate limit') ||
+              errorLower.includes('429')) {
+            setError('Too many sign-in attempts. Please wait a minute before trying again.')
+          } else {
+            setError('Incorrect email or password. Please try again.')
+          }
         } else {
           // Fetch fresh user to inspect email_confirmed_at once after sign-in
           const { data: fresh } = await supabase.auth.getUser();
@@ -184,30 +254,87 @@ export function AuthModal({
           }
         }
       }
-    } catch (error) {
-      setError('An unexpected error occurred')
+    } catch (error: any) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setError('Network error. Please check your internet connection and try again.')
+      } else if (error.message?.includes('rate limit') || error.message?.includes('429') || error.message?.includes('too many requests')) {
+        setError('Too many attempts. Please wait a minute before trying again.')
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
+      setIsProcessing(false)
     }
   }
 
   const handleResendVerification = async () => {
+    if (isProcessing || isResendingVerification) {
+      return
+    }
+
+    setIsProcessing(true)
     setIsResendingVerification(true)
     setError(null)
+    setResendSuccess(false)
 
     try {
-      const { error } = await resendVerification(email)
+      const normalizedEmail = email.trim().toLowerCase()
+      const { error } = await resendVerification(normalizedEmail)
       if (error) {
         setError(error)
+        setResendSuccess(false)
       } else {
+        setResendSuccess(true)
         setError(null)
         // Show success message briefly
-        setTimeout(() => setError(null), 3000)
+        setTimeout(() => setResendSuccess(false), 5000)
       }
     } catch (error) {
       setError('Failed to resend verification email')
+      setResendSuccess(false)
     } finally {
       setIsResendingVerification(false)
+      setIsProcessing(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (isProcessing) return
+    
+    setIsProcessing(true)
+    setError(null)
+    
+    const normalizedEmail = email.trim().toLowerCase()
+    
+    if (!normalizedEmail) {
+      setError('Please enter your email address')
+      setIsProcessing(false)
+      return
+    }
+    
+    try {
+      const { error } = await sendPasswordReset(normalizedEmail)
+      if (error) {
+        const errorLower = error.toLowerCase()
+        if (errorLower.includes('rate limit') || errorLower.includes('too many requests')) {
+           setError('Too many attempts. Please wait a minute.')
+        } else {
+           setError(error)
+        }
+      } else {
+        setError(null)
+        // Show success message
+        setResendSuccess(true) // Reuse this state for success banner
+        setTimeout(() => {
+           setResendSuccess(false)
+           switchMode('signin')
+        }, 5000)
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -275,12 +402,14 @@ export function AuthModal({
               {mode === 'signin' && 'Welcome back!'}
               {mode === 'verify' && 'Check your email'}
               {mode === 'success' && 'Welcome to Persian Learning!'}
+              {mode === 'forgot_password' && 'Reset Password'}
             </DialogTitle>
             <DialogDescription className="text-center">
               {mode === 'signup' && description}
               {mode === 'signin' && 'Sign in to continue your Persian learning journey'}
               {mode === 'verify' && 'We sent you a verification link. Please check your email and click the link to continue.'}
               {mode === 'success' && 'Your account is ready. Starting your lesson...'}
+              {mode === 'forgot_password' && "Enter your email and we'll send you a link to reset your password."}
             </DialogDescription>
           </DialogHeader>
 
@@ -293,11 +422,29 @@ export function AuthModal({
               <p className="text-sm text-muted-foreground">
                 Verification email sent to:
               </p>
-              <p className="font-medium">{email}</p>
+              <p className="font-medium break-words px-4 text-sm sm:text-base">
+                {email.length > 40 ? (
+                  <span title={email} className="truncate block">
+                    {email.substring(0, 40)}...
+                  </span>
+                ) : (
+                  email
+                )}
+              </p>
               <p className="text-xs text-muted-foreground mt-2">
                 We'll automatically detect when you verify your email...
               </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 Didn't receive it? Check your spam folder or try resending.
+              </p>
             </div>
+            
+            {resendSuccess && (
+              <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md p-2 text-center">
+                ✅ Verification email resent! Check your inbox.
+              </div>
+            )}
+
             <div className="space-y-2">
               <Button
                 type="button"
@@ -336,6 +483,61 @@ export function AuthModal({
             <p className="text-sm text-muted-foreground">
               Redirecting to your lesson...
             </p>
+          </div>
+        )}
+
+        {mode === 'forgot_password' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isProcessing || resendSuccess}
+              />
+            </div>
+            
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                {error}
+              </div>
+            )}
+            
+            {resendSuccess && (
+              <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md p-3">
+                ✅ Password reset link sent! Check your email.
+              </div>
+            )}
+
+            <Button 
+              type="button" 
+              className="w-full" 
+              onClick={handleForgotPassword}
+              disabled={isProcessing || !email || resendSuccess}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                'Send Reset Link'
+              )}
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => switchMode('signin')}
+              disabled={isProcessing}
+            >
+              Back to Sign In
+            </Button>
           </div>
         )}
 
@@ -384,7 +586,19 @@ export function AuthModal({
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={() => switchMode('forgot_password')}
+                    className="text-xs text-primary hover:underline"
+                    tabIndex={-1}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Input
                   id="password"
@@ -481,7 +695,7 @@ export function AuthModal({
               type="submit" 
               className="w-full" 
               disabled={
-                isLoading || 
+                isLoading || isProcessing ||
                 (mode === 'signup' && (!passwordValid || !passwordsMatch || !confirmPassword))
               }
             >

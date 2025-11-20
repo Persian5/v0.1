@@ -38,7 +38,7 @@ export class VocabularyService {
     for (const lesson of module.lessons) {
       if (lesson.vocabulary) {
         moduleVocabulary.push(...lesson.vocabulary);
-      }
+  }
     }
     
     return moduleVocabulary;
@@ -359,4 +359,4 @@ export class VocabularyService {
     return undefined;
   }
 
-}
+} 
