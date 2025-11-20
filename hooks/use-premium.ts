@@ -40,21 +40,13 @@ export function usePremium() {
       return
     }
 
-    // User exists - wait for cache to be initialized before reading
-    const initializeAndRead = async () => {
-      setIsLoading(true)
-      
-      // Ensure SmartAuthService cache is initialized
-      // This prevents reading stale/empty cache before initializeSession completes
-      await SmartAuthService.initializeSession()
-      
-      // Now read from fully initialized cache
-      const cachedStatus = SmartAuthService.getHasPremium()
-      setHasPremium(cachedStatus)
-      setIsLoading(false)
-    }
-
-    initializeAndRead()
+    // User exists - read from cache (already initialized by SmartAuthProvider)
+    setIsLoading(true)
+    
+    // Read directly from cache - SmartAuthProvider already initialized it
+    const cachedStatus = SmartAuthService.getHasPremium()
+    setHasPremium(cachedStatus)
+    setIsLoading(false)
 
     // Listen for premium status changes (e.g., user upgrades mid-session)
     const unsubscribe = SmartAuthService.addEventListener((eventType, data) => {

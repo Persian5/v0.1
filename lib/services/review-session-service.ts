@@ -331,11 +331,11 @@ export class ReviewSessionService {
       if (!result.granted) {
          // If already awarded, we consider it "success" from the UI perspective (idempotent)
          // but return the reason for debugging
-         return {
-           awarded: false,
+        return {
+          awarded: false,
            reason: result.reason || 'already_awarded',
            newXp: result.newXp
-         }
+        }
       }
 
       console.log(`✅ Review XP awarded: ${xpToAward} XP via unified service`)

@@ -428,7 +428,7 @@ export class XpService {
           if (newXp !== undefined) {
              // Unconditionally set the UI to match the database state
              // Even if "already awarded", we want the UI to show the correct total
-             SmartAuthService.setXpDirectly(newXp)
+              SmartAuthService.setXpDirectly(newXp)
           }
         } catch (error) {
           console.warn('Failed to reconcile XP:', error)

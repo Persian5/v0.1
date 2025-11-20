@@ -197,21 +197,21 @@ export function AuthModal({
       verificationLog('Manual refresh verification status')
       
       // Force refresh session from server
-      const { data: { session }, error } = await supabase.auth.refreshSession()
-      
-      if (error) {
+          const { data: { session }, error } = await supabase.auth.refreshSession()
+          
+          if (error) {
         verificationLog('Error refreshing session:', error)
         setError('Failed to check verification status. Please try again.')
         setIsRefreshingStatus(false)
-        return
-      }
-      
-      if (session?.user?.email_confirmed_at) {
+            return
+          }
+          
+          if (session?.user?.email_confirmed_at) {
         verificationLog('Email verified via manual refresh')
         
         // Ensure this tab gets the fresh auth token
         await supabase.auth.refreshSession()
-        
+            
         // Force full session reloading + user context update
         const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
         await SmartAuthService.initializeSession()
@@ -221,13 +221,13 @@ export function AuthModal({
       } else {
         verificationLog('Email not yet verified')
         setError('Email not yet verified. Please check your inbox and click the verification link.')
-      }
-    } catch (error) {
+          }
+        } catch (error) {
       verificationLog('Error during manual refresh:', error)
       setError('An error occurred. Please try again.')
     } finally {
       setIsRefreshingStatus(false)
-    }
+        }
   }
 
   // PHASE 5: Resend cooldown timer
@@ -350,7 +350,7 @@ export function AuthModal({
               errorLower.includes('exceeded')) {
             setError('Too many attempts. Please wait a minute before trying again.')
           } else {
-            setError(error)
+          setError(error)
           }
         } else {
           // 2.6: Signup success state
@@ -380,7 +380,7 @@ export function AuthModal({
               errorLower.includes('429')) {
             setError('Too many sign-in attempts. Please wait a minute before trying again.')
           } else {
-            setError('Incorrect email or password. Please try again.')
+          setError('Incorrect email or password. Please try again.')
           }
         } else {
           // Fetch fresh user to inspect email_confirmed_at once after sign-in
@@ -593,16 +593,16 @@ export function AuthModal({
               </>
             ) : (
               <>
-                <div className="flex justify-center">
-                  <Mail className="h-12 w-12 text-primary" />
-                </div>
+            <div className="flex justify-center">
+              <Mail className="h-12 w-12 text-primary" />
+            </div>
                 
                 {/* PHASE 5: Always show email if available, hide if not */}
                 {(user?.email || email) && (
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Verification email sent to:
-                    </p>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Verification email sent to:
+              </p>
                     <p className="font-medium break-words px-4 text-sm sm:text-base">
                       {((user?.email || email).length > 40) ? (
                         <span title={user?.email || email} className="truncate block">
@@ -626,32 +626,32 @@ export function AuthModal({
                         </p>
                         <p className="text-red-700 text-xs mt-1">
                           You can request a new verification email below.
-                        </p>
+              </p>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Button
-                        type="button"
-                        variant="outline"
+            </div>
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
                         className="w-full border-red-300 hover:bg-red-50"
-                        onClick={handleResendVerification}
+                onClick={handleResendVerification}
                         disabled={isResendingVerification || resendCooldown > 0}
-                      >
-                        {isResendingVerification ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
+              >
+                {isResendingVerification ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
                         ) : resendCooldown > 0 ? (
                           `Resend available in ${Math.floor(resendCooldown / 60)}:${String(resendCooldown % 60).padStart(2, '0')}`
-                        ) : (
-                          'Resend verification email'
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="w-full text-sm"
+                ) : (
+                  'Resend verification email'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-sm"
                         onClick={() => switchMode('signin')}
                       >
                         Back to sign in
@@ -717,14 +717,14 @@ export function AuthModal({
                       type="button"
                       variant="ghost"
                       className="w-full text-sm text-muted-foreground"
-                      onClick={() => {
-                        resetForm()
-                        switchMode('signup')
-                      }}
-                    >
-                      Try a different email
-                    </Button>
-                  </div>
+                onClick={() => {
+                  resetForm()
+                  switchMode('signup')
+                }}
+              >
+                Try a different email
+              </Button>
+            </div>
                 )}
               </>
             )}
@@ -741,7 +741,7 @@ export function AuthModal({
             </div>
             <div className="space-y-2">
               <h3 className="text-xl font-semibold text-green-700">Email Verified!</h3>
-              <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
                 Welcome to Finglish 🎉
               </p>
             </div>
@@ -849,7 +849,7 @@ export function AuthModal({
             
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password</Label>
                 {mode === 'signin' && (
                   <button
                     type="button"
