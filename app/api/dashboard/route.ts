@@ -54,10 +54,20 @@ export async function GET(request: NextRequest) {
         return await VocabularyTrackingService.getDashboardStats(user.id)
       })(),
       
-      // 3. Get user profile
+      // 3. Get user profile (use server-side client for RLS)
       (async () => {
-        const { DatabaseService } = await import('@/lib/supabase/database')
-        return await DatabaseService.getUserProfile(user.id)
+        const { data, error } = await supabaseServer
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (error) {
+          console.error('Error fetching user profile:', error)
+          return null
+        }
+        
+        return data
       })()
     ])
 
@@ -95,8 +105,9 @@ export async function GET(request: NextRequest) {
     // Calculate XP earned today
     const xpEarnedToday = (xpTransactionsData || []).reduce((sum, tx) => sum + (tx.amount || 0), 0)
 
-    // Calculate level (simple: level = floor(total_xp / 100))
-    const level = Math.floor((profile?.total_xp || 0) / 100)
+    // Calculate level using progressive XP curve
+    const { getLevelFromXP } = await import('@/lib/utils/leveling')
+    const level = getLevelFromXP(profile?.total_xp || 0)
 
     // Calculate daily goal progress
     const dailyGoalXp = profile?.daily_goal_xp || 50

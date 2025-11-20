@@ -5,11 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Target, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import type { VocabularyItem } from "@/lib/types"
 import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 
 interface WordNeedingPractice {
   vocabulary_id: string
@@ -26,10 +26,21 @@ interface WordsNeedingPracticeProps {
   wordsToReview: WordNeedingPractice[]
   hardWords: WordNeedingPractice[]
   isLoading: boolean
+  shouldAnimate?: boolean
+  onAnimationComplete?: () => void
 }
 
-export function WordsNeedingPractice({ wordsToReview, hardWords, isLoading }: WordsNeedingPracticeProps) {
+export function WordsNeedingPractice({ wordsToReview, hardWords, isLoading, shouldAnimate = true, onAnimationComplete }: WordsNeedingPracticeProps) {
   const [vocabDefinitions, setVocabDefinitions] = useState<Map<string, VocabularyItem>>(new Map())
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+  
+  // Mark animation as complete when section enters viewport
+  useEffect(() => {
+    if (isInView && shouldAnimate && onAnimationComplete) {
+      onAnimationComplete()
+    }
+  }, [isInView, shouldAnimate, onAnimationComplete])
   
   // Merge and deduplicate words (prioritize hard words for accuracy display)
   const mergedWords = (() => {
@@ -107,7 +118,7 @@ export function WordsNeedingPractice({ wordsToReview, hardWords, isLoading }: Wo
   }
 
   return (
-    <div>
+    <div ref={ref}>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
         {mergedWords.map((word, index) => {
           const vocab = vocabDefinitions.get(word.vocabulary_id)
@@ -118,9 +129,9 @@ export function WordsNeedingPractice({ wordsToReview, hardWords, isLoading }: Wo
           return (
             <motion.div
               key={word.vocabulary_id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 + 0.3 }}
+              initial={shouldAnimate ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
+              animate={isInView && shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut", delay: index * 0.04 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
             >
               <Link
@@ -146,11 +157,11 @@ export function WordsNeedingPractice({ wordsToReview, hardWords, isLoading }: Wo
                   {/* Accuracy indicator bar */}
                   <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
                     <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${accuracy}%` }}
-                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 + (index * 0.05) }}
+                      initial={shouldAnimate ? { width: 0 } : { width: `${accuracy}%` }}
+                      animate={isInView && shouldAnimate ? { width: `${accuracy}%` } : { width: `${accuracy}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut", delay: shouldAnimate ? 0.5 + (index * 0.04) : 0 }}
                       className={cn(
-                        "h-full transition-all duration-500 rounded-full",
+                        "h-full rounded-full",
                         accuracy < 50 ? "bg-red-400" : accuracy < 80 ? "bg-amber-400" : "bg-green-400"
                       )}
                     />

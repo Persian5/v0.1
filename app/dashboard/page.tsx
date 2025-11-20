@@ -63,11 +63,15 @@ interface DashboardData {
   xpEarnedToday: number
 }
 
-import { getGreeting } from "@/lib/utils/greeting"
+import { getGreetingParts } from "@/lib/utils/greeting"
+import { Hand } from "lucide-react"
+import { getLevelInfo } from "@/lib/utils/leveling"
+import { useDashboardAnimations } from "@/hooks/use-dashboard-animations"
 
 function DashboardContent() {
   const { user } = useAuth()
   const pathname = usePathname()
+  const { shouldAnimate, markAnimated } = useDashboardAnimations()
   
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -159,21 +163,10 @@ function DashboardContent() {
            dashboard.xp > 0
   }, [dashboard])
 
-  // Calculate level progress
-  // Assuming level thresholds: L1=0-100, L2=100-200, etc. (100 XP per level for simplicity, based on calculation in API)
-  // API route does: const level = Math.floor((profile?.total_xp || 0) / 100)
-  const levelProgress = useMemo(() => {
-    if (!dashboard) return { current: 0, next: 100, percent: 0 }
-    const currentLevelXp = (dashboard.level) * 100
-    const nextLevelXp = (dashboard.level + 1) * 100
-    const xpInLevel = dashboard.xp - currentLevelXp
-    const percent = Math.min(100, Math.max(0, (xpInLevel / 100) * 100))
-    
-    return {
-      current: xpInLevel,
-      next: 100,
-      percent
-    }
+  // Calculate level progress using progressive curve
+  const levelInfo = useMemo(() => {
+    if (!dashboard) return null
+    return getLevelInfo(dashboard.xp)
   }, [dashboard])
 
   // Show loading skeleton only if no cache exists
@@ -204,30 +197,40 @@ function DashboardContent() {
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8 md:py-12 max-w-7xl">
           {/* Page Header */}
-          <div className="text-center mb-10 md:mb-14">
-            <h1 className="text-xl md:text-2xl font-medium text-neutral-500 mb-2">
-              {getGreeting(firstName)}
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-xl md:text-2xl font-medium text-neutral-500 mb-2 flex items-center justify-center gap-2 flex-wrap">
+              {(() => {
+                const { greeting, name } = getGreetingParts(firstName)
+                return (
+                  <>
+                    <span>{greeting}{name ? `, ${name}!` : '!'}</span>
+                    {name && <Hand className="w-5 h-5 md:w-6 md:h-6 text-neutral-400" />}
+                  </>
+                )
+              })()}
             </h1>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 mb-6">
               Your Learning Hub
             </h2>
             
             {/* Level Indicator */}
-            {hasProgress && dashboard && (
+            {hasProgress && dashboard && levelInfo && (
               <div className="max-w-xs mx-auto">
                 <div className="flex flex-col mb-2">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Level {dashboard.level}</span>
+                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wide">Level {levelInfo.level}</span>
                     <span className="text-xs font-medium text-neutral-400">{dashboard.xp.toLocaleString()} XP Total</span>
                   </div>
                   <div className="flex justify-end mt-1">
-                    <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">{Math.round(levelProgress.percent)}% to Level {dashboard.level + 1}</span>
+                    <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">
+                      {Math.round(levelInfo.progressPercent)}% to Level {levelInfo.nextLevel}
+                    </span>
                   </div>
                 </div>
                 <div className="h-2.5 w-full bg-neutral-100 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
-                    style={{ width: `${levelProgress.percent}%` }}
+                    style={{ width: `${levelInfo.progressPercent}%` }}
                   />
                 </div>
               </div>
@@ -256,7 +259,7 @@ function DashboardContent() {
 
           {/* RETURNING USER: Show Full Dashboard */}
           {(isLoading || hasProgress) && (
-            <div className="space-y-12 md:space-y-16">
+            <div className="space-y-6 md:space-y-8">
               
               {/* SECTION 1: Primary Action - Resume Learning + Daily Goal */}
               <section className="space-y-6 max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
@@ -274,7 +277,7 @@ function DashboardContent() {
               </section>
 
               {/* Section Divider */}
-              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
 
               {/* SECTION 2: Today's Stats */}
               <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
@@ -286,18 +289,20 @@ function DashboardContent() {
                     Your daily activity summary
                   </p>
                 </div>
-                <WidgetErrorBoundary>
-                  <TodayStatsSection
-                    xpEarned={dashboard?.xpEarnedToday || 0}
-                    lessonsCompleted={dashboard?.lessonsCompletedToday || 0}
-                    streak={dashboard?.streakCount || 0}
-                    isLoading={isLoading}
-                  />
-                </WidgetErrorBoundary>
+              <WidgetErrorBoundary>
+                <TodayStatsSection
+                  xpEarned={dashboard?.xpEarnedToday || 0}
+                  lessonsCompleted={dashboard?.lessonsCompletedToday || 0}
+                  streak={dashboard?.streakCount || 0}
+                  isLoading={isLoading}
+                  shouldAnimate={shouldAnimate}
+                  onAnimationComplete={markAnimated}
+                />
+              </WidgetErrorBoundary>
               </section>
 
               {/* Section Divider */}
-              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
 
               {/* SECTION 3: Words Needing Practice */}
               <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
@@ -309,17 +314,19 @@ function DashboardContent() {
                     Strengthen words you're struggling with
                   </p>
                 </div>
-                <WidgetErrorBoundary>
-                  <WordsNeedingPractice
-                    wordsToReview={dashboard?.stats?.wordsToReview || []}
-                    hardWords={dashboard?.stats?.hardWords || []}
-                    isLoading={isLoading}
-                  />
-                </WidgetErrorBoundary>
+              <WidgetErrorBoundary>
+                <WordsNeedingPractice
+                  wordsToReview={dashboard?.stats?.wordsToReview || []}
+                  hardWords={dashboard?.stats?.hardWords || []}
+                  isLoading={isLoading}
+                  shouldAnimate={shouldAnimate}
+                  onAnimationComplete={markAnimated}
+                />
+              </WidgetErrorBoundary>
               </section>
 
               {/* Section Divider */}
-              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
 
               {/* SECTION 4: Progress Summary */}
               <section className="max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
@@ -331,18 +338,20 @@ function DashboardContent() {
                     Track your long-term growth
                   </p>
                 </div>
-                <WidgetErrorBoundary>
-                  <ProgressSummarySection
-                    wordsLearned={dashboard?.stats?.wordsLearned || 0}
-                    masteredWords={dashboard?.stats?.masteredWords || 0}
-                    lessonsCompleted={dashboard?.progress?.length || 0}
-                    isLoading={isLoading}
-                  />
-                </WidgetErrorBoundary>
+              <WidgetErrorBoundary>
+                <ProgressSummarySection
+                  wordsLearned={dashboard?.stats?.wordsLearned || 0}
+                  masteredWords={dashboard?.stats?.masteredWords || 0}
+                  lessonsCompleted={dashboard?.progress?.length || 0}
+                  isLoading={isLoading}
+                  shouldAnimate={shouldAnimate}
+                  onAnimationComplete={markAnimated}
+                />
+              </WidgetErrorBoundary>
               </section>
 
               {/* Section Divider */}
-              <div className="h-3 w-full bg-gray-50 rounded-full my-8 opacity-50" />
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-4" />
 
               {/* SECTION 5: Leaderboard */}
               <section className="max-w-3xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">

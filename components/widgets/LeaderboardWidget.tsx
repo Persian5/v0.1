@@ -109,9 +109,9 @@ export function LeaderboardWidget() {
   }
 
   const getRankIcon = (rank: number) => {
-    if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-500" />
-    if (rank === 2) return <Medal className="w-5 h-5 text-slate-400" />
-    if (rank === 3) return <Medal className="w-5 h-5 text-orange-400" />
+    if (rank === 1) return <Trophy className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+    if (rank === 2) return <Trophy className="w-5 h-5 text-gray-400 fill-gray-400" />
+    if (rank === 3) return <Trophy className="w-5 h-5 text-orange-500 fill-orange-500" />
     return null
   }
 
@@ -120,16 +120,27 @@ export function LeaderboardWidget() {
       <CardContent className="p-6 sm:p-8">
         <div className="space-y-4">
           {/* Top 3 */}
-          {data.top.map((entry, index) => (
+          {data.top.map((entry, index) => {
+            // Determine gradient based on rank
+            let gradientClass = ''
+            if (entry.rank === 1) {
+              gradientClass = 'bg-gradient-to-r from-yellow-400/30 via-yellow-500/20 to-yellow-600/30'
+            } else if (entry.rank === 2) {
+              gradientClass = 'bg-gradient-to-r from-gray-300/30 via-gray-400/20 to-gray-500/30'
+            } else if (entry.rank === 3) {
+              gradientClass = 'bg-gradient-to-r from-orange-400/30 via-orange-500/20 to-orange-600/30'
+            }
+            
+            return (
             <motion.div
               key={entry.rank}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`p-3 rounded-2xl border transition-all duration-300 flex items-center hover:bg-gray-50 ${
+              className={`p-2.5 rounded-2xl border transition-all duration-300 flex items-center hover:bg-gray-50 hover:shadow-sm hover:-translate-y-0.5 ${
                 entry.isYou 
-                  ? 'bg-primary/5 border-primary/20 shadow-sm' 
-                  : 'bg-white border-neutral-100 hover:border-neutral-200'
+                  ? `bg-primary/5 border-primary/20 shadow-sm ${gradientClass}` 
+                  : `bg-white border-neutral-100 hover:border-neutral-200 ${gradientClass}`
               }`}
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -158,7 +169,8 @@ export function LeaderboardWidget() {
                 <div className="text-xs font-medium text-neutral-400 uppercase tracking-wide">XP</div>
               </div>
             </motion.div>
-          ))}
+            )
+          })}
 
           {/* User rank (if outside top 3) */}
           {data.you && data.you.rank > 3 && (
@@ -166,7 +178,7 @@ export function LeaderboardWidget() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="p-3 rounded-2xl border border-primary/20 bg-primary/5 shadow-sm mt-6 flex items-center hover:bg-gray-50 transition-colors"
+              className="p-2.5 rounded-2xl border border-primary/20 bg-primary/5 shadow-sm mt-6 flex items-center hover:bg-gray-50 hover:shadow-sm hover:-translate-y-0.5 transition-all"
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">

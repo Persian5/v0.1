@@ -3,21 +3,36 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BookOpen, Trophy, Award } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, useInView } from "framer-motion"
+import { useRef, useEffect } from "react"
 
 interface ProgressSummarySectionProps {
   wordsLearned: number
   masteredWords: number
   lessonsCompleted: number
   isLoading?: boolean
+  shouldAnimate?: boolean
+  onAnimationComplete?: () => void
 }
 
 export function ProgressSummarySection({ 
   wordsLearned, 
   masteredWords, 
   lessonsCompleted, 
-  isLoading 
+  isLoading,
+  shouldAnimate = true,
+  onAnimationComplete
 }: ProgressSummarySectionProps) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+  
+  // Mark animation as complete when section enters viewport
+  useEffect(() => {
+    if (isInView && shouldAnimate && onAnimationComplete) {
+      onAnimationComplete()
+    }
+  }, [isInView, shouldAnimate, onAnimationComplete])
+  
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -57,13 +72,13 @@ export function ProgressSummarySection({
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div ref={ref} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {cards.map((card, index) => (
         <motion.div
           key={card.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: index * 0.1 + 0.4 }}
+          initial={shouldAnimate ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
+          animate={isInView && shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut", delay: index * 0.04 }}
           whileHover={{ y: -2, transition: { duration: 0.2 } }}
         >
           <Card className="bg-white border border-neutral-200/50 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl group h-full">

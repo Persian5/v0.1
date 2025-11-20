@@ -4,18 +4,30 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Zap, BookOpen, Flame } from "lucide-react"
 import { useStreak } from "@/hooks/use-streak"
-import { motion } from "framer-motion"
+import { motion, useInView } from "framer-motion"
+import { useRef, useEffect } from "react"
 
 interface TodayStatsSectionProps {
   xpEarned: number
   lessonsCompleted: number
   streak: number
   isLoading?: boolean
+  shouldAnimate?: boolean
+  onAnimationComplete?: () => void
 }
 
-export function TodayStatsSection({ xpEarned, lessonsCompleted, streak: _unused, isLoading }: TodayStatsSectionProps) {
+export function TodayStatsSection({ xpEarned, lessonsCompleted, streak: _unused, isLoading, shouldAnimate = true, onAnimationComplete }: TodayStatsSectionProps) {
   // Use the same hook as the old DashboardHero component for live streak updates
   const { streak, isLoading: streakLoading } = useStreak()
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+  
+  // Mark animation as complete when section enters viewport
+  useEffect(() => {
+    if (isInView && shouldAnimate && onAnimationComplete) {
+      onAnimationComplete()
+    }
+  }, [isInView, shouldAnimate, onAnimationComplete])
   
   const anyLoading = isLoading || streakLoading
   if (anyLoading) {
@@ -66,13 +78,13 @@ export function TodayStatsSection({ xpEarned, lessonsCompleted, streak: _unused,
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div ref={ref} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {stats.map((stat, index) => (
         <motion.div
           key={stat.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: index * 0.1 + 0.2 }}
+          initial={shouldAnimate ? { opacity: 0, y: 30 } : { opacity: 1, y: 0 }}
+          animate={isInView && shouldAnimate ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut", delay: index * 0.04 }}
           whileHover={{ y: -2, transition: { duration: 0.2 } }}
         >
           <Card className="bg-white border border-neutral-200/50 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl h-full">
