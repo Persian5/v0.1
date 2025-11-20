@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Mail, Eye, EyeOff, X } from 'lucide-react'
+import { Loader2, Mail, Eye, EyeOff, X, XCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from './AuthProvider'
 import { supabase } from '@/lib/supabase/client'
 import WidgetErrorBoundary from '@/components/errors/WidgetErrorBoundary'
@@ -62,6 +62,10 @@ export function AuthModal({
   
   // PHASE 3: Track verification state
   const [isVerifying, setIsVerifying] = useState(false)
+  
+  // PHASE 5: Manual refresh and resend cooldown
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState<number>(0)
 
   // Auto-switch to verify mode if user exists but email not verified
   useEffect(() => {
@@ -182,45 +186,56 @@ export function AuthModal({
     }
   }
 
-  // PHASE 3: Fallback polling for manual verification (when no token provided)
-  // This is for users who sign up normally and need to click email link separately
-  useEffect(() => {
-    // Only poll if:
-    // 1. In verify mode
-    // 2. No token-based verification in progress
-    // 3. User exists but not verified
-    if (mode !== 'verify') return
-    if (storedVerificationToken) return // Token-based verification active
-    if (!user || isEmailVerified) return
-    if (!isOpen) return
+  // PHASE 5: Manual refresh verification status (replaces polling)
+  const handleRefreshVerificationStatus = async () => {
+    if (isRefreshingStatus) return
     
-    verificationLog('Starting polling for manual verification')
+    setIsRefreshingStatus(true)
+    setError(null)
     
-    const pollInterval = setInterval(async () => {
-      try {
-        // Force refresh session from server (not cached)
-        const { data: { session }, error } = await supabase.auth.refreshSession()
-        
-        if (error) {
-          verificationLog('Error refreshing session during polling:', error)
-          return
-        }
-        
-        if (session?.user?.email_confirmed_at) {
-          verificationLog('Email verified via polling')
-          clearInterval(pollInterval)
-          await handleVerificationSuccess()
-        }
-      } catch (error) {
-        verificationLog('Error polling for email verification:', error)
+    try {
+      verificationLog('Manual refresh verification status')
+      
+      // Force refresh session from server
+      const { data: { session }, error } = await supabase.auth.refreshSession()
+      
+      if (error) {
+        verificationLog('Error refreshing session:', error)
+        setError('Failed to check verification status. Please try again.')
+        setIsRefreshingStatus(false)
+        return
       }
-    }, 5000) // Poll every 5 seconds
-
-    return () => {
-      verificationLog('Stopping polling')
-      clearInterval(pollInterval)
+      
+      if (session?.user?.email_confirmed_at) {
+        verificationLog('Email verified via manual refresh')
+        await handleVerificationSuccess()
+      } else {
+        verificationLog('Email not yet verified')
+        setError('Email not yet verified. Please check your inbox and click the verification link.')
+      }
+    } catch (error) {
+      verificationLog('Error during manual refresh:', error)
+      setError('An error occurred. Please try again.')
+    } finally {
+      setIsRefreshingStatus(false)
     }
-  }, [mode, storedVerificationToken, user, isEmailVerified, isOpen, onSuccess, onClose])
+  }
+
+  // PHASE 5: Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    
+    const id = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) {
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    
+    return () => clearInterval(id)
+  }, [resendCooldown])
 
   // Freeze background scroll when modal open
   useModalScrollLock(isOpen)
@@ -399,11 +414,28 @@ export function AuthModal({
     setIsResendingVerification(true)
     setError(null)
     setResendSuccess(false)
+    setResendCooldown(0) // Reset cooldown
 
     try {
       const normalizedEmail = email.trim().toLowerCase()
       const { error } = await resendVerification(normalizedEmail)
       if (error) {
+        // PHASE 5: Parse cooldown from error message
+        // Example: "Please wait X minutes" or "after 39 seconds"
+        const errorLower = error.toLowerCase()
+        
+        if (errorLower.includes('wait') || errorLower.includes('after')) {
+          // Try to extract seconds
+          const secondsMatch = errorLower.match(/(\d+)\s*second/i)
+          const minutesMatch = errorLower.match(/(\d+)\s*minute/i)
+          
+          if (secondsMatch) {
+            setResendCooldown(parseInt(secondsMatch[1], 10))
+          } else if (minutesMatch) {
+            setResendCooldown(parseInt(minutesMatch[1], 10) * 60)
+          }
+        }
+        
         setError(error)
         setResendSuccess(false)
       } else {
@@ -555,30 +587,76 @@ export function AuthModal({
                 <div className="flex justify-center">
                   <Mail className="h-12 w-12 text-primary" />
                 </div>
-                <div className="text-center space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Verification email sent to:
-                  </p>
-                  <p className="font-medium break-words px-4 text-sm sm:text-base">
-                    {email.length > 40 ? (
-                      <span title={email} className="truncate block">
-                        {email.substring(0, 40)}...
-                      </span>
-                    ) : (
-                      email
-                    )}
-                  </p>
-                  {!storedVerificationToken && (
-                    <>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        We'll automatically detect when you verify your email...
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        💡 Didn't receive it? Check your spam folder or try resending.
-                      </p>
-                    </>
-                  )}
-                </div>
+                
+                {/* PHASE 5: Always show email if available, hide if not */}
+                {(user?.email || email) && (
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Verification email sent to:
+                    </p>
+                    <p className="font-medium break-words px-4 text-sm sm:text-base">
+                      {((user?.email || email).length > 40) ? (
+                        <span title={user?.email || email} className="truncate block">
+                          {(user?.email || email).substring(0, 40)}...
+                        </span>
+                      ) : (
+                        user?.email || email
+                      )}
+                    </p>
+                  </div>
+                )}
+                
+                {/* PHASE 5: Expired token UI */}
+                {error && error.toLowerCase().includes('expired') && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <XCircle className="h-6 w-6 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-medium text-red-900 text-sm">
+                          This verification link has expired
+                        </p>
+                        <p className="text-red-700 text-xs mt-1">
+                          You can request a new verification email below.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full border-red-300 hover:bg-red-50"
+                        onClick={handleResendVerification}
+                        disabled={isResendingVerification || resendCooldown > 0}
+                      >
+                        {isResendingVerification ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : resendCooldown > 0 ? (
+                          `Resend available in ${Math.floor(resendCooldown / 60)}:${String(resendCooldown % 60).padStart(2, '0')}`
+                        ) : (
+                          'Resend verification email'
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full text-sm"
+                        onClick={() => switchMode('signin')}
+                      >
+                        Back to sign in
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* PHASE 5: Other errors (non-expired) */}
+                {error && !error.toLowerCase().includes('expired') && (
+                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3 text-center">
+                    {error}
+                  </div>
+                )}
                 
                 {resendSuccess && (
                   <div className="text-sm text-green-600 bg-green-50 border border-green-200 rounded-md p-2 text-center">
@@ -586,57 +664,56 @@ export function AuthModal({
                   </div>
                 )}
 
-                {/* PHASE 3: Only show resend button when not verifying and no token */}
-                {!isVerifying && !storedVerificationToken && (
+                {/* PHASE 5: Show buttons when not verifying and no expired error */}
+                {!isVerifying && !storedVerificationToken && !error?.toLowerCase().includes('expired') && (
                   <div className="space-y-2">
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full"
                       onClick={handleResendVerification}
-                      disabled={isResendingVerification}
+                      disabled={isResendingVerification || resendCooldown > 0}
                     >
                       {isResendingVerification ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Sending...
                         </>
+                      ) : resendCooldown > 0 ? (
+                        `Resend available in ${Math.floor(resendCooldown / 60)}:${String(resendCooldown % 60).padStart(2, '0')}`
                       ) : (
                         'Resend verification email'
                       )}
                     </Button>
+                    
+                    {/* PHASE 5: Manual refresh button (replaces polling) */}
                     <Button
                       type="button"
                       variant="ghost"
                       className="w-full text-sm"
+                      onClick={handleRefreshVerificationStatus}
+                      disabled={isRefreshingStatus}
+                    >
+                      {isRefreshingStatus ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        'Refresh verification status'
+                      )}
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full text-sm text-muted-foreground"
                       onClick={() => {
                         resetForm()
                         switchMode('signup')
                       }}
                     >
                       Try a different email
-                    </Button>
-                  </div>
-                )}
-                
-                {/* PHASE 3: Show resend button after verification fails */}
-                {!isVerifying && storedVerificationToken === undefined && error && (
-                  <div className="space-y-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleResendVerification}
-                      disabled={isResendingVerification}
-                    >
-                      {isResendingVerification ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        'Request new verification link'
-                      )}
                     </Button>
                   </div>
                 )}
@@ -647,10 +724,18 @@ export function AuthModal({
 
         {mode === 'success' && (
           <div className="text-center space-y-4">
-            <div className="text-4xl">🎉</div>
-            <p className="text-sm text-muted-foreground">
-              Redirecting to your lesson...
-            </p>
+            {/* PHASE 5: Enhanced success screen with animation */}
+            <div className="flex justify-center">
+              <div className="animate-scale-in">
+                <CheckCircle2 className="h-16 w-16 text-green-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-green-700">Email Verified!</h3>
+              <p className="text-sm text-muted-foreground">
+                Welcome to Finglish 🎉
+              </p>
+            </div>
           </div>
         )}
 
