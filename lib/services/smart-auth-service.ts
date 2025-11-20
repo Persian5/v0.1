@@ -77,6 +77,7 @@ export class SmartAuthService {
   private static syncQueue: BackgroundSyncOperation[] = []
   private static syncInterval: NodeJS.Timeout | null = null
   private static isInitializing = false
+  private static hasAttemptedInitialization = false // Track if we've checked for a session
   
   // Auth listener guard - prevents multiple registrations
   private static authListenerUnsubscribe: (() => void) | null = null
@@ -157,6 +158,8 @@ export class SmartAuthService {
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.user) {
+        // No session - mark initialization as complete
+        this.hasAttemptedInitialization = true
         this.isInitializing = false
         return { user: null, isEmailVerified: false, isReady: true }
       }
@@ -212,11 +215,13 @@ export class SmartAuthService {
       // Start background sync
       this.startBackgroundSync()
       
+      this.hasAttemptedInitialization = true
       this.isInitializing = false
       return this.getSessionState()
       
     } catch (error) {
       console.error('Session initialization failed:', error)
+      this.hasAttemptedInitialization = true
       this.isInitializing = false
       return { user: null, isEmailVerified: false, isReady: true }
     }
@@ -230,12 +235,24 @@ export class SmartAuthService {
     isEmailVerified: boolean
     isReady: boolean
   } {
+    // CRITICAL FIX: During initialization, always return isReady: false
+    // This ensures skeleton shows until initialization completes
     if (this.isInitializing) {
       return { user: null, isEmailVerified: false, isReady: false }
     }
     
+    // CRITICAL FIX: On refresh, cache doesn't exist yet, but we might have a session
+    // Don't return isReady: true until we've checked for a session
+    // This prevents premature rendering with wrong state
     if (!this.sessionCache || this.isSessionExpired()) {
-      return { user: null, isEmailVerified: false, isReady: true }
+      // Only return isReady: true if we've already attempted initialization
+      // This means we checked and found no session (logged-out state)
+      // Otherwise, return false to wait for initialization
+      return { 
+        user: null, 
+        isEmailVerified: false, 
+        isReady: this.hasAttemptedInitialization // Only ready if we've checked
+      }
     }
     
     return {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,34 +35,50 @@ export default function ModulesPage() {
   const router = useRouter()
   const { xp } = useSmartXp()
   const { user, isEmailVerified, isLoading: authLoading } = useAuth()
-  const { hasPremium, isLoading: premiumLoading } = usePremium()
+  const { hasPremium: hookHasPremium, isLoading: premiumLoading } = usePremium()
   const { progressData, isProgressLoading } = useProgress()
 
-  // OPTIMISTIC RENDERING: Read cached progress immediately if available
+  // OPTIMISTIC RENDERING: Read cached data directly from cache (synchronous, no race condition)
+  const cachedProfile = SmartAuthService.getCachedProfile()
   const cachedProgress = SmartAuthService.getUserProgress()
+  const cachedHasPremium = SmartAuthService.getHasPremium()
+  const cacheState = SmartAuthService.getSessionState()
   const effectiveProgressData = progressData.length > 0 ? progressData : cachedProgress
 
   // Calculate authentication status
   const isAuthenticated = user && isEmailVerified
 
+  // CRITICAL: Read premium status directly from cache to avoid race condition
+  // usePremium() hook has async state updates, causing component to render with stale value
+  // Reading directly from cache ensures we get the correct value synchronously
+  // CRITICAL FIX: If user exists, ONLY use cache value - never hook fallback
+  // On refresh, user exists but cache doesn't yet - if we use hook, hasPremium is wrong
+  // If user exists but cache doesn't, hasPremium will be wrong, but we won't render (skeleton shows)
+  // Once cache loads, hasPremium will be correct and we'll render
+  const hasPremium = cachedProfile ? cachedHasPremium : (user ? false : hookHasPremium)
+
   // Check if data is loaded (auth + premium ready)
-  // CRITICAL: Wait for cache to be initialized before rendering to prevent flash
-  // Check if SmartAuthService cache is ready (not initializing)
-  const cacheState = SmartAuthService.getSessionState()
-  const cacheReady = cacheState.isReady
+  // CRITICAL: On refresh, if user exists, cache MUST exist before rendering
+  // Problem: On refresh, user exists but cache doesn't yet, causing wrong hasPremium
+  // Solution: If user exists, wait for cache to exist AND initialization complete
+  const hasUser = !!user
+  const cacheExists = !!cachedProfile
+  const initializationComplete = cacheState.isReady // false when isInitializing = true
   
-  // CRITICAL: If authenticated and premiumLoading is false, verify cache actually has premium data
-  // This prevents rendering with false premium status before cache is populated on first load
-  // On first load: premiumLoading becomes false immediately (reads from empty cache)
-  // But cache hasn't finished initializing yet, so hasPremium is wrong
-  const premiumDataReady = !isAuthenticated || premiumLoading || (cacheReady && user) // If authenticated, wait for cache to be ready
+  // CRITICAL: If user exists, cache MUST exist AND hasPremium must be confirmed before rendering
+  // This prevents showing wrong state when cache exists but hasPremium hasn't been set yet
+  // getHasPremium() returns false if cache doesn't exist, but also returns false if user doesn't have premium
+  // So we need to ensure cache exists AND initialization is complete (which sets hasPremium)
+  const hasPremiumConfirmed = cachedProfile ? (cachedHasPremium !== undefined) : true // If cache exists, hasPremium must be set
+  const cacheReady = !hasUser || (cacheExists && initializationComplete && hasPremiumConfirmed && !premiumLoading)
   
   // If authenticated, wait for progress data (cached or fresh) to prevent flash
   const hasProgressData = effectiveProgressData.length > 0
   const progressReady = !isProgressLoading || hasProgressData
   
-  // Render only when: cache ready AND premium data ready AND (not authenticated OR progress ready)
-  const isLoaded = cacheReady && !authLoading && premiumDataReady && (!isAuthenticated || progressReady)
+  // Render only when: auth ready AND premium ready AND cache ready AND (not authenticated OR progress ready)
+  // CRITICAL: If user exists but cache doesn't, DON'T render (show skeleton)
+  const isLoaded = !authLoading && !premiumLoading && cacheReady && (!isAuthenticated || progressReady)
 
   // Handler for premium module click
   const handlePremiumClick = (moduleTitle: string) => {
@@ -88,7 +104,12 @@ export default function ModulesPage() {
     // Otherwise, allow normal navigation (will be handled by Link component)
   }
 
-  const modules = getModules().map((module, index) => {
+  // CRITICAL: Only calculate modules when data is loaded to prevent wrong hasPremium calculation
+  // On refresh, hasPremium might be wrong until cache loads, causing wrong button states
+  const modules = useMemo(() => {
+    if (!isLoaded) return [] // Don't calculate if not loaded (prevents wrong hasPremium)
+    
+    return getModules().map((module, index) => {
     // Compute access status client-side using cached data
     const requiresPremium = module.requiresPremium ?? false
     const prerequisitesComplete = isAuthenticated ? 
@@ -155,7 +176,8 @@ export default function ModulesPage() {
       buttonIcon,
       buttonClass
     }
-  })
+    })
+  }, [isLoaded, hasPremium, isAuthenticated, effectiveProgressData])
 
   // OPTIMISTIC RENDERING: Show skeleton only if data not loaded yet
   if (!isLoaded) {
