@@ -37,6 +37,8 @@ function VerifyEmailContent() {
       const token = searchParams.get('token')
       const type = searchParams.get('type')
       
+      console.log('[AUTH] verify_page_load', { token: token ? 'present' : 'missing', type: type || 'missing' })
+      
       // CRITICAL: Validate required params early
       if (token && !type) {
         setError('Invalid verification link: missing type parameter')
@@ -80,6 +82,7 @@ function VerifyEmailContent() {
       }
 
       try {
+        console.log('[AUTH] verification_attempt', { type, token_present: !!token })
         // Attempt verification
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash: token,
@@ -94,6 +97,7 @@ function VerifyEmailContent() {
               error.message.includes('token has already been used') ||
               error.message.includes('already verified')) {
             // Token was already used = email is verified = SUCCESS
+            console.log('[AUTH] verification_token_already_used', { email: user?.email })
             setStatus('success')
             setUserEmail(user?.email || '')
             
@@ -124,6 +128,8 @@ function VerifyEmailContent() {
               error.message.includes('device') ||
               error.code === 'session_not_found') {
             
+            console.log('[AUTH] verification_cookie_issue', { error: error.message })
+            
             // Device mismatch - verify worked but session failed
             if (error.message.includes('session') || error.message.includes('device')) {
                setStatus('success')
@@ -145,10 +151,12 @@ function VerifyEmailContent() {
             setError(error.message || 'Verification failed')
             setStatus('invalid')
           }
+          console.log('[AUTH] verification_failed', { error: error.message })
           return
         }
 
         if (data.user) {
+          console.log('[AUTH] verification_success', { userId: data.user.id })
           setStatus('success')
           setUserEmail(data.user.email || '')
           
@@ -181,6 +189,7 @@ function VerifyEmailContent() {
         }
       } catch (error: any) {
         console.error('Verification error:', error)
+        console.log('[AUTH] verification_failed', { error: error?.message || 'An unexpected error occurred' })
         
         // CRITICAL: Catch network/cookie errors
         if (error instanceof TypeError || error.message?.includes('fetch')) {

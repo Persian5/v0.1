@@ -82,20 +82,24 @@ function ResetPasswordContent() {
     
     setIsLoading(true)
     setError(null)
+    console.log('[AUTH] password_reset_start', { userId: user.id })
 
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       
       if (error) {
+        console.log('[AUTH] password_reset_failed', { userId: user.id, error: error.message })
         setError(error.message)
       } else {
+        console.log('[AUTH] password_reset_success', { userId: user.id })
         setSuccess(true)
         // Redirect after delay
         setTimeout(() => {
           router.push('/dashboard')
         }, 2000)
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.log('[AUTH] password_reset_failed', { userId: user?.id, error: err?.message || 'An unexpected error occurred' })
       setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)
