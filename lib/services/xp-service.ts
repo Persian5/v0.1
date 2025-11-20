@@ -414,6 +414,23 @@ export class XpService {
           try {
             const { SmartAuthService } = await import('./smart-auth-service')
             SmartAuthService.setXpDirectly(newXp)
+            
+            // STREAK FIX: Fetch and update streak after XP award
+            // The database trigger (trg_update_streak) updates streak_count when XP is awarded
+            // We need to refresh the cache to reflect this change
+            try {
+              const { DatabaseService } = await import('@/lib/supabase/database')
+              const profile = await DatabaseService.getUserProfile(userId)
+              if (profile && profile.streak_count !== undefined) {
+                SmartAuthService.updateUserData({ 
+                  streakCount: profile.streak_count,
+                  lastActivityDate: profile.last_activity_date || null
+                })
+              }
+            } catch (streakError) {
+              console.warn('Failed to update streak cache after XP award:', streakError)
+              // Non-critical - streak will update on next page load
+            }
           } catch (e) {
             console.warn('Failed to sync XP to UI:', e)
           }
@@ -429,6 +446,20 @@ export class XpService {
              // Unconditionally set the UI to match the database state
              // Even if "already awarded", we want the UI to show the correct total
               SmartAuthService.setXpDirectly(newXp)
+              
+              // STREAK FIX: Also update streak when already awarded
+              try {
+                const { DatabaseService } = await import('@/lib/supabase/database')
+                const profile = await DatabaseService.getUserProfile(userId)
+                if (profile && profile.streak_count !== undefined) {
+                  SmartAuthService.updateUserData({ 
+                    streakCount: profile.streak_count,
+                    lastActivityDate: profile.last_activity_date || null
+                  })
+                }
+              } catch (streakError) {
+                console.warn('Failed to update streak cache (already awarded case):', streakError)
+              }
           }
         } catch (error) {
           console.warn('Failed to reconcile XP:', error)

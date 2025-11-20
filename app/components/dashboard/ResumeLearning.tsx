@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Play, BookOpen, CheckCircle2 } from "lucide-react"
+import { Play, BookOpen, CheckCircle2, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getModules } from "@/lib/config/curriculum"
@@ -71,32 +71,26 @@ export function ResumeLearning({ nextLesson }: ResumeLearningProps) {
   // Handle "all lessons completed" state
   if (displayLesson.allLessonsCompleted) {
     return (
-      <Card className="bg-primary/5 border-primary/20 shadow-md hover:shadow-lg transition-shadow">
-        <CardContent className="p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="p-3 rounded-lg bg-primary/10 flex-shrink-0">
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
+      <Card className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-sm">
+        <CardContent className="p-6 md:p-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-start gap-4 flex-1">
+              <div className="p-3 rounded-xl bg-emerald-100 text-emerald-600 flex-shrink-0">
+                <CheckCircle2 className="h-8 w-8" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg mb-1">You're All Caught Up!</h3>
-                <p className="text-sm text-muted-foreground">
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-neutral-900">You're All Caught Up!</h3>
+                <p className="text-base text-neutral-600">
                   New lessons coming soon. While you wait, strengthen your vocabulary.
                 </p>
               </div>
             </div>
-            <Link 
-              href="/review"
-              className="w-full sm:w-auto flex-shrink-0"
-            >
+            <Link href="/review" className="w-full md:w-auto">
               <Button 
                 size="lg" 
-                className={cn(
-                  "w-full sm:w-auto bg-primary hover:bg-primary/90",
-                  "min-h-[48px]" // Touch target
-                )}
+                className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-14 px-8 rounded-xl shadow-sm hover:shadow transition-all"
               >
-                <Play className="h-4 w-4 mr-2" />
+                <Play className="h-5 w-5 mr-2 fill-current" />
                 Review Your Words
               </Button>
             </Link>
@@ -110,36 +104,43 @@ export function ResumeLearning({ nextLesson }: ResumeLearningProps) {
   const formattedTitle = formatLessonTitle(displayLesson.lessonId, displayLesson.lessonTitle)
 
   return (
-    <Card className="bg-primary/5 border-primary/20 shadow-md hover:shadow-lg transition-shadow">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="p-3 rounded-lg bg-primary/10 flex-shrink-0">
-              <BookOpen className="h-6 w-6 text-primary" />
+    <Card className="bg-gradient-to-br from-amber-50/80 to-white border border-amber-100/50 shadow-sm hover:shadow-md transition-all duration-300 group">
+      <CardContent className="p-6 md:p-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-start gap-5 flex-1 w-full">
+            <div className="p-4 rounded-2xl bg-amber-100/50 text-amber-600 flex-shrink-0 shadow-inner hidden sm:block">
+              <BookOpen className="h-8 w-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-lg truncate">{formattedTitle}</h3>
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold tracking-wide uppercase">
+                  Next Up
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground truncate mb-1">{displayLesson.moduleTitle}</p>
+              <h3 className="text-2xl font-bold text-neutral-900 tracking-tight leading-tight">
+                {formattedTitle}
+              </h3>
+              <p className="text-base font-medium text-neutral-500 truncate">
+                {displayLesson.moduleTitle}
+              </p>
               {displayLesson.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">{displayLesson.description}</p>
+                <p className="text-sm text-neutral-400 line-clamp-2 max-w-xl">
+                  {displayLesson.description}
+                </p>
               )}
             </div>
           </div>
+          
           <Link 
             href={`/modules/${displayLesson.moduleId}/${displayLesson.lessonId}`}
-            className="w-full sm:w-auto flex-shrink-0"
+            className="w-full md:w-auto flex-shrink-0 mt-2 md:mt-0"
           >
             <Button 
               size="lg" 
-              className={cn(
-                "w-full sm:w-auto bg-primary hover:bg-primary/90",
-                "min-h-[48px]" // Touch target
-              )}
+              className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300 text-lg"
             >
-              <Play className="h-4 w-4 mr-2" />
               Continue Learning
+              <ArrowRight className="h-5 w-5 ml-2 stroke-[3px]" />
             </Button>
           </Link>
         </div>

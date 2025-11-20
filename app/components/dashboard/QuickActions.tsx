@@ -13,31 +13,43 @@ interface QuickAction {
   variant: "default" | "secondary" | "outline"
 }
 
-const actions: QuickAction[] = [
-  {
-    label: "Continue Learning",
-    icon: <BookOpen className="h-5 w-5" />,
-    href: "/modules",
-    description: "Pick up where you left off",
-    variant: "default"
-  },
-  {
-    label: "Practice Weak Words",
-    icon: <Target className="h-5 w-5" />,
-    href: "/review",
-    description: "Focus on words you're struggling with",
-    variant: "secondary"
-  },
-  {
-    label: "Browse Modules",
-    icon: <Grid3x3 className="h-5 w-5" />,
-    href: "/modules",
-    description: "Explore all lessons",
-    variant: "outline"
-  }
-]
+interface QuickActionsProps {
+  nextLesson?: {
+    moduleId: string
+    lessonId: string
+  } | null
+}
 
-export function QuickActions() {
+export function QuickActions({ nextLesson }: QuickActionsProps) {
+  // Dynamic href for "Continue Learning" - link to specific lesson if available
+  const continueLearningHref = nextLesson 
+    ? `/modules/${nextLesson.moduleId}/${nextLesson.lessonId}`
+    : "/modules"
+
+  const actions: QuickAction[] = [
+    {
+      label: "Continue Learning",
+      icon: <BookOpen className="h-5 w-5" />,
+      href: continueLearningHref,
+      description: "Pick up where you left off",
+      variant: "default"
+    },
+    {
+      label: "Practice Weak Words",
+      icon: <Target className="h-5 w-5" />,
+      href: "/review",
+      description: "Focus on words you're struggling with",
+      variant: "secondary"
+    },
+    {
+      label: "Browse Modules",
+      icon: <Grid3x3 className="h-5 w-5" />,
+      href: "/modules",
+      description: "Explore all lessons",
+      variant: "outline"
+    }
+  ]
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {actions.map((action, index) => {

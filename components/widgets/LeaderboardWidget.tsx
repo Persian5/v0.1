@@ -116,94 +116,95 @@ export function LeaderboardWidget() {
   }
 
   return (
-    <Card className="bg-white border border-neutral-200 shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-primary" />
-          Leaderboard
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Top 3 */}
-        {data.top.map((entry, index) => (
-          <motion.div
-            key={entry.rank}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className={`p-3 rounded-lg border ${
-              entry.isYou 
-                ? 'bg-primary/10 border-primary' 
-                : 'bg-background/50 border-border'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8">
+    <Card className="bg-white border border-neutral-200/50 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
+      <CardContent className="p-6 sm:p-8">
+        <div className="space-y-4">
+          {/* Top 3 */}
+          {data.top.map((entry, index) => (
+            <motion.div
+              key={entry.rank}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className={`p-4 rounded-xl border transition-all duration-300 flex items-center ${
+                entry.isYou 
+                  ? 'bg-primary/5 border-primary/20 shadow-sm' 
+                  : 'bg-white border-neutral-100 hover:border-neutral-200'
+              }`}
+            >
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
                   {getRankIcon(entry.rank) || (
-                    <span className="text-lg font-bold text-muted-foreground">
-                      {entry.rank}
+                    <span className="text-lg font-bold text-neutral-400 font-mono">
+                      #{entry.rank}
                     </span>
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-semibold text-sm truncate">
+                  <div className="font-semibold text-base text-neutral-900 truncate flex items-center gap-2">
                     {entry.displayName}
                     {entry.isYou && (
-                      <span className="text-primary ml-1 text-xs">(You)</span>
+                      <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+                        You
+                      </span>
                     )}
                   </div>
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <div className="font-bold text-sm text-primary">
+              <div className="text-right shrink-0 pl-4">
+                <div className="font-bold text-base text-neutral-900">
                   {entry.xp.toLocaleString()}
                 </div>
-                <div className="text-xs text-muted-foreground">XP</div>
+                <div className="text-xs font-medium text-neutral-400 uppercase tracking-wide">XP</div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
 
-        {/* User rank (if outside top 3) */}
-        {data.you && data.you.rank > 3 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="p-3 rounded-lg border bg-primary/10 border-primary mt-4"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8">
-                  <span className="text-lg font-bold text-primary">
-                    {data.you.rank}
+          {/* User rank (if outside top 3) */}
+          {data.you && data.you.rank > 3 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="p-4 rounded-xl border border-primary/20 bg-primary/5 shadow-sm mt-6 flex items-center"
+            >
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
+                  <span className="text-lg font-bold text-primary font-mono">
+                    #{data.you.rank}
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <div className="font-semibold text-sm truncate">
+                  <div className="font-semibold text-base text-neutral-900 truncate flex items-center gap-2">
                     {data.you.displayName}
-                    <span className="text-primary ml-1 text-xs">(You)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+                      You
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <div className="font-bold text-sm text-primary">
+              <div className="text-right shrink-0 pl-4">
+                <div className="font-bold text-base text-neutral-900">
                   {data.you.xp.toLocaleString()}
                 </div>
-                <div className="text-xs text-muted-foreground">XP</div>
+                <div className="text-xs font-medium text-neutral-400 uppercase tracking-wide">XP</div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {/* View Full Leaderboard Button */}
-        <Link href="/leaderboard">
-          <Button variant="outline" size="sm" className="w-full mt-4">
-            View Your Ranking
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </Link>
+          {/* View Full Leaderboard Button */}
+          <div className="pt-4">
+            <Link href="/leaderboard">
+              <Button 
+                variant="outline" 
+                className="w-full h-12 rounded-xl border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 text-neutral-600 font-medium transition-all"
+              >
+                View Full Rankings
+                <ArrowRight className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100" />
+              </Button>
+            </Link>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
