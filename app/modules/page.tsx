@@ -14,7 +14,7 @@ import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import type { Module } from "@/lib/types"
-import { ModuleSnakePath } from "@/app/components/modules/ModuleSnakePath"
+import { ModuleCard } from "@/app/components/modules/ModuleCard"
 
 interface ModuleAccessStatus {
   canAccess: boolean
@@ -102,6 +102,9 @@ export default function ModulesPage() {
     }
 
     // Otherwise, allow normal navigation (will be handled by Link component)
+    if (moduleData.href && moduleData.href !== '#') {
+      router.push(moduleData.href)
+    }
   }
 
   // CRITICAL: Only calculate modules when data is loaded to prevent wrong hasPremium calculation
@@ -136,34 +139,24 @@ export default function ModulesPage() {
 
     // Determine button text and style based on access and completion status
     let buttonText = "Start Module"
-    let buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
-    let buttonClass = "w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors"
     let uiState: 'locked' | 'completed' | 'in-progress' | 'start' = 'start'
 
     // Premium badge state (free user, requires premium)
     if (showPremiumBadge) {
       buttonText = "Unlock Premium"
-      buttonIcon = <Crown className="mr-2 h-4 w-4" />
-      buttonClass = "w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
       uiState = 'locked'
     }
     // Completion lock state (paid user, prerequisites incomplete)
     else if (showCompletionLock) {
       buttonText = "Complete Previous Modules"
-      buttonIcon = <AlertCircle className="mr-2 h-4 w-4" />
-      buttonClass = "w-full bg-gray-300 text-gray-600 cursor-not-allowed font-semibold py-3 rounded-lg"
       uiState = 'locked'
     }
     // Normal access states
     else if (moduleCompletionInfo.isCompleted) {
-      buttonText = "Module Complete"
-      buttonIcon = <CheckCircle className="mr-2 h-4 w-4" />
-      buttonClass = "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors"
+      buttonText = "Review Module"
       uiState = 'completed'
     } else if (moduleCompletionInfo.completionPercentage > 0) {
-      buttonText = "Continue Module"
-      buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
-      buttonClass = "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+      buttonText = "Continue"
       uiState = 'in-progress'
     } else {
       uiState = 'start'
@@ -180,33 +173,30 @@ export default function ModulesPage() {
       completionInfo: moduleCompletionInfo,
       accessStatus,
       buttonText,
-      buttonIcon,
-      buttonClass,
       uiState
     }
     })
   }, [isLoaded, hasPremium, isAuthenticated, effectiveProgressData])
-
-  const highlightModule = useMemo(() => {
-    const inProgress = modules.find(module => module.uiState === 'in-progress')
-    if (inProgress) return inProgress
-    return modules.find(module => module.uiState === 'start') || null
-  }, [modules])
 
   // OPTIMISTIC RENDERING: Show skeleton only if data not loaded yet
   if (!isLoaded) {
     return (
       <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
         <main className="flex-1">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+          <div className="max-w-4xl mx-auto px-4 pb-20 pt-12 space-y-8">
             <div className="text-center space-y-3">
               <div className="h-4 w-32 bg-slate-200 rounded-full mx-auto animate-pulse" />
               <div className="h-10 w-60 bg-slate-200 rounded-full mx-auto animate-pulse" />
               <div className="h-4 w-72 bg-slate-200 rounded-full mx-auto animate-pulse" />
             </div>
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 animate-pulse h-40" />
+                <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 h-80 animate-pulse space-y-4">
+                   <div className="w-20 h-20 rounded-2xl bg-slate-100" />
+                   <div className="h-6 w-3/4 bg-slate-100 rounded" />
+                   <div className="h-20 w-full bg-slate-50 rounded" />
+                   <div className="h-10 w-full bg-slate-100 rounded-xl mt-auto" />
+                </div>
               ))}
             </div>
           </div>
@@ -222,15 +212,15 @@ export default function ModulesPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
       <main className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
+        <div className="max-w-6xl mx-auto px-4 pb-20 pt-12 space-y-12">
           {/* Page Header */}
           <div className="text-center space-y-4">
             <p className="text-xs uppercase tracking-[0.25em] text-amber-600 font-semibold">Your Journey</p>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#1E7B57]">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#1E7B57]">
               Choose Your Module
             </h1>
-            <p className="text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto">
-              Learning Persian gets easier one module at a time. Keep going, you’re closer than you think.
+            <p className="text-base text-neutral-600 max-w-2xl mx-auto">
+              Learning Persian gets easier one module at a time.
             </p>
             
             {/* Overall Progress Bar */}
@@ -239,27 +229,31 @@ export default function ModulesPage() {
                 <span>Overall Progress</span>
                 <span>{progressPercent}%</span>
               </div>
-              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#58cc02] transition-all duration-1000 ease-out"
+                  className="h-full bg-[#1E7B57] transition-all duration-1000 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Snake Path Layout */}
-          <section className="py-8">
-            <ModuleSnakePath 
-              modules={modules} 
-              onModuleClick={handleModuleClick} 
-            />
+          {/* Card Stack Layout */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            {modules.map((module, index) => (
+              <ModuleCard
+                key={module.id}
+                {...module}
+                onClick={(e) => handleModuleClick(module, e)}
+                index={index}
+              />
+            ))}
           </section>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white">
+      <footer className="border-t bg-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-500 text-center sm:text-left">
@@ -285,4 +279,4 @@ export default function ModulesPage() {
       />
     </div>
   )
-} 
+}
