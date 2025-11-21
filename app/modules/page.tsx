@@ -14,7 +14,7 @@ import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import type { Module } from "@/lib/types"
-import { ModuleCard } from "@/app/components/modules/ModuleCard"
+import { ModuleSnakePath } from "@/app/components/modules/ModuleSnakePath"
 
 interface ModuleAccessStatus {
   canAccess: boolean
@@ -88,21 +88,21 @@ export default function ModulesPage() {
 
   // Handler for module navigation
   const handleModuleClick = (moduleData: any, e: React.MouseEvent) => {
+    e.preventDefault()
+    
     // If module shows premium badge, open modal instead of navigating
     if (moduleData.accessStatus.showPremiumBadge) {
-      e.preventDefault()
       handlePremiumClick(moduleData.title)
       return
     }
 
     // If module shows completion lock, prevent navigation
     if (moduleData.accessStatus.showCompletionLock) {
-      e.preventDefault()
       return
     }
 
-    // Otherwise, allow normal navigation (will be handled by Link component)
-    if (moduleData.href && moduleData.href !== '#') {
+    // Navigate to the module page
+    if (moduleData.href && moduleData.href !== "#") {
       router.push(moduleData.href)
     }
   }
@@ -139,27 +139,44 @@ export default function ModulesPage() {
 
     // Determine button text and style based on access and completion status
     let buttonText = "Start Module"
-    let uiState: 'locked' | 'completed' | 'in-progress' | 'start' = 'start'
+    let buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
+    let buttonClass = "w-full bg-[#E8F5E9] hover:bg-[#C8E6C9] text-[#1E7B57] font-semibold py-3 rounded-lg transition-colors"
+    let uiState: 'locked' | 'completed' | 'current' | 'available' = 'available'
 
     // Premium badge state (free user, requires premium)
     if (showPremiumBadge) {
       buttonText = "Unlock Premium"
+      buttonIcon = <Crown className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
       uiState = 'locked'
     }
     // Completion lock state (paid user, prerequisites incomplete)
     else if (showCompletionLock) {
       buttonText = "Complete Previous Modules"
+      buttonIcon = <AlertCircle className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-gray-300 text-gray-600 cursor-not-allowed font-semibold py-3 rounded-lg"
       uiState = 'locked'
+    }
+    
+    // Generate prerequisite message
+    let prerequisiteMessage: string | undefined
+    if (showCompletionLock && index > 0) {
+      const previousModule = getModules()[index - 1]
+      prerequisiteMessage = `Complete Module ${index} first`
     }
     // Normal access states
     else if (moduleCompletionInfo.isCompleted) {
-      buttonText = "Review Module"
+      buttonText = "Module Complete"
+      buttonIcon = <CheckCircle className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors"
       uiState = 'completed'
     } else if (moduleCompletionInfo.completionPercentage > 0) {
-      buttonText = "Continue"
-      uiState = 'in-progress'
+      buttonText = "Continue Module"
+      buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+      uiState = 'current' // In-progress modules are "current"
     } else {
-      uiState = 'start'
+      uiState = 'available' // New modules are "available"
     }
 
     return {
@@ -173,30 +190,59 @@ export default function ModulesPage() {
       completionInfo: moduleCompletionInfo,
       accessStatus,
       buttonText,
-      uiState
+      buttonIcon,
+      buttonClass,
+      uiState,
+      lessonCount: module.lessons.length,
+      prerequisiteMessage
     }
     })
   }, [isLoaded, hasPremium, isAuthenticated, effectiveProgressData])
+
+  const highlightModule = useMemo(() => {
+    const inProgress = modules.find(module => module.uiState === 'current')
+    if (inProgress) return inProgress
+    return modules.find(module => module.uiState === 'available') || null
+  }, [modules])
+
+  // Calculate progress based on lessons, not modules
+  // Must be called before any conditional returns (React hooks rule)
+  const totalLessons = useMemo(() => {
+    return getModules().reduce((sum, module) => sum + module.lessons.length, 0)
+  }, [])
+  
+  const completedLessons = useMemo(() => {
+    if (!isAuthenticated) return 0
+    // Count unique completed lessons from progress data
+    const completedSet = new Set<string>()
+    effectiveProgressData.forEach((p) => {
+      const isCompleted = 
+        !!p.completed_at || 
+        p.progress_percent === 100 || 
+        p.status === 'completed'
+      if (isCompleted) {
+        completedSet.add(`${p.module_id}-${p.lesson_id}`)
+      }
+    })
+    return completedSet.size
+  }, [isAuthenticated, effectiveProgressData])
+  
+  const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
 
   // OPTIMISTIC RENDERING: Show skeleton only if data not loaded yet
   if (!isLoaded) {
     return (
       <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
         <main className="flex-1">
-          <div className="max-w-4xl mx-auto px-4 pb-20 pt-12 space-y-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
             <div className="text-center space-y-3">
               <div className="h-4 w-32 bg-slate-200 rounded-full mx-auto animate-pulse" />
               <div className="h-10 w-60 bg-slate-200 rounded-full mx-auto animate-pulse" />
               <div className="h-4 w-72 bg-slate-200 rounded-full mx-auto animate-pulse" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="space-y-6">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 h-80 animate-pulse space-y-4">
-                   <div className="w-20 h-20 rounded-2xl bg-slate-100" />
-                   <div className="h-6 w-3/4 bg-slate-100 rounded" />
-                   <div className="h-20 w-full bg-slate-50 rounded" />
-                   <div className="h-10 w-full bg-slate-100 rounded-xl mt-auto" />
-                </div>
+                <div key={i} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 animate-pulse h-40" />
               ))}
             </div>
           </div>
@@ -205,55 +251,43 @@ export default function ModulesPage() {
     )
   }
 
-  const totalModules = modules.length
-  const completedModules = modules.filter(m => m.uiState === 'completed').length
-  const progressPercent = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0
-
   return (
     <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
       <main className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 pb-20 pt-12 space-y-12">
-          {/* Page Header */}
-          <div className="text-center space-y-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-amber-600 font-semibold">Your Journey</p>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#1E7B57]">
+        <div className="max-w-7xl mx-auto px-2 md:px-4 lg:px-8 py-6 sm:py-8 space-y-8">
+          {/* Page Header - Compact */}
+          <div className="text-center space-y-1">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#1E7B57]">
               Choose Your Module
             </h1>
-            <p className="text-base text-neutral-600 max-w-2xl mx-auto">
-              Learning Persian gets easier one module at a time.
-            </p>
             
-            {/* Overall Progress Bar */}
-            <div className="max-w-md mx-auto mt-6 px-4">
-              <div className="flex justify-between text-sm font-medium text-neutral-600 mb-2">
+            {/* Overall Progress Bar - Compact */}
+            <div className="max-w-md mx-auto mt-3 px-4">
+              <div className="flex justify-between text-xs font-medium text-neutral-600 mb-1">
                 <span>Overall Progress</span>
                 <span>{progressPercent}%</span>
               </div>
-              <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#1E7B57] transition-all duration-1000 ease-out"
+                  className="h-full bg-[#4AB88A] transition-all duration-1000 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Card Stack Layout */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {modules.map((module, index) => (
-              <ModuleCard
-                key={module.id}
-                {...module}
-                onClick={(e) => handleModuleClick(module, e)}
-                index={index}
-              />
-            ))}
+          {/* Snake Path Layout */}
+          <section className="py-2">
+            <ModuleSnakePath 
+              modules={modules} 
+              onModuleClick={handleModuleClick} 
+            />
           </section>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white mt-auto">
+      <footer className="border-t bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-500 text-center sm:text-left">
