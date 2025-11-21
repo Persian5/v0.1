@@ -3,8 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Lock, CheckCircle, PlayCircle, Clock, Crown, AlertCircle } from "lucide-react"
+import { Lock, CheckCircle, PlayCircle, Crown, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
 import { useSmartXp } from "@/hooks/use-smart-xp"
@@ -15,6 +14,7 @@ import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import type { Module } from "@/lib/types"
+import { ModuleSnakePath } from "@/app/components/modules/ModuleSnakePath"
 
 interface ModuleAccessStatus {
   canAccess: boolean
@@ -138,28 +138,35 @@ export default function ModulesPage() {
     let buttonText = "Start Module"
     let buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
     let buttonClass = "w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors"
+    let uiState: 'locked' | 'completed' | 'in-progress' | 'start' = 'start'
 
     // Premium badge state (free user, requires premium)
     if (showPremiumBadge) {
       buttonText = "Unlock Premium"
       buttonIcon = <Crown className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
+      uiState = 'locked'
     }
     // Completion lock state (paid user, prerequisites incomplete)
     else if (showCompletionLock) {
       buttonText = "Complete Previous Modules"
       buttonIcon = <AlertCircle className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-gray-300 text-gray-600 cursor-not-allowed font-semibold py-3 rounded-lg"
+      uiState = 'locked'
     }
     // Normal access states
     else if (moduleCompletionInfo.isCompleted) {
       buttonText = "Module Complete"
       buttonIcon = <CheckCircle className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors"
+      uiState = 'completed'
     } else if (moduleCompletionInfo.completionPercentage > 0) {
       buttonText = "Continue Module"
       buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+      uiState = 'in-progress'
+    } else {
+      uiState = 'start'
     }
 
     return {
@@ -174,33 +181,32 @@ export default function ModulesPage() {
       accessStatus,
       buttonText,
       buttonIcon,
-      buttonClass
+      buttonClass,
+      uiState
     }
     })
   }, [isLoaded, hasPremium, isAuthenticated, effectiveProgressData])
 
+  const highlightModule = useMemo(() => {
+    const inProgress = modules.find(module => module.uiState === 'in-progress')
+    if (inProgress) return inProgress
+    return modules.find(module => module.uiState === 'start') || null
+  }, [modules])
+
   // OPTIMISTIC RENDERING: Show skeleton only if data not loaded yet
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <main className="flex-1 bg-primary/5">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div className="text-center mb-8 sm:mb-12">
-              <div className="h-12 bg-gray-200 rounded w-64 mx-auto mb-4 animate-pulse"></div>
-              <div className="h-6 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
+      <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
+        <main className="flex-1">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+            <div className="text-center space-y-3">
+              <div className="h-4 w-32 bg-slate-200 rounded-full mx-auto animate-pulse" />
+              <div className="h-10 w-60 bg-slate-200 rounded-full mx-auto animate-pulse" />
+              <div className="h-4 w-72 bg-slate-200 rounded-full mx-auto animate-pulse" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="bg-white">
-                  <CardHeader className="pb-4">
-                    <div className="h-16 bg-gray-200 rounded mb-3 animate-pulse"></div>
-                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="h-20 bg-gray-200 rounded mb-4 animate-pulse"></div>
-                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
-                  </CardContent>
-                </Card>
+            <div className="space-y-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 animate-pulse h-40" />
               ))}
             </div>
           </div>
@@ -209,113 +215,46 @@ export default function ModulesPage() {
     )
   }
 
+  const totalModules = modules.length
+  const completedModules = modules.filter(m => m.uiState === 'completed').length
+  const progressPercent = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0
+
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <main className="flex-1 bg-primary/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
           {/* Page Header */}
-          <div className="text-center mb-8 sm:mb-12">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-primary mb-4">
+          <div className="text-center space-y-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-amber-600 font-semibold">Your Journey</p>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#1E7B57]">
               Choose Your Module
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Start your Persian learning journey with structured lessons
+            <p className="text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto">
+              Learning Persian gets easier one module at a time. Keep going, you’re closer than you think.
             </p>
-          </div>
-
-          {/* Modules Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-            {modules.map((module) => (
-              <Card 
-                key={module.id} 
-                className={`relative transition-all duration-300 hover:shadow-lg border-2 bg-white ${
-                  module.available 
-                    ? 'hover:border-accent/50 hover:scale-105' 
-                    : 'opacity-60 border-gray-200'
-                }`}
-              >
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-center">
-                    <div className="text-4xl sm:text-5xl mb-3">{module.emoji}</div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
-                      {module.title}
-                    </h3>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm sm:text-base text-gray-600 mb-4 text-center min-h-[60px] sm:min-h-[80px] flex items-center justify-center">
-                    {module.description}
-                  </p>
-
-                  {/* Progress Information for Authenticated Users */}
-                  {isAuthenticated && module.available && (
-                    <div className="mb-4 space-y-2">
-                      {/* Progress Bar */}
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            module.completionInfo.isCompleted ? 'bg-green-500' : 'bg-blue-500'
-                          }`}
-                          style={{ width: `${module.completionInfo.completionPercentage}%` }}
-                        ></div>
-                      </div>
-                      
-                      {/* Progress Text */}
-                      <div className="flex justify-between items-center text-xs text-gray-600">
-                        <span>{module.completionInfo.completionPercentage}% complete</span>
-                        {module.completionInfo.durationFormatted && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{module.completionInfo.durationFormatted}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="w-full">
-                    {module.available ? (
-                      module.accessStatus?.showPremiumBadge || module.accessStatus?.showCompletionLock ? (
-                        <Button 
-                          className={module.buttonClass}
-                          onClick={(e) => handleModuleClick(module, e)}
-                          disabled={module.accessStatus?.showCompletionLock}
-                        >
-                          {module.buttonIcon}
-                          {module.buttonText}
-                        </Button>
-                      ) : (
-                        <Link href={module.href} className="block">
-                          <Button className={module.buttonClass}>
-                            {module.buttonIcon}
-                            {module.buttonText}
-                          </Button>
-                        </Link>
-                      )
-                    ) : (
-                      <Button 
-                        className="w-full bg-gray-100 text-gray-500 cursor-not-allowed font-semibold py-3 rounded-lg"
-                        disabled
-                      >
-                        <Lock className="mr-2 h-4 w-4" />
-                        Coming Soon
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="text-center mt-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-600">Module 1 Available</span>
-              <div className="w-3 h-3 rounded-full bg-gray-300 ml-2"></div>
-              <span className="text-sm text-gray-400">More modules coming soon</span>
+            
+            {/* Overall Progress Bar */}
+            <div className="max-w-md mx-auto mt-6 px-4">
+              <div className="flex justify-between text-sm font-medium text-neutral-600 mb-2">
+                <span>Overall Progress</span>
+                <span>{progressPercent}%</span>
+              </div>
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#58cc02] transition-all duration-1000 ease-out"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
           </div>
+
+          {/* Snake Path Layout */}
+          <section className="py-8">
+            <ModuleSnakePath 
+              modules={modules} 
+              onModuleClick={handleModuleClick} 
+            />
+          </section>
         </div>
       </main>
 
