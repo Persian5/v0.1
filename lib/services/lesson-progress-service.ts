@@ -1,4 +1,5 @@
 import { getModules, getModule, type Module } from '../config/curriculum';
+import { type Lesson, type LessonStep } from '../types';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
 import { VocabularyProgressService } from './vocabulary-progress-service';
@@ -22,6 +23,16 @@ export interface LessonCompletionResult {
 }
 
 export class LessonProgressService {
+
+  // ===== HELPER FUNCTIONS =====
+
+  /**
+   * Detect if a lesson is a story lesson by checking its structure
+   * A story lesson has exactly one step of type 'story-conversation'
+   */
+  static isStoryLesson(lesson: Lesson | { steps: LessonStep[] }): boolean {
+    return lesson.steps.length === 1 && lesson.steps[0].type === 'story-conversation';
+  }
 
   // ===== CACHE MANAGEMENT =====
   

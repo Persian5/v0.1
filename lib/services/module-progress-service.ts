@@ -1,65 +1,88 @@
 import { getModule } from '../config/curriculum';
 import { LessonProgressService } from './lesson-progress-service';
-
-// Local storage key for module progress
-const MODULE_PROGRESS_KEY = 'user-module-progress';
-
-// Module progress tracking structure
-export interface ModuleProgressMap {
-  [moduleId: string]: {
-    completed: boolean;
-    completedAt?: string;
-    totalXpEarned: number;
-  };
-}
+import { DatabaseService, UserLessonProgress } from '../supabase/database';
+import { AuthService } from './auth-service';
 
 export class ModuleProgressService {
   
-  // Get module progress from local storage
-  private static getProgress(): ModuleProgressMap {
-    if (typeof window === 'undefined') return {};
-    
+  /**
+   * Check if a module is completed
+   * DERIVED: A module is complete if ALL lessons in that module have completed_at NOT NULL
+   */
+  static async isModuleCompleted(moduleId: string): Promise<boolean> {
     try {
-      const stored = localStorage.getItem(MODULE_PROGRESS_KEY);
-      return stored ? JSON.parse(stored) : {};
+      const user = await AuthService.getCurrentUser();
+      if (!user) return false;
+
+      const module = getModule(moduleId);
+      if (!module || !module.lessons || module.lessons.length === 0) return false;
+
+      // Get all lesson progress for this module
+      const lessonProgress = await DatabaseService.getUserLessonProgress(user.id, moduleId);
+
+      // Check if ALL lessons are completed
+      return module.lessons.every(lesson => {
+        const progress = lessonProgress.find(
+          p => p.module_id === moduleId && p.lesson_id === lesson.id
+        );
+        return progress?.completed_at !== null && progress?.completed_at !== undefined;
+      });
     } catch (error) {
-      console.error('Error reading module progress:', error);
-      return {};
+      console.error('Error checking module completion:', error);
+      return false;
     }
   }
 
-  // Save module progress to local storage
-  private static saveProgress(progress: ModuleProgressMap): void {
-    if (typeof window === 'undefined') return;
-    
+  /**
+   * Get module completion data (derived from lesson progress)
+   * Returns completion status and calculated XP from all completed lessons
+   */
+  static async getModuleCompletion(moduleId: string): Promise<{
+    completed: boolean;
+    completedAt?: string;
+    totalXpEarned: number;
+  } | null> {
     try {
-      localStorage.setItem(MODULE_PROGRESS_KEY, JSON.stringify(progress));
+      const user = await AuthService.getCurrentUser();
+      if (!user) return null;
+
+      const module = getModule(moduleId);
+      if (!module) return null;
+
+      // Get all lesson progress for this module
+      const lessonProgress = await DatabaseService.getUserLessonProgress(user.id, moduleId);
+
+      // Check if all lessons are completed
+      const allLessonsCompleted = module.lessons.every(lesson => {
+        const progress = lessonProgress.find(
+          p => p.module_id === moduleId && p.lesson_id === lesson.id
+        );
+        return progress?.completed_at !== null && progress?.completed_at !== undefined;
+      });
+
+      // Calculate total XP from completed lessons
+      const totalXpEarned = lessonProgress
+        .filter(p => p.module_id === moduleId && p.completed_at !== null)
+        .reduce((sum, p) => sum + (p.xp_earned || 0), 0);
+
+      // Get the latest completion date (most recent lesson completion)
+      const completedLessons = lessonProgress
+        .filter(p => p.module_id === moduleId && p.completed_at !== null)
+        .sort((a, b) => {
+          const dateA = a.completed_at ? new Date(a.completed_at).getTime() : 0;
+          const dateB = b.completed_at ? new Date(b.completed_at).getTime() : 0;
+          return dateB - dateA; // Most recent first
+        });
+
+      return {
+        completed: allLessonsCompleted,
+        completedAt: completedLessons[0]?.completed_at || undefined,
+        totalXpEarned
+      };
     } catch (error) {
-      console.error('Error saving module progress:', error);
+      console.error('Error getting module completion:', error);
+      return null;
     }
-  }
-
-  // Check if a module is completed
-  static isModuleCompleted(moduleId: string): boolean {
-    const progress = this.getProgress();
-    return progress[moduleId]?.completed || false;
-  }
-
-  // Mark a module as completed
-  static markModuleCompleted(moduleId: string, totalXpEarned: number): void {
-    const progress = this.getProgress();
-    progress[moduleId] = {
-      completed: true,
-      completedAt: new Date().toISOString(),
-      totalXpEarned
-    };
-    this.saveProgress(progress);
-  }
-
-  // Get module completion data
-  static getModuleCompletion(moduleId: string) {
-    const progress = this.getProgress();
-    return progress[moduleId] || null;
   }
 
   // Check if all lessons in a module are completed (this triggers module completion)
@@ -103,16 +126,53 @@ export class ModuleProgressService {
   }
 
   // Reset module progress (for testing/development)
-  static resetModuleProgress(moduleId: string): void {
-    const progress = this.getProgress();
-    delete progress[moduleId];
-    this.saveProgress(progress);
+  // Note: Module progress is derived from lesson progress, so resetting lessons resets module
+  static async resetModuleProgress(moduleId: string): Promise<void> {
+    try {
+      const user = await AuthService.getCurrentUser();
+      if (!user) {
+        throw new Error('User must be authenticated to reset module progress');
+      }
+
+      // Delete all lesson progress for this module (which resets module completion)
+      const { supabase } = await import('../supabase/client');
+      const { error } = await supabase
+        .from('user_lesson_progress')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('module_id', moduleId);
+
+      if (error) {
+        throw new Error(`Failed to reset module progress: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error resetting module progress:', error);
+      throw error;
+    }
   }
 
-  // Clear all module progress
-  static clearAllProgress(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(MODULE_PROGRESS_KEY);
+  // Clear all module progress (for testing/development)
+  // Note: Module progress is derived from lesson progress
+  static async clearAllProgress(): Promise<void> {
+    try {
+      const user = await AuthService.getCurrentUser();
+      if (!user) {
+        throw new Error('User must be authenticated to clear module progress');
+      }
+
+      // Delete all lesson progress (which clears all module completion)
+      const { supabase } = await import('../supabase/client');
+      const { error } = await supabase
+        .from('user_lesson_progress')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw new Error(`Failed to clear module progress: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error clearing module progress:', error);
+      throw error;
     }
   }
 } 

@@ -181,7 +181,7 @@
 
 ### **LESSON 5: Story Mode - Meeting Someone New** (1 step, 0 vocab)
 
-**Type:** `isStoryLesson: true`
+**Type:** Story lesson (detected automatically: single `story-conversation` step)
 
 **Step Flow:**
 1. **story-conversation** - 7 exchanges with Sara (7 XP total, 1 per correct choice)
@@ -417,7 +417,8 @@ When creating a new lesson, gather:
 - [ ] Description
 - [ ] Emoji
 - [ ] `locked: false`
-- [ ] `grammarLesson: true` or `isStoryLesson: true` (if applicable)
+- [ ] `grammarLesson: true` (if applicable)
+- [ ] Story lessons are detected automatically (single `story-conversation` step)
 - [ ] `reviewVocabulary: []` array of IDs from previous lessons
 - [ ] `vocabulary: []` array of 2-6 new words
 

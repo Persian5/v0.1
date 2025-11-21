@@ -450,7 +450,6 @@ export const curriculumData: Module[] = [
         description: "Practice your greetings in a real conversation with Sara at a friend's house",
         emoji: "🗣️",
         locked: false,
-        isStoryLesson: true,
         vocabulary: [], // Uses vocabulary from previous lessons
         steps: [
           {
@@ -863,246 +862,179 @@ export const curriculumData: Module[] = [
         ]
         };
       })(),
-      {
-        id: "lesson2",
-        title: "Basic Responses Continued",
-        description: "Learn to use 'is' and 'is not' with Persian verb roots and build complex responses",
-        emoji: "🌍",
-        progress: 0,
-        locked: false,
-        vocabulary: [
-          {
-            id: "hast",
-            en: "Is",
-            fa: "هست",
-            finglish: "Hast",
-            phonetic: "hast",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "neest",
-            en: "Is Not",
-            fa: "نیست",
-            finglish: "Neest",
-            phonetic: "neest",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "hastam",
-            en: "I Am",
-            fa: "هستم",
-            finglish: "Hastam",
-            phonetic: "has-TAM",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "neestam",
-            en: "I Am Not",
-            fa: "نیستم",
-            finglish: "Neestam",
-            phonetic: "nees-TAM",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "neesti",
-            en: "You Are Not",
-            fa: "نیستی",
-            finglish: "Neesti",
-            phonetic: "nees-TEE",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "hasti",
-            en: "You Are",
-            fa: "هستی",
-            finglish: "Hasti",
-            phonetic: "has-TEE",
-            lessonId: "module2-lesson2"
-          },
-          {
-            id: "kheily",
-            en: "Very",
-            fa: "خیلی",
-            finglish: "Kheily",
-            phonetic: "khay-LEE",
-            lessonId: "module2-lesson2"
-          }
-        ],
-        steps: [
-          {
-            type: "welcome",
-            title: "Basic Responses Continued",
-            description: "Learn to use Persian verb roots 'hast' (is) and 'neest' (is not) with the suffix patterns you already know.",
-            points: 0,
-            data: {
-              objectives: [
-                "Learn the verb roots 'hast' and 'neest'",
-                "Apply suffix patterns to create 'I am', 'you are not', etc.",
-                "Build complex responses using these new forms",
-                "Practice natural Persian conversation patterns"
-              ],
-              lessonType: "responses"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "hast"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "neest"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which root means 'is not'?",
-              options: ["hast", "neest", "khoob", "esm"],
-              correct: 1
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'you are not' using the neest root?",
-              answer: "neest-i"
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'I am' using the hast root?",
-              answer: "hast-am"
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "hastam", slotId: "slot1" },
-                { id: "word2", text: "neestam", slotId: "slot2" },
-                { id: "word3", text: "neesti", slotId: "slot3" },
-                { id: "word4", text: "hasti", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "I am" },
-                { id: "slot2", text: "I am not" },
-                { id: "slot3", text: "You are not" },
-                { id: "slot4", text: "You are" }
-              ]
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'I am not'?",
-              answer: "neest-am"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "kheily"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man kheily khoobam",
-              expectedTranslation: "I am very good",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Khoob neestam",
-              expectedTranslation: "I am not good",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "kheily",
-              distractors: ["khoob", "hast", "neest"]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Esme man James neest",
-              expectedTranslation: "My name is not James",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "baleh", slotId: "slot1" },
-                { id: "word2", text: "man", slotId: "slot2" },
-                { id: "word3", text: "khodafez", slotId: "slot3" },
-                { id: "word4", text: "khoshbakhtam", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Yes" },
-                { id: "slot2", text: "I / Me" },
-                { id: "slot3", text: "Goodbye" },
-                { id: "slot4", text: "Nice to meet you" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man James hastam",
-              expectedTranslation: "I am James",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "chetori", text: "Chetori", translation: "How are you?" },
-                { id: "khoob", text: "Khoob", translation: "Good" },
-                { id: "neestam", text: "Neestam", translation: "I am not" },
-                { id: "merci", text: "Merci", translation: "Thank you" },
-                { id: "khodafez", text: "Khodafez", translation: "Goodbye" }
-              ],
-              targetWords: ["salam", "chetori", "khoob", "neestam", "merci", "khodafez"],
-              title: "Complete Conversation Practice",
-              successMessage: "Excellent! You can now express complex states and responses!",
-              incorrectMessage: "Almost there—let's practice that conversation flow again!",
-              conversationFlow: {
-                description: "A complete conversation with complex responses",
-                expectedPhrase: "Hello, how are you? I am not good, thank you, goodbye",
-                persianSequence: ["salam", "chetori", "khoob", "neestam", "merci", "khodafez"]
+      // Module 2 Lesson 2: Full Introductions
+      (() => {
+        const vocabulary = createVocabulary("module2-lesson2", {
+          ids: ["khoshbakhtam"],
+          en: ["Nice to Meet You"],
+          fa: ["خوشبختم"],
+          finglish: ["Khoshbakhtam"],
+          phonetic: ["Khosh-bakh-TAM"]
+        });
+
+        return {
+          id: "lesson2",
+          title: "Full Introductions",
+          description: "Today you'll learn how to complete a basic introduction using: \"My name is …\" \"Nice to meet you\" Recognize full introduction exchanges in listening and text Build comfort with ezafe + name structure",
+          emoji: "👋",
+          progress: 0,
+          locked: false,
+          vocabulary,
+          steps: [
+            // 1. Welcome Intro
+            {
+              type: "welcome",
+              title: "Full Introductions",
+              description: "Today you'll learn how to complete your introduction in Persian. You already know how to say your name, now let's sound natural and polite when meeting someone.",
+              points: 0,
+              data: {
+                objectives: [
+                  "Say your full introduction confidently",
+                  "Use \"Nice to meet you\" naturally",
+                  "Recognize full introduction exchanges",
+                  "Build comfort with ezafe + name structure"
+                ],
+                lessonType: "introductions"
               }
-            }
-          }
-        ]
-      },
+            },
+            // 2. Audio Sequence: Salam, esm|e shoma chiye
+            audioSequence(
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
+              ],
+              "Hello what is your name"
+            ),
+            // 3. Matching: Man, Shoma, Esm, Esm|e
+            matching([
+              "man",
+              "shoma",
+              "esm",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const
+            ]),
+            // 4. Audio Meaning: Chiye
+            audioMeaning("chiye"),
+            // 5. Flashcard: Khoshbakhtam
+            flashcard(vocabulary, "khoshbakhtam"),
+            // 6. MC Quiz: What does "Khoshbakhtam" mean?
+            vocabQuiz(vocabulary, "khoshbakhtam", "vocab-normal"),
+            // 7. Text Sequence: Esm|e man (user firstName)-e khoshbakhtam
+            textSequence(
+              "Esme man {userFirstName}-e khoshbakhtam",
+              "My name is {userFirstName} nice to meet you",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man",
+                "khoshbakhtam"
+              ]
+            ),
+            // 8. Audio Meaning: Esm
+            audioMeaning("esm"),
+            // 9. Text Sequence: Salam, esm|e man (user firstName)-e
+            textSequence(
+              "Salam, esme man {userFirstName}-e",
+              "Hello my name is {userFirstName}",
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man"
+              ]
+            ),
+            // 10. Matching: Esm|e, Khoshbakhtam Esm|e Man Shoma
+            matching([
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "khoshbakhtam",
+              "man",
+              "shoma"
+            ]),
+            // 11. Audio Sequence: Salam chetori khoob|am merci
+            audioSequence(
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
+              ],
+              "Hello how are you I'm good thank you"
+            ),
+            // 12. Reverse Quiz: Which word means "Nice to Meet You"
+            vocabQuiz(vocabulary, "khoshbakhtam", "vocab-reverse"),
+            // 13. Audio Sequence: Esm|e shoma chiye
+            audioSequence(
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
+              ],
+              "What is your name"
+            ),
+            // 14. Audio Sequence: Esm|e man
+            audioSequence(
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man"
+              ],
+              "My name"
+            ),
+            // 15. Text Sequence: Na merci khoob|am, khodafez
+            textSequence(
+              "Na merci khoobam, khodafez",
+              "No thank you I'm good goodbye",
+              [
+                "na",
+                "merci",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "khodafez"
+              ]
+            ),
+            // 16. MC Quiz: Khoob
+            vocabQuiz([], "khoob", "vocab-normal"),
+            // 17. Reverse Quiz: Bad|am
+            vocabQuiz([], { kind: "suffix", baseId: "bad", suffixId: "am" } as const, "vocab-reverse"),
+            // 18. Text Sequence: Baleh merci
+            textSequence(
+              "Baleh merci",
+              "Yes thank you",
+              ["baleh", "merci"]
+            ),
+            // 19. Input: Baleh
+            input(
+              "How do you say 'Yes' in Persian?",
+              "Baleh",
+              2,
+              "baleh"
+            ),
+            // 20. Text Sequence: Salam chetori khoob|am merci
+            textSequence(
+              "Salam chetori khoobam merci",
+              "Hello how are you I'm good thank you",
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
+              ]
+            ),
+            // 21. Final Challenge: Salam esm|e man (userFirstName)-e, khoshbakhtam khodafez
+            final(vocabulary, [
+              "salam",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "man",
+              "{userFirstName}-e", // Plain string - name with ezafe connector
+              "khoshbakhtam",
+              "khodafez"
+            ], {
+              conversationFlow: {
+                description: "A complete introduction conversation",
+                expectedPhrase: "Hello my name is {userFirstName} nice to meet you goodbye"
+              },
+              title: "Your Full Introduction"
+            })
+          ]
+        };
+      })(),
       {
         id: "lesson3",
         title: "Saying Where You Are From",

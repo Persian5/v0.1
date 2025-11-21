@@ -92,16 +92,30 @@ export function deriveStepUid(step: LessonStep, stepIndex: number, moduleId?: st
     
     case 'quiz': {
       const vocabId = (step as any).data?.vocabularyId
+      const lexemeRef = (step as any).data?.lexemeRef
+      const quizType = (step as any).data?.quizType || 'vocab-normal' // Include quizType in UID for uniqueness
+      
+      // Create identifier from vocabId or lexemeRef
+      let contentId: string
       if (vocabId) {
-        return `${UID_VERSION}-quiz-${vocabId}`
+        contentId = vocabId
+      } else if (lexemeRef) {
+        // Grammar form: create ID from baseId and suffixId
+        contentId = typeof lexemeRef === 'string' 
+          ? lexemeRef 
+          : `${lexemeRef.baseId}|${lexemeRef.suffixId}`
+      } else {
+        // Fallback: hash prompt + correct answer
+        const prompt = (step as any).data?.prompt
+        const correct = (step as any).data?.correct
+        if (prompt !== undefined && correct !== undefined) {
+          return `${UID_VERSION}-quiz-${quizType}-${simpleHash(`${prompt}-${correct}`)}`
+        }
+        throw new Error(`[${location}] Quiz step ${stepIndex} missing vocabularyId, lexemeRef, or (prompt + correct) - required for stable UID`)
       }
-      // If no vocabId, hash the prompt + correct answer for uniqueness
-      const prompt = (step as any).data?.prompt
-      const correct = (step as any).data?.correct
-      if (prompt !== undefined && correct !== undefined) {
-        return `${UID_VERSION}-quiz-${simpleHash(`${prompt}-${correct}`)}`
-      }
-      throw new Error(`[${location}] Quiz step ${stepIndex} missing vocabularyId or (prompt + correct) - required for stable UID`)
+      
+      // Include quizType to differentiate normal vs reverse quizzes
+      return `${UID_VERSION}-quiz-${quizType}-${contentId}`
     }
     
     case 'input': {

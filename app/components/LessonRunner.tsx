@@ -76,6 +76,14 @@ export function LessonRunner({
   const [isPending, startTransition] = useTransition();
   const { user } = useAuth(); // Get user for idempotent XP
   
+  // Get user's first name for dynamic content replacement
+  const userFirstName = user?.user_metadata?.first_name || 'Friend'
+  
+  // Helper to replace {userFirstName} placeholder in strings
+  const replaceUserName = useCallback((text: string): string => {
+    return text.replace(/{userFirstName}/g, userFirstName)
+  }, [userFirstName])
+  
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SIMPLIFIED REMEDIATION SYSTEM (Launch Week Fix)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -242,8 +250,8 @@ export function LessonRunner({
           console.log(`🎯 [LessonRunner] Lesson completion triggered: ${moduleId}/${lessonId}`)
         })
 
-        // Check if this is a story lesson using the lesson data
-        const isStoryLesson = lessonData?.isStoryLesson || false;
+        // Check if this is a story lesson by checking structure (single story-conversation step)
+        const isStoryLesson = steps.length === 1 && steps[0].type === 'story-conversation';
         
         // Track lesson completion for analytics
         console.log(`Lesson completed: ${moduleId}/${lessonId}`);
@@ -593,9 +601,19 @@ export function LessonRunner({
         })
       };
     }
+    // Fallback: use plain words/slots if no lexemeRefs
     return {
-      words: matchingStep.data.words,
-      slots: matchingStep.data.slots
+      words: matchingStep.data.words.map((word, index) => ({
+        id: word,
+        text: word,
+        slotId: `slot${index + 1}`,
+        vocabularyId: undefined,  // No grammar form tracking for plain words
+        wordText: undefined
+      })),
+      slots: matchingStep.data.slots.map((slot, index) => ({
+        id: `slot${index + 1}`,
+        text: slot
+      }))
     };
   }, [idx, step?.type, (step as MatchingStep)?.data?.lexemeRefs, (step as MatchingStep)?.data?.words]);
 
@@ -640,8 +658,8 @@ export function LessonRunner({
       return {
         words: resolved.map((lexeme, index) => ({
           id: lexeme.id,
-          text: lexeme.finglish,
-          translation: lexeme.en
+          text: replaceUserName(lexeme.finglish),
+          translation: replaceUserName(lexeme.en)
         })),
         targetWords: resolved.map(lexeme => lexeme.id),
         persianSequence: resolved.map(lexeme => lexeme.id)
@@ -652,7 +670,7 @@ export function LessonRunner({
       targetWords: finalStep.data.targetWords,
       persianSequence: finalStep.data.conversationFlow?.persianSequence || []
     };
-  }, [idx, step?.type, (step as FinalStep)?.data?.lexemeRefs, (step as FinalStep)?.data?.words]);
+  }, [idx, step?.type, (step as FinalStep)?.data?.lexemeRefs, (step as FinalStep)?.data?.words, userFirstName]);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Early returns (after all hooks)
@@ -1080,6 +1098,9 @@ export function LessonRunner({
           incorrectMessage={(step as FinalStep).incorrectMessage}
           conversationFlow={{
             ...(step as FinalStep).data.conversationFlow,
+            expectedPhrase: (step as FinalStep).data.conversationFlow?.expectedPhrase 
+              ? replaceUserName((step as FinalStep).data.conversationFlow.expectedPhrase)
+              : undefined,
             persianSequence: finalStepData.persianSequence
           }}
           points={step.points}
@@ -1187,8 +1208,8 @@ export function LessonRunner({
       ) : step.type === 'text-sequence' ? (
         <TextSequence
           key={idx}
-          finglishText={(step as TextSequenceStep).data.finglishText}
-          expectedTranslation={(step as TextSequenceStep).data.expectedTranslation}
+          finglishText={replaceUserName((step as TextSequenceStep).data.finglishText)}
+          expectedTranslation={replaceUserName((step as TextSequenceStep).data.expectedTranslation)}
           lexemeSequence={(step as TextSequenceStep).data.lexemeSequence} // GRAMMAR FORMS: Pass lexemeSequence (same as AudioSequence)
           vocabularyBank={allVocab}
           points={step.points}

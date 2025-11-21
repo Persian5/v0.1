@@ -32,8 +32,8 @@ export function MatchingGame({
   // Following same pattern as Quiz component for consistency
   // If preShuffled=true, use arrays as-is (parent already shuffled them)
   // Use ref to track if we've already processed arrays (prevents re-shuffle on re-render)
-  const processedWordsRef = useRef<Array<{ id: string; text: string; slotId: string }> | null>(null)
-  const processedSlotsRef = useRef<Array<{ id: string; text: string }> | null>(null)
+  const processedWordsRef = useRef<typeof words | null>(null)
+  const processedSlotsRef = useRef<typeof slots | null>(null)
   const lastRoundKeyRef = useRef<string>('') // Track round to detect round changes
   
   // Create a stable key from words array to detect when it's a new round

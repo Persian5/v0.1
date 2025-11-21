@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { StoryConversationStep, StoryChoice as StoryChoiceType, StoryExchange } from '@/lib/types';
-import { StoryProgressService } from '@/lib/services/story-progress-service';
 import { ChatBubble } from './ChatBubble';
 import { XpAnimation } from './XpAnimation';
 import { TypingIndicator } from './TypingIndicator';
@@ -8,6 +7,7 @@ import { playSuccessSound } from './Flashcard';
 import { motion } from 'framer-motion';
 import { useAuth } from "@/components/auth/AuthProvider";
 import { shuffle } from '@/lib/utils';
+import { SmartAuthService } from '@/lib/services/smart-auth-service';
 
 interface StoryConversationProps {
   step: StoryConversationStep;
@@ -25,8 +25,10 @@ interface ChatMessage {
 
 export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryConversationProps) {
   const { user } = useAuth();
-  const authFirstName = user?.user_metadata?.first_name || 'Friend';
-  const [userName, setUserName] = useState<string>(authFirstName);
+  // Get user name from SmartAuthService cache (no localStorage)
+  const cachedProfile = SmartAuthService.getCachedProfile();
+  const authFirstName = cachedProfile?.first_name || user?.user_metadata?.first_name || 'Friend';
+  const [userName] = useState<string>(authFirstName);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [currentExchangeIndex, setCurrentExchangeIndex] = useState(0);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
@@ -45,18 +47,8 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   const lastScrolledExchangeId = useRef<string | null>(null);
   const { data: storyData } = step;
   
-  // Initialize story
-  useEffect(() => {
-    // Since all users are authenticated, always use auth first name
-    if (authFirstName && authFirstName !== 'Friend') {
-      setUserName(authFirstName);
-    }
-    
-    // Cleanup function to reset story on unmount
-    return () => {
-      StoryProgressService.resetStoryProgress(storyData.storyId);
-    };
-  }, [authFirstName]);
+  // Initialize story - no persistence, stories are treated like regular lessons
+  // If user quits midway, they lose progress (same as any lesson)
 
   // Initialize story when ready
   useEffect(() => {
@@ -67,15 +59,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   }, [userName]);
 
   const initializeStory = () => {
-    // Always start fresh - reset any existing progress
-    StoryProgressService.resetStoryProgress(storyData.storyId);
-    
-    // Initialize new story progress
-    StoryProgressService.initializeStoryProgress(
-      storyData.storyId,
-      storyData.exchanges.length,
-      { name: userName }
-    );
+    // Always start fresh - no persistence (stories = regular lessons)
     setCurrentExchangeIndex(0);
     setProgress(0);
     
@@ -113,10 +97,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     }
   };
 
-  const handleNameSubmit = (name: string) => {
-    // This function is no longer used since all users are authenticated
-    setUserName(name);
-  };
+  // Removed handleNameSubmit - user name comes from SmartAuthService cache
 
   const getCurrentExchange = (): StoryExchange | null => {
     return storyData.exchanges[currentExchangeIndex] || null;
@@ -155,14 +136,8 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
       // Play success sound for correct choice (no XP animation per choice)
       playSuccessSound();
 
-      // Update progress
-      StoryProgressService.updateProgress(
-        storyData.storyId,
-        true,
-        true,
-        choice.vocabularyUsed,
-        true
-      );
+      // Note: No progress persistence - stories are treated like regular lessons
+      // If user quits, they lose progress (same as any lesson)
 
       // Wait for animations and user message to appear
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -264,7 +239,8 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   };
 
   const handleStoryCompletion = async () => {
-    StoryProgressService.markStoryCompleted(storyData.storyId);
+    // Story completion is handled by LessonProgressService.markLessonCompleted()
+    // (called via onComplete callback) - no need for separate story tracking
     setIsCompleted(true);
     
     // Award XP once for story completion (idempotent, back button safe)

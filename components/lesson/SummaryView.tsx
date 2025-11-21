@@ -6,6 +6,7 @@ import { Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { getLesson } from "@/lib/config/curriculum"
+import type { Lesson } from "@/lib/types"
 
 interface SummaryViewProps {
   moduleId: string
@@ -21,7 +22,8 @@ export default function SummaryView({
   const router = useRouter()
 
   const lesson = getLesson(moduleId, lessonId)
-  const isStoryLesson = lesson?.isStoryLesson || false
+  // A story lesson has exactly one step of type 'story-conversation'
+  const isStoryLesson = lesson ? LessonProgressService.isStoryLesson(lesson) : false
   const vocabulary = lesson?.vocabulary || []
   
   const formattedVocabulary = vocabulary.map(vocab => `${vocab.finglish} : ${vocab.en}`)

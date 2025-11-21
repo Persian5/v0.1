@@ -104,7 +104,8 @@ export class VocabularyProgressService {
       if (!lesson) continue;
       
       // Skip story lessons (they have empty vocabulary arrays and are pure review)
-      if (lesson.isStoryLesson) continue;
+      // A story lesson has exactly one step of type 'story-conversation'
+      if (lesson.steps.length === 1 && lesson.steps[0].type === 'story-conversation') continue;
       
       // Add lesson-specific vocabulary
       if (lesson.vocabulary) {
@@ -173,20 +174,12 @@ export class VocabularyProgressService {
   
   /**
    * Find vocabulary item by ID across all curriculum
+   * OPTIMIZED: Uses O(1) map lookup instead of O(n) scan
    */
   private static findVocabularyById(vocabId: string): VocabularyItem | undefined {
-    const allModules = getModules();
-    
-    for (const module of allModules) {
-      for (const lesson of module.lessons) {
-        if (lesson.vocabulary) {
-          const found = lesson.vocabulary.find(item => item.id === vocabId);
-          if (found) return found;
-        }
-      }
-    }
-    
-    return undefined;
+    const { getCurriculumLexicon } = require('../utils/curriculum-lexicon');
+    const lexicon = getCurriculumLexicon();
+    return lexicon.allVocabMap.get(vocabId);
   }
   
   /**

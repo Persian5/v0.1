@@ -51,6 +51,7 @@ function LessonPageContent() {
   const [previousStates, setPreviousStates] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState(0); // NEW: Track current step number
   const [totalSteps, setTotalSteps] = useState(0); // NEW: Track total steps
+  const [moduleTotalXp, setModuleTotalXp] = useState(0); // Module completion XP (derived from lesson progress)
   
   // Unified state for auth + accessibility + premium + locks
   const [appState, setAppState] = useState<{
@@ -80,6 +81,24 @@ function LessonPageContent() {
   // Get data from config
   const lesson = getLesson(moduleId, lessonId)
   const module = getModule(moduleId);
+  
+  // Load module completion XP (derived from lesson progress)
+  useEffect(() => {
+    const loadModuleXp = async () => {
+      if (!moduleId) return;
+      
+      try {
+        const completion = await ModuleProgressService.getModuleCompletion(moduleId);
+        if (completion) {
+          setModuleTotalXp(completion.totalXpEarned);
+        }
+      } catch (error) {
+        console.error('Error loading module XP:', error);
+      }
+    };
+    
+    loadModuleXp();
+  }, [moduleId]);
   
   // UNIFIED AUTH + ACCESSIBILITY CHECK using SmartAuthService cached data
   useEffect(() => {
@@ -636,7 +655,7 @@ function LessonPageContent() {
             ) : currentView === 'module-completion' ? (
               <ModuleCompletion 
                 moduleId={moduleId}
-                totalXpEarned={ModuleProgressService.getModuleCompletion(moduleId)?.totalXpEarned || 0}
+                totalXpEarned={moduleTotalXp}
               />
             ) : currentView === 'summary' ? (
               <SummaryView 

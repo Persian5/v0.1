@@ -2,6 +2,7 @@ import { VocabularyItem } from '../types';
 import { getLesson, generateCompleteReviewVocabulary } from '../config/curriculum';
 import { getSemanticGroup, getRelatedGroups, getVocabIdsInGroup } from '../config/semantic-groups';
 import { WordBankService } from './word-bank-service';
+import { getCurriculumLexicon } from '../utils/curriculum-lexicon';
 
 /**
  * VocabularyContentService (formerly VocabularyService)
@@ -74,19 +75,10 @@ export class VocabularyService {
   // NEW METHODS FOR DYNAMIC REMEDIATION
 
   // Find vocabulary item by ID across all curriculum (make public)
+  // OPTIMIZED: Uses O(1) map lookup instead of O(n) scan
   static findVocabularyById(vocabId: string): VocabularyItem | undefined {
-    const allModules = require('../config/curriculum').getModules();
-    
-    for (const module of allModules) {
-      for (const lesson of module.lessons) {
-        if (lesson.vocabulary) {
-          const found = lesson.vocabulary.find((item: VocabularyItem) => item.id === vocabId);
-          if (found) return found;
-        }
-      }
-    }
-    
-    return undefined;
+    const lexicon = getCurriculumLexicon();
+    return lexicon.allVocabMap.get(vocabId);
   }
 
   // SYSTEMATIC METHOD: Get all vocabulary from entire curriculum
