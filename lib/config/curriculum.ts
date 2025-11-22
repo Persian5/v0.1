@@ -1035,193 +1035,170 @@ export const curriculumData: Module[] = [
           ]
         };
       })(),
-      {
-        id: "lesson3",
-        title: "Saying Where You Are From",
-        description: "Learn how to ask and tell where you are from using 'koja' (where) and 'ahle' (from/belonging to)",
-        emoji: "🌍",
-        progress: 0,
-        locked: false,
-        vocabulary: [
-          {
-            id: "koja",
-            en: "Where",
-            fa: "کجا",
-            finglish: "Koja",
-            phonetic: "ko-JAH",
-            lessonId: "module2-lesson3"
-          },
-          {
-            id: "ahle",
-            en: "From",
-            fa: "اهل",
-            finglish: "Ahle",
-            phonetic: "ah-LEH",
-            lessonId: "module2-lesson3"
-          }
-        ],
-        steps: [
-          {
-            type: "welcome",
-            title: "Saying Where You Are From",
-            description: "Learn how to ask and tell where you are from using essential location vocabulary.",
-            points: 0,
-            data: {
-              objectives: [
-                "Learn 'koja' (where) to ask about location",
-                "Learn 'ahle' (from/belonging to) for origin",
-                "Ask 'where are you from?' in Persian",
-                "Say 'I am from Iran' confidently"
-              ],
-              lessonType: "location"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "koja"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which word means 'where'?",
-              options: ["Koja", "Merci", "Khoobam", "Hasti"],
-              correct: 0
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Koja hasti?",
-              expectedTranslation: "Where are you?",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "ahle"
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "Type the Persian word for 'where'",
-              answer: "koja"
-            }
-          },
-          {
-            type: "audio-meaning",
-            points: 2,
-            data: {
-              vocabularyId: "ahle",
-              distractors: ["koja", "hasti", "iran"]
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Koja", slotId: "slot1" },
-                { id: "word2", text: "Merci", slotId: "slot2" },
-                { id: "word3", text: "Chetori", slotId: "slot3" },
-                { id: "word4", text: "Baleh", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Where" },
-                { id: "slot2", text: "Thank you" },
-                { id: "slot3", text: "How are you" },
-                { id: "slot4", text: "Yes" }
-              ]
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Ahle", slotId: "slot1" },
-                { id: "word2", text: "Koja", slotId: "slot2" },
-                { id: "word3", text: "Hasti", slotId: "slot3" },
-                { id: "word4", text: "Shoma", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "From" },
-                { id: "slot2", text: "Where" },
-                { id: "slot3", text: "You are" },
-                { id: "slot4", text: "You" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man khoobam shoma chi",
-              expectedTranslation: "I am good what about you",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Shoma ahle koja hasti",
-              expectedTranslation: "Where are you from?",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man ahle Iran hastam",
-              expectedTranslation: "I am from Iran",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "audio-sequence",
-            points: 3,
-            data: {
-              sequence: ["shoma", "ahle", "koja", "hasti"],
-              expectedTranslation: "Where are you from?"
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "ahle_1", text: "Ahle", translation: "From" },
-                { id: "koja", text: "Koja", translation: "Where" },
-                { id: "hasti", text: "Hasti", translation: "You are" },
-                { id: "man", text: "Man", translation: "I" },
-                { id: "ahle_2", text: "Ahle", translation: "From" },
-                { id: "iran", text: "Iran", translation: "Iran" },
-                { id: "hastam", text: "Hastam", translation: "I am" }
-              ],
-              targetWords: ["shoma", "ahle_1", "koja", "hasti", "man", "ahle_2", "iran", "hastam"],
-              title: "Where Are You From?",
-              successMessage: "Excellent! You can now ask and answer where someone is from!",
-              incorrectMessage: "Almost there—let's practice that location conversation again!",
-              conversationFlow: {
-                description: "A complete conversation about origins",
-                expectedPhrase: "where are you from? I am from Iran",
-                persianSequence: ["shoma", "ahle_1", "koja", "hasti", "man", "ahle_2", "iran", "hastam"]
+      // Module 2 Lesson 3: Nice to Meet You Too
+      (() => {
+        const vocabulary = createVocabulary("module2-lesson3", {
+          ids: ["ham"],
+          en: ["Too / Also"],
+          fa: ["هم"],
+          finglish: ["Ham"],
+          phonetic: ["HAHM"]
+        });
+
+        return {
+          id: "lesson3",
+          title: "Nice to Meet You Too",
+          description: "Today you'll practice real conversations. You'll learn how to reply when someone says \"Khoshbakhtam\" and you will build complete introductions with simple, natural responses.",
+          emoji: "👋",
+          progress: 0,
+          locked: false,
+          vocabulary,
+          steps: [
+            // 1. Welcome Intro
+            {
+              type: "welcome",
+              title: "Nice to Meet You Too",
+              description: "Today you'll practice real conversations. You'll learn how to reply when someone says \"Khoshbakhtam\" and you will build complete introductions with simple, natural responses.",
+              points: 0,
+              data: {
+                objectives: [
+                  "Reply naturally to \"Khoshbakhtam\"",
+                  "Use \"ham\" (too/also) in conversations",
+                  "Build complete introduction exchanges",
+                  "Feel confident in short dialogues"
+                ],
+                lessonType: "conversations"
               }
-            }
-          }
-        ]
-      },
+            },
+            // 2. Audio Sequence: Salam chetori khoob|am merci
+            audioSequence(
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
+              ],
+              "Hello how are you I'm good thank you"
+            ),
+            // 3. Audio Meaning: Chetori
+            audioMeaning("chetori"),
+            // 4. Flashcard: Ham
+            flashcard(vocabulary, "ham"),
+            // 5. MC Quiz: Ham
+            vocabQuiz(vocabulary, "ham", "vocab-normal"),
+            // 6. Text Sequence: Man Ham Khoob|am
+            textSequence(
+              "Man ham khoobam",
+              "I'm good too",
+              [
+                "man",
+                "ham",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+              ]
+            ),
+            // 7. Matching: Bad|am, Ham, Khoshbakhtam, Khoob|am
+            matching([
+              { kind: "suffix", baseId: "bad", suffixId: "am" } as const,
+              "ham",
+              "khoshbakhtam",
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+            ]),
+            // 8. Audio Sequence: Esm|e shoma chiye?
+            audioSequence(
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
+              ],
+              "What is your name"
+            ),
+            // 9. Text Sequence: Salam Esm|e shoma chiye?
+            textSequence(
+              "Salam esme shoma chiye?",
+              "Hello what is your name",
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
+              ]
+            ),
+            // 10. Audio Meaning: Esm
+            audioMeaning("esm"),
+            // 11. Text Sequence: Esm|e man {userFirstName}-e Khoshbakhtam
+            textSequence(
+              "Esme man {userFirstName}-e khoshbakhtam",
+              "My name is {userFirstName} nice to meet you",
+              [
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man",
+                "khoshbakhtam"
+              ]
+            ),
+            // 12. Audio Sequence: Man ham Khoshbakhtam
+            audioSequence(
+              [
+                "man",
+                "ham",
+                "khoshbakhtam"
+              ],
+              "Nice to meet you too"
+            ),
+            // 13. Reverse Quiz: Khoshbakhtam
+            vocabQuiz([], "khoshbakhtam", "vocab-reverse"),
+            // 14. Audio Sequence: Man ham khoob|am
+            audioSequence(
+              [
+                "man",
+                "ham",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+              ],
+              "I'm good too"
+            ),
+            // 15. Reverse Quiz: Shoma
+            vocabQuiz([], "shoma", "vocab-reverse"),
+            // 16. Text Sequence: Na, merci
+            textSequence(
+              "Na, merci",
+              "No, thank you",
+              ["na", "merci"]
+            ),
+            // 17. Text Sequence: Baleh Khoob|am, Merci
+            textSequence(
+              "Baleh khoobam, merci",
+              "Yes I'm good, thank you",
+              [
+                "baleh",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
+              ]
+            ),
+            // 18. Input Game: Bad|am
+            input(
+              "How do you say 'I'm bad' in Persian?",
+              "bad-am",
+              2,
+              { kind: "suffix", baseId: "bad", suffixId: "am" } as const
+            ),
+            // 19. Final Challenge: Salam chetori esm|e man {userFirstName}-e Khoshbakhtam khodafez
+            final(vocabulary, [
+              "salam",
+              "chetori",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "man",
+              "{userFirstName}-e", // Plain string - name with ezafe connector
+              "khoshbakhtam",
+              "khodafez"
+            ], {
+              conversationFlow: {
+                description: "A complete introduction conversation with response",
+                expectedPhrase: "Hello how are you my name is {userFirstName} nice to meet you goodbye"
+              },
+              title: "Your Complete Introduction"
+            })
+          ]
+        };
+      })(),
       {
         id: "lesson4",
         title: "Where I Live",

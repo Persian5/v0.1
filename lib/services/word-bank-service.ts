@@ -75,15 +75,32 @@ export class WordBankService {
    * - Removes punctuation for storage consistency
    * - Removes extra whitespace
    * - Returns first part before slash for consistency
+   * - Context-aware: If contextWord provided, uses the part that matches context
    * 
    * @param enText - English translation text (e.g., "I / Me", "I'm Good", "How Are You?")
+   * @param contextWord - Optional: Word from expected translation to match context (e.g., "too" → uses "Too" from "Too / Also")
    * @returns Normalized text for display (no punctuation, no slashes)
    */
-  static normalizeVocabEnglish(enText: string): string {
+  static normalizeVocabEnglish(enText: string, contextWord?: string): string {
     if (!enText) return enText;
     
-    // Handle slash-separated translations (e.g., "I / Me" → "I")
+    // Handle slash-separated translations (e.g., "Too / Also")
     const parts = enText.split('/').map(p => p.trim());
+    
+    // Context-aware: If contextWord provided, use the part that matches
+    if (contextWord) {
+      const normalizedContext = contextWord.toLowerCase().trim();
+      for (const part of parts) {
+        const normalizedPart = part.toLowerCase().replace(/[?!.,]/g, '').trim();
+        if (normalizedPart === normalizedContext) {
+          // Found matching part - use it
+          let normalized = part.replace(/[?!.,]/g, '');
+          return normalized.replace(/\s+/g, ' ').trim();
+        }
+      }
+    }
+    
+    // Default: Use first part
     const firstPart = parts[0];
     
     // Remove punctuation for storage consistency
@@ -806,9 +823,11 @@ export class WordBankService {
       });
 
       if (vocabMatch) {
+        // Context-aware normalization: Use the part of slash-separated translation that matches the expected word
+        const contextAwareWord = this.normalizeVocabEnglish(vocabMatch.en, word);
         semanticUnits.push({
           vocabularyId: vocabMatch.id,
-          wordText: this.normalizeVocabEnglish(vocabMatch.en),
+          wordText: contextAwareWord,
           isPhrase: false,
           semanticGroup: vocabMatch.semanticGroup || getSemanticGroup(vocabMatch.id),
           isCorrect: true
