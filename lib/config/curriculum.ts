@@ -70,7 +70,7 @@ export const curriculumData: Module[] = [
           final(vocabulary, ["salam", "chetori", "merci", "khodafez"], {
             conversationFlow: {
               description: "A polite greeting conversation",
-              expectedPhrase: "Hello, how are you, thank you, goodbye"
+              expectedPhrase: "Hello {userFirstName}, how are you, thank you, goodbye"
             },
             title: "Your First Conversation"
           })
@@ -764,14 +764,14 @@ export const curriculumData: Module[] = [
                 "chiye"
               ]
             ),
-            // 11. Text Sequence: Esm|e Man Amir-e (name as plain string, no grammar tracking)
+            // 11. Text Sequence: Esm|e Man {userFirstName}-e (name as plain string, no grammar tracking)
             textSequence(
-              "Esme Man Amir-e",
-              "My name is Amir",
+              "Esme Man {userFirstName}-e",
+              "My name is {userFirstName}",
               [
                 { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
-                "man"
-                // Note: "Amir-e" is just text, not tracked as grammar form
+                "man",
+                "{userFirstName}-e" // Plain string - name with ezafe connector (not tracked as grammar form)
               ]
             ),
             // 12. Matching: Baleh, Na, Esm|e, Esm
@@ -842,7 +842,7 @@ export const curriculumData: Module[] = [
               "man",
               "shoma"
             ]),
-            // 21. Final Challenge: Salam Esm|e Shoma chiye, esm|e man sara-e Khodafez (name as plain string)
+            // 21. Final Challenge: Salam Esm|e Shoma chiye, esm|e man {userFirstName}-e Khodafez (name as plain string)
             final(vocabulary, [
               "salam",
               { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
@@ -850,12 +850,12 @@ export const curriculumData: Module[] = [
               "chiye",
               { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
               "man",
-              "sara-e", // Plain string for name (not tracked as grammar form)
+              "{userFirstName}-e", // Plain string - name with ezafe connector (not tracked as grammar form)
               "khodafez"
             ], {
               conversationFlow: {
                 description: "A complete introduction conversation",
-                expectedPhrase: "Hello, what is your name? My name is Sara, goodbye"
+                expectedPhrase: "Hello, what is your name? My name is {userFirstName}, goodbye"
               },
               title: "Your Introduction"
             })
@@ -1199,223 +1199,216 @@ export const curriculumData: Module[] = [
           ]
         };
       })(),
-      {
-        id: "lesson4",
-        title: "Where I Live",
-        description: "Learn to ask and say where you live, combining location words with action verbs",
-        emoji: "🏠",
-        progress: 0,
-        locked: false,
-        vocabulary: [
-          {
-            id: "zendegi",
-            en: "Life",
-            fa: "زندگی",
-            finglish: "Zendegi",
-            phonetic: "zen-deh-GEE",
-            lessonId: "module2-lesson4"
-          },
-          {
-            id: "mikonam",
-            en: "I do",
-            fa: "می کنم",
-            finglish: "Mikonam",
-            phonetic: "MEE-ko-nam",
-            lessonId: "module2-lesson4"
-          },
-          {
-            id: "mikoni",
-            en: "You do",
-            fa: "می کنی",
-            finglish: "Mikoni",
-            phonetic: "MEE-kon-ee",
-            lessonId: "module2-lesson4"
-          },
-          {
-            id: "dar",
-            en: "In",
-            fa: "در",
-            finglish: "Dar",
-            phonetic: "dahr",
-            lessonId: "module2-lesson4"
-          },
-          {
-            id: "amrika",
-            en: "America",
-            fa: "آمریکا",
-            finglish: "Amrika",
-            phonetic: "uhm-ree-ka",
-            lessonId: "module2-lesson4"
-          }
-        ],
-        steps: [
-          {
-            type: "welcome",
-            title: "Where I Live",
-            description: "Learn to ask and say where you live, building on location vocabulary with action verbs.",
-            points: 0,
-            data: {
-              objectives: [
-                "Learn 'zendegi' (life) for living and residence",
-                "Learn 'mikonam' (I do) and 'mikoni' (you do)",
-                "Ask 'where do you live?' vs 'where are you from?'",
-                "Say 'I live in America' confidently"
-              ],
-              lessonType: "location"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "zendegi"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "mikonam"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "amrika"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which word means 'life'?",
-              options: ["Zendegi", "Koja", "Ahle", "Mikonam"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which word means 'I do'?",
-              options: ["Mikonam", "Hastam", "Neestam", "Zendegi"],
-              correct: 0
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "mikoni"
-            }
-          },
-          {
-            type: "flashcard",
-            points: 1,
-            data: {
-              vocabularyId: "dar"
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "Which word connects location phrases (like 'in America')?",
-              options: ["Dar", "Koja", "Ahle", "Zendegi"],
-              correct: 0
-            }
-          },
-          {
-            type: "quiz",
-            points: 2,
-            data: {
-              prompt: "What suffix makes 'you do' from the root 'mikon'?",
-              options: ["-i", "-am", "-ast", "-im"],
-              correct: 0
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'I do' using the mikon root?",
-              answer: "mikon-am"
-            }
-          },
-          {
-            type: "input",
-            points: 2,
-            data: {
-              question: "How do you say 'you do' using the mikon root?",
-              answer: "mikon-i"
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Man dar amrika zendegi mikonam",
-              expectedTranslation: "I live in America",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "matching",
-            points: 3,
-            data: {
-              words: [
-                { id: "word1", text: "Zendegi", slotId: "slot1" },
-                { id: "word2", text: "Mikonam", slotId: "slot2" },
-                { id: "word3", text: "Mikoni", slotId: "slot3" },
-                { id: "word4", text: "Dar", slotId: "slot4" }
-              ],
-              slots: [
-                { id: "slot1", text: "Life" },
-                { id: "slot2", text: "I do" },
-                { id: "slot3", text: "You do" },
-                { id: "slot4", text: "In" }
-              ]
-            }
-          },
-          {
-            type: "text-sequence",
-            points: 3,
-            data: {
-              finglishText: "Shoma koja zendegi mikoni",
-              expectedTranslation: "Where do you live?",
-              maxWordBankSize: 10
-            }
-          },
-          {
-            type: "final",
-            points: 4,
-            data: {
-              words: [
-                { id: "salam", text: "Salam", translation: "Hello" },
-                { id: "shoma", text: "Shoma", translation: "You" },
-                { id: "koja", text: "Koja", translation: "Where" },
-                { id: "zendegi_1", text: "Zendegi", translation: "Life/Live" },
-                { id: "mikoni", text: "Mikoni", translation: "You do" },
-                { id: "man", text: "Man", translation: "I" },
-                { id: "dar", text: "Dar", translation: "In" },
-                { id: "amrika", text: "Amrika", translation: "America" },
-                { id: "zendegi_2", text: "Zendegi", translation: "Life/Live" },
-                { id: "mikonam", text: "Mikonam", translation: "I do" }
-              ],
-              targetWords: ["salam", "shoma", "koja", "zendegi_1", "mikoni", "man", "dar", "amrika", "zendegi_2", "mikonam"],
-              title: "Where Do You Live?",
-              successMessage: "Perfect! You can now ask and say where you live!",
-              incorrectMessage: "Almost there—let's practice that residence phrase again!",
-              conversationFlow: {
-                description: "A complete phrase about where you live",
-                expectedPhrase: "Hello, where do you live? I live in America.",
-                persianSequence: ["salam", "shoma", "koja", "zendegi_1", "mikoni", "man", "dar", "amrika", "zendegi_2", "mikonam"]
+      // Module 2 Lesson 4: The -i Ending (You Are)
+      (() => {
+        // No vocabulary needed - all are grammar forms
+        const vocabulary: VocabularyItem[] = [];
+
+        return {
+          id: "lesson4",
+          title: "The -i Ending (You Are)",
+          description: "Today, you'll learn the Persian ending –i, which means 'you are.' By the end of this lesson, you can ask someone how they're doing using words you already know.",
+          emoji: "👋",
+          progress: 0,
+          locked: false,
+          vocabulary,
+          steps: [
+            // 1. Welcome Intro
+            {
+              type: "welcome",
+              title: "The -i Ending (You Are)",
+              description: "Today, you'll learn the Persian ending –i, which means 'you are.' By the end of this lesson, you can ask someone how they're doing using words you already know.",
+              points: 0,
+              data: {
+                objectives: [
+                  "Learn the Persian ending –i (\"you are\")",
+                  "Ask \"Are you good?\" and \"Are you bad?\"",
+                  "Respond naturally to questions about how you are",
+                  "Build confidence with question and answer patterns"
+                ],
+                lessonType: "grammar"
               }
-            }
-          }
-        ]
-      },
+            },
+            // 2. Audio Sequence: Salam chetori khoob|am merci
+            audioSequence(
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
+              ],
+              "Hello how are you I'm good thank you"
+            ),
+            // 3. Input: khoob|am - separated root + suffix input
+            input(
+              "How do you say 'I'm good' in Persian?",
+              "khoob-am",
+              2,
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+            ),
+            // 4. Audio Meaning: Baleh
+            audioMeaning("baleh"),
+            // 5. Matching: Khoob, Khoob|am, Bad, Bad|am
+            matching([
+              "khoob",
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+              "bad",
+              { kind: "suffix", baseId: "bad", suffixId: "am" } as const
+            ]),
+            // 6. Grammar Intro: -i (you are)
+            {
+              type: "grammar-intro",
+              points: 1,
+              data: {
+                conceptId: "suffix-i",
+                title: "-i = you are",
+                description: "In Persian, add –i to adjectives to mean you are. As a question: Are you X? As a statement: You are X.",
+                rule: "Add -i to adjectives to say 'you are'",
+                visualType: "tree",
+                visualData: {
+                  base: "khoob",
+                  transformations: [
+                    { label: "-i", result: "khoobi", meaning: "You're good" },
+                    { label: "-i (bad)", result: "badi", meaning: "You're bad" }
+                  ]
+                }
+              }
+            },
+            // 7. Grammar Fill in the Blank: Khoob|i - you are good
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+              data: {
+                conceptId: "suffix-i-khoob",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
+                exercises: [
+                  {
+                    sentence: "Khoob-___",
+                    translation: "You are good",
+                    blankPosition: 6,
+                    correctAnswer: "i",
+                    suffixOptions: [
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            // 8. Grammar Fill in the Blank: Bad|i - you are bad (with question mark)
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+              data: {
+                conceptId: "suffix-i-bad",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
+                exercises: [
+                  {
+                    sentence: "Bad-___?",
+                    translation: "Are you bad?",
+                    blankPosition: 4,
+                    correctAnswer: "i",
+                    suffixOptions: [
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            // 9. Audio Meaning: Khoob|i
+            audioMeaning({ kind: "suffix", baseId: "khoob", suffixId: "i" } as const),
+            // 10. Audio Meaning: Bad|am
+            audioMeaning({ kind: "suffix", baseId: "bad", suffixId: "am" } as const),
+            // 11. Audio Sequence: Baleh Khoob|am
+            audioSequence(
+              [
+                "baleh",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+              ],
+              "Yes I'm good"
+            ),
+            // 12. Text Sequence: Khoob|i? Na Bad|am
+            textSequence(
+              "Khoobi? Na badam",
+              "Are you good? No I'm bad",
+              [
+                { kind: "suffix", baseId: "khoob", suffixId: "i" } as const,
+                "na",
+                { kind: "suffix", baseId: "bad", suffixId: "am" } as const
+              ]
+            ),
+            // 13. Matching: Khoob|i, Bad|i, Bad|am, Khoob|am
+            matching([
+              { kind: "suffix", baseId: "khoob", suffixId: "i" } as const,
+              { kind: "suffix", baseId: "bad", suffixId: "i" } as const,
+              { kind: "suffix", baseId: "bad", suffixId: "am" } as const,
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+            ]),
+            // 14. Reverse Quiz: Man
+            vocabQuiz([], "man", "vocab-reverse"),
+            // 15. MC Quiz: Shoma
+            vocabQuiz([], "shoma", "vocab-normal"),
+            // 16. Text Sequence: Salam shoma khoob|i?
+            textSequence(
+              "Salam shoma khoobi?",
+              "Hello are you good",
+              [
+                "salam",
+                "shoma",
+                { kind: "suffix", baseId: "khoob", suffixId: "i" } as const
+              ]
+            ),
+            // 17. Audio Sequence: Khoob|i? Baleh khoob|am
+            audioSequence(
+              [
+                { kind: "suffix", baseId: "khoob", suffixId: "i" } as const,
+                "baleh",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+              ],
+              "Are you good? Yes I'm good"
+            ),
+            // 18. Input Game: Bad|i - separate root and suffix version
+            input(
+              "How do you say 'You're bad' in Persian?",
+              "bad-i",
+              2,
+              { kind: "suffix", baseId: "bad", suffixId: "i" } as const
+            ),
+            // 19. Text Sequence: Na merci bad|am
+            textSequence(
+              "Na merci badam",
+              "No thank you I'm bad",
+              [
+                "na",
+                "merci",
+                { kind: "suffix", baseId: "bad", suffixId: "am" } as const
+              ]
+            ),
+            // 20. Final Challenge: Salam, shoma khoobi? Na badam, khodafez
+            final(vocabulary, [
+              "salam",
+              "shoma",
+              { kind: "suffix", baseId: "khoob", suffixId: "i" } as const,
+              "na",
+              { kind: "suffix", baseId: "bad", suffixId: "am" } as const,
+              "khodafez"
+            ], {
+              conversationFlow: {
+                description: "A complete conversation asking how someone is",
+                expectedPhrase: "Hello, are you good? No I'm bad, goodbye"
+              },
+              title: "Asking How Someone Is"
+            })
+          ]
+        };
+      })(),
       {
         id: "lesson5",
         title: "Connect Ideas Naturally",
