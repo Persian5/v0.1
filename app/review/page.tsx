@@ -183,9 +183,9 @@ export default function ReviewPage() {
       }
     }
 
-    // Case 1: Not signed in - EXPLICIT text about signup requirement
+    // Case 1: Not signed in - Show preview first, then signup
     return {
-      text: "Sign Up to Play",
+      text: "Complete Lesson 1 First",
       disabled: false,
       onClick: () => router.push('/modules'),
       className: "bg-primary hover:bg-primary/90 text-white",
