@@ -222,9 +222,9 @@ export class AudioService {
    * Play audio for a resolved lexeme (base vocab or grammar form)
    * 
    * For base vocabulary: Plays single audio file
-   * For grammar forms: 
-   *   1. First checks for composite audio file (e.g., "khoobi.mp3")
-   *   2. If not found, plays base + suffix seamlessly (no pause)
+   * For grammar forms: Always plays base + suffix seamlessly (no pause)
+   *   - Skips composite audio check (e.g., "khoobam.mp3") as these are edge cases
+   *   - Always uses base word audio + suffix audio with zero delay
    * 
    * @param resolved - ResolvedLexeme from GrammarService.resolve()
    * @returns true if audio played successfully, false otherwise
@@ -237,26 +237,12 @@ export class AudioService {
     
     // Grammar form with suffix
     if (resolved.grammar.kind === 'suffix') {
-      // Step 1: Try composite audio file first (e.g., "khoobi.mp3" for "khoob|i")
-      // This is the seamless single-file option
-      const compositeId = `${resolved.baseId}${resolved.grammar.suffixId}`; // e.g., "khoobi" or "badam"
-      const compositePath = this.getVocabularyAudioPath(compositeId); // e.g., "/audio/khoobi.mp3" or "/audio/badam.mp3"
-      
-      // Try to play composite audio file first (if it exists)
-      // Note: We try to play directly instead of checking existence first (audioExists can give false positives)
-      const compositePlaySuccess = await this.playAudio(compositePath);
-      
-      if (compositePlaySuccess) {
-        // Composite file exists and played successfully - use it
-        return true;
-      }
-      
-      // Step 2: Fallback - Composite file doesn't exist or failed to play
-      // Play base + suffix seamlessly (no pause between them)
+      // ALWAYS use base + suffix seamlessly (no composite audio check)
+      // Composite audio files (e.g., "khoobam.mp3") are edge cases and will be removed
       const basePath = this.getVocabularyAudioPath(resolved.baseId);
       const suffixPath = this.getSuffixAudioPath(resolved.grammar.suffixId);
       
-      // Use noPause=true for grammar forms to string them together tightly
+      // Play base + suffix seamlessly with zero pause (noPause=true)
       return await this.playAudioSequence([basePath, suffixPath], true);
     }
     
