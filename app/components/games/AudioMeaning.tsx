@@ -69,7 +69,27 @@ export function AudioMeaning({
       }
     }
     
-    // Fallback to vocabularyId lookup
+    // CRITICAL FIX: Check if vocabularyId is a grammar form (contains "|")
+    // Grammar forms like "bad|i" need to be resolved using GrammarService
+    if (vocabularyId.includes('|')) {
+      try {
+        // Parse grammar form ID: "bad|i" -> { baseId: "bad", suffixId: "i" }
+        const [baseId, suffixId] = vocabularyId.split('|');
+        if (baseId && suffixId) {
+          const grammarRef: LexemeRef = {
+            kind: 'suffix',
+            baseId: baseId,
+            suffixId: suffixId
+          };
+          return GrammarService.resolve(grammarRef);
+        }
+      } catch (error) {
+        console.error('[AudioMeaning] Failed to resolve grammar form:', vocabularyId, error);
+        return null;
+      }
+    }
+    
+    // Fallback to vocabularyId lookup (base vocabulary)
     const vocab = vocabularyBank.find(v => v.id === vocabularyId) || (() => {
       try {
         const { VocabularyService } = require('@/lib/services/vocabulary-service')
