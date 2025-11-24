@@ -47,6 +47,12 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
   const lastScrolledExchangeId = useRef<string | null>(null);
   const { data: storyData } = step;
   
+  // FIX 7: Reset hasInitialized when storyId changes to allow re-entry
+  // This ensures a fresh start when navigating to a different story or re-entering the same story
+  useEffect(() => {
+    hasInitialized.current = false;
+  }, [storyData.storyId]);
+  
   // Initialize story - no persistence, stories are treated like regular lessons
   // If user quits midway, they lose progress (same as any lesson)
 
@@ -56,7 +62,7 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
       initializeStory();
       hasInitialized.current = true;
     }
-  }, [userName]);
+  }, [userName, storyData.storyId]); // FIX 7: Also depend on storyId to reinitialize on story change
 
   const initializeStory = () => {
     // Always start fresh - no persistence (stories = regular lessons)

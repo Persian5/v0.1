@@ -93,6 +93,8 @@ export function LessonRunner({
   const currentStepTrackedRef = useRef<Set<string>>(new Set()); // Prevent retry counting on same step
   // PHASE 1 FIX: Add debouncing for XP awards
   const isAwardingXpRef = useRef(false);
+  // FIX 3: Story completion idempotency guard
+  const storyCompleteGuardRef = useRef(false);
   
   // Sync refs with state for re-render consistency
   useEffect(() => {
@@ -102,6 +104,35 @@ export function LessonRunner({
   useEffect(() => {
     pendingRemediationRef.current = pendingRemediation;
   }, [pendingRemediation]);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // FIX 1: FULL LESSON STATE RESET ON MODULE/LESSON CHANGE
+  // Guarantees every new lesson starts from a completely clean state
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  useEffect(() => {
+    // Reset all state variables to initial values
+    setIdx(0);
+    setRemediationQueue([]);
+    setIsInRemediation(false);
+    setRemediationStep('flashcard');
+    setRemediationStartIdx(null);
+    setPendingRemediation([]);
+    setIncorrectAttempts({});
+    setQuizAttemptCounter(0);
+    setStoryCompleted(false);
+    setIsNavigating(false);
+    setShowXp(false);
+    
+    // Reset all refs to initial values
+    remediationQueueRef.current = [];
+    pendingRemediationRef.current = [];
+    remediationTriggeredRef.current = new Set();
+    currentStepTrackedRef.current = new Set();
+    isAwardingXpRef.current = false;
+    storyCompleteGuardRef.current = false;
+    
+    console.log(`[LessonRunner] State reset for lesson: ${moduleId}/${lessonId}`);
+  }, [moduleId, lessonId]);
 
   // Get all vocabulary for this lesson (including review vocabulary)
   const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
@@ -384,6 +415,7 @@ export function LessonRunner({
   
   // IDEMPOTENT XP HANDLER: Award XP once per step (back button safe)
   // Returns Promise<boolean>: true if XP was granted, false if already completed
+  // FIX 4: Added timeout protection to prevent XP lock if network hangs
   const createStepXpHandler = () => {
     return async (): Promise<boolean> => {
       // PHASE 1 FIX: Debounce rapid clicks
@@ -396,6 +428,14 @@ export function LessonRunner({
       }
 
       isAwardingXpRef.current = true;
+
+      // FIX 4: Timeout wrapper - release lock after 8 seconds max
+      const timeoutId = setTimeout(() => {
+        if (isAwardingXpRef.current) {
+          console.warn('[LessonRunner] XP award timeout - releasing lock');
+          isAwardingXpRef.current = false;
+        }
+      }, 8000);
 
       try {
         // Derive stable step UID
@@ -427,6 +467,7 @@ export function LessonRunner({
         // Return whether XP was granted (true = new XP, false = already done)
         return result.granted;
       } finally {
+        clearTimeout(timeoutId);
         isAwardingXpRef.current = false;
       }
     };
@@ -575,39 +616,77 @@ export function LessonRunner({
 
   // PHASE 8 FIX: Memoize matching step resolution to prevent constant re-shuffling
   // MUST be called before any early returns to satisfy React hooks rules
+  // FIX 5: Wrapped GrammarService.resolve in try-catch for safety
   const matchingStepData = useMemo(() => {
     if (!step || step.type !== 'matching') return null;
     const matchingStep = step as MatchingStep;
+    
+    // FIX 5: Guard against missing data
+    if (!matchingStep.data) {
+      console.error('[LessonRunner] Matching step has no data');
+      return null;
+    }
+    
     const { GrammarService } = require('@/lib/services/grammar-service');
     
     if (matchingStep.data.lexemeRefs) {
-      return {
-        words: matchingStep.data.lexemeRefs.map((ref, index) => {
-          const resolved = GrammarService.resolve(ref);
-          return {
-            id: resolved.id,  // Use actual vocabulary ID (e.g., "bad|am")
-            text: resolved.finglish,
-            slotId: `slot${index + 1}`,
-            vocabularyId: resolved.id,  // Store for tracking
-            wordText: resolved.en  // Store for tracking
-          };
-        }),
-        slots: matchingStep.data.lexemeRefs.map((ref, index) => {
-          const resolved = GrammarService.resolve(ref);
-          return {
-            id: `slot${index + 1}`,
-            text: resolved.en
-          };
-        })
-      };
+      try {
+        return {
+          words: matchingStep.data.lexemeRefs.map((ref, index) => {
+            try {
+              const resolved = GrammarService.resolve(ref);
+              return {
+                id: resolved.id,
+                text: resolved.finglish,
+                slotId: `slot${index + 1}`,
+                vocabularyId: resolved.id,
+                wordText: resolved.en
+              };
+            } catch (err) {
+              console.error(`[LessonRunner] Failed to resolve lexeme ref at index ${index}:`, err);
+              // Return a fallback for failed resolution
+              const fallbackId = typeof ref === 'string' ? ref : `unknown-${index}`;
+              return {
+                id: fallbackId,
+                text: fallbackId,
+                slotId: `slot${index + 1}`,
+                vocabularyId: undefined,
+                wordText: undefined
+              };
+            }
+          }),
+          slots: matchingStep.data.lexemeRefs.map((ref, index) => {
+            try {
+              const resolved = GrammarService.resolve(ref);
+              return {
+                id: `slot${index + 1}`,
+                text: resolved.en
+              };
+            } catch (err) {
+              const fallbackId = typeof ref === 'string' ? ref : `unknown-${index}`;
+              return {
+                id: `slot${index + 1}`,
+                text: fallbackId
+              };
+            }
+          })
+        };
+      } catch (err) {
+        console.error('[LessonRunner] Failed to resolve matching step lexemeRefs:', err);
+        return null;
+      }
     }
     // Fallback: use plain words/slots if no lexemeRefs
+    if (!matchingStep.data.words || !matchingStep.data.slots) {
+      console.error('[LessonRunner] Matching step missing words or slots');
+      return null;
+    }
     return {
       words: matchingStep.data.words.map((word, index) => ({
         id: word,
         text: word,
         slotId: `slot${index + 1}`,
-        vocabularyId: undefined,  // No grammar form tracking for plain words
+        vocabularyId: undefined,
         wordText: undefined
       })),
       slots: matchingStep.data.slots.map((slot, index) => ({
@@ -618,56 +697,73 @@ export function LessonRunner({
   }, [idx, step?.type, (step as MatchingStep)?.data?.lexemeRefs, (step as MatchingStep)?.data?.words]);
 
   // PHASE 8 FIX: Memoize final step resolution to show actual words instead of IDs
+  // FIX 5: Added comprehensive try-catch and data guards
   const finalStepData = useMemo(() => {
     if (!step || step.type !== 'final') return null;
     const finalStep = step as FinalStep;
+    
+    // FIX 5: Guard against missing data
+    if (!finalStep.data) {
+      console.error('[LessonRunner] Final step has no data');
+      return null;
+    }
+    
     const { GrammarService } = require('@/lib/services/grammar-service');
     
     if (finalStep.data.lexemeRefs) {
-      const resolved = finalStep.data.lexemeRefs.map(ref => {
-        // Handle plain strings that aren't vocabulary IDs (e.g., "sara-e", "amir-e")
-        // These are just text strings, not grammar forms or vocab items
-        if (typeof ref === 'string') {
-          // Check if it's a grammar form ID (contains |) or a valid vocab ID
-          if (ref.includes('|')) {
-            // Grammar form ID (e.g., "esm|e") - resolve it
-            return GrammarService.resolve(ref);
+      try {
+        const resolved = finalStep.data.lexemeRefs.map((ref, index) => {
+          // Handle plain strings that aren't vocabulary IDs (e.g., "sara-e", "amir-e")
+          if (typeof ref === 'string') {
+            // Check if it's a grammar form ID (contains |) or a valid vocab ID
+            if (ref.includes('|')) {
+              // Grammar form ID (e.g., "esm|e") - resolve it
+              try {
+                return GrammarService.resolve(ref);
+              } catch (err) {
+                console.error(`[LessonRunner] Failed to resolve grammar form ${ref}:`, err);
+                return { id: ref, en: ref, fa: ref, finglish: ref, phonetic: '', lessonId: '', isGrammarForm: false, baseId: null };
+              }
+            }
+            // Try to resolve as vocabulary ID
+            try {
+              return GrammarService.resolve(ref);
+            } catch (error) {
+              // Not a valid vocab ID - treat as plain string
+              return { id: ref, en: ref, fa: ref, finglish: ref, phonetic: '', lessonId: '', semanticGroup: undefined, isGrammarForm: false, baseId: null };
+            }
           }
-          // Try to resolve as vocabulary ID
+          // LexemeRef object (e.g., { kind: "suffix", baseId: "esm", suffixId: "e" })
           try {
             return GrammarService.resolve(ref);
-          } catch (error) {
-            // Not a valid vocab ID - treat as plain string
-            // Return a simple lexeme object for plain strings
-            return {
-              id: ref,
-              en: ref, // Use the string as-is for English
-              fa: ref, // Use the string as-is for Persian
-              finglish: ref, // Use the string as-is for Finglish
-              phonetic: '',
-              lessonId: '',
-              semanticGroup: undefined,
-              isGrammarForm: false,
-              baseId: null
-            };
+          } catch (err) {
+            console.error(`[LessonRunner] Failed to resolve LexemeRef at index ${index}:`, err);
+            const fallbackId = `unknown-${index}`;
+            return { id: fallbackId, en: fallbackId, fa: fallbackId, finglish: fallbackId, phonetic: '', lessonId: '', isGrammarForm: false, baseId: null };
           }
-        }
-        // LexemeRef object (e.g., { kind: "suffix", baseId: "esm", suffixId: "e" })
-        return GrammarService.resolve(ref);
-      });
-      return {
-        words: resolved.map((lexeme, index) => ({
-          id: lexeme.id,
-          text: replaceUserName(lexeme.finglish),
-          translation: replaceUserName(lexeme.en)
-        })),
-        targetWords: resolved.map(lexeme => lexeme.id),
-        persianSequence: resolved.map(lexeme => lexeme.id)
-      };
+        });
+        return {
+          words: resolved.map((lexeme, index) => ({
+            id: lexeme.id,
+            text: replaceUserName(lexeme.finglish),
+            translation: replaceUserName(lexeme.en)
+          })),
+          targetWords: resolved.map(lexeme => lexeme.id),
+          persianSequence: resolved.map(lexeme => lexeme.id)
+        };
+      } catch (err) {
+        console.error('[LessonRunner] Failed to resolve final step lexemeRefs:', err);
+        return null;
+      }
+    }
+    // Fallback for steps without lexemeRefs
+    if (!finalStep.data.words) {
+      console.error('[LessonRunner] Final step missing both lexemeRefs and words');
+      return null;
     }
     return {
       words: finalStep.data.words,
-      targetWords: finalStep.data.targetWords,
+      targetWords: finalStep.data.targetWords || [],
       persianSequence: finalStep.data.conversationFlow?.persianSequence || []
     };
   }, [idx, step?.type, (step as FinalStep)?.data?.lexemeRefs, (step as FinalStep)?.data?.words, userFirstName]);
@@ -675,6 +771,21 @@ export function LessonRunner({
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // Early returns (after all hooks)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // FIX 6: Empty-lesson protection - prevent crash and show error screen
+  if (steps.length === 0) {
+    console.error('[LessonRunner] Lesson has no steps', { moduleId, lessonId });
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Lesson Not Available</h2>
+        <p className="text-gray-600 mb-4">This lesson has no content. Please try another lesson.</p>
+        <Button onClick={() => router.push('/modules')} variant="outline">
+          Back to Modules
+        </Button>
+      </div>
+    );
+  }
 
   // Inline completion UI is no longer used — dedicated routed pages handle completion.
   if (idx >= steps.length && !isInRemediation && !storyCompleted) {
@@ -763,10 +874,17 @@ export function LessonRunner({
 
   // Special handler for story completion - bypasses lesson completion and goes directly to module completion
   const handleStoryComplete = () => {
-    // Prevent normal lesson‐completion logic from re-firing
+    // FIX 3: Idempotency guard - prevent duplicate calls on re-render
+    if (storyCompleteGuardRef.current) {
+      console.log('[LessonRunner] Story completion already triggered, ignoring duplicate call');
+      return;
+    }
+    storyCompleteGuardRef.current = true;
+    
+    // Prevent normal lesson-completion logic from re-firing
     setStoryCompleted(true);
 
-    // Update progress bar to 100 %
+    // Update progress bar to 100%
     if (onProgressChange) {
       onProgressChange(100);
     }
@@ -1087,28 +1205,46 @@ export function LessonRunner({
           onXpStart={createStepXpHandler()}
           onVocabTrack={createVocabularyTracker()}
         />
+      ) : step.type === 'matching' && !matchingStepData ? (
+        // FIX 5: Explicit error for matching step with failed data resolution
+        <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">Matching Game Error</h2>
+          <p className="text-gray-600 mb-4">Could not load matching game data. Skipping to next step.</p>
+          <Button onClick={() => handleItemComplete(true)} variant="outline">Continue</Button>
+        </div>
       ) : step.type === 'final' && finalStepData ? (
         <FinalChallenge
           key={`final-${idx}`}
           words={finalStepData.words}
           targetWords={finalStepData.targetWords}
-          title={(step as FinalStep).title}
-          description={(step as FinalStep).description}
-          successMessage={(step as FinalStep).successMessage}
-          incorrectMessage={(step as FinalStep).incorrectMessage}
-          conversationFlow={{
-            ...(step as FinalStep).data.conversationFlow,
-            expectedPhrase: (step as FinalStep).data.conversationFlow?.expectedPhrase 
-              ? replaceUserName((step as FinalStep).data.conversationFlow.expectedPhrase)
-              : undefined,
-            persianSequence: finalStepData.persianSequence
-          }}
+          title={(step as FinalStep).data.title}
+          description={(step as FinalStep).data.description}
+          successMessage={(step as FinalStep).data.successMessage}
+          incorrectMessage={(step as FinalStep).data.incorrectMessage}
+          conversationFlow={(() => {
+            const flow = (step as FinalStep).data.conversationFlow;
+            if (!flow) return undefined;
+            return {
+              description: flow.description,
+              expectedPhrase: flow.expectedPhrase ? replaceUserName(flow.expectedPhrase) : '',
+              persianSequence: finalStepData.persianSequence
+            };
+          })()}
           points={step.points}
           learnedSoFar={learnedCache[idx]} // PHASE 4A: Pass learned vocabulary state
           vocabularyBank={allCurriculumVocab} // PHASE 4A: Pass vocabulary bank for filtering
           onComplete={handleItemComplete}
           onXpStart={createStepXpHandler()}
         />
+      ) : step.type === 'final' && !finalStepData ? (
+        // FIX 5: Explicit error for final step with failed data resolution
+        <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">Final Challenge Error</h2>
+          <p className="text-gray-600 mb-4">Could not load final challenge data. Skipping to complete lesson.</p>
+          <Button onClick={() => handleItemComplete(true)} variant="outline">Complete Lesson</Button>
+        </div>
       ) : step.type === 'grammar-intro' ? (
         /**
          * ============================================================================
@@ -1229,7 +1365,19 @@ export function LessonRunner({
           onXpStart={createStepXpHandler()}
           addXp={addXp}
         />
-      ) : null}
+      ) : (
+        // FIX 5: Safe fallback for unknown step types - never render blank
+        <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center">
+          <div className="text-5xl mb-4">❓</div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">Unknown Step Type</h2>
+          <p className="text-gray-600 mb-4">
+            Step type "{step.type}" is not recognized. Skipping to next step.
+          </p>
+          <Button onClick={() => handleItemComplete(true)} variant="outline">
+            Continue
+          </Button>
+        </div>
+      )}
         </div>
       </div>
     </>

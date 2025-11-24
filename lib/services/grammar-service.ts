@@ -46,9 +46,12 @@ const SUFFIX_DEFINITIONS: Record<string, {
   'e': {
     faScript: 'ه',          // Persian "ه" (ezafe connector)
     meaningPrefix: ''       // No prefix - ezafe is a connector, not a meaning modifier
+  },
+  'i': {
+    faScript: 'ی',          // Persian "ی"
+    meaningPrefix: "You're " // "You're good", "You're bad", etc.
   }
   // Future suffixes:
-  // 'i': { faScript: 'ی', meaningPrefix: "You're " },      // informal you
   // 'im': { faScript: 'یم', meaningPrefix: "We're " },     // we are
   // 'et': { faScript: 'ت', meaningPrefix: "Your " },        // possessive your
   // 'and': { faScript: 'ند', meaningPrefix: "They're " },   // they are

@@ -232,7 +232,7 @@ export default function ModulesPage() {
   // OPTIMISTIC RENDERING: Show skeleton only if data not loaded yet
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
+      <div className="flex min-h-screen flex-col bg-[#F5FAF5]">
         <main className="flex-1">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
             <div className="text-center space-y-3">
@@ -252,7 +252,7 @@ export default function ModulesPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
+    <div className="flex min-h-screen flex-col bg-[#F5FAF5]">
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-2 md:px-4 lg:px-8 py-6 sm:py-8 space-y-8">
           {/* Page Header - Compact */}

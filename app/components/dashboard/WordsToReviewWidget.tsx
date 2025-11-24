@@ -40,7 +40,31 @@ export function WordsToReviewWidget({ wordsToReview, isLoading }: WordsToReviewW
       
       for (const word of wordsToLoad) {
         if (!vocabDefinitions.has(word.vocabulary_id)) {
-          const vocab = VocabularyService.findVocabularyById(word.vocabulary_id)
+          let vocab: VocabularyItem | undefined
+          
+          // Check if it's a grammar form (contains | delimiter)
+          if (word.vocabulary_id.includes('|')) {
+            try {
+              const { GrammarService } = require('@/lib/services/grammar-service')
+              const resolved = GrammarService.resolve(word.vocabulary_id)
+              // Convert ResolvedLexeme to VocabularyItem format
+              vocab = {
+                id: resolved.id,
+                en: resolved.en,
+                fa: resolved.fa,
+                finglish: resolved.finglish,
+                phonetic: resolved.phonetic || '',
+                lessonId: resolved.lessonId || '',
+                semanticGroup: resolved.semanticGroup
+              }
+            } catch (e) {
+              console.warn(`[WordsToReviewWidget] Failed to resolve grammar form: ${word.vocabulary_id}`, e)
+            }
+          } else {
+            // Base vocabulary - use VocabularyService
+            vocab = VocabularyService.findVocabularyById(word.vocabulary_id)
+          }
+          
           if (vocab) {
             definitions.set(word.vocabulary_id, vocab)
           }

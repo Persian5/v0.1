@@ -75,7 +75,31 @@ export function WordsNeedingPractice({ wordsToReview, hardWords, isLoading, shou
       
       for (const word of mergedWords) {
         if (!updated.has(word.vocabulary_id)) {
-          const vocab = VocabularyService.findVocabularyById(word.vocabulary_id)
+          let vocab: VocabularyItem | undefined
+          
+          // Check if it's a grammar form (contains | delimiter)
+          if (word.vocabulary_id.includes('|')) {
+            try {
+              const { GrammarService } = require('@/lib/services/grammar-service')
+              const resolved = GrammarService.resolve(word.vocabulary_id)
+              // Convert ResolvedLexeme to VocabularyItem format
+              vocab = {
+                id: resolved.id,
+                en: resolved.en,
+                fa: resolved.fa,
+                finglish: resolved.finglish,
+                phonetic: resolved.phonetic || '',
+                lessonId: resolved.lessonId || '',
+                semanticGroup: resolved.semanticGroup
+              }
+            } catch (e) {
+              console.warn(`[WordsNeedingPractice] Failed to resolve grammar form: ${word.vocabulary_id}`, e)
+            }
+          } else {
+            // Base vocabulary - use VocabularyService
+            vocab = VocabularyService.findVocabularyById(word.vocabulary_id)
+          }
+          
           if (vocab) {
             updated.set(word.vocabulary_id, vocab)
           }
