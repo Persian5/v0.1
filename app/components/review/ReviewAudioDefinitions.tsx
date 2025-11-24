@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { AudioMeaning } from "@/app/components/games/AudioMeaning"
 import { ReviewFilter } from "@/lib/services/review-session-service"
@@ -101,19 +101,17 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
   const currentVocab = vocabulary[currentIndex]
 
   // Generate distractors for current word AND build complete vocabularyBank
-  const distractors = useRef<string[]>([])
-  const completeVocabularyBank = useRef<VocabularyItem[]>([])
+  // CRITICAL FIX: Use state instead of ref so React tracks changes and AudioMeaning receives updates
+  const [distractors, setDistractors] = useState<string[]>([])
+  const [completeVocabularyBank, setCompleteVocabularyBank] = useState<VocabularyItem[]>([])
   
-  // Ensure vocabularyBank always has current vocab (defensive)
+  // Generate distractors and vocabulary bank when current vocab changes
   useEffect(() => {
-    if (currentVocab && completeVocabularyBank.current.length === 0) {
-      // If bank is empty but we have current vocab, add it immediately
-      completeVocabularyBank.current = [currentVocab]
+    if (!currentVocab || vocabulary.length === 0) {
+      setDistractors([])
+      setCompleteVocabularyBank([])
+      return
     }
-  }, [currentVocab])
-  
-  useEffect(() => {
-    if (!currentVocab || vocabulary.length === 0) return
 
     // Get all vocabulary for distractor generation
     const allVocab = VocabularyService.getAllCurriculumVocabulary()
@@ -166,8 +164,8 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
       }
     }
 
-    distractors.current = distractorIds.slice(0, 3)
-    completeVocabularyBank.current = Array.from(vocabItemsForBank.values())
+    setDistractors(distractorIds.slice(0, 3))
+    setCompleteVocabularyBank(Array.from(vocabItemsForBank.values()))
   }, [currentVocab, vocabulary])
 
   // Handle vocabulary tracking
@@ -195,11 +193,15 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
       setCorrectCount(prev => prev + 1)
       
       // Award XP (1 XP per correct answer)
+      // CRITICAL FIX: Use unique actionId per question to ensure idempotency
+      // Include currentIndex to ensure uniqueness even if same vocab appears twice
+      const uniqueActionId = `${vocabulary[currentIndex]?.id}-${currentIndex}-${Date.now()}`
       const result = await ReviewSessionService.awardReviewXp(user.id, 1, {
         gameType: 'audio-definitions',
-        actionId: `${vocabulary[currentIndex]?.id}-${Date.now()}`,
+        actionId: uniqueActionId,
         metadata: {
-          vocabId: vocabulary[currentIndex]?.id
+          vocabId: vocabulary[currentIndex]?.id,
+          questionIndex: currentIndex
         }
       })
       if (!result.awarded && result.reason === 'Daily review XP cap reached' && !xpCapShown) {
@@ -232,7 +234,9 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
   }
   
   // Handle restart game
-  const handleRestart = () => {
+  const handleRestart = useCallback(() => {
+    if (vocabulary.length === 0) return
+    
     // Reshuffle vocabulary using proper Fisher-Yates shuffle
     const shuffled = shuffle([...vocabulary])
     
@@ -249,11 +253,13 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
     setCorrectCount(0)
     setWrongCount(0)
     setLastVocabId(null)
+    setXpCapReached(false)
+    setXpCapShown(false)
     gameStartTime.current = Date.now()
-  }
+  }, [vocabulary, lastVocabId])
 
   // Handle continue (auto-advance to next question) - ONLY called on correct answer
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     if (isGameOver) return // Don't advance if game over
     
     // Store current vocab ID to avoid showing it next
@@ -284,7 +290,7 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
       setVocabulary(shuffled)
       setCurrentIndex(0)
     }
-  }
+  }, [currentIndex, vocabulary, isGameOver])
 
   if (isLoading) {
     return (
@@ -417,11 +423,12 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
       <main className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full">
         {/* Game Area - Mobile: Full width, Desktop: ~70% */}
         <div className="flex-1 lg:w-[70%] lg:border-r-2 lg:border-[#10B981]/20 p-4 sm:p-6">
-          {!isGameOver && currentVocab && completeVocabularyBank.current.length > 0 ? (
+          {!isGameOver && currentVocab && completeVocabularyBank.length > 0 ? (
             <AudioMeaning
+              key={`${currentVocab.id}-${currentIndex}`}
               vocabularyId={currentVocab.id}
-              distractors={distractors.current}
-              vocabularyBank={completeVocabularyBank.current}
+              distractors={distractors}
+              vocabularyBank={completeVocabularyBank}
               points={1}
               autoPlay={true}
               onContinue={handleContinue}
@@ -429,8 +436,11 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
               onVocabTrack={handleVocabTrack}
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">Loading...</p>
+            <div className="flex items-center justify-center h-full min-h-[400px]">
+              <div className="text-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#10B981] border-t-transparent mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading question...</p>
+              </div>
             </div>
           )}
           
