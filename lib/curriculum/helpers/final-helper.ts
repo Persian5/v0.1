@@ -80,12 +80,12 @@ export function finalHelper(
       words,
       targetWords,
       conversationFlow,
-      lexemeRefs: refs  // NEW: Store raw LexemeRef[] for runtime resolution
-    },
-    title: options.title || "Final Challenge",
-    description: options.description,
-    successMessage: options.successMessage || defaultSuccessMessage,
-    incorrectMessage: options.incorrectMessage || defaultIncorrectMessage
+      lexemeRefs: refs,  // NEW: Store raw LexemeRef[] for runtime resolution
+      title: options.title || "Final Challenge",
+      description: options.description,
+      successMessage: options.successMessage || defaultSuccessMessage,
+      incorrectMessage: options.incorrectMessage || defaultIncorrectMessage
+    }
   };
 }
 
