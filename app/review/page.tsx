@@ -137,14 +137,27 @@ export default function ReviewPage() {
   ]
 
   // Get button state based on game and user status
+  // CRITICAL: Only return final state when loading is complete to prevent flicker
   const getButtonState = (game: typeof gameModes[0]) => {
-    // Case 4: Coming soon (not implemented)
+    // Case 4: Coming soon (not implemented) - Always show regardless of loading
     if (!game.isImplemented) {
       return {
         text: "Coming Soon",
         disabled: true,
         onClick: null,
-        className: "bg-gray-100 text-gray-500 cursor-not-allowed"
+        className: "bg-gray-100 text-gray-500 cursor-not-allowed",
+        isLoading: false
+      }
+    }
+
+    // Show loading skeleton until we know user's final state
+    if (isLoadingVocabulary) {
+      return {
+        text: "Loading...",
+        disabled: true,
+        onClick: null,
+        className: "bg-gray-200 text-gray-400 cursor-not-allowed animate-pulse",
+        isLoading: true
       }
     }
 
@@ -154,26 +167,29 @@ export default function ReviewPage() {
         text: "Play Now",
         disabled: false,
         onClick: () => handleGameClick(game.id),
-        className: "bg-accent hover:bg-accent/90 text-white"
+        className: "bg-accent hover:bg-accent/90 text-white",
+        isLoading: false
       }
     }
 
-    // Case 2: Signed in, no vocabulary
+    // Case 2: Signed in, no vocabulary - EXPLICIT text about what's needed
     if (user && isEmailVerified && !hasVocabulary) {
       return {
-        text: "Start Lesson 1",
+        text: "Complete Module 1 to Play",
         disabled: false,
         onClick: () => router.push('/modules'),
-        className: "bg-blue-600 hover:bg-blue-700 text-white"
+        className: "bg-blue-600 hover:bg-blue-700 text-white",
+        isLoading: false
       }
     }
 
-    // Case 1: Not signed in
+    // Case 1: Not signed in - EXPLICIT text about signup requirement
     return {
-      text: "Start Learning",
+      text: "Sign Up to Play",
       disabled: false,
       onClick: () => router.push('/modules'),
-      className: "bg-primary hover:bg-primary/90 text-white"
+      className: "bg-primary hover:bg-primary/90 text-white",
+      isLoading: false
     }
   }
 
@@ -235,7 +251,7 @@ export default function ReviewPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
             {gameModes.map((game) => {
               const buttonState = getButtonState(game)
-              const isClickable = !buttonState.disabled
+              const isClickable = !buttonState.disabled && !buttonState.isLoading
               
               return (
               <Card 
@@ -243,6 +259,8 @@ export default function ReviewPage() {
                 className={`relative transition-all duration-300 border-2 bg-white ${
                   game.isImplemented && isClickable
                     ? 'hover:shadow-lg hover:border-accent/50 hover:scale-105 cursor-pointer' 
+                    : game.isImplemented && buttonState.isLoading
+                    ? 'opacity-80'
                     : game.isImplemented
                     ? 'opacity-90'
                     : 'opacity-60 border-gray-200'
