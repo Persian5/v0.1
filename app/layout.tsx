@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import { Suspense } from "react"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from "@vercel/analytics/next"
@@ -48,7 +49,9 @@ export default function RootLayout({
         >
           <XpCacheInitializer />
           <SmartAuthProvider>
-            <EmailVerificationDetector />
+            <Suspense fallback={null}>
+              <EmailVerificationDetector />
+            </Suspense>
             <ClientRootBoundary>
               <ConditionalHeader />
               {children}
