@@ -474,7 +474,7 @@ export function generateGrammarOptions(
       {
     blankType,
     correctAnswer,
-        options: options.map(o => o.text || o.meaning),
+        options: options.map(o => o.text),
         learnedSoFarCount: learnedSoFar?.vocabIds?.length,
       }
     );
