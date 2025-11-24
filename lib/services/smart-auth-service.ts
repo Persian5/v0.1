@@ -497,6 +497,7 @@ export class SmartAuthService {
     dailyGoalXp?: number
     progress?: UserLessonProgress[]
     profile?: Partial<UserProfile>
+    lastActivityDate?: string | null
   }): void {
     if (!this.sessionCache) return
     
@@ -531,6 +532,11 @@ export class SmartAuthService {
         hasChanges = true
         this.emitEvent('streak-updated', { newStreak: updates.streakCount, oldStreak })
       }
+    }
+    
+    if (updates.lastActivityDate !== undefined) {
+      this.sessionCache.lastActivityDate = updates.lastActivityDate
+      // No event emission needed - internal cache update only
     }
     
     if (updates.dailyGoalXp !== undefined) {
