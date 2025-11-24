@@ -79,6 +79,7 @@ export default function ReviewPage() {
       title: "Memory Game",
       description: "Match Persian words with their English translations",
       icon: <Brain className="h-6 w-6" />,
+      isImplemented: true,
       available: hasVocabulary,
       difficulty: "Easy",
       features: ["Card matching", "4x2 grid", "3 lives", "XP per match"]
@@ -88,6 +89,7 @@ export default function ReviewPage() {
       title: "Unlimited Audio Definitions",
       description: "Listen to Persian words and select their meanings",
       icon: <Headphones className="h-6 w-6" />,
+      isImplemented: true,
       available: hasVocabulary,
       difficulty: "Easy → Medium",
       features: ["Unlimited questions", "Audio playback", "Streak tracking", "Auto-advance"]
@@ -97,6 +99,7 @@ export default function ReviewPage() {
       title: "Matching Marathon",
       description: "Match pairs as fast as you can - difficulty increases!",
       icon: <Target className="h-6 w-6" />,
+      isImplemented: true,
       available: hasVocabulary,
       difficulty: "Medium → Hard",
       features: ["Unlimited rounds", "Increasing difficulty", "3 lives", "Round counter"]
@@ -106,6 +109,7 @@ export default function ReviewPage() {
       title: "Persian Word Rush",
       description: "Fast-paced vocabulary matching with increasing speed",
       icon: <Zap className="h-6 w-6" />,
+      isImplemented: true,
       available: hasVocabulary,
       difficulty: "Easy → Hard",
       features: ["Sliding words", "4 lives system", "XP combos", `${vocabularyCount} words available`]
@@ -115,6 +119,7 @@ export default function ReviewPage() {
       title: "Story Mode",
       description: "Character driven cultural game mode where you get to experience different Persian events and have to talk with people",
       icon: <Target className="h-6 w-6" />,
+      isImplemented: false,
       available: false,
       difficulty: "Medium",
       features: ["Cultural immersion", "Story-driven", "Character conversations", "Persian events"]
@@ -124,11 +129,53 @@ export default function ReviewPage() {
       title: "Pronunciation Check",
       description: "Testing a user's pronunciation of words",
       icon: <Trophy className="h-6 w-6" />,
+      isImplemented: false,
       available: false,
       difficulty: "Medium → Hard",
       features: ["Voice recognition", "Pronunciation feedback", "Review sessions", "Progress tracking"]
     }
   ]
+
+  // Get button state based on game and user status
+  const getButtonState = (game: typeof gameModes[0]) => {
+    // Case 4: Coming soon (not implemented)
+    if (!game.isImplemented) {
+      return {
+        text: "Coming Soon",
+        disabled: true,
+        onClick: null,
+        className: "bg-gray-100 text-gray-500 cursor-not-allowed"
+      }
+    }
+
+    // Case 3: Can play (signed in + has vocabulary)
+    if (user && isEmailVerified && hasVocabulary) {
+      return {
+        text: "Play Now",
+        disabled: false,
+        onClick: () => handleGameClick(game.id),
+        className: "bg-accent hover:bg-accent/90 text-white"
+      }
+    }
+
+    // Case 2: Signed in, no vocabulary
+    if (user && isEmailVerified && !hasVocabulary) {
+      return {
+        text: "Start Lesson 1",
+        disabled: false,
+        onClick: () => router.push('/modules'),
+        className: "bg-blue-600 hover:bg-blue-700 text-white"
+      }
+    }
+
+    // Case 1: Not signed in
+    return {
+      text: "Start Learning",
+      disabled: false,
+      onClick: () => router.push('/modules'),
+      className: "bg-primary hover:bg-primary/90 text-white"
+    }
+  }
 
   if (!mounted) {
     return null
@@ -186,12 +233,18 @@ export default function ReviewPage() {
 
           {/* Games Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-            {gameModes.map((game) => (
+            {gameModes.map((game) => {
+              const buttonState = getButtonState(game)
+              const isClickable = !buttonState.disabled
+              
+              return (
               <Card 
                 key={game.id} 
-                className={`relative transition-all duration-300 hover:shadow-lg border-2 bg-white ${
-                  game.available 
-                    ? 'hover:border-accent/50 hover:scale-105 cursor-pointer' 
+                className={`relative transition-all duration-300 border-2 bg-white ${
+                  game.isImplemented && isClickable
+                    ? 'hover:shadow-lg hover:border-accent/50 hover:scale-105 cursor-pointer' 
+                    : game.isImplemented
+                    ? 'opacity-90'
                     : 'opacity-60 border-gray-200'
                 }`}
               >
@@ -229,25 +282,18 @@ export default function ReviewPage() {
                   </div>
 
                   <div className="w-full">
-                    {game.available ? (
-                      <Button
-                        onClick={() => handleGameClick(game.id)}
-                        className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-colors"
-                      >
-                        Play Now
-                      </Button>
-                    ) : (
-                      <Button 
-                        className="w-full bg-gray-100 text-gray-500 cursor-not-allowed font-semibold py-3 rounded-lg"
-                        disabled
-                      >
-                        {game.id === "word-rush" && user && isEmailVerified && !hasVocabulary ? "Complete Lessons First" : "Coming Soon"}
-                      </Button>
-                    )}
+                    <Button
+                      onClick={buttonState.onClick || undefined}
+                      disabled={buttonState.disabled}
+                      className={`w-full font-semibold py-3 rounded-lg transition-colors ${buttonState.className}`}
+                    >
+                      {buttonState.text}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              )
+            })}
           </div>
 
           {/* Info Section */}
