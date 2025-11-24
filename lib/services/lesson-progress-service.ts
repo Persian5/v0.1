@@ -1,5 +1,5 @@
-import { getModules, getModule, type Module } from '../config/curriculum';
-import { type Lesson, type LessonStep } from '../types';
+import { getModules, getModule } from '../config/curriculum';
+import { type Lesson, type LessonStep, type Module } from '../types';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
 import { VocabularyProgressService } from './vocabulary-progress-service';
