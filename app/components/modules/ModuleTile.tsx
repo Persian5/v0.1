@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 export interface ModuleTileProps {
   id: string | number
   title: string
-  emoji: string
+  emoji?: string
   description: string
   state: 'completed' | 'current' | 'available' | 'locked'
   progress?: number
@@ -92,7 +92,7 @@ export function ModuleTile({
             "text-5xl sm:text-6xl filter drop-shadow-sm transition-all",
             isLocked && "grayscale opacity-40 scale-90"
           )}>
-            {emoji}
+            {emoji || "📘"}
           </span>
         </div>
 

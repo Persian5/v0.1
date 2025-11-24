@@ -9,7 +9,7 @@ interface ModuleData {
   id: string | number
   title: string
   description: string
-  emoji: string
+  emoji?: string
   uiState: 'completed' | 'current' | 'available' | 'locked'
   completionInfo?: {
     completionPercentage: number
