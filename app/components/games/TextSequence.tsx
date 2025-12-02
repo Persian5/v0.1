@@ -239,6 +239,11 @@ export function TextSequence({
         // Track each word, replacing base IDs with composite IDs for grammar forms
         perWordResults.forEach((result, index) => {
           if (result.vocabularyId) {
+            // Skip tracking placeholder strings (personalized names, not vocabulary)
+            if (result.vocabularyId.includes('{userFirstName}') || result.vocabularyId === 'Iran') {
+              return; // Don't track - it's a personalized placeholder
+            }
+            
             // Check if this vocabularyId is a base ID of a grammar form
             const compositeId = baseIdToCompositeId.get(result.vocabularyId);
             const resolved = baseIdToResolved.get(result.vocabularyId);
@@ -256,6 +261,10 @@ export function TextSequence({
         // No grammar forms - track as-is
       perWordResults.forEach(result => {
         if (result.vocabularyId) {
+          // Skip tracking placeholder strings (personalized names, not vocabulary)
+          if (result.vocabularyId.includes('{userFirstName}') || result.vocabularyId === 'Iran') {
+            return; // Don't track - it's a personalized placeholder
+          }
           onVocabTrack(result.vocabularyId, result.wordText, result.isCorrect, timeSpentMs);
         }
       });

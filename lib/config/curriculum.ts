@@ -771,7 +771,7 @@ export const curriculumData: Module[] = [
               [
                 { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
                 "man",
-                "{userFirstName}-e" // Plain string - name with ezafe connector (not tracked as grammar form)
+                "{userFirstName}-e" // Plain string - personalized, appears in word bank, not tracked as vocab
               ]
             ),
             // 12. Matching: Baleh, Na, Esm|e, Esm
@@ -850,7 +850,7 @@ export const curriculumData: Module[] = [
               "chiye",
               { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
               "man",
-              "{userFirstName}-e", // Plain string - name with ezafe connector (not tracked as grammar form)
+              "{userFirstName}-e", // Plain string - personalized, appears in word bank, not tracked as vocab
               "khodafez"
             ], {
               conversationFlow: {
@@ -873,22 +873,22 @@ export const curriculumData: Module[] = [
         });
 
         return {
-          id: "lesson2",
+        id: "lesson2",
           title: "Full Introductions",
           description: "Today you'll learn how to complete a basic introduction using: \"My name is …\" \"Nice to meet you\" Recognize full introduction exchanges in listening and text Build comfort with ezafe + name structure",
           emoji: "👋",
-          progress: 0,
-          locked: false,
+        progress: 0,
+        locked: false,
           vocabulary,
-          steps: [
+        steps: [
             // 1. Welcome Intro
-            {
-              type: "welcome",
+          {
+            type: "welcome",
               title: "Full Introductions",
               description: "Today you'll learn how to complete your introduction in Persian. You already know how to say your name, now let's sound natural and polite when meeting someone.",
-              points: 0,
-              data: {
-                objectives: [
+            points: 0,
+            data: {
+              objectives: [
                   "Say your full introduction confidently",
                   "Use \"Nice to meet you\" naturally",
                   "Recognize full introduction exchanges",
@@ -939,7 +939,8 @@ export const curriculumData: Module[] = [
               [
                 "salam",
                 { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
-                "man"
+                "man",
+                "{userFirstName}-e" // Plain string - personalized, appears in word bank, not tracked as vocab
               ]
             ),
             // 10. Matching: Esm|e, Khoshbakhtam Esm|e Man Shoma
@@ -1022,7 +1023,7 @@ export const curriculumData: Module[] = [
               "salam",
               { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
               "man",
-              "{userFirstName}-e", // Plain string - name with ezafe connector
+              "{userFirstName}-e", // Plain string - personalized, appears in word bank, not tracked as vocab
               "khoshbakhtam",
               "khodafez"
             ], {
@@ -1046,22 +1047,22 @@ export const curriculumData: Module[] = [
         });
 
         return {
-          id: "lesson3",
+        id: "lesson3",
           title: "Nice to Meet You Too",
           description: "Today you'll practice real conversations. You'll learn how to reply when someone says \"Khoshbakhtam\" and you will build complete introductions with simple, natural responses.",
           emoji: "👋",
-          progress: 0,
-          locked: false,
+        progress: 0,
+        locked: false,
           vocabulary,
-          steps: [
+        steps: [
             // 1. Welcome Intro
-            {
-              type: "welcome",
+          {
+            type: "welcome",
               title: "Nice to Meet You Too",
               description: "Today you'll practice real conversations. You'll learn how to reply when someone says \"Khoshbakhtam\" and you will build complete introductions with simple, natural responses.",
-              points: 0,
-              data: {
-                objectives: [
+            points: 0,
+            data: {
+              objectives: [
                   "Reply naturally to \"Khoshbakhtam\"",
                   "Use \"ham\" (too/also) in conversations",
                   "Build complete introduction exchanges",
@@ -1186,7 +1187,7 @@ export const curriculumData: Module[] = [
               "chetori",
               { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
               "man",
-              "{userFirstName}-e", // Plain string - name with ezafe connector
+              "{userFirstName}-e", // Plain string - personalized, appears in word bank, not tracked as vocab
               "khoshbakhtam",
               "khodafez"
             ], {
@@ -1209,18 +1210,18 @@ export const curriculumData: Module[] = [
           title: "The -i Ending (You Are)",
           description: "Today, you'll learn the Persian ending –i, which means 'you are.' By the end of this lesson, you can ask someone how they're doing using words you already know.",
           emoji: "👋",
-          progress: 0,
-          locked: false,
+        progress: 0,
+        locked: false,
           vocabulary,
-          steps: [
+        steps: [
             // 1. Welcome Intro
-            {
-              type: "welcome",
+          {
+            type: "welcome",
               title: "The -i Ending (You Are)",
               description: "Today, you'll learn the Persian ending –i, which means 'you are.' By the end of this lesson, you can ask someone how they're doing using words you already know.",
-              points: 0,
-              data: {
-                objectives: [
+            points: 0,
+            data: {
+              objectives: [
                   "Learn the Persian ending –i (\"you are\")",
                   "Ask \"Are you good?\" and \"Are you bad?\"",
                   "Respond naturally to questions about how you are",
@@ -1256,16 +1257,16 @@ export const curriculumData: Module[] = [
               { kind: "suffix", baseId: "bad", suffixId: "am" } as const
             ]),
             // 6. Grammar Intro: -i (you are)
-            {
-              type: "grammar-intro",
-              points: 1,
-              data: {
+          {
+            type: "grammar-intro",
+            points: 1,
+            data: {
                 conceptId: "suffix-i",
                 title: "-i = you are",
                 description: "In Persian, add –i to adjectives to mean you are. As a question: Are you X? As a statement: You are X.",
                 rule: "Add -i to adjectives to say 'you are'",
                 visualType: "tree",
-                visualData: {
+              visualData: {
                   base: "khoob",
                   transformations: [
                     { label: "-i", result: "khoobi", meaning: "You're good" },
@@ -1275,15 +1276,15 @@ export const curriculumData: Module[] = [
               }
             },
             // 7. Grammar Fill in the Blank: Khoob|i - you are good
-            {
-              type: "grammar-fill-blank",
-              points: 1,
-              data: {
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
                 conceptId: "suffix-i-khoob",
                 label: "FILL IN THE SUFFIX",
                 subtitle: "Choose the correct ending",
-                exercises: [
-                  {
+              exercises: [
+                {
                     sentence: "Khoob-___",
                     translation: "You are good",
                     blankPosition: 6,
@@ -1293,21 +1294,21 @@ export const curriculumData: Module[] = [
                       { id: "suffix-am", text: "-am" },
                       { id: "suffix-e", text: "-e" },
                       { id: "suffix-et", text: "-et" }
-                    ]
-                  }
-                ]
-              }
-            },
+                  ]
+                }
+              ]
+            }
+          },
             // 8. Grammar Fill in the Blank: Bad|i - you are bad (with question mark)
-            {
-              type: "grammar-fill-blank",
-              points: 1,
-              data: {
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
                 conceptId: "suffix-i-bad",
                 label: "FILL IN THE SUFFIX",
                 subtitle: "Choose the correct ending",
-                exercises: [
-                  {
+              exercises: [
+                {
                     sentence: "Bad-___?",
                     translation: "Are you bad?",
                     blankPosition: 4,
@@ -1317,11 +1318,11 @@ export const curriculumData: Module[] = [
                       { id: "suffix-am", text: "-am" },
                       { id: "suffix-e", text: "-e" },
                       { id: "suffix-et", text: "-et" }
-                    ]
-                  }
-                ]
-              }
-            },
+                  ]
+                }
+              ]
+            }
+          },
             // 9. Audio Meaning: Khoob|i
             audioMeaning({ kind: "suffix", baseId: "khoob", suffixId: "i" } as const),
             // 10. Audio Meaning: Bad|am
@@ -1409,6 +1410,435 @@ export const curriculumData: Module[] = [
           ]
         };
       })(),
+      // Module 2 Lesson 5: Putting It All Together
+      (() => {
+        // No new vocabulary - mastery lesson
+        const vocabulary: VocabularyItem[] = [];
+
+        return {
+          id: "lesson5",
+          title: "Putting It All Together",
+          description: "Today you'll put everything you've learned together into your first real Persian conversation. No new words, just mastery.",
+          emoji: "💬",
+        progress: 0,
+        locked: false,
+          vocabulary,
+        steps: [
+            // 1. Welcome Intro
+          {
+            type: "welcome",
+              title: "Putting It All Together",
+              description: "Today you'll put everything you've learned together into your first real Persian conversation. No new words, just mastery.",
+            points: 0,
+            data: {
+              objectives: [
+                  "Confidently hold a 20-25 second Persian conversation",
+                  "Use all greetings, introductions, and responses naturally",
+                  "Master the complete conversation flow",
+                  "Feel confident speaking Persian"
+                ],
+                lessonType: "conversations"
+              }
+            },
+            // 2. Audio Sequence: Salam esm|e shoma chiye
+            audioSequence(
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "shoma",
+                "chiye"
+              ],
+              "Hello what is your name"
+            ),
+            // 3. Matching: Man Shoma Esm|e Chi
+            matching([
+              "man",
+              "shoma",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "chi"
+            ]),
+            // 4. Audio Meaning: Khoshbakhtam
+            audioMeaning("khoshbakhtam"),
+            // 5. MC Quiz: Esm
+          {
+            type: "quiz",
+            points: 2,
+            data: {
+                prompt: "What does 'esm' mean?",
+                options: ["Name", "My name", "Your name", "Name of"],
+                correct: 0,
+                quizType: "vocab-normal",
+                lexemeRef: "esm"
+              }
+            },
+            // 6. Text Sequence: Salam, esm|e man {userFirstName}-e
+            textSequence(
+              "Salam, esme man {userFirstName}-e",
+              "Hello, my name is {userFirstName}",
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man",
+                "{userFirstName}-e" // Plain string - personalized, appears in word bank, not tracked as vocab
+              ]
+            ),
+            // 7. Audio Sequence: Man ham khoshbakhtam
+            audioSequence(
+              [
+                "man",
+                "ham",
+                "khoshbakhtam"
+              ],
+              "Nice to meet you too"
+            ),
+            // 8. Text Sequence: Baleh Merci Khoob|am
+            textSequence(
+              "Baleh merci khoobam",
+              "Yes thank you I'm good",
+              [
+                "baleh",
+                "merci",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+              ]
+            ),
+            // 9. Audio Meaning: Khoob|i
+            audioMeaning({ kind: "suffix", baseId: "khoob", suffixId: "i" } as const),
+            // 10. Grammar Fill in the Blank: Khoob-(blank) for -i
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+            data: {
+                conceptId: "suffix-i-khoob-review",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
+                exercises: [
+                  {
+                    sentence: "Khoob-___",
+                    translation: "You are good",
+                    blankPosition: 6,
+                    correctAnswer: "i",
+                    suffixOptions: [
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            // 11. Grammar Fill in the Blank: Bad-(blank) for -am
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+            data: {
+                conceptId: "suffix-am-bad-review",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
+                exercises: [
+                  {
+                    sentence: "Bad-___",
+                    translation: "I am bad",
+                    blankPosition: 4,
+                    correctAnswer: "am",
+                    suffixOptions: [
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            // 12. Matching: Khoob|i Bad|i Khoob|am Bad|am
+            matching([
+              { kind: "suffix", baseId: "khoob", suffixId: "i" } as const,
+              { kind: "suffix", baseId: "bad", suffixId: "i" } as const,
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+              { kind: "suffix", baseId: "bad", suffixId: "am" } as const
+            ]),
+            // 13. Audio Meaning: Khodafez
+            audioMeaning("khodafez"),
+            // 14. Reverse Quiz: Khoob
+            vocabQuiz([], "khoob", "vocab-reverse"),
+            // 15. Audio Sequence: Na merci khoob|am
+            audioSequence(
+              [
+                "na",
+                "merci",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const
+              ],
+              "No thank you I'm good"
+            ),
+            // 16. Reverse Quiz: Nice to meet you too
+            vocabQuiz([], "khoshbakhtam", "vocab-reverse"),
+            // 17. Input Game: Chetori
+            input(
+              "How do you say 'how are you' in Persian?",
+              "Chetori",
+              2,
+              "chetori"
+            ),
+            // 18. Input Game: Khoob-i
+            input(
+              "How do you say 'you are good' in Persian?",
+              "khoob-i",
+              2,
+              { kind: "suffix", baseId: "khoob", suffixId: "i" } as const
+            ),
+            // 19. Final Challenge: Salam, esme shoma chiye? Esme man {userFirstName}-e khoshbakhtam. Man ham khoshbakhtam khodafez
+            final(vocabulary, [
+              "salam",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "shoma",
+              "chiye",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "man",
+              "{userFirstName}-e", // Plain string - personalized, appears in word bank, not tracked as vocab
+              "khoshbakhtam",
+              "man",
+              "ham",
+              "khoshbakhtam",
+              "khodafez"
+            ], {
+              conversationFlow: {
+                description: "A complete 20-25 second Persian conversation",
+                expectedPhrase: "Hello what is your name my name is {userFirstName} nice to meet you nice to meet you too goodbye"
+              },
+              title: "Your First Real Conversation"
+            })
+          ]
+        };
+      })(),
+      // Module 2 Lesson 6: Texting Game
+      (() => {
+        // No new vocabulary - mastery lesson
+        const vocabulary: VocabularyItem[] = [];
+
+        return {
+          id: "lesson6",
+          title: "Texting Game",
+          description: "Practice a real texting conversation using all your greeting and introduction skills",
+        emoji: "💬",
+        progress: 0,
+        locked: false,
+          vocabulary,
+        steps: [
+          {
+            type: "story-conversation",
+            points: 6, // XP awarded once at story completion (idempotent)
+            data: {
+                storyId: "module2-texting-game",
+                title: "Texting Game",
+                description: "Practice a real texting conversation using all your greeting and introduction skills",
+                setting: "You're texting with Sara, a new friend",
+                characterName: "Sara",
+              characterEmoji: "👩",
+              requiresPersonalization: true,
+              exchanges: [
+                  // Exchange 1: Sara initiates - "Salam {FirstName}"
+                {
+                  id: "exchange1",
+                  initiator: "character",
+                    characterMessage: "Salam {name}",
+                  choices: [
+                    {
+                      id: "choice1a",
+                        text: "Salam Sara",
+                        vocabularyUsed: ["salam"],
+                      isCorrect: true,
+                      points: 1,
+                        responseMessage: "Khoobi?"
+                    },
+                    {
+                      id: "choice1b",
+                        text: "Khodafez Sara",
+                        vocabularyUsed: ["khodafez"],
+                      isCorrect: false,
+                        points: 0
+                    },
+                    {
+                      id: "choice1c",
+                        text: "Merci Sara",
+                        vocabularyUsed: ["merci"],
+                      isCorrect: false,
+                        points: 0
+                    }
+                  ]
+                },
+                  // Exchange 2: Sara asks "Khoobi?" - User responds
+                {
+                  id: "exchange2",
+                  initiator: "character",
+                    characterMessage: "Khoobi?",
+                  choices: [
+                    {
+                      id: "choice2a",
+                        text: "Baleh khoobam",
+                        vocabularyUsed: ["baleh", "khoobam"],
+                      isCorrect: true,
+                      points: 1,
+                        responseMessage: ""
+                    },
+                    {
+                      id: "choice2b",
+                        text: "Baleh khoobi",
+                        vocabularyUsed: ["baleh", "khoobi"],
+                      isCorrect: false,
+                        points: 0
+                    },
+                    {
+                      id: "choice2c",
+                        text: "Nah khoobi",
+                        vocabularyUsed: ["na", "khoobi"],
+                      isCorrect: false,
+                        points: 0
+                    },
+                    {
+                      id: "choice2d",
+                        text: "Nah khoobam",
+                        vocabularyUsed: ["na", "khoobam"],
+                      isCorrect: false,
+                        points: 0
+                    }
+                  ]
+                },
+                  // Exchange 3: User follow-up - asks "Shoma chetori?"
+                {
+                  id: "exchange3",
+                    initiator: "user",
+                    characterMessage: "",
+                  choices: [
+                    {
+                      id: "choice3a",
+                        text: "Shoma chetori?",
+                        vocabularyUsed: ["shoma", "chetori"],
+                      isCorrect: true,
+                      points: 1,
+                        responseMessage: "Man ham khoobam!"
+                    },
+                    {
+                      id: "choice3b",
+                        text: "Man chetori",
+                        vocabularyUsed: ["man", "chetori"],
+                      isCorrect: false,
+                        points: 0
+                      }
+                    ]
+                  },
+                  // Exchange 4: Sara says "Man ham khoobam!" then asks "Esme shoma chiye?"
+                {
+                  id: "exchange4",
+                  initiator: "character",
+                    characterMessage: "Man ham khoobam! Esme shoma chiye?",
+                  choices: [
+                    {
+                      id: "choice4a",
+                        text: "Esme man {name}-e",
+                        vocabularyUsed: ["esme", "man"],
+                      isCorrect: true,
+                      points: 1,
+                        responseMessage: ""
+                    },
+                    {
+                      id: "choice4b",
+                        text: "Esme shoma {name}-e",
+                        vocabularyUsed: ["esme", "shoma"],
+                      isCorrect: false,
+                        points: 0
+                    },
+                    {
+                      id: "choice4c",
+                        text: "Esm man {name}-e",
+                        vocabularyUsed: ["esm", "man"],
+                      isCorrect: false,
+                        points: 0
+                    },
+                    {
+                      id: "choice4d",
+                        text: "Esm shoma {name}-e",
+                        vocabularyUsed: ["esm", "shoma"],
+                      isCorrect: false,
+                        points: 0
+                    }
+                  ]
+                },
+                  // Exchange 5: User follow-up - asks "Esme shoma chiye?"
+                {
+                  id: "exchange5",
+                    initiator: "user",
+                    characterMessage: "",
+                  choices: [
+                    {
+                      id: "choice5a",
+                        text: "Esme shoma chiye?",
+                        vocabularyUsed: ["esme", "shoma", "chiye"],
+                      isCorrect: true,
+                      points: 1,
+                        responseMessage: "Esme man Sara-e, khoshbakhtam"
+                    },
+                    {
+                      id: "choice5b",
+                        text: "Esme man chiye?",
+                        vocabularyUsed: ["esme", "man", "chiye"],
+                      isCorrect: false,
+                        points: 0
+                      }
+                    ]
+                  },
+                  // Exchange 6: Sara says "Esme man Sara-e, khoshbakhtam"
+                {
+                  id: "exchange6",
+                  initiator: "character",
+                    characterMessage: "Esme man Sara-e, khoshbakhtam",
+                  choices: [
+                    {
+                      id: "choice6a",
+                        text: "Man ham khoshbakhtam",
+                        vocabularyUsed: ["man", "ham", "khoshbakhtam"],
+                      isCorrect: true,
+                      points: 1,
+                        responseMessage: ""
+                    },
+                    {
+                      id: "choice6b",
+                        text: "Shoma ham khoshbakhtam",
+                        vocabularyUsed: ["shoma", "ham", "khoshbakhtam"],
+                      isCorrect: false,
+                        points: 0
+                      }
+                    ]
+                  },
+                  // Exchange 7: Sara says goodbye "Khodafez {name}"
+                  {
+                    id: "exchange7",
+                    initiator: "character",
+                    characterMessage: "Khodafez {name}",
+                    choices: [
+                      {
+                        id: "choice7a",
+                        text: "Khodafez Sara",
+                        vocabularyUsed: ["khodafez"],
+                        isCorrect: true,
+                        points: 1,
+                        responseMessage: ""
+                      },
+                      {
+                        id: "choice7b",
+                        text: "Salam Sara",
+                        vocabularyUsed: ["salam"],
+                      isCorrect: false,
+                        points: 0
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+        };
+      })(),
     ]
   },
   {
@@ -1416,11 +1846,554 @@ export const curriculumData: Module[] = [
     title: "Module 3: Family & Relationships",
     description: "Describe your family or ask about someone else's. Includes parents, siblings, friends, and possessive structures.",
     emoji: "👪",
-    lessonCount: 0,
-    estimatedTime: "0 minutes",
-    available: false,
-    requiresPremium: true,
-    lessons: []
+    lessonCount: 1,
+    estimatedTime: "15 minutes",
+    available: true,
+    lessons: [
+      // Module 3 Lesson 1: Where Are You From?
+      (() => {
+        const vocabulary = createVocabulary("module3-lesson1", {
+          ids: ["hast", "ahle"],
+          en: ["Is / To Be", "From / Belonging To"],
+          fa: ["هست", "اهل"],
+          finglish: ["Hast", "Ahle"],
+          phonetic: ["hast", "AH-leh"]
+        });
+
+        return {
+        id: "lesson1",
+          title: "Where Are You From?",
+          description: "Today you'll learn how to say where you're from in Persian. By the end of this lesson, you can introduce yourself and ask others about their origin.",
+          emoji: "🌍",
+        progress: 0,
+        locked: false,
+          vocabulary,
+        steps: [
+            // 1. Welcome Intro
+          {
+            type: "welcome",
+              title: "Where Are You From?",
+              description: "Today you'll learn how to say where you're from in Persian. By the end of this lesson, you can introduce yourself and ask others about their origin.",
+            points: 0,
+            data: {
+              objectives: [
+                  "Learn the verb 'hast' (to be)",
+                  "Learn 'ahle' (from)",
+                  "Say 'I am from Iran' naturally",
+                  "Ask 'Are you from Iran?' confidently"
+                ],
+                lessonType: "grammar"
+              }
+            },
+            
+            // 2. Review: Audio Sequence - Previous greetings
+            audioSequence(["salam", "chetori"], "Hello how are you"),
+            
+            // 3. Review: Matching - Pronouns and responses
+            matching([
+              "man",
+              "shoma",
+              { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+              "merci"
+            ]),
+            
+            // 4. Flashcard: Hast (to be)
+            flashcard(vocabulary, "hast"),
+            
+            // 5. Audio Meaning: Hast
+            audioMeaning("hast"),
+            
+            // 6. Vocab Quiz: Hast (What does "hast" mean?)
+            vocabQuiz(vocabulary, "hast", "vocab-normal"),
+            
+            // 7. Flashcard: Ahle (from)
+            flashcard(vocabulary, "ahle"),
+            
+            // 8. Audio Meaning: Ahle
+            audioMeaning("ahle"),
+            
+            // 9. Matching: Hast, Ahle, Man, Shoma
+            matching(["hast", "ahle", "man", "shoma"]),
+            
+            // 10. Text Sequence - Standalone "hast" with user's first name (BEFORE grammar intros)
+            textSequence(
+              "{userFirstName} ahle Iran hast",
+              "{userFirstName} is from Iran",
+              [
+                "{userFirstName}", // Plain string - personalized, appears in word bank, not tracked as vocab
+                "ahle",
+                "Iran", // Plain string - appears in word bank, not tracked as vocab
+                "hast" // Standalone base word - tracked as regular vocab
+              ]
+            ),
+            
+            // 11. Grammar Intro: hastam (I am)
+            {
+              type: "grammar-intro",
+              points: 1,
+            data: {
+                conceptId: "verb-hastam",
+                title: "hastam = I am",
+                description: "In Persian, you add -am to 'hast' to say 'I am'. For example: hast → hastam ('I am'), Man ahle Iran hastam ('I am from Iran').",
+                rule: "Add -am to 'hast' to say 'I am'",
+                visualType: "tree",
+                visualData: {
+                  base: "hast",
+                  transformations: [
+                    { label: "-am", result: "hastam", meaning: "I am" },
+                    { label: "Man ahle Iran + hastam", result: "Man ahle Iran hastam", meaning: "I am from Iran" }
+                  ]
+                }
+              }
+            },
+            
+            // 12. Grammar Fill in the Blank: Hast-___ (testing hastam)
+            {
+              type: "grammar-fill-blank",
+              points: 1,
+            data: {
+                conceptId: "verb-hastam-fill",
+                label: "FILL IN THE SUFFIX",
+                subtitle: "Choose the correct ending",
+                exercises: [
+                  {
+                    sentence: "Hast-___",
+                    translation: "I am",
+                    blankPosition: 5,
+                    correctAnswer: "am",
+                    suffixOptions: [
+                      { id: "suffix-am", text: "-am" },
+                      { id: "suffix-i", text: "-i" },
+                      { id: "suffix-e", text: "-e" },
+                      { id: "suffix-et", text: "-et" }
+                    ]
+                  }
+                ]
+              }
+            },
+            
+            // 13. Audio Meaning: Hast|am (TRACKED)
+            audioMeaning({ kind: "suffix", baseId: "hast", suffixId: "am" } as const),
+            
+            // 14. Text Sequence: Man ahle Iran hast|am (TRACKED)
+            textSequence(
+              "Man ahle Iran hastam",
+              "I am from Iran",
+              [
+                "man",
+                "ahle",
+                "Iran", // Plain string - not tracked
+                { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+              ]
+            ),
+            
+            // 15. Audio Sequence: Man ahle Iran hast|am (TRACKED)
+            audioSequence(
+              [
+                "man",
+                "ahle",
+                "Iran", // Plain string - not tracked
+                { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+              ],
+              "I am from Iran"
+            ),
+            
+            // 16. Grammar Intro: hasti (you are)
+          {
+            type: "grammar-intro",
+            points: 1,
+            data: {
+                conceptId: "verb-hasti",
+                title: "hasti = you are",
+                description: "In Persian, you add -i to 'hast' to say 'you are'. As a question: Shoma ahle Iran hasti? ('Are you from Iran?'). As a statement: Shoma ahle Iran hasti ('You are from Iran').",
+                rule: "Add -i to 'hast' to say 'you are'",
+                visualType: "tree",
+              visualData: {
+                  base: "hast",
+                  transformations: [
+                    { label: "-i", result: "hasti", meaning: "You are" },
+                    { label: "Shoma ahle Iran + hasti?", result: "Shoma ahle Iran hasti?", meaning: "Are you from Iran?" }
+                  ]
+                }
+              }
+            },
+            
+            // 17. Grammar Fill in the Blank: Hast-___? (testing hasti)
+          {
+            type: "grammar-fill-blank",
+            points: 1,
+            data: {
+                conceptId: "verb-hasti-fill",
+              label: "FILL IN THE SUFFIX",
+              subtitle: "Choose the correct ending",
+              exercises: [
+                {
+                    sentence: "Hast-___?",
+                    translation: "Are you?",
+                    blankPosition: 5,
+                    correctAnswer: "i",
+                  suffixOptions: [
+                    { id: "suffix-i", text: "-i" },
+                    { id: "suffix-am", text: "-am" },
+                      { id: "suffix-e", text: "-e" },
+                    { id: "suffix-et", text: "-et" }
+                  ]
+                }
+              ]
+            }
+          },
+            
+            // 18. Audio Meaning: Hast|i (TRACKED)
+            audioMeaning({ kind: "suffix", baseId: "hast", suffixId: "i" } as const),
+            
+            // 19. Text Sequence: Shoma ahle Iran hast|i? (TRACKED)
+            textSequence(
+              "Shoma ahle Iran hasti?",
+              "Are you from Iran",
+              [
+                "shoma",
+                "ahle",
+                "Iran", // Plain string - not tracked
+                { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+              ]
+            ),
+            
+            // 20. Audio Sequence: Shoma ahle Iran hast|i? (TRACKED)
+            audioSequence(
+              [
+                "shoma",
+                "ahle",
+                "Iran", // Plain string - not tracked
+                { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+              ],
+              "Are you from Iran"
+            ),
+            
+            // 21. Review: Matching - Grammar forms and base words
+            matching([
+              { kind: "suffix", baseId: "hast", suffixId: "am" } as const,
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const,
+              "hast",
+              "ahle"
+            ]),
+            
+            // 22. Review: Vocab Quiz - Ahle (What does "ahle" mean?)
+            vocabQuiz(vocabulary, "ahle", "vocab-reverse"),
+            
+            // 23. Review: Text Sequence - Combining with previous vocab
+            textSequence(
+              "Salam, man ahle Iran hastam",
+              "Hello I am from Iran",
+              [
+                "salam",
+                "man",
+                "ahle",
+                "Iran", // Plain string - not tracked
+                { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+              ]
+            ),
+            
+            // 24. Final Challenge: Salam shoma ahle Iran hasti? Baleh, man ahle Iran hastam
+            final(vocabulary, [
+              "salam",
+              "shoma",
+              "ahle",
+              "Iran", // Plain string - not tracked
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const,
+              "baleh",
+              "man",
+              { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+            ], {
+              conversationFlow: {
+                description: "A conversation asking where someone is from",
+                expectedPhrase: "Hello are you from Iran yes I am from Iran"
+              },
+              title: "Asking Where Someone Is From"
+            })
+          ]
+        };
+      })(),
+      // Module 3 Lesson 2: Where Are You From? (Continued)
+      (() => {
+        const vocabulary = createVocabulary("module3-lesson2", {
+          ids: ["koja"],
+          en: ["Where"],
+          fa: ["کجا"],
+          finglish: ["Koja"],
+          phonetic: ["ko-JAH"]
+        });
+
+        return {
+          id: "lesson2",
+          title: "Where Are You From? (Continued)",
+          description: "Today you'll learn how to ask someone where they're from using the question 'Shoma ahle koja hasti?'",
+          emoji: "🌍",
+        progress: 0,
+        locked: false,
+          vocabulary,
+        steps: [
+            // 1. Welcome Intro
+          {
+            type: "welcome",
+              title: "Where Are You From? (Continued)",
+              description: "Today you'll learn how to ask someone where they're from using the question 'Shoma ahle koja hasti?'",
+            points: 0,
+            data: {
+              objectives: [
+                  "Learn 'koja' (where)",
+                  "Ask 'Where are you from?' naturally",
+                  "Understand the question when hearing it",
+                  "Answer using what you learned in Lesson 1",
+                  "Review greetings and responses from previous lessons"
+                ],
+                lessonType: "grammar"
+              }
+            },
+            
+            // 2. Review: Audio Sequence - Lesson 1 structure
+            audioSequence(
+              [
+                "man",
+                "ahle",
+                "Iran", // Plain string
+                { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+              ],
+              "I am from Iran"
+            ),
+            
+            // 3. Review: Matching - Module 1 & 2 vocab
+            matching([
+              "khodafez",
+              "baleh",
+              "na",
+              "esm"
+            ]),
+            
+            // 4. Review: Audio Sequence - Lesson 1 structure
+            audioSequence(
+              [
+                "salam",
+                "man",
+                "ahle",
+                "Iran", // Plain string
+                { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+              ],
+              "Hello I am from Iran"
+            ),
+            
+            // 5. Review: Matching - Lesson 1 vocab
+            matching([
+              "ahle",
+              "man",
+              { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+            ]),
+            
+            // 6. Review: Audio Meaning - Hasti
+            audioMeaning({ kind: "suffix", baseId: "hast", suffixId: "i" } as const),
+            
+            // 7. Flashcard: Koja
+            flashcard(vocabulary, "koja"),
+            
+            // 8. MC Quiz: Koja
+            vocabQuiz(vocabulary, "koja", "vocab-normal"),
+            
+            // 9. Audio Meaning: Koja
+            audioMeaning("koja"),
+            
+            // 10. Matching: Ahle Koja Shoma Hast|i
+            matching([
+              "ahle",
+              "koja",
+              "shoma",
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+            ]),
+            
+            // 11. Text Sequence: Shoma ahle koja hast|i?
+            textSequence(
+              "Shoma ahle koja hasti?",
+              "Where are you from",
+              [
+                "shoma",
+                "ahle",
+                "koja",
+                { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+              ]
+            ),
+            
+            // 12. Audio Sequence: Shoma ahle koja hast|i?
+            audioSequence(
+              [
+                "shoma",
+                "ahle",
+                "koja",
+                { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+              ],
+              "Where are you from"
+            ),
+            
+            // 13. Review: Text Sequence - Module 1 response
+            textSequence(
+              "Salam chetori khoobam merci",
+              "Hello how are you I'm good thank you",
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
+              ]
+            ),
+            
+            // 14. Reverse Quiz: Which phrase means "Where are you from?"
+            vocabQuiz(
+              vocabulary,
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const,
+              "vocab-reverse"
+            ),
+            
+            // 15. Input Game: Shoma ahle ____ hasti?
+            input(
+              "How do you say 'Where are you from?' in Persian?",
+              "shoma-ahle-koja-hasti",
+              2,
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+            ),
+            
+            // 16. Review: Matching - Module 2 vocab
+            matching([
+              "esm",
+              { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+              "chiye",
+              "man"
+            ]),
+            
+            // 17. Matching: Ahle Koja Hast|am Hast|i Shoma
+            matching([
+              "ahle",
+              "koja",
+              { kind: "suffix", baseId: "hast", suffixId: "am" } as const,
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const,
+              "shoma"
+            ]),
+            
+            // 18. Text Sequence: Man ahle Iran hast|am (reinforcing answer)
+            textSequence(
+              "Man ahle Iran hastam",
+              "I am from Iran",
+              [
+                "man",
+                "ahle",
+                "Iran", // Plain string
+                { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+              ]
+            ),
+            
+            // 19. Review: Audio Sequence - Module 1 & 2 combined
+            audioSequence(
+              [
+                "salam",
+                "chetori",
+                { kind: "suffix", baseId: "khoob", suffixId: "am" } as const,
+                "merci"
+              ],
+              "Hello how are you I'm good thank you"
+            ),
+            
+            // 20. Audio Sequence: Salam shoma ahle koja hast|i?
+            audioSequence(
+              [
+                "salam",
+                "shoma",
+                "ahle",
+                "koja",
+                { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+              ],
+              "Hello where are you from"
+            ),
+            
+            // 21. PERSONALIZATION FIXED: Text Sequence - "Where is {userFirstName} from?"
+            textSequence(
+              "{userFirstName} ahle koja hast?",
+              "Where is {userFirstName} from",
+              [
+                "{userFirstName}", // Plain string - personalized, appears in word bank, not tracked as vocab
+                "ahle",
+                "koja",
+                "hast"
+              ]
+            ),
+            
+            // 22. Review: Text Sequence - Module 2 introduction pattern
+            textSequence(
+              "Salam, esme man {userFirstName}-e",
+              "Hello my name is {userFirstName}",
+              [
+                "salam",
+                { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
+                "man",
+                "{userFirstName}-e" // Plain string - personalized, appears in word bank, not tracked as vocab
+              ]
+            ),
+            
+            // 23. Text Sequence: Salam, shoma ahle koja hast|i?
+            textSequence(
+              "Salam, shoma ahle koja hasti?",
+              "Hello where are you from",
+              [
+                "salam",
+                "shoma",
+                "ahle",
+                "koja",
+                { kind: "suffix", baseId: "hast", suffixId: "i" } as const
+              ]
+            ),
+            
+            // 24. Audio Sequence: Baleh man ham ahle Iran hast|am
+            audioSequence(
+              [
+                "baleh",
+                "man",
+                "ham",
+                "ahle",
+                "Iran", // Plain string
+                { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+              ],
+              "Yes I am from Iran too"
+            ),
+            
+            // 25. Review: Matching - All vocab mix
+            matching([
+              "koja",
+              "ahle",
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const,
+              { kind: "suffix", baseId: "hast", suffixId: "am" } as const,
+              "shoma",
+              "salam"
+            ]),
+            
+            // 26. Final Challenge: Salam {userFirstName}, shoma ahle koja hasti? Man ahle Iran hastam
+            final(vocabulary, [
+              "salam",
+              "{userFirstName}", // Plain string - personalized, appears in word bank, not tracked as vocab
+              "shoma",
+              "ahle",
+              "koja",
+              { kind: "suffix", baseId: "hast", suffixId: "i" } as const,
+              "man",
+              "ahle",
+              "Iran", // Plain string - appears in word bank, not tracked as vocab
+              { kind: "suffix", baseId: "hast", suffixId: "am" } as const
+            ], {
+              conversationFlow: {
+                description: "A conversation asking where someone is from",
+                expectedPhrase: "Hello {userFirstName} where are you from I am from Iran"
+              },
+              title: "Asking Where Someone Is From"
+            })
+          ]
+        };
+      })()
+    ],
+    requiresPremium: true
   },
   {
     id: "module4",

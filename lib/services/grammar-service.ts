@@ -74,6 +74,22 @@ export function resolve(ref: LexemeRef): ResolvedLexeme {
   // ============================================================================
   
   if (typeof ref === 'string') {
+    // Handle placeholder strings (e.g., "{userFirstName}", "{userFirstName}-e", "Iran")
+    // These are personalized display strings, not vocabulary to track
+    if (ref.includes('{userFirstName}') || ref === 'Iran') {
+      return {
+        id: ref,
+        baseId: ref,
+        en: ref, // Will be replaced with actual name in UI
+        fa: ref,
+        finglish: ref, // Will be replaced with actual name in UI
+        phonetic: '',
+        lessonId: undefined,
+        semanticGroup: undefined,
+        isGrammarForm: false
+      };
+    }
+
     // Check if it's a grammar form ID (e.g., "khoob|am")
     if (ref.includes('|')) {
       const [baseId, suffixId] = ref.split('|');
