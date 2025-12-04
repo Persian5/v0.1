@@ -1587,7 +1587,7 @@ export const curriculumData: Module[] = [
               2,
               { kind: "suffix", baseId: "khoob", suffixId: "i" } as const
             ),
-            // 19. Final Challenge: Salam, esme shoma chiye? Esme man {userFirstName}-e khoshbakhtam. Man ham khoshbakhtam khodafez
+            // 19. Final Challenge: Salam, esme shoma chiye? Esme man {userFirstName}-e, man ham khoshbakhtam khodafez
             final(vocabulary, [
               "salam",
               { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
@@ -1596,7 +1596,6 @@ export const curriculumData: Module[] = [
               { kind: "suffix", baseId: "esm", suffixId: "e" } as const,
               "man",
               "{userFirstName}-e", // Plain string - personalized, appears in word bank, not tracked as vocab
-              "khoshbakhtam",
               "man",
               "ham",
               "khoshbakhtam",
@@ -1604,7 +1603,7 @@ export const curriculumData: Module[] = [
             ], {
               conversationFlow: {
                 description: "A complete 20-25 second Persian conversation",
-                expectedPhrase: "Hello what is your name my name is {userFirstName} nice to meet you nice to meet you too goodbye"
+                expectedPhrase: "Hello, what is your name? my name is {userFirstName}-e, nice to meet you too! Goodbye."
               },
               title: "Your First Real Conversation"
             })
@@ -2492,6 +2491,15 @@ export function getModules(): Module[] {
 
 export function getModule(moduleId: string): Module | undefined {
   return curriculumData.find(m => m.id === moduleId);
+}
+
+/**
+ * Get the actual lesson count for a module (fully automated)
+ * Always uses module.lessons.length - ignores hardcoded lessonCount values
+ * This ensures completion checks are always accurate even when lessons are added/removed
+ */
+export function getModuleLessonCount(module: Module): number {
+  return module.lessons?.length || 0;
 }
 
 export function getLesson(moduleId: string, lessonId: string) {

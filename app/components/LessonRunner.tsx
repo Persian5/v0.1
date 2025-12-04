@@ -742,14 +742,25 @@ export function LessonRunner({
             return { id: fallbackId, en: fallbackId, fa: fallbackId, finglish: fallbackId, phonetic: '', lessonId: '', isGrammarForm: false, baseId: null };
           }
         });
-        return {
-          words: resolved.map((lexeme, index) => ({
-            id: lexeme.id,
+        // CRITICAL FIX: Create unique IDs for duplicates by appending index
+        // This ensures words like "esme" appearing twice get unique IDs (esm|e-0, esm|e-1)
+        const wordsWithUniqueIds = resolved.map((lexeme, index) => {
+          // Check if this ID already exists (duplicate)
+          const isDuplicate = resolved.slice(0, index).some(l => l.id === lexeme.id);
+          const uniqueId = isDuplicate ? `${lexeme.id}-${index}` : lexeme.id;
+          
+          return {
+            id: uniqueId,
             text: replaceUserName(lexeme.finglish),
-            translation: replaceUserName(lexeme.en)
-          })),
-          targetWords: resolved.map(lexeme => lexeme.id),
-          persianSequence: resolved.map(lexeme => lexeme.id)
+            translation: replaceUserName(lexeme.en),
+            originalId: lexeme.id // Keep original for matching
+          };
+        });
+        
+        return {
+          words: wordsWithUniqueIds,
+          targetWords: wordsWithUniqueIds.map(w => w.id),
+          persianSequence: wordsWithUniqueIds.map(w => w.id)
         };
       } catch (err) {
         console.error('[LessonRunner] Failed to resolve final step lexemeRefs:', err);

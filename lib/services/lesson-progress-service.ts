@@ -575,11 +575,28 @@ export class LessonProgressService {
     const module = modules.find(m => m.id === moduleId);
     if (!module) return false;
     
-    const completedLessonsInModule = progressData.filter(p => 
-      p.module_id === moduleId && p.status === 'completed'
-    ).length;
+    // CRITICAL: Modules with no lessons are never complete
+    const actualLessonCount = module.lessons?.length || 0;
+    if (actualLessonCount === 0) return false;
     
-    return completedLessonsInModule === module.lessonCount;
+    // STRICT CHECK: Verify EVERY lesson in the module is completed
+    // This ensures we don't just count matches, but verify each lesson individually
+    const validLessonIds = new Set(module.lessons.map(l => l.id));
+    
+    // Build set of completed lesson IDs from progress data (only valid ones)
+    const completedLessonIds = new Set<string>()
+    progressData.forEach(p => {
+      if (
+        p.module_id === moduleId && 
+        p.status === 'completed' &&
+        validLessonIds.has(p.lesson_id)
+      ) {
+        completedLessonIds.add(p.lesson_id)
+      }
+    })
+    
+    // Check that EVERY lesson in the module has a completed entry
+    return module.lessons.every(lesson => completedLessonIds.has(lesson.id))
   }
 
   /**
@@ -606,11 +623,21 @@ export class LessonProgressService {
     const module = modules.find(m => m.id === moduleId);
     if (!module) return 0;
     
+    // AUTOMATED: Only count completed lessons that exist in current curriculum
+    // This filters out deleted lessons from the database
+    const validLessonIds = new Set(module.lessons.map(l => l.id));
     const completedLessonsInModule = progressData.filter(p => 
-      p.module_id === moduleId && p.status === 'completed'
+      p.module_id === moduleId && 
+      p.status === 'completed' &&
+      validLessonIds.has(p.lesson_id) // Only count lessons that exist in curriculum
     ).length;
     
-    return Math.round((completedLessonsInModule / module.lessonCount) * 100);
+    // AUTOMATED: Use actual lesson count from module.lessons.length
+    // This ensures completion percentages are always accurate even when lessons are added/removed
+    const actualLessonCount = module.lessons?.length || 0;
+    
+    if (actualLessonCount === 0) return 0;
+    return Math.round((completedLessonsInModule / actualLessonCount) * 100);
   }
 
   /**

@@ -58,7 +58,7 @@ export function ModuleTile({
         {/* Lesson Count Badge */}
         {lessonCount !== undefined && (
           <div className="absolute -top-2 -right-2 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm z-20 border-2 border-white whitespace-nowrap">
-            {lessonCount} {lessonCount === 1 ? 'Lesson' : 'Lessons'}
+            {lessonCount === 0 ? 'Coming Soon' : `${lessonCount} ${lessonCount === 1 ? 'Lesson' : 'Lessons'}`}
           </div>
         )}
 

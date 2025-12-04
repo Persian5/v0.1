@@ -400,7 +400,12 @@ export default function ModulePage() {
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-white rounded-full shadow-sm border">
                 <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>
                 <span className="text-xs sm:text-sm text-gray-600">
-                    {allProgress.filter(p => p.module_id === moduleId && p.status === 'completed').length} of {lessons.length} lessons completed
+                    {/* AUTOMATED: Only count completed lessons that exist in current curriculum (filters out deleted lessons) */}
+                    {allProgress.filter(p => 
+                      p.module_id === moduleId && 
+                      p.status === 'completed' &&
+                      lessons.some(lesson => lesson.id === p.lesson_id)
+                    ).length} of {lessons.length} lessons completed
                 </span>
               </div>
             </div>

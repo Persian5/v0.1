@@ -4,7 +4,7 @@ export interface Module {
   title: string;
   description: string;
   emoji?: string;
-  lessonCount: number;
+  lessonCount?: number; // DEPRECATED: Use getModuleLessonCount() helper instead. Kept for backward compatibility.
   estimatedTime: string;
   available: boolean;
   requiresPremium?: boolean; // True for modules that require paid subscription (Module 2+)

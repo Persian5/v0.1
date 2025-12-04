@@ -117,9 +117,21 @@ export default function ModulesPage() {
     return getModules().map((module, index) => {
     // Compute access status client-side using cached data
     const requiresPremium = module.requiresPremium ?? false
-    const prerequisitesComplete = isAuthenticated ? 
-      LessonProgressService.isModuleCompletedFast(index > 0 ? getModules()[index - 1].id : 'module1', effectiveProgressData) :
-      true // Non-authenticated users see everything as "accessible" (will be gated on click)
+    
+    // CRITICAL: Check ALL previous modules are complete, not just the immediate previous one
+    let prerequisitesComplete = true
+    if (isAuthenticated && index > 0) {
+      const allModules = getModules()
+      // Check all modules before this one
+      for (let i = 0; i < index; i++) {
+        const prevModule = allModules[i]
+        const isPrevComplete = LessonProgressService.isModuleCompletedFast(prevModule.id, effectiveProgressData)
+        if (!isPrevComplete) {
+          prerequisitesComplete = false
+          break
+        }
+      }
+    }
     
     const showPremiumBadge = requiresPremium && !hasPremium
     const showCompletionLock = !showPremiumBadge && !prerequisitesComplete && index > 0
@@ -145,11 +157,21 @@ export default function ModulesPage() {
     let buttonClass = "w-full bg-[#E8F5E9] hover:bg-[#C8E6C9] text-[#1E7B57] font-semibold py-3 rounded-lg transition-colors"
     let uiState: 'locked' | 'completed' | 'current' | 'available' = 'available'
 
+    // Check if module is unlocked but has no content
+    const hasNoContent = module.lessons.length === 0
+    
     // Premium badge state (free user, requires premium)
     if (showPremiumBadge) {
       buttonText = "Unlock Premium"
       buttonIcon = <Crown className="mr-2 h-4 w-4" />
       buttonClass = "w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-lg transition-colors"
+      uiState = 'locked'
+    }
+    // Coming Soon state (unlocked but no content)
+    else if (canAccess && hasNoContent) {
+      buttonText = "Coming Soon"
+      buttonIcon = <Lock className="mr-2 h-4 w-4" />
+      buttonClass = "w-full bg-gray-300 text-gray-600 cursor-not-allowed font-semibold py-3 rounded-lg"
       uiState = 'locked'
     }
     // Completion lock state (paid user, prerequisites incomplete)
@@ -159,26 +181,46 @@ export default function ModulesPage() {
       buttonClass = "w-full bg-gray-300 text-gray-600 cursor-not-allowed font-semibold py-3 rounded-lg"
       uiState = 'locked'
     }
-    
-    // Generate prerequisite message
-    let prerequisiteMessage: string | undefined
-    if (showCompletionLock && index > 0) {
-      const previousModule = getModules()[index - 1]
-      prerequisiteMessage = `Complete Module ${index} first`
+    // Normal access states (only if not coming soon)
+    else if (!hasNoContent) {
+      if (moduleCompletionInfo.isCompleted) {
+        buttonText = "Module Complete"
+        buttonIcon = <CheckCircle className="mr-2 h-4 w-4" />
+        buttonClass = "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors"
+        uiState = 'completed'
+      } else if (moduleCompletionInfo.completionPercentage > 0) {
+        buttonText = "Continue Module"
+        buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
+        buttonClass = "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+        uiState = 'current' // In-progress modules are "current"
+      } else {
+        uiState = 'available' // New modules are "available"
+      }
     }
-    // Normal access states
-    else if (moduleCompletionInfo.isCompleted) {
-      buttonText = "Module Complete"
-      buttonIcon = <CheckCircle className="mr-2 h-4 w-4" />
-      buttonClass = "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors"
-      uiState = 'completed'
-    } else if (moduleCompletionInfo.completionPercentage > 0) {
-      buttonText = "Continue Module"
-      buttonIcon = <PlayCircle className="mr-2 h-4 w-4" />
-      buttonClass = "w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
-      uiState = 'current' // In-progress modules are "current"
-    } else {
-      uiState = 'available' // New modules are "available"
+    
+    // Generate prerequisite message (only for modules that need prerequisites, not coming soon)
+    let prerequisiteMessage: string | undefined
+    if (!prerequisitesComplete && index > 0 && !(canAccess && hasNoContent)) {
+      // Find which previous module is incomplete
+      const allModules = getModules()
+      let incompleteModuleIndex = -1
+      for (let i = 0; i < index; i++) {
+        const prevModule = allModules[i]
+        const isPrevComplete = isAuthenticated ? 
+          LessonProgressService.isModuleCompletedFast(prevModule.id, effectiveProgressData) : 
+          false
+        if (!isPrevComplete) {
+          incompleteModuleIndex = i
+          break
+        }
+      }
+      
+      if (incompleteModuleIndex >= 0) {
+        const incompleteModule = allModules[incompleteModuleIndex]
+        prerequisiteMessage = `Complete ${incompleteModule.title} first`
+      } else {
+        prerequisiteMessage = `Complete previous modules first`
+      }
     }
 
     return {
@@ -195,7 +237,7 @@ export default function ModulesPage() {
       buttonIcon,
       buttonClass,
       uiState,
-      lessonCount: module.lessons.length,
+      lessonCount: hasNoContent ? 0 : module.lessons.length, // 0 for coming soon modules
       prerequisiteMessage
     }
     })
@@ -215,21 +257,37 @@ export default function ModulesPage() {
   
   const completedLessons = useMemo(() => {
     if (!isAuthenticated) return 0
-    // Count unique completed lessons from progress data
+    
+    // CRITICAL: Only count completed lessons that exist in current curriculum
+    // This filters out deleted lessons from the database to prevent >100% progress
+    const modules = getModules()
+    const validLessonKeys = new Set<string>()
+    
+    // Build set of valid lesson keys (module-lesson combinations that exist)
+    modules.forEach(module => {
+      module.lessons.forEach(lesson => {
+        validLessonKeys.add(`${module.id}-${lesson.id}`)
+      })
+    })
+    
+    // Count only completed lessons that exist in current curriculum
     const completedSet = new Set<string>()
     effectiveProgressData.forEach((p) => {
+      const lessonKey = `${p.module_id}-${p.lesson_id}`
       const isCompleted = 
         !!p.completed_at || 
         p.progress_percent === 100 || 
         p.status === 'completed'
-      if (isCompleted) {
-        completedSet.add(`${p.module_id}-${p.lesson_id}`)
+      
+      // Only count if lesson exists in current curriculum
+      if (isCompleted && validLessonKeys.has(lessonKey)) {
+        completedSet.add(lessonKey)
       }
     })
     return completedSet.size
   }, [isAuthenticated, effectiveProgressData])
   
-  const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+  const progressPercent = totalLessons > 0 ? Math.min(Math.round((completedLessons / totalLessons) * 100), 100) : 0
 
   // OPTIMISTIC RENDERING: Show skeleton only if data not loaded yet
   if (!isLoaded) {
