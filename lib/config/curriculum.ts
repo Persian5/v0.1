@@ -11,7 +11,6 @@ export const curriculumData: Module[] = [
     title: "Module 1: Greetings & Politeness",
     description: "Start a conversation the right way. Learn how to say hello, goodbye, thank you, please, and the difference between formal and casual tone.",
     emoji: "👋",
-    lessonCount: 6,
     estimatedTime: "30 minutes",
     available: true,
     lessons: [
@@ -651,7 +650,6 @@ export const curriculumData: Module[] = [
     title: "Module 2: Responses & Feelings",
     description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
     emoji: "😊",
-    lessonCount: 4,
     estimatedTime: "60 minutes",
     available: true,
     requiresPremium: true,
@@ -1845,7 +1843,6 @@ export const curriculumData: Module[] = [
     title: "Module 3: Family & Relationships",
     description: "Describe your family or ask about someone else's. Includes parents, siblings, friends, and possessive structures.",
     emoji: "👪",
-    lessonCount: 1,
     estimatedTime: "15 minutes",
     available: true,
     lessons: [
@@ -2399,7 +2396,6 @@ export const curriculumData: Module[] = [
     title: "Module 4: Food & Ordering at a Restaurant",
     description: "Order like a pro. Learn how to ask for the check, express what you want or don't want, and talk about Persian dishes.",
     emoji: "🍽️",
-    lessonCount: 5,
     estimatedTime: "40 minutes",
     available: false,
     requiresPremium: true,
@@ -2410,7 +2406,6 @@ export const curriculumData: Module[] = [
     title: "Module 5: Daily Activities & Routines",
     description: "Talk about your daily schedule. Wake up, go to work or school, and describe habits and everyday actions.",
     emoji: "📅",
-    lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
     requiresPremium: true,
@@ -2421,7 +2416,6 @@ export const curriculumData: Module[] = [
     title: "Module 6: Getting Around (Travel & Directions)",
     description: "Navigate with ease. Ask for directions, take taxis, and find locations using common travel vocabulary.",
     emoji: "🚕",
-    lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
     requiresPremium: true,
@@ -2432,7 +2426,6 @@ export const curriculumData: Module[] = [
     title: "Module 7: Feelings & Small Talk",
     description: "Talk about how you feel. Learn casual check-ins, emotions, and how to keep a conversation going.",
     emoji: "😊",
-    lessonCount: 3,
     estimatedTime: "25 minutes",
     available: false,
     requiresPremium: true,
@@ -2443,7 +2436,6 @@ export const curriculumData: Module[] = [
     title: "Module 8: Persian Slang & Humor",
     description: "Speak like a true Tehrani. Learn playful, everyday expressions used with friends and family.",
     emoji: "😎",
-    lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
     requiresPremium: true,
@@ -2454,7 +2446,6 @@ export const curriculumData: Module[] = [
     title: "Module 9: Shopping, Prices & Bargaining",
     description: "Ask how much, negotiate prices, and describe items by size, color, and quality.",
     emoji: "🛍️",
-    lessonCount: 3,
     estimatedTime: "25 minutes",
     available: false,
     requiresPremium: true,
@@ -2465,7 +2456,6 @@ export const curriculumData: Module[] = [
     title: "Module 10: Celebrations & Holidays",
     description: "Join the fun. Learn phrases for Nowruz, Yalda, birthdays, weddings, and other cultural events.",
     emoji: "🎉",
-    lessonCount: 3,
     estimatedTime: "30 minutes",
     available: false,
     requiresPremium: true,
@@ -2476,7 +2466,6 @@ export const curriculumData: Module[] = [
     title: "Module 11: Story Mode – A Day in Tehran",
     description: "Practice what you've learned in an interactive choose-your-path story through real-life situations.",
     emoji: "📚",
-    lessonCount: 4,
     estimatedTime: "45 minutes",
     available: false,
     requiresPremium: true,
@@ -2495,7 +2484,7 @@ export function getModule(moduleId: string): Module | undefined {
 
 /**
  * Get the actual lesson count for a module (fully automated)
- * Always uses module.lessons.length - ignores hardcoded lessonCount values
+ * Always uses module.lessons.length - lesson counts are now fully automated
  * This ensures completion checks are always accurate even when lessons are added/removed
  */
 export function getModuleLessonCount(module: Module): number {

@@ -11,10 +11,9 @@
   title: "Module 1: Greetings & Politeness",
   description: "Start a conversation the right way. Learn how to say hello, goodbye, thank you, please, and the difference between formal and casual tone.",
   emoji: "👋",
-  lessonCount: 5,
   estimatedTime: "25 minutes",
   available: true,
-  lessons: [ /* 5 lessons below */ ]
+  lessons: [ /* lessons are automatically counted from this array */ ]
 }
 ```
 
@@ -211,7 +210,6 @@
   title: "Module 2: Responses & Feelings",
   description: "Learn to express how you feel and respond naturally. Master essential phrases for describing your state and using intensifiers.",
   emoji: "😊",
-  lessonCount: 3,
   estimatedTime: "60 minutes",
   available: true,
   requiresPremium: true,
