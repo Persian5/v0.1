@@ -113,7 +113,7 @@ export class AuthService {
       }
 
       return { error: null }
-    } catch (error) {
+    } catch {
       return { error: { message: 'An unexpected error occurred during sign out' } }
     }
   }
@@ -260,7 +260,7 @@ export class AuthService {
       }
 
       return { error: null }
-    } catch (err: any) {
+    } catch {
       return { error: { message: 'Failed to change password' } }
     }
   }

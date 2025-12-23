@@ -52,7 +52,7 @@ export function LessonIntro({
   backgroundImageAlt = "Background image",
   foregroundImage,
   foregroundImageAlt = "Character image",
-  missionTitle = "Let's Get Started!",
+  missionTitle: _missionTitle = "Let's Get Started!",
   missionDescription = "Welcome to this lesson!",
   missionInstructions = "Your objectives:",
   

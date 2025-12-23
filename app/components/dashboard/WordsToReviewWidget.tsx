@@ -26,7 +26,7 @@ interface WordsToReviewWidgetProps {
 }
 
 export function WordsToReviewWidget({ wordsToReview, isLoading }: WordsToReviewWidgetProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [_expanded, setExpanded] = useState(false)
   const [displayedCount, setDisplayedCount] = useState(3)
   const [vocabDefinitions, setVocabDefinitions] = useState<Map<string, VocabularyItem>>(new Map())
 

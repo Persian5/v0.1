@@ -13,17 +13,6 @@ type LeaderboardUser = {
   created_at: string
 }
 
-// In-memory cache for leaderboard data
-// TTL: 2 minutes (120000ms)
-// Reduces database load for frequently accessed leaderboard
-interface CacheEntry {
-  data: any
-  timestamp: number
-}
-
-const cache: Record<string, CacheEntry> = {}
-const CACHE_TTL = 0 // No cache - always query fresh data from database
-
 // Rate limiting: Simple in-memory tracker (upgrade to Redis for production)
 const rateLimit: Record<string, { count: number; resetTime: number }> = {}
 const RATE_LIMIT_WINDOW = 60000 // 1 minute
@@ -135,10 +124,7 @@ export async function GET(request: NextRequest) {
       { auth: { persistSession: false } }
     )
     
-    // 5. Get authenticated user (optional, for "You are here" feature)
-    // Note: We can't get user from service role client, so leaderboard is fully public
-    // Users can still see their rank by matching their profile ID client-side if needed
-    const user = null // Always null for public leaderboard
+    // Note: Leaderboard is public. Users can see their rank by matching profile ID client-side.
     
     // DEBUG: Log database connection details
     console.log('🔍 Leaderboard API Database Connection:', {
@@ -288,28 +274,6 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // CRITICAL: For the specific user in question, always query directly for comparison
-    // This helps identify if it's a query issue or database replication issue
-    const currentUserInResults = topUsers?.find((u: LeaderboardUser) => u.display_name === 'Armee E.' || u.id === '881a4bff-589f-46b8-b4ba-517cb6822e4c')
-    let directQueryResult = null
-    if (currentUserInResults) {
-      const { data: directCheck, error: directError } = await supabase
-        .from('user_profiles')
-        .select('total_xp, updated_at')
-        .eq('id', currentUserInResults.id)
-        .single()
-      
-      directQueryResult = {
-        leaderboardQueryXp: currentUserInResults.total_xp,
-        directQueryXp: directCheck?.total_xp,
-        updatedAt: directCheck?.updated_at,
-        match: currentUserInResults.total_xp === directCheck?.total_xp,
-        error: directError?.message
-      }
-      
-      console.log('🔍 CRITICAL: Direct XP check for Armee E.:', directQueryResult)
-    }
-    
     // 7. Calculate ranks and sanitize
     const top = (topUsers || []).map((user: LeaderboardUser, index: number) => {
       const rank = offset + index + 1
@@ -344,8 +308,7 @@ export async function GET(request: NextRequest) {
             xp: u.total_xp,
             rawXp: u.total_xp
           })),
-          queryError: (topError as { message?: string } | null)?.message || null,
-          directQueryComparison: directQueryResult // This shows if leaderboard query matches direct query
+          queryError: (topError as { message?: string } | null)?.message || null
         }
       })
     }

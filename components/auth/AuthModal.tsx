@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,8 +36,7 @@ export function AuthModal({
   verificationToken,
   verificationType
 }: AuthModalProps) {
-  const router = useRouter()
-  const { signIn, signUp, resendVerification, sendPasswordReset, user, isEmailVerified } = useAuth() // Added sendPasswordReset
+  const { signIn, signUp, resendVerification, sendPasswordReset, user, isEmailVerified } = useAuth()
   
   const [mode, setMode] = useState<AuthMode>(initialMode || 'signup')
   const [email, setEmail] = useState('')
@@ -453,7 +451,7 @@ export function AuthModal({
         // Show success message briefly
         setTimeout(() => setResendSuccess(false), 5000)
       }
-    } catch (error) {
+    } catch {
       setError('Failed to resend verification email')
       setResendSuccess(false)
     } finally {
@@ -494,7 +492,7 @@ export function AuthModal({
            switchMode('signin')
         }, 5000)
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
     } finally {
       setIsProcessing(false)

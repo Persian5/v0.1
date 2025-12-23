@@ -74,7 +74,6 @@
 "use client"
 
 import { useState, useRef, useEffect, useMemo } from "react"
-import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { XpAnimation } from "./XpAnimation"
@@ -84,7 +83,7 @@ import { shuffle } from "@/lib/utils"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { deriveStepUid } from "@/lib/utils/step-uid"
 import { GrammarTrackingService } from "@/lib/services/grammar-tracking-service"
-import { generateGrammarOptions, type GrammarOption } from "@/lib/utils/grammar-options"
+import { generateGrammarOptions } from "@/lib/utils/grammar-options"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 
 export interface GrammarFillBlankProps {
@@ -112,7 +111,7 @@ export function GrammarFillBlank({
   moduleId,
   lessonId,
   stepIndex,
-  title,
+  title: _title,
   label,
   subtitle,
   points = 1,
@@ -261,7 +260,7 @@ export function GrammarFillBlank({
       
       // AUTO-SEMANTIC GROUP DETECTION: SIMPLIFIED - Only use if we have plenty of options
       // Disable auto-detection to prevent single-option banks - rely on manual curriculum tags only
-      let finalSemanticGroup = expectedSemanticGroup
+      const finalSemanticGroup = expectedSemanticGroup
       // Removed auto-detection to prevent issues - curriculum must explicitly specify if needed
       
       // DEBUG LOG: Before generating options
@@ -364,22 +363,6 @@ export function GrammarFillBlank({
     })
     return shuffled
   }, [rawOptions])
-
-  // Check if all blanks are filled correctly
-  const checkAllBlanks = () => {
-    if (hasMultipleBlanks) {
-      return blanks.every(blank => {
-        const answer = blankAnswers[blank.index]
-        const correctAnswer = blank.correctAnswer
-        return answer === correctAnswer
-      })
-    } else {
-      // Single blank (backward compatibility)
-      const answer = blankAnswers[0]
-      const correctAnswer = currentExercise.correctAnswer || ''
-      return answer === correctAnswer
-    }
-  }
 
   // Check if current blank is correct - FIXED: Always check the SPECIFIC blank, robust matching
   const checkCurrentBlank = (selectedText: string, blankIndexToCheck?: number) => {

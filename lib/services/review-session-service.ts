@@ -97,36 +97,10 @@ export class ReviewSessionService {
    * Note: This is approximate and may have edge cases around DST transitions.
    * For production, consider using a library like date-fns-tz.
    */
-  static calculateNextMidnightUTC(timezone: string): string {
+  static calculateNextMidnightUTC(_timezone: string): string {
     try {
       // Get current time
       const now = new Date()
-      
-      // Format current time in user's timezone to get date components
-      const formatter = new Intl.DateTimeFormat('en-CA', { // en-CA gives YYYY-MM-DD format
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
-      
-      const todayStr = formatter.format(now)
-      const [year, month, day] = todayStr.split('-').map(Number)
-      
-      // Create date object for tomorrow midnight in user's timezone
-      // We'll create a date string that represents midnight in that timezone
-      const tomorrowMidnightStr = `${year}-${String(month).padStart(2, '0')}-${String(day + 1).padStart(2, '0')}T00:00:00`
-      
-      // Parse as if it were in the user's timezone
-      // JavaScript Date doesn't handle timezones well, so we'll use a workaround:
-      // Create a date object and adjust for timezone offset
-      
-      // Get timezone offset for the user's timezone at that date
-      const testDate = new Date(tomorrowMidnightStr + 'Z') // Start with UTC
-      const offsetFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        timeZoneName: 'longOffset'
-      })
       
       // Simpler approach: just add 24 hours from now, rounded to next midnight
       // This is good enough for MVP
@@ -235,7 +209,7 @@ export class ReviewSessionService {
       today.setHours(0, 0, 0, 0)
       const todayStart = today.toISOString()
       
-      const { data: transactions, error: txError } = await supabase
+      const { data: transactions } = await supabase
         .from('user_xp_transactions')
         .select('amount')
         .eq('user_id', userId)
@@ -308,10 +282,6 @@ export class ReviewSessionService {
       }
 
       // Use Unified XP Service
-      // We construct a unique stepUid based on the review action
-      // format: review:[gameType]:[actionId]
-      const stepUid = `review:${context.gameType}:${context.actionId}`
-      
       const { XpService } = await import('./xp-service')
       
       const result = await XpService.awardXpOnce({

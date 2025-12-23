@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase/client'
 
 function ResetPasswordContent() {
   const router = useRouter()
-  const { user, changePassword } = useAuth()
+  const { user } = useAuth()
   
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

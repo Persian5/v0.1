@@ -487,7 +487,7 @@ export class VocabularyTrackingService {
         }))
         .sort((a, b) => b.errorRate - a.errorRate) // Highest error rate first
         .slice(0, limit) // Top N hardest words
-        .map(({ errorRate, ...rest }) => rest) // Remove errorRate from output
+        .map(({ errorRate: _errorRate, ...rest }) => rest) // Remove errorRate from output
 
       return hardWordsWithErrorRate
 

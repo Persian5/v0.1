@@ -1,6 +1,4 @@
 import { Module, LessonStep, VocabularyItem } from "../types";
-import { ConversationFlowService } from "../services/conversation-flow-service";
-import { generateGrammarOptions } from "../utils/grammar-options";
 import { vocabQuiz, flashcard, input, audioMeaning, audioSequence, textSequence, matching, final } from "./curriculum-helpers";
 import { createVocabulary } from "./vocabulary-builder";
 
@@ -2518,18 +2516,6 @@ export function getLessonVocabulary(moduleId: string, lessonId: string): Vocabul
 }
 
 /**
- * Helper function to generate conversation flow for final challenges
- * Uses ConversationFlowService to create proper Persian conversation patterns
- */
-function createConversationFlow(
-  englishPhrase: string, 
-  vocabularyIds: string[]
-): { description: string; expectedPhrase: string; persianSequence: string[] } | undefined {
-  const flow = ConversationFlowService.generateConversationFlow(englishPhrase, vocabularyIds);
-  return flow || undefined;
-}
-
-/**
  * SYSTEMATIC PREVENTION: Helper function to generate complete reviewVocabulary arrays
  * This ensures all previous lesson vocabulary is available for audio sequences and other components
  * 
@@ -2559,19 +2545,3 @@ export function generateCompleteReviewVocabulary(moduleId: string, currentLesson
   
   return allPreviousVocab;
 }
-
-/**
- * Validation function to check if audio sequences have required vocabulary
- * This helps catch missing vocabulary issues during development
- */
-function validateAudioSequenceVocabulary(
-  sequenceIds: string[], 
-  availableVocab: string[]
-): { isValid: boolean; missingVocab: string[] } {
-  const missingVocab = sequenceIds.filter(id => !availableVocab.includes(id));
-  
-  return {
-    isValid: missingVocab.length === 0,
-    missingVocab
-  };
-} 

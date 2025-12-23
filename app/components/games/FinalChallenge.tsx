@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { X } from "lucide-react"
@@ -44,10 +42,10 @@ export interface FinalChallengeProps {
 export function FinalChallenge({ 
   words,
   targetWords,
-  title = "Final Challenge",
+  title: _title = "Final Challenge",
   description,
-  successMessage = "Perfect! You got the order right!",
-  incorrectMessage = "Almost there—let's try that order again!",
+  successMessage: _successMessage = "Perfect! You got the order right!",
+  incorrectMessage: _incorrectMessage = "Almost there—let's try that order again!",
   conversationFlow,
   points = 20, 
   onComplete,

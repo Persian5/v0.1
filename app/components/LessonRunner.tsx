@@ -16,8 +16,6 @@ import { XpService } from '@/lib/services/xp-service'
 import { LessonProgressService } from '@/lib/services/lesson-progress-service'
 import { VocabularyService } from '@/lib/services/vocabulary-service'
 import { VocabularyTrackingService } from '@/lib/services/vocabulary-tracking-service'
-import { getLessonVocabulary } from '@/lib/config/curriculum'
-import { ModuleProgressService } from '@/lib/services/module-progress-service'
 import { SyncService } from '@/lib/services/sync-service'
 import { useRouter } from 'next/navigation'
 import { deriveStepUid } from '@/lib/utils/step-uid'
@@ -55,7 +53,7 @@ export function LessonRunner({
   addXp, 
   progress, 
   onProgressChange,
-  currentView,
+  currentView: _currentView,
   onViewChange,
   onSaveState,
   onStepChange // NEW: Callback for step changes
@@ -134,8 +132,7 @@ export function LessonRunner({
     console.log(`[LessonRunner] State reset for lesson: ${moduleId}/${lessonId}`);
   }, [moduleId, lessonId]);
 
-  // Get all vocabulary for this lesson (including review vocabulary)
-  const currentLessonVocab = getLessonVocabulary(moduleId, lessonId);
+  // Get review vocabulary for this lesson
   const reviewVocab = VocabularyService.getReviewVocabulary(moduleId, lessonId);
   
   // SYSTEMATIC FIX: For vocabulary extraction, we need access to ALL curriculum vocabulary
@@ -281,9 +278,6 @@ export function LessonRunner({
           console.log(`🎯 [LessonRunner] Lesson completion triggered: ${moduleId}/${lessonId}`)
         })
 
-        // Check if this is a story lesson by checking structure (single story-conversation step)
-        const isStoryLesson = steps.length === 1 && steps[0].type === 'story-conversation';
-        
         // Track lesson completion for analytics
         console.log(`Lesson completed: ${moduleId}/${lessonId}`);
 
@@ -662,7 +656,7 @@ export function LessonRunner({
                 id: `slot${index + 1}`,
                 text: resolved.en
               };
-            } catch (err) {
+            } catch {
               const fallbackId = typeof ref === 'string' ? ref : `unknown-${index}`;
               return {
                 id: `slot${index + 1}`,
@@ -671,8 +665,8 @@ export function LessonRunner({
             }
           })
         };
-      } catch (err) {
-        console.error('[LessonRunner] Failed to resolve matching step lexemeRefs:', err);
+      } catch {
+        console.error('[LessonRunner] Failed to resolve matching step lexemeRefs');
         return null;
       }
     }
@@ -728,7 +722,7 @@ export function LessonRunner({
             // Try to resolve as vocabulary ID
             try {
               return GrammarService.resolve(ref);
-            } catch (error) {
+            } catch {
               // Not a valid vocab ID - treat as plain string
               return { id: ref, en: ref, fa: ref, finglish: ref, phonetic: '', lessonId: '', semanticGroup: undefined, isGrammarForm: false, baseId: null };
             }
@@ -836,13 +830,6 @@ export function LessonRunner({
   // NEW: Only trigger remediation after 2+ incorrect attempts (soft threshold)
   // DEPRECATED: This function is NO LONGER USED - remediation is handled by createVocabularyTracker
   // Keeping for backwards compatibility but it does nothing
-  const handleRemediationNeeded = (dataOrId?: any) => {
-    // DEPRECATED: Do nothing - remediation is now handled by createVocabularyTracker
-    // This prevents any double-tracking if this function is accidentally called
-    console.warn('handleRemediationNeeded is deprecated - remediation is handled by createVocabularyTracker');
-    return;
-  };
-
   // Complete current remediation and continue to next lesson step
   // Guard: prevent double completion (flashcard already advances, quiz already advances)
   const completeRemediation = () => {
@@ -975,32 +962,6 @@ export function LessonRunner({
     return undefined;
   };
 
-  // Create activity-specific XP handlers using the XP service
-  const createXpHandler = (activityType: 'flashcard' | 'quiz' | 'input' | 'matching' | 'final' | 'audio-meaning' | 'audio-sequence' | 'text-sequence' | 'story-conversation') => {
-    return () => {
-      const xpReward = XpService.getReward(
-        activityType === 'flashcard' ? 'FLASHCARD_FLIP' :
-        activityType === 'quiz' ? 'QUIZ_CORRECT' :
-        activityType === 'input' ? 'INPUT_CORRECT' :
-        activityType === 'matching' ? 'MATCHING_COMPLETE' :
-        activityType === 'audio-meaning' ? 'QUIZ_CORRECT' :
-        activityType === 'audio-sequence' ? 'MATCHING_COMPLETE' :
-        activityType === 'text-sequence' ? 'TEXT_SEQUENCE_COMPLETE' :
-        activityType === 'story-conversation' ? 'QUIZ_CORRECT' :
-        'FINAL_CHALLENGE'
-      );
-      
-      // Directly add XP amount instead of doing math with current total
-      addXp(xpReward.amount, xpReward.source, {
-        lessonId,
-        moduleId,
-        activityType,
-        stepIndex: idx,
-        isRemediation: isInRemediation
-      });
-    };
-  };
-  
   // Generic handler for all components except Flashcard
   const handleItemComplete = (wasCorrect: boolean = true) => {
     if (isInRemediation) {

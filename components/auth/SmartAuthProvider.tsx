@@ -124,7 +124,7 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error: null }
-    } catch (error) {
+    } catch {
       return { error: 'An unexpected error occurred' }
     }
   }
@@ -144,7 +144,7 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error: null }
-    } catch (error) {
+    } catch {
       return { error: 'An unexpected error occurred' }
     }
   }
@@ -175,7 +175,7 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error: null }
-    } catch (error) {
+    } catch {
       return { error: 'Failed to resend verification email' }
     }
   }
@@ -187,7 +187,7 @@ export function SmartAuthProvider({ children }: AuthProviderProps) {
         return { error: error.message }
       }
       return { error: null }
-    } catch (error) {
+    } catch {
       return { error: 'Failed to send password reset email' }
     }
   }

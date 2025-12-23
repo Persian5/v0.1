@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, LogOut, Settings, RotateCcw, Crown, CreditCard } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'

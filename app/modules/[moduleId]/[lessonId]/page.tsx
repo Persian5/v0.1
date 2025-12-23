@@ -3,13 +3,11 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Star, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { useXp } from "@/hooks/use-xp"
-import { VocabularyService } from "@/lib/services/vocabulary-service"
-import { getLesson, getModule, getLessonSteps, getLessonVocabulary } from "@/lib/config/curriculum"
+import { getLesson, getModule, getLessonSteps } from "@/lib/config/curriculum"
 import { LessonPreviewContent } from "@/components/previews/LessonPreviewContent"
 import { BlurredPreviewContainer } from "@/components/previews/BlurredPreviewContainer"
 import { NotFound } from "@/components/NotFound"
@@ -18,17 +16,14 @@ import CompletionView from "@/components/lesson/CompletionView"
 import SummaryView from "@/components/lesson/SummaryView"
 import { ModuleCompletion } from "@/app/components/ModuleCompletion"
 import { ModuleProgressService } from "@/lib/services/module-progress-service"
-import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
-import { useAuth } from "@/components/auth/AuthProvider"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import { LockScreen } from "@/components/LockScreen"
 import PageErrorBoundary from "@/components/errors/PageErrorBoundary"
 import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
-import { ModuleAccessService } from "@/lib/services/module-access-service"
 import { safeTelemetry } from "@/lib/utils/telemetry-safe"
 
 // Cache staleness threshold (60 seconds - lesson accessibility rarely changes mid-session)
@@ -43,12 +38,12 @@ function LessonPageContent() {
   const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
   const lessonId = typeof params.lessonId === 'string' ? params.lessonId : '';
   
-  const { xp, addXp, setXp } = useXp();
+  const { xp, addXp } = useXp();
   const initialViewParam = searchParamsNav.get('view');
   
   const [progress, setProgress] = useState(0);
   const [currentView, setCurrentView] = useState(initialViewParam === 'module-completion' ? 'module-completion' : 'welcome');
-  const [previousStates, setPreviousStates] = useState<any[]>([]);
+  const [_previousStates, setPreviousStates] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState(0); // NEW: Track current step number
   const [totalSteps, setTotalSteps] = useState(0); // NEW: Track total steps
   const [moduleTotalXp, setModuleTotalXp] = useState(0); // Module completion XP (derived from lesson progress)
@@ -584,22 +579,6 @@ function LessonPageContent() {
     )
   }
 
-  // Handle going back to the previous step
-  const handleBack = () => {
-    if (previousStates.length > 0) {
-      const previousState = previousStates.pop()!;
-      setProgress(previousState.progress);
-      // Tell LessonRunner to go back to the previous step
-      const lessonRunnerState = document.getElementById('lesson-runner-state');
-      if (lessonRunnerState) {
-        lessonRunnerState.dispatchEvent(new CustomEvent('go-back', { 
-          detail: { stepIndex: previousState.currentStep } 
-        }));
-      }
-      setPreviousStates([...previousStates]);
-    }
-  };
-
   const resetLesson = () => {
     setProgress(0);
     setCurrentView('welcome');
@@ -609,12 +588,6 @@ function LessonPageContent() {
   const handleViewSummary = () => {
     setCurrentView('summary');
   };
-
-  const getLearnedWords = () => {
-    // SummaryPage doesn't use this prop - it gets vocabulary directly from lesson config
-    // Return empty array to satisfy the interface
-    return []
-  }
 
   return (
     <PageErrorBoundary>

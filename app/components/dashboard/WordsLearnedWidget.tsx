@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { BookOpen, Trophy, AlertCircle } from "lucide-react"
+import { BookOpen } from "lucide-react"
 
 interface WordsLearnedWidgetProps {
   wordsLearned: number

@@ -37,10 +37,10 @@ function makeSupabaseServer() {
         get(name: string) {
           return store.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
+        set(_name: string, _value: string, _options: CookieOptions) {
           // no-op: not setting cookies from this route
         },
-        remove(name: string, options: CookieOptions) {
+        remove(_name: string, _options: CookieOptions) {
           // no-op
         },
       },

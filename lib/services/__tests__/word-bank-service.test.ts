@@ -388,7 +388,6 @@ describe('WordBankService', () => {
       });
 
       // Should include other greetings as distractors
-      const allTexts = result.allOptions.map(opt => opt.toLowerCase());
       expect(result.distractors.length).toBeGreaterThan(0);
       
       // At least some distractors should be from greetings group
@@ -583,7 +582,6 @@ describe('WordBankService', () => {
       });
 
       // "live" should appear, but "I do" should not appear as a separate distractor
-      const allTexts = result.allOptions.map(opt => opt.toLowerCase());
       // This is a complex test - in practice, "live" might not match vocab directly
       // but the contextual filtering should prevent "I do" from appearing separately
       expect(result.correctWords.length).toBeGreaterThan(0);
@@ -605,7 +603,6 @@ describe('WordBankService', () => {
         vocabularyBank,
       });
 
-      const allTexts = result.allOptions.map(opt => opt.toLowerCase());
       // "are you" and "you are" should not appear as distractors
       const distractorTexts = result.wordBankItems
         .filter(item => !item.isCorrect)

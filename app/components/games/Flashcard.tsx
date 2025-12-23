@@ -87,7 +87,7 @@ export function Flashcard({
   onXpStart,
   isFlipped: extFlipped,
   onFlip: extFlip,
-  showContinueButton,
+  showContinueButton: _showContinueButton,
   onVocabTrack,
   label = "NEW WORD",
   subtitle
@@ -104,7 +104,7 @@ export function Flashcard({
     }
   }, [vocabularyItem, vocabularyId]);
   const [localFlip, setLocalFlip] = useState(false)
-  const [localShowNext, setLocalShowNext] = useState(false)
+  const [_localShowNext, setLocalShowNext] = useState(false)
   const [showXp, setShowXp] = useState(false)
   const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false) // Track if step was already completed (local state)
   const [lastFlipState, setLastFlipState] = useState(false)
@@ -116,7 +116,6 @@ export function Flashcard({
   const startTime = useRef(Date.now())
 
   const isFlipped = extFlipped ?? localFlip
-  const showNext  = showContinueButton ?? localShowNext
 
   // Auto-play audio when component mounts (Persian side for vocabulary)
   useEffect(() => {

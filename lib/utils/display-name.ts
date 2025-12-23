@@ -79,7 +79,7 @@ export async function isDisplayNameAvailable(
   currentUserId: string
 ): Promise<{ available: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('user_profiles')
       .select('id')
       .eq('display_name', displayName.trim())

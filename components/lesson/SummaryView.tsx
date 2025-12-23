@@ -6,7 +6,6 @@ import { Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { getLesson } from "@/lib/config/curriculum"
-import type { Lesson } from "@/lib/types"
 
 interface SummaryViewProps {
   moduleId: string

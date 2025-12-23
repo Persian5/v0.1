@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { Volume2, RotateCcw } from "lucide-react"
+import { Volume2 } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem, LexemeRef, ResolvedLexeme } from "@/lib/types"
@@ -511,7 +511,7 @@ export function AudioMeaning({
 
       {/* Answer Options - Card Grid (2x2) */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-2">
-        {answerOptionsWithIndices.map((optionData, displayIndex) => {
+        {answerOptionsWithIndices.map((optionData) => {
           const actualIndex = optionData.originalIndex
           
               // Card styling

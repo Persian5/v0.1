@@ -1,5 +1,5 @@
 import { VocabularyItem } from '../types';
-import { getLesson, getModules, generateCompleteReviewVocabulary } from '../config/curriculum';
+import { getLesson, generateCompleteReviewVocabulary } from '../config/curriculum';
 import { AuthService } from './auth-service';
 import { DatabaseService } from '../supabase/database';
 

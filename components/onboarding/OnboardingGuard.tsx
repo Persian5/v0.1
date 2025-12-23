@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { OnboardingService } from '@/lib/services/onboarding-service'
-import { SmartAuthService } from '@/lib/services/smart-auth-service'
 import { OnboardingModal } from './OnboardingModal'
 
 /**

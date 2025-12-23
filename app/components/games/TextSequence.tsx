@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { Type, RotateCcw } from "lucide-react"
+import { Type } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { VocabularyItem, LexemeRef } from "@/lib/types"
 import { playSuccessSound } from "./Flashcard"
@@ -237,7 +237,7 @@ export function TextSequence({
         });
         
         // Track each word, replacing base IDs with composite IDs for grammar forms
-        perWordResults.forEach((result, index) => {
+        perWordResults.forEach((result) => {
           if (result.vocabularyId) {
             // Skip tracking placeholder strings (personalized names, not vocabulary)
             if (result.vocabularyId.includes('{userFirstName}') || result.vocabularyId === 'Iran') {
@@ -373,7 +373,6 @@ export function TextSequence({
             <div className="flex flex-wrap gap-1 sm:gap-2 justify-center content-center">
               {userOrder.map((wordKey, index) => {
                 const word = wordKey.split('-').slice(0, -1).join('-');
-                const wordIndex = parseInt(wordKey.split('-').slice(-1)[0]);
                 return (
                   <div
                     key={wordKey}

@@ -2,19 +2,16 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronRight, ChevronLeft, Star, Loader2 } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChevronRight, Loader2 } from "lucide-react"
 import { ModulePreviewContent } from "@/components/previews/ModulePreviewContent"
 import { BlurredPreviewContainer } from "@/components/previews/BlurredPreviewContainer"
 import { NotFound } from "@/components/NotFound"
 import { getModule } from "@/lib/config/curriculum"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
-import { AccountNavButton } from "@/app/components/AccountNavButton"
 import { useParams, useRouter } from "next/navigation"
 import { UserLessonProgress } from "@/lib/supabase/database"
 import { useSmartXp } from "@/hooks/use-smart-xp"
-import { XpService } from "@/lib/services/xp-service"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import { LockScreen } from "@/components/LockScreen"
@@ -35,7 +32,7 @@ export default function ModulePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { xp } = useSmartXp()
+  useSmartXp() // Keep hook for side effects
 
   // Get data from config
   const module = getModule(moduleId as string)
@@ -143,12 +140,6 @@ export default function ModulePage() {
       p.lesson_id === lessonId && 
       p.status === 'completed'
     )
-  }
-
-  // Helper function to get default accessibility for unauthenticated users
-  const getDefaultAccessibility = (moduleId: string, lessonId: string): boolean => {
-    // For unauthenticated users: Module 1 Lesson 1 is accessible, others are locked until auth
-    return moduleId === 'module1' && lessonId === 'lesson1'
   }
 
   // ======== INSTANT ACCESSIBILITY CALC (NO NETWORK LAG) ========

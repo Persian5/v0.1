@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Lightbulb, Volume2, CheckCircle } from "lucide-react"
+import { ArrowRight, Volume2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { XpAnimation } from "./XpAnimation"
 import { playSuccessSound } from "./Flashcard"
-import { getGrammarConcept, GrammarPhase, UseItExample, UseItInputExample, UseItQuizExample } from "@/lib/config/grammar-concepts"
+import { getGrammarConcept, UseItInputExample, UseItQuizExample } from "@/lib/config/grammar-concepts"
 import { AudioService } from "@/lib/services/audio-service"
 
 export interface GrammarConceptProps {

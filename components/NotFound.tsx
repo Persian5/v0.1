@@ -14,7 +14,7 @@ interface NotFoundProps {
  * User-friendly 404 component for invalid module/lesson IDs
  * Matches site theme and provides clear navigation options
  */
-export function NotFound({ type, moduleId, lessonId }: NotFoundProps) {
+export function NotFound({ type, moduleId: _moduleId, lessonId: _lessonId }: NotFoundProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center space-y-6 px-4 max-w-md">

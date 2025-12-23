@@ -1,4 +1,4 @@
-import { getModules, getModule } from '../config/curriculum';
+import { getModules } from '../config/curriculum';
 import { type Lesson, type LessonStep, type Module } from '../types';
 import { AuthService } from './auth-service';
 import { DatabaseService, UserLessonProgress } from '../supabase/database';
@@ -224,8 +224,10 @@ export class LessonProgressService {
           // Update legacy cache updater (if exists)
           this.updateProgressCache(updatedProgress)
           
-          // Update SmartAuthService cache
-          SmartAuthService['sessionCache']!.progress = updatedProgress
+          // Update SmartAuthService cache (null-safe)
+          if (SmartAuthService['sessionCache']) {
+            SmartAuthService['sessionCache'].progress = updatedProgress
+          }
           SmartAuthService.markProgressUpdated()
           
           // Verify completion exists in cache

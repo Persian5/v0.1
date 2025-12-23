@@ -1,11 +1,8 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
-import { PersianWordRush } from "@/app/components/games/PersianWordRush"
 import { useRouter, useSearchParams } from "next/navigation"
+import { PersianWordRush } from "@/app/components/games/PersianWordRush"
 import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
 import { ReviewFilter } from "@/lib/services/review-session-service"
 import { AuthGuard } from "@/components/auth/AuthGuard"

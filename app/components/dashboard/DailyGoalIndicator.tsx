@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Target, Zap, CheckCircle } from "lucide-react"
+import { Target, CheckCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"

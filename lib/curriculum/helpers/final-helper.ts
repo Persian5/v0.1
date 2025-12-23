@@ -1,5 +1,4 @@
 import { FinalStep, LexemeRef, VocabularyItem } from "../../types";
-import { GrammarService } from "../../services/grammar-service";
 
 /**
  * Options for final step generation

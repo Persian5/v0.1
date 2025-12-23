@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Heart, X, Trophy, Zap, ArrowRight } from "lucide-react"
+import { Heart, X, Zap, ArrowRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { VocabularyService } from "@/lib/services/vocabulary-service"
-import { XpService } from "@/lib/services/xp-service"
 import { VocabularyItem } from "@/lib/types"
 import { VocabularyProgressService } from "@/lib/services/vocabulary-progress-service"
 import { ReviewSessionService, ReviewFilter } from "@/lib/services/review-session-service"
@@ -86,9 +84,7 @@ export function PersianWordRush({
   // Track current word position for shake animations
   const currentPositionRef = useRef<number>(0)
   
-  // New animation states for word shake & explode
-  const [wordAnimationState, setWordAnimationState] = useState<'sliding' | 'shaking-green' | 'shaking-red' | 'exploding' | null>('sliding')
-  const [wordPosition, setWordPosition] = useState<{ x: number, y: number } | null>(null)
+  // Note: Animation states removed - were unused
 
   const { user, isEmailVerified } = useAuth()
 

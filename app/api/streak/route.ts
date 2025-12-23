@@ -6,7 +6,7 @@ import { StreakService } from '@/lib/services/streak-service'
  * GET /api/streak
  * Returns current streak for authenticated user
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient()
     
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
  * Manual streak refresh (for testing/debugging)
  * Note: Streak updates are automatic via trigger, but this can force a refresh
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const supabase = await createClient()
     

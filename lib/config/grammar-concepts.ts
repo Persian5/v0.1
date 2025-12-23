@@ -1,5 +1,3 @@
-import { VocabularyItem } from "../types";
-
 // Use It example types
 export interface UseItInputExample {
   type: 'input';

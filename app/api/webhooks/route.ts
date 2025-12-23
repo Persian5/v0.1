@@ -116,7 +116,7 @@ export async function POST(req: Request) {
                 : null,
               cancel_at_period_end: (sub as any).cancel_at_period_end ?? false,
             });
-          } catch (e) {
+          } catch (_e) {
             console.warn("Subscription not retrievable yet; will rely on later events.", subId);
           }
         }

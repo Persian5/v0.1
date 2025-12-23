@@ -77,7 +77,7 @@ export class StreakService {
       // Call the database function to update streak
       // This is the same function called by the XP trigger
       console.log(`🔄 Calling update_streak RPC for user: ${userId}`)
-      const { data, error } = await supabase.rpc('update_streak', {
+      const { error } = await supabase.rpc('update_streak', {
         p_user_id: userId
       })
       

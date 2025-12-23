@@ -164,7 +164,6 @@ export class XpService {
    */
   static getXpForNextLevel(totalXp: number): number {
     const currentLevel = this.getLevel(totalXp)
-    const xpNeededForCurrentLevel = (currentLevel - 1) * 100
     const xpNeededForNextLevel = currentLevel * 100
     return xpNeededForNextLevel - totalXp
   }
@@ -391,7 +390,7 @@ export class XpService {
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
           SmartAuthService.addXpOptimistic(-amount, 'rollback')
-        } catch (e) {}
+        } catch {}
         // Remove cache on error so user can retry
         if (typeof window !== 'undefined') {
           localStorage.removeItem(cacheKey)

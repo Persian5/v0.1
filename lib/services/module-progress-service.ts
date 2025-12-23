@@ -1,6 +1,6 @@
 import { getModule } from '../config/curriculum';
 import { LessonProgressService } from './lesson-progress-service';
-import { DatabaseService, UserLessonProgress } from '../supabase/database';
+import { DatabaseService } from '../supabase/database';
 import { AuthService } from './auth-service';
 
 export class ModuleProgressService {

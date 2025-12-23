@@ -94,7 +94,7 @@ export class WordBankService {
         const normalizedPart = part.toLowerCase().replace(/[?!.,]/g, '').trim();
         if (normalizedPart === normalizedContext) {
           // Found matching part - use it
-          let normalized = part.replace(/[?!.,]/g, '');
+          const normalized = part.replace(/[?!.,]/g, '');
           return normalized.replace(/\s+/g, ' ').trim();
         }
       }
@@ -104,7 +104,7 @@ export class WordBankService {
     const firstPart = parts[0];
     
     // Remove punctuation for storage consistency
-    let normalized = firstPart.replace(/[?!.,]/g, '');
+    const normalized = firstPart.replace(/[?!.,]/g, '');
     
     // Remove extra whitespace
     return normalized.replace(/\s+/g, ' ').trim();
@@ -242,7 +242,6 @@ export class WordBankService {
     // 2. Filling remaining slots with random vocabulary from learned vocab
     // 3. Showing fewer distractors if learned vocab is very limited
     let filteredVocabularyBank = vocabularyBank;
-    let fallbackLevel = 'none';
     
     if (FLAGS.USE_LEARNED_VOCAB_IN_WORDBANK && learnedVocabIds && learnedVocabIds.length > 0) {
       const learnedSet = new Set(learnedVocabIds);
@@ -261,7 +260,6 @@ export class WordBankService {
       // Semantic generation will handle insufficient words gracefully
       if (filtered.length > 0) {
         filteredVocabularyBank = filtered;
-        fallbackLevel = 'learned';
         
         if (FLAGS.LOG_WORDBANK) {
           console.log(
@@ -282,7 +280,6 @@ export class WordBankService {
           const currentLessonVocab = VocabularyService.getLessonVocabulary(moduleId, lessonId);
           if (currentLessonVocab.length > 0) {
             filteredVocabularyBank = currentLessonVocab;
-            fallbackLevel = 'current-lesson';
             
             if (FLAGS.LOG_WORDBANK) {
               console.log(
@@ -591,20 +588,6 @@ export class WordBankService {
       }
     });
     
-    // Now filter distractors: remove synonyms of correct items AND slash-separated translations
-    const correctSemanticGroups = new Set(
-      deduplicatedCorrectItems
-        .map(item => item.semanticGroup)
-        .filter((g): g is string => g !== undefined)
-    );
-    
-    // Build set of correct normalized word texts for comparison (with contraction expansion)
-    const correctWordTexts = new Set(
-      deduplicatedCorrectItems.map(item => 
-        this.expandContractions(item.wordText.toLowerCase().replace(/[?.,!]/g, '').trim())
-      )
-    );
-    
     // Filter distractors: remove synonyms and slash-separated translations
     const filteredDistractorItems = normalizedDistractorItems.filter(item => {
       // CRITICAL: Filter out ALL slash-separated translations from distractors
@@ -718,7 +701,7 @@ export class WordBankService {
   private static extractSemanticUnitsFromExpected(
     expectedTranslation: string,
     vocabularyBank: VocabularyItem[],
-    sequenceIds?: string[]
+    _sequenceIds?: string[]
   ): WordBankItem[] {
     const semanticUnits: WordBankItem[] = [];
     const usedVocabIds = new Set<string>();

@@ -106,7 +106,7 @@ export function useStreak(): UseStreakReturn {
 
   // Refresh streak manually
   const refreshStreak = useCallback(async () => {
-    let isMounted = true
+    const isMounted = true
     await loadStreak(() => isMounted)
   }, [loadStreak])
 

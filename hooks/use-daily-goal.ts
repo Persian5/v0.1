@@ -101,7 +101,7 @@ export function useDailyGoal(): UseDailyGoalReturn {
 
   // Refresh progress manually
   const refreshProgress = useCallback(async () => {
-    let isMounted = true
+    const isMounted = true
     await loadDailyGoal(() => isMounted)
   }, [loadDailyGoal])
 
@@ -123,7 +123,7 @@ export function useDailyGoal(): UseDailyGoalReturn {
       
       if (result.success) {
         // Reload data to get updated progress
-        let isMounted = true
+        const isMounted = true
         await loadDailyGoal(() => isMounted)
       }
       

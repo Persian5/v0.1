@@ -37,7 +37,7 @@ export class AudioService {
       });
       
       return true;
-    } catch (error) {
+    } catch {
       console.log(`Audio not available: ${audioPath}`);
       return false;
     }

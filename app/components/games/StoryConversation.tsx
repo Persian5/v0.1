@@ -23,7 +23,7 @@ interface ChatMessage {
   exchangeId: string;
 }
 
-export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryConversationProps) {
+export function StoryConversation({ step, onComplete, onXpStart, addXp: _addXp }: StoryConversationProps) {
   const { user } = useAuth();
   // Get user name from SmartAuthService cache (no localStorage)
   const cachedProfile = SmartAuthService.getCachedProfile();
@@ -266,11 +266,6 @@ export function StoryConversation({ step, onComplete, onXpStart, addXp }: StoryC
     onComplete();
   };
 
-  const restartStory = () => {
-    // Reset initialization flag and let useEffect handle re-initialization
-    hasInitialized.current = false;
-    setChatHistory([]);
-  };
 
   // REMOVED: Auto-scroll behavior
   // Messages now naturally stack upward (iMessage style)

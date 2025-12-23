@@ -18,7 +18,7 @@ export function ValidatedLetterInput({
   targetAnswer,
   onChange,
   onSubmit,
-  placeholder,
+  placeholder: _placeholder,
   disabled,
   className
 }: ValidatedLetterInputProps) {

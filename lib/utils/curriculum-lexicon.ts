@@ -97,7 +97,7 @@
  * ============================================================================
  */
 
-import { VocabularyItem, Module, LessonStep } from '../types'
+import { VocabularyItem, LessonStep } from '../types'
 import { getModules } from '../config/curriculum'
 
 // ============================================================================
@@ -319,9 +319,9 @@ export function buildLearnedCache(
   const baseConnectors = getBaseConnectors(moduleId, lessonId, lexicon)
   
   // Incremental building: each step adds new introductions
-  let currentVocabIds = [...baseVocabIds]
-  let currentSuffixes = [...baseSuffixes]
-  let currentConnectors = [...baseConnectors]
+  const currentVocabIds = [...baseVocabIds]
+  const currentSuffixes = [...baseSuffixes]
+  const currentConnectors = [...baseConnectors]
   
   for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
     const step = steps[stepIndex]

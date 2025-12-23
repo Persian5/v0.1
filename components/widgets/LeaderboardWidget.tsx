@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trophy, Medal, ArrowRight, Loader2 } from 'lucide-react'
+import { Trophy, ArrowRight, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface LeaderboardEntry {

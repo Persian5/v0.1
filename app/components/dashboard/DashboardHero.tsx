@@ -10,9 +10,9 @@ import { Trophy, Flame, Target, Zap } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
 export function DashboardHero() {
-  const { level, progress, isLoading: levelLoading, formattedLevel, formattedProgress } = useLevel()
+  const { level, progress, isLoading: levelLoading, formattedProgress } = useLevel()
   const { streak, isLoading: streakLoading, formattedStreak } = useStreak()
-  const { progress: dailyProgress, isLoading: goalLoading, formattedProgress: formattedDailyProgress } = useDailyGoal()
+  const { progress: dailyProgress, isLoading: goalLoading } = useDailyGoal()
   const totalXp = SmartAuthService.getUserXp()
 
   const isLoading = levelLoading || streakLoading || goalLoading

@@ -24,21 +24,13 @@ export default function CompletionView({
   moduleId,
   lessonId,
   xpGained,
-  resetLesson,
+  resetLesson: _resetLesson,
   handleViewSummary
 }: CompletionViewProps) {
   const router = useRouter()
   const { xp: totalXp } = useSmartXp()
   const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [premiumModuleTitle, setPremiumModuleTitle] = useState<string | undefined>(undefined)
-  
-  const handleReset = () => {
-    if (resetLesson) {
-      resetLesson()
-    } else {
-      router.push(`/modules/${moduleId}/${lessonId}`)
-    }
-  }
   
   const navigateToSummary = () => {
     if (handleViewSummary) {

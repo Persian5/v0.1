@@ -583,7 +583,7 @@ export class SmartAuthService {
   /**
    * Add XP optimistically (immediate UI feedback before DB confirms)
    */
-  static addXpOptimistic(amount: number, source: string): void {
+  static addXpOptimistic(amount: number, _source: string): void {
     if (!this.sessionCache) return
     
     const oldXp = this.sessionCache.totalXp
@@ -740,7 +740,7 @@ export class SmartAuthService {
       await this.initializeSession()
       
       return result
-    } catch (error) {
+    } catch {
       return { user: null, error: { message: 'Sign in failed' } }
     }
   }

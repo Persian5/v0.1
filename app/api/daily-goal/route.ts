@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic' // Required for cookies/auth
  * GET /api/daily-goal
  * Returns current daily goal and progress for authenticated user
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient()
     

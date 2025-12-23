@@ -1,5 +1,5 @@
 import { motion } from "framer-motion"
-import { Check, Lock, Star } from "lucide-react"
+import { Check, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface ModuleTileProps {
@@ -16,7 +16,7 @@ export interface ModuleTileProps {
 }
 
 export function ModuleTile({ 
-  id, 
+  id: _id, 
   title, 
   emoji, 
   description,

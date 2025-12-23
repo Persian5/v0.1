@@ -1,5 +1,4 @@
 import { useState, useMemo, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { XpAnimation } from "./XpAnimation"

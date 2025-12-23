@@ -18,10 +18,10 @@ export async function hasPremiumAccess(): Promise<boolean> {
         get(name: string) {
           return store.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
+        set(_name: string, _value: string, _options: CookieOptions) {
           // no-op: not setting cookies from this utility
         },
-        remove(name: string, options: CookieOptions) {
+        remove(_name: string, _options: CookieOptions) {
           // no-op
         },
       },
@@ -61,10 +61,10 @@ export async function getSubscriptionDetails() {
         get(name: string) {
           return store.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
+        set(_name: string, _value: string, _options: CookieOptions) {
           // no-op
         },
-        remove(name: string, options: CookieOptions) {
+        remove(_name: string, _options: CookieOptions) {
           // no-op
         },
       },

@@ -1,5 +1,4 @@
 import { AudioMeaningStep, LexemeRef } from "../../types";
-import { GrammarService } from "../../services/grammar-service";
 
 /**
  * Internal helper function to generate audio-meaning steps

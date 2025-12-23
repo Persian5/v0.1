@@ -21,8 +21,8 @@ interface ProgressOverviewProps {
   progressLoading?: boolean
 }
 
-export function ProgressOverview({ wordsLearned, masteredWords, wordsToReview = 0, isLoading, sharedProgress, progressLoading }: ProgressOverviewProps) {
-  const { level, progress, isLoading: levelLoading } = useLevel()
+export function ProgressOverview({ wordsLearned, masteredWords, isLoading, sharedProgress, progressLoading }: ProgressOverviewProps) {
+  const { isLoading: levelLoading } = useLevel()
   const { user } = useAuth()
   const [lessonsCompleted, setLessonsCompleted] = useState(0)
   const [lessonsLoading, setLessonsLoading] = useState(true)

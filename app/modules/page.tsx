@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { Lock, CheckCircle, PlayCircle, Crown, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getModules } from "@/lib/config/curriculum"
@@ -15,7 +14,6 @@ import { usePremium } from "@/hooks/use-premium"
 import { SmartAuthService } from "@/lib/services/smart-auth-service"
 import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
-import type { Module } from "@/lib/types"
 import { ModuleSnakePath } from "@/app/components/modules/ModuleSnakePath"
 
 interface ModuleAccessStatus {
@@ -27,15 +25,11 @@ interface ModuleAccessStatus {
   showCompletionLock: boolean
 }
 
-interface ModuleWithAccessStatus extends Module {
-  accessStatus: ModuleAccessStatus
-}
-
 export default function ModulesPage() {
   const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [selectedModuleTitle, setSelectedModuleTitle] = useState<string>("")
   const router = useRouter()
-  const { xp } = useSmartXp()
+  useSmartXp() // Keep hook for side effects
   const { user, isEmailVerified, isLoading: authLoading } = useAuth()
   const { hasPremium: hookHasPremium, isLoading: premiumLoading } = usePremium()
   const { progressData, isProgressLoading } = useProgress()
@@ -242,12 +236,6 @@ export default function ModulesPage() {
     }
     })
   }, [isLoaded, hasPremium, isAuthenticated, effectiveProgressData])
-
-  const highlightModule = useMemo(() => {
-    const inProgress = modules.find(module => module.uiState === 'current')
-    if (inProgress) return inProgress
-    return modules.find(module => module.uiState === 'available') || null
-  }, [modules])
 
   // Calculate progress based on lessons, not modules
   // Must be called before any conditional returns (React hooks rule)

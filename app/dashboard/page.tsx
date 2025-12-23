@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { usePathname } from "next/navigation"
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { WelcomeCard } from "@/app/components/dashboard/WelcomeCard"

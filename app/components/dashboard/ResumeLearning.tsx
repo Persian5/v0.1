@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Play, BookOpen, CheckCircle2, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { cn } from "@/lib/utils"
 import { getModules } from "@/lib/config/curriculum"
 import { motion } from "framer-motion"
 

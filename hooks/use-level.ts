@@ -103,7 +103,7 @@ export function useLevel(): UseLevelReturn {
 
   // Refresh level manually
   const refreshLevel = useCallback(async () => {
-    let isMounted = true
+    const isMounted = true
     await loadLevel(() => isMounted)
   }, [loadLevel])
 

@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { ModuleTile } from "./ModuleTile"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"

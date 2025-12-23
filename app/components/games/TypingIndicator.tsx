@@ -5,7 +5,7 @@ interface TypingIndicatorProps {
   characterEmoji: string;
 }
 
-export function TypingIndicator({ characterName, characterEmoji }: TypingIndicatorProps) {
+export function TypingIndicator({ characterName: _characterName, characterEmoji }: TypingIndicatorProps) {
   return (
     <div className="flex items-start gap-2 mb-2">
       {/* Character Avatar */}

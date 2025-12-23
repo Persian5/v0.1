@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Home, BookOpen, RotateCcw, Trophy, Crown, Settings, LogOut, X, BarChart3 } from 'lucide-react'
@@ -19,7 +18,7 @@ interface MobileMenuProps {
  * Mobile navigation menu with slide-in drawer animation
  * Auto-closes on navigation or escape key
  */
-export function MobileMenu({ isOpen, onClose, variant = 'default', onOpenAuthModal }: MobileMenuProps) {
+export function MobileMenu({ isOpen, onClose, variant: _variant = 'default', onOpenAuthModal }: MobileMenuProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { user, signOut } = useAuth()

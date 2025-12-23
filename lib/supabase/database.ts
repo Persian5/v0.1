@@ -1,5 +1,4 @@
 import { supabase } from './client'
-import { createClient } from './server'
 import type { User } from '@supabase/supabase-js'
 import { withAuthRetry } from '../utils/with-auth-retry'
 import { generateDefaultDisplayName } from '../utils/display-name'

@@ -99,7 +99,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
       }
       setIsSaving(false)
       return true
-    } catch (err) {
+    } catch {
       setError('Failed to save. Please try again.')
       setIsSaving(false)
       return false
@@ -150,7 +150,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
       setIsLoading(false)
       onComplete?.()
       onClose()
-    } catch (err) {
+    } catch {
       setError('Failed to complete onboarding. Please try again.')
       setIsLoading(false)
     }

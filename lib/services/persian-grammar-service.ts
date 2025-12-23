@@ -60,7 +60,6 @@ export class PersianGrammarService {
     expectedTranslation: string
   ): GrammarTransformation[] {
     const result: GrammarTransformation[] = [];
-    const expectedWords = expectedTranslation.toLowerCase().split(' ');
     let sequenceIndex = 0;
     
     while (sequenceIndex < sequence.length) {

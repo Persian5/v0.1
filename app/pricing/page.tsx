@@ -2,20 +2,16 @@
 
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { SubscribeButton } from "@/components/SubscribeButton";
 
 export default function PricingPage() {
   const router = useRouter()
-  const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  // Client-side mount detection removed - not needed
 
   const handleStartLearning = () => {
     router.push('/modules')

@@ -13,7 +13,7 @@
  *     → { id: "khoobam", baseId: "khoob", en: "I'm good", isGrammarForm: true, ... }
  */
 
-import { LexemeRef, GrammarRef, ResolvedLexeme, VocabId } from '../types';
+import { LexemeRef, GrammarRef, ResolvedLexeme } from '../types';
 import { VocabularyService } from './vocabulary-service';
 
 // ============================================================================

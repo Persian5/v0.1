@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { Volume2, RotateCcw } from "lucide-react"
+import { Volume2 } from "lucide-react"
 import { XpAnimation } from "./XpAnimation"
 import { AudioService } from "@/lib/services/audio-service"
 import { VocabularyItem, LexemeRef, ResolvedLexeme } from "@/lib/types"
@@ -34,7 +34,7 @@ export function AudioSequence({
   lexemeSequence, // NEW: Optional LexemeRef[] for grammar forms
   vocabularyBank,
   points = 3,
-  autoPlay = false,
+  autoPlay: _autoPlay = false,
   expectedTranslation, // Add support for custom translation
   targetWordCount, // Add support for custom word count
   maxWordBankSize = 12, // Default max 12 options for better variety while manageable
@@ -277,7 +277,7 @@ export function AudioSequence({
     // Track how many times we've seen each wordText to handle duplicates
     // CRITICAL: Use stable displayKeys based on wordText + occurrence, NOT array index
     const wordTextCounts = new Map<string, number>()
-    wordBankResult.allOptions.forEach((wordText, displayIndex) => {
+    wordBankResult.allOptions.forEach((wordText) => {
       const normalizedKey = wordText.toLowerCase()
       const count = wordTextCounts.get(normalizedKey) || 0
       wordTextCounts.set(normalizedKey, count + 1)

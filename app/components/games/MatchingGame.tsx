@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Button } from "../../../components/ui/button"
 import { XpAnimation } from "./XpAnimation"
 import { motion, AnimatePresence } from "framer-motion"
 import { playSuccessSound } from "./Flashcard"
@@ -101,7 +100,7 @@ export function MatchingGame({
   } | null>(null)
   const [startTime] = useState(Date.now()) // Track start time for per-match tracking
   const [trackedMatches, setTrackedMatches] = useState<Set<string>>(new Set()) // Track which pairs have been tracked
-  const [matchAttemptTimes, setMatchAttemptTimes] = useState<Record<string, number>>({}) // Track when each match was attempted
+  const [_matchAttemptTimes, setMatchAttemptTimes] = useState<Record<string, number>>({}) // Track when each match was attempted
 
   /**
    * Find vocabulary ID for a matching pair

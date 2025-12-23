@@ -33,7 +33,6 @@ export function HardWordsWidget({ hardWords, isLoading }: HardWordsWidgetProps) 
     if (hardWords.length === 0) return
 
     const loadDefinitions = () => {
-      const definitions = new Map<string, VocabularyItem>()
       const wordsToLoad = hardWords.slice(0, 10)
       
       setVocabDefinitions(prev => {
