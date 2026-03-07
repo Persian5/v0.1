@@ -152,8 +152,44 @@ function LessonPageContent() {
               }
             }
             
-            if (accessData && !accessData.canAccess && accessData.reason === 'no_premium') {
-              // User doesn't have premium → show premium modal
+            if (accessData) {
+              if (!accessData.canAccess && accessData.reason === 'no_premium') {
+                setAppState({
+                  isLoading: false,
+                  isAuthenticated: true,
+                  isAccessible: false,
+                  showAuthModal: false,
+                  showPremiumModal: true,
+                  showLockScreen: false,
+                  lockType: null,
+                  lockMessage: '',
+                  missingPrerequisites: [],
+                  error: null
+                })
+                return
+              }
+              if (!accessData.canAccess && accessData.reason === 'incomplete_prerequisites') {
+                const missingModules = accessData.missingPrerequisites || []
+                const firstMissingModule = missingModules[0] ? getModule(missingModules[0]) : null
+                const message = firstMissingModule
+                  ? `Complete ${firstMissingModule.title} first to unlock this lesson.`
+                  : 'Complete previous modules first to unlock this lesson.'
+                setAppState({
+                  isLoading: false,
+                  isAuthenticated: true,
+                  isAccessible: false,
+                  showAuthModal: false,
+                  showPremiumModal: false,
+                  showLockScreen: true,
+                  lockType: 'prerequisites',
+                  lockMessage: message,
+                  missingPrerequisites: missingModules,
+                  error: null
+                })
+                return
+              }
+            } else {
+              // No accessData: fetch failed or !response.ok — fail closed (show paywall)
               setAppState({
                 isLoading: false,
                 isAuthenticated: true,
@@ -168,32 +204,22 @@ function LessonPageContent() {
               })
               return
             }
-            
-            // STEP 2: Check prerequisites (if premium check passed)
-            if (accessData && !accessData.canAccess && accessData.reason === 'incomplete_prerequisites') {
-              const missingModules = accessData.missingPrerequisites || []
-              const firstMissingModule = missingModules[0] ? getModule(missingModules[0]) : null
-              const message = firstMissingModule
-                ? `Complete ${firstMissingModule.title} first to unlock this lesson.`
-                : 'Complete previous modules first to unlock this lesson.'
-              
-              setAppState({
-                isLoading: false,
-                isAuthenticated: true,
-                isAccessible: false,
-                showAuthModal: false,
-                showPremiumModal: false,
-                showLockScreen: true,
-                lockType: 'prerequisites',
-                lockMessage: message,
-                missingPrerequisites: missingModules,
-                error: null
-              })
-              return
-            }
           } catch (error) {
             console.error('Failed to check premium/prerequisites:', error)
-            // On error, continue to sequential check (fail open for now)
+            // Fail closed: show paywall so we never expose premium content on error
+            setAppState({
+              isLoading: false,
+              isAuthenticated: true,
+              isAccessible: false,
+              showAuthModal: false,
+              showPremiumModal: true,
+              showLockScreen: false,
+              lockType: null,
+              lockMessage: '',
+              missingPrerequisites: [],
+              error: null
+            })
+            return
           }
         }
         

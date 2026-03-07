@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Zap, Trophy, Target, BookOpen, Brain, Headphones } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { VocabularyProgressService } from "@/lib/services/vocabulary-progress-service"
 import { useAuth } from "@/components/auth/AuthProvider"
 import { ReviewFilterModal } from "@/app/components/review/ReviewFilterModal"
-import { ReviewFilter } from "@/lib/services/review-session-service"
+import { ReviewFilter, ReviewSessionService } from "@/lib/services/review-session-service"
 
 export default function ReviewPage() {
   const [mounted, setMounted] = useState(false)
@@ -27,7 +26,8 @@ export default function ReviewPage() {
     setMounted(true)
   }, [])
 
-  // Load vocabulary count when user is authenticated
+  // Load vocabulary using same source as review games (VocabularyTrackingService via ReviewSessionService)
+  // So hub and games agree: if games have words, hub shows "Play now"; if not, both say complete lessons.
   useEffect(() => {
     const loadVocabulary = async () => {
       if (!mounted || !user || !isEmailVerified) {
@@ -37,13 +37,9 @@ export default function ReviewPage() {
 
       try {
         setIsLoadingVocabulary(true)
-        const [count, hasVocab] = await Promise.all([
-          VocabularyProgressService.getUserVocabularyCount(),
-          VocabularyProgressService.hasVocabularyForPractice()
-        ])
-        
-        setVocabularyCount(count)
-        setHasVocabulary(hasVocab)
+        const words = await ReviewSessionService.getVocabularyForFilter(user.id, 'all-learned', 500)
+        setVocabularyCount(words.length)
+        setHasVocabulary(words.length > 0)
       } catch (error) {
         console.error('Failed to load vocabulary information:', error)
         setVocabularyCount(0)

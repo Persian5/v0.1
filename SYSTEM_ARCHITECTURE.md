@@ -1,251 +1,153 @@
 # System Architecture
 
-## 🏗️ **Current Technical State**
+**Reference document.** For daily priorities, see `MASTER_PROJECT_OPERATING_DOC.md`.
 
-### **Data Flow Architecture**
-```
-curriculum.ts → Services → React Components → localStorage → Supabase (planned)
-```
+---
 
-**Core Flow:**
-1. **Content Source**: All lessons, vocabulary, and structure defined in `lib/config/curriculum.ts`
-2. **Service Layer**: Business logic handled by dedicated services
-3. **Component Layer**: React components consume data via props and service calls
-4. **Storage Layer**: Currently localStorage, migrating to Supabase before launch
-5. **Routing**: Dynamic navigation based on user progress state
-
-### **Service Architecture**
-
-**XpService** (`lib/services/xp-service.ts`)
-- Manages experience point rewards and calculations
-- Handles XP formatting and display
-- Defines reward amounts per activity type
-- Storage: `global-user-xp` in localStorage
-
-**LessonProgressService** (`lib/services/lesson-progress-service.ts`)
-- Tracks lesson completion status
-- Provides dynamic navigation logic
-- Methods:
-  - `getFirstAvailableLesson()` - finds first incomplete lesson
-  - `getNextSequentialLesson()` - finds sequential next lesson regardless of completion
-  - `markLessonCompleted()` - updates progress
-- Storage: `user-lesson-progress` as `{"module1-lesson1": boolean}`
-
-**VocabularyService** (`lib/services/vocabulary-service.ts`)
-- Manages vocabulary learning progress
-- Tracks words learned per lesson
-- Storage: `vocabulary-progress` as lesson-specific word arrays
-
-### **Lesson Structure System**
-
-**Flexible Step Architecture:**
-```typescript
-interface LessonStep {
-  type: 'welcome' | 'flashcard' | 'quiz' | 'input' | 'matching' | 'final'
-  points: number
-  data: StepTypeData
-}
-```
-
-**Current Step Types:**
-- `welcome` - Lesson introduction with objectives
-- `flashcard` - Vocabulary cards with pronunciation
-- `quiz` - Multiple choice questions
-- `input` - Text input exercises
-- `matching` - Drag and drop word matching
-- `final` - Conversation challenge scenarios
-
-**Extensibility**: New game types can be added by:
-1. Adding new step type to interface
-2. Creating component for the game
-3. Adding handler in LessonRunner
-4. No changes needed to existing lessons
-
-### **Vocabulary System**
-
-**Structure:**
-```typescript
-interface VocabularyItem {
-  id: string
-  en: string        // English translation
-  fa: string        // Farsi script
-  finglish: string  // Romanized Persian
-  phonetic: string  // Pronunciation guide
-  lessonId: string  // "module1-lesson1"
-  audio?: string    // Future: audio file path
-}
-```
-
-**Dynamic Integration:**
-- Flashcards can reference vocabulary by ID
-- Lessons build vocabulary progressively
-- Summary pages show lesson-specific learned words
-- Backward compatibility maintained for legacy flashcard data
-
-### **Routing Architecture**
-
-**Dynamic Navigation:**
-- NO hardcoded lesson paths (e.g., `/modules/module1/lesson1`)
-- All navigation uses progress services
-- Routes automatically adapt to user state
-
-**Navigation Points:**
-- Homepage "Preview Lesson" → `LessonProgressService.getFirstAvailableLesson()`
-- Account "Continue Learning" → `LessonProgressService.getFirstAvailableLesson()`
-- Completion "Next Lesson" → `LessonProgressService.getNextSequentialLesson()`
-- Fallback to module1/lesson1 if all complete
-
-### **State Management**
-
-**Current Pattern:**
-- React state for component-level UI state
-- localStorage for persistence
-- Service layer abstracts storage implementation
-- Props down, events up pattern
-
-**Migration Strategy:**
-- Services provide abstraction layer
-- Storage implementation can be swapped without component changes
-- localStorage → Supabase transition invisible to UI layer
-
-### **Component Hierarchy**
-
-**Core Reusable Components:**
-- `LessonRunner` - orchestrates lesson flow
-- `Flashcard` - vocabulary presentation
-- `Quiz` - multiple choice interactions
-- `InputExercise` - text input challenges
-- `MatchingGame` - drag and drop
-- `FinalChallenge` - conversation scenarios
-
-**Page Components:**
-- Lesson pages (`/modules/[moduleId]/[lessonId]`)
-- Completion pages
-- Summary pages
-- Module overview pages
-
-**Layout Components:**
-- Header with dynamic navigation
-- Progress bars
-- XP displays
-
-### **Authentication Architecture (Planned)**
-
-**Supabase Integration:**
-- Email/password authentication
-- OAuth providers (Google, Apple)
-- Email verification required
-- Session management
-- Row Level Security (RLS) policies
-
-**Data Migration:**
-```
-localStorage → Supabase Tables:
-- global-user-xp → users.total_xp
-- user-lesson-progress → lesson_progress table
-- vocabulary-progress → vocabulary_progress table
-```
-
-### **Payment Integration (Planned)**
-
-**Stripe Setup:**
-- Monthly subscription model ($4.99/month)
-- Module 1 free, Module 2+ behind paywall
-- Webhook handling for subscription events
-- Subscription status checking before lesson access
-
-### **Performance Considerations**
-
-**Current Optimizations:**
-- Lesson content lazy-loaded
-- Minimal re-renders in LessonRunner
-- Service layer caching
-- Optimized bundle size
-
-**Future Considerations:**
-- Audio file compression and CDN
-- Progressive lesson loading
-- Offline capability for completed lessons
-
-### **Error Handling**
-
-**Current Strategy:**
-- Graceful fallbacks in navigation services
-- Safe lesson loading with error boundaries
-- localStorage error catching
-- Network failure handling
-
-### **File Organization**
+## Data Flow
 
 ```
+curriculum.ts (content) --> Services (business logic) --> React Components (UI) --> Supabase (persistence)
+```
+
+1. **Content:** All lessons, vocabulary, and structure in `lib/config/curriculum.ts`
+2. **Services:** Business logic in `lib/services/*.ts` (static methods, error handling, Supabase calls)
+3. **Components:** React components consume data via props and service calls
+4. **Storage:** Supabase (primary), localStorage (XP cache, animation timestamps only)
+5. **Routing:** Dynamic navigation based on user progress via `LessonProgressService`
+
+---
+
+## Services
+
+| Service | File | Purpose |
+|---------|------|---------|
+| SmartAuthService | `lib/services/smart-auth-service.ts` | Cached auth state, session management, XP cache, progress cache |
+| LessonProgressService | `lib/services/lesson-progress-service.ts` | Lesson completion, sequential access, navigation (getFirstAvailableLesson, getNextSequentialLesson) |
+| XpService | `lib/services/xp-service.ts` | XP awards (idempotent via stepUid v2), formatting, level calculation |
+| ModuleAccessService | `lib/services/module-access-service.ts` | Premium/prerequisite checks for module access |
+| VocabularyTrackingService | `lib/services/vocabulary-tracking-service.ts` | Word mastery, SRS scheduling, remediation, hard words |
+| VocabularyProgressService | `lib/services/vocabulary-progress-service.ts` | Practice vocabulary from completed lessons |
+| ReviewSessionService | `lib/services/review-session-service.ts` | Review game vocabulary, daily XP cap (1000), timezone management |
+| WordBankService | `lib/services/word-bank-service.ts` | Distractor generation for games (wrong answers that look plausible) |
+| DailyGoalService | `lib/services/daily-goal-service.ts` | Daily XP goal tracking |
+| GrammarService | `lib/services/grammar-service.ts` | Grammar form resolution for vocabulary |
+| OnboardingService | `lib/services/onboarding-service.ts` | Onboarding preferences |
+| AuthService | `lib/services/auth-service.ts` | Low-level auth helpers |
+| DatabaseService | `lib/supabase/database.ts` | Direct Supabase queries (used by other services) |
+
+---
+
+## Authentication (Active)
+
+- **Provider:** Supabase Auth (email/password)
+- **Session:** Managed by `SmartAuthService` with client-side caching
+- **Protection:** `AuthGuard` component wraps protected routes; `LessonRouteGuard` wraps completion/summary routes
+- **Email verification:** Required before accessing lessons; auto-polling detection
+- **OAuth:** Not implemented (deferred)
+
+---
+
+## Payments (Active)
+
+- **Provider:** Stripe (currently sandbox; LIVE setup is a launch blocker)
+- **Model:** $4.99/month subscription
+- **Flow:** `/api/checkout` creates Stripe Checkout session --> Stripe hosted page --> `/api/webhooks` handles events --> `user_subscriptions` table updated
+- **Access check:** `ModuleAccessService.canAccessModule()` (server) and `/api/check-module-access` (API) check `requiresPremium` flag + `user_subscriptions` table
+- **UI:** `PremiumLockModal` shown when access denied
+
+---
+
+## Lesson System
+
+**Step types:** `welcome`, `flashcard`, `quiz`, `input`, `matching`, `audio-meaning`, `audio-sequence`, `text-sequence`, `grammar-fill-blank`, `grammar-concept`, `story-conversation`, `final`
+
+**Flow:** `LessonRunner.tsx` orchestrates steps sequentially. Each step type has a game component in `app/components/games/`. Steps are defined in `curriculum.ts` per lesson.
+
+**Extensibility:** Add new step type by: (1) define type in `lib/types.ts`, (2) create game component, (3) add case in `LessonRunner`, (4) use in curriculum.
+
+---
+
+## Review System
+
+- **Hub:** `/review` -- shows available games, checks vocabulary availability
+- **Games:** Memory, Audio Definitions, Matching Marathon, Word Rush (each under `/review/[gameId]`)
+- **Vocabulary source:** `ReviewSessionService.getVocabularyForFilter()` --> `VocabularyTrackingService` --> `vocabulary_performance` table
+- **Filters:** `all-learned`, `mastered`, `hard-words`
+- **XP:** 1 XP per correct answer, 1000/day cap, timezone-aware reset
+
+---
+
+## Database
+
+See `database_schema.md` for full schema and `rls_policies.md` for RLS policies.
+
+**Key tables:** `user_profiles`, `user_lesson_progress`, `user_xp_transactions`, `vocabulary_performance`, `vocabulary_attempts`, `user_subscriptions`
+
+**Key RPCs:** `award_xp_unified()`, `update_streak()`
+
+---
+
+## File Organization
+
+```
+app/
+  page.tsx                          # Landing page
+  layout.tsx                        # Root layout (SmartAuthProvider, ConditionalHeader)
+  dashboard/page.tsx                # User dashboard
+  leaderboard/page.tsx              # Full leaderboard
+  modules/page.tsx                  # Module list
+  modules/[moduleId]/page.tsx       # Module detail (lesson list)
+  modules/[moduleId]/[lessonId]/
+    page.tsx                        # Lesson page (LessonRunner)
+    completion/page.tsx             # Post-lesson completion
+    summary/page.tsx                # Lesson summary
+  review/
+    page.tsx                        # Review hub
+    layout.tsx                      # Shared review layout
+    audio-definitions/page.tsx      # Game routes
+    memory-game/page.tsx
+    matching-marathon/page.tsx
+    word-rush/page.tsx
+  billing/                          # Payment success/cancel pages
+  api/
+    checkout/route.ts               # Stripe checkout session
+    webhooks/route.ts               # Stripe webhook handler
+    check-premium/route.ts          # Premium status check
+    check-module-access/route.ts    # Module access check
+    leaderboard/route.ts            # Leaderboard data
+    dashboard/route.ts              # Dashboard stats
+    streak/route.ts                 # Streak data
+    level/route.ts                  # Level data
+  components/
+    LessonRunner.tsx                # Core lesson orchestration
+    games/*.tsx                     # Game components
+    review/*.tsx                    # Review game wrappers
+    dashboard/*.tsx                 # Dashboard widgets
+
+components/
+  auth/                             # AuthProvider, AuthModal, AuthGuard
+  ui/                               # shadcn/ui components
+  routes/LessonRouteGuard.tsx       # Route protection
+  PremiumLockModal.tsx              # Paywall modal
+  lesson/CompletionView.tsx         # Lesson completion
+  onboarding/OnboardingModal.tsx    # Onboarding flow
+  errors/                           # Error boundaries
+  layout/                           # ConditionalHeader, AppHeader
+
 lib/
   config/
-    curriculum.ts          # Single source of truth for all content
-  services/
-    xp-service.ts         # XP management
-    lesson-progress-service.ts  # Progress tracking
-    vocabulary-service.ts # Vocabulary progress
-  types.ts               # TypeScript interfaces
+    curriculum.ts                   # ALL lesson content (single source of truth)
+    curriculum-helpers.ts           # Step builder helpers
+    semantic-groups.ts              # Vocabulary semantic groupings
+  services/*.ts                     # All business logic (see Services table above)
+  supabase/
+    client.ts                       # Supabase client
+    database.ts                     # DatabaseService
+  utils/                            # Helpers (subscription, rate-limit, greeting, etc.)
+  types.ts                          # TypeScript interfaces
+  curriculum/helpers/               # Per-step-type curriculum helpers
 
-app/
-  components/
-    LessonRunner.tsx      # Core lesson orchestration
-    games/               # Individual game components
-  modules/[moduleId]/[lessonId]/  # Dynamic lesson pages
+hooks/                              # React hooks (useLevel, useStreak, useDailyGoal, etc.)
+supabase/migrations/                # Database migrations (NEVER delete)
 ```
-
-### **Security Considerations**
-
-**Current:**
-- Client-side data validation
-- Safe localStorage usage
-- XSS prevention in content rendering
-
-**Planned (Supabase):**
-- Row Level Security policies
-- JWT token management
-- API rate limiting
-- Secure payment processing
-
-### **Monitoring & Analytics (Planned)**
-
-**User Behavior:**
-- Lesson completion rates
-- Time spent per lesson
-- Drop-off points
-- XP earning patterns
-
-**Technical Metrics:**
-- Page load times
-- Error rates
-- API response times
-- Payment success rates
-
----
-
-## 🔄 **Migration Timeline**
-
-### **Phase 1: Authentication**
-- Supabase project setup
-- User table creation
-- Auth integration
-- Email verification
-
-### **Phase 2: Data Migration**
-- Progress table creation
-- localStorage → Supabase migration service
-- Data preservation testing
-
-### **Phase 3: Payment Integration**
-- Stripe webhook setup
-- Subscription management
-- Paywall implementation
-
-### **Phase 4: Analytics**
-- Event tracking setup
-- Dashboard creation
-- Performance monitoring
-
----
-
-This architecture supports the core principle: **modular, scalable, and dynamic**. Every component can be extended without breaking existing functionality, and all content flows through the single source of truth in curriculum.ts. 

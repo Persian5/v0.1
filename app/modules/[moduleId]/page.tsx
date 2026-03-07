@@ -12,6 +12,7 @@ import { LessonProgressService } from "@/lib/services/lesson-progress-service"
 import { useParams, useRouter } from "next/navigation"
 import { UserLessonProgress } from "@/lib/supabase/database"
 import { useSmartXp } from "@/hooks/use-smart-xp"
+import { Button } from "@/components/ui/button"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import { LockScreen } from "@/components/LockScreen"
@@ -49,7 +50,8 @@ export default function ModulePage() {
         const { user, isEmailVerified, isReady } = await SmartAuthService.initializeSession()
         
         if (!isReady) {
-          // Still initializing
+          // Still initializing - must clear loading so UI can retry or show correctly
+          setIsLoading(false)
           return
         }
         
@@ -74,22 +76,20 @@ export default function ModulePage() {
               }
             }
             
-            // ✅ FIX: Show overlay instead of redirecting
-            if (accessData && !accessData.canAccess) {
-              if (accessData.reason === 'no_premium') {
-                // Show premium modal overlay
+            // Show overlay when no access or when we couldn't verify (fail closed for premium)
+            if (accessData) {
+              if (!accessData.canAccess && accessData.reason === 'no_premium') {
                 setShowPremiumModal(true)
                 setIsLoading(false)
                 return
-              } else if (accessData.reason === 'incomplete_prerequisites') {
-                // Show prerequisites lock screen
+              }
+              if (!accessData.canAccess && accessData.reason === 'incomplete_prerequisites') {
                 const missingModules = accessData.missingPrerequisites || []
                 const { getModule } = await import('@/lib/config/curriculum')
                 const firstMissingModule = missingModules[0] ? getModule(missingModules[0]) : null
                 const message = firstMissingModule
                   ? `Complete ${firstMissingModule.title} first to unlock this module.`
                   : 'Complete previous modules first to unlock this module.'
-                
                 setShowLockScreen(true)
                 setLockType('prerequisites')
                 setLockMessage(message)
@@ -97,10 +97,18 @@ export default function ModulePage() {
                 setIsLoading(false)
                 return
               }
+            } else {
+              // No accessData: fetch failed or !response.ok — fail closed for premium (show paywall)
+              setShowPremiumModal(true)
+              setIsLoading(false)
+              return
             }
           } catch (accessError) {
             console.error('Failed to check module access:', accessError)
-            // On error, continue to allow access (fail open for better UX)
+            // Fail closed: show paywall so we never expose premium content on error
+            setShowPremiumModal(true)
+            setIsLoading(false)
+            return
           }
         }
         
