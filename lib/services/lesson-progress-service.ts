@@ -423,22 +423,22 @@ export class LessonProgressService {
     const modules = getModules();
 
     // Loop through all modules in order
-    for (const module of modules) {
+    for (const currentModule of modules) {
       // Skip modules where available === false
-      if (!module.available) continue;
+      if (!currentModule.available) continue;
 
       // Within each module, go lesson by lesson
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         // Skip lessons where locked === true
         if (lesson.locked) continue;
 
         // Check if lesson is accessible and not completed
-        const isAccessible = await this.isLessonAccessible(module.id, lesson.id);
-        const isCompleted = await this.isLessonCompleted(module.id, lesson.id);
+        const isAccessible = await this.isLessonAccessible(currentModule.id, lesson.id);
+        const isCompleted = await this.isLessonCompleted(currentModule.id, lesson.id);
         
         if (isAccessible && !isCompleted) {
           return {
-            moduleId: module.id,
+            moduleId: currentModule.id,
             lessonId: lesson.id
           };
         }
@@ -460,25 +460,25 @@ export class LessonProgressService {
     let foundCurrent = false;
 
     // Loop through all modules in order
-    for (const module of modules) {
+    for (const currentModule of modules) {
       // Skip modules where available === false
-      if (!module.available) continue;
+      if (!currentModule.available) continue;
 
       // Within each module, go lesson by lesson
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         // Skip lessons where locked === true
         if (lesson.locked) continue;
 
         // If we found the current lesson in previous iteration, return this one
         if (foundCurrent) {
           return {
-            moduleId: module.id,
+            moduleId: currentModule.id,
             lessonId: lesson.id
           };
         }
 
         // Check if this is the current lesson
-        if (module.id === currentModuleId && lesson.id === currentLessonId) {
+        if (currentModule.id === currentModuleId && lesson.id === currentLessonId) {
           foundCurrent = true;
         }
       }
@@ -496,20 +496,20 @@ export class LessonProgressService {
     let previousLesson: AvailableLesson | null = null;
 
     // Loop through all modules in order
-    for (const module of modules) {
-      if (!module.available) continue;
+    for (const currentModule of modules) {
+      if (!currentModule.available) continue;
 
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         if (lesson.locked) continue;
 
         // If we found our target lesson, return the previous one
-        if (module.id === moduleId && lesson.id === lessonId) {
+        if (currentModule.id === moduleId && lesson.id === lessonId) {
           return previousLesson;
         }
 
         // Update previous lesson for next iteration
         previousLesson = {
-          moduleId: module.id,
+          moduleId: currentModule.id,
           lessonId: lesson.id
         };
       }
@@ -526,20 +526,20 @@ export class LessonProgressService {
     let previousLesson: AvailableLesson | null = null;
 
     // Loop through all modules in order
-    for (const module of modules) {
-      if (!module.available) continue;
+    for (const currentModule of modules) {
+      if (!currentModule.available) continue;
       
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         if (lesson.locked) continue;
         
         // If we found our target lesson, return the previous one
-        if (module.id === moduleId && lesson.id === lessonId) {
+        if (currentModule.id === moduleId && lesson.id === lessonId) {
           return previousLesson;
         }
 
         // Update previous lesson for next iteration
         previousLesson = {
-          moduleId: module.id,
+          moduleId: currentModule.id,
           lessonId: lesson.id
         };
       }
@@ -574,16 +574,16 @@ export class LessonProgressService {
     progressData: UserLessonProgress[]
   ): boolean {
     const modules = getModules();
-    const module = modules.find(m => m.id === moduleId);
-    if (!module) return false;
+    const moduleData = modules.find(m => m.id === moduleId);
+    if (!moduleData) return false;
     
     // CRITICAL: Modules with no lessons are never complete
-    const actualLessonCount = module.lessons?.length || 0;
+    const actualLessonCount = moduleData.lessons?.length || 0;
     if (actualLessonCount === 0) return false;
     
     // STRICT CHECK: Verify EVERY lesson in the module is completed
     // This ensures we don't just count matches, but verify each lesson individually
-    const validLessonIds = new Set(module.lessons.map(l => l.id));
+    const validLessonIds = new Set(moduleData.lessons.map(l => l.id));
     
     // Build set of completed lesson IDs from progress data (only valid ones)
     const completedLessonIds = new Set<string>()
@@ -598,7 +598,7 @@ export class LessonProgressService {
     })
     
     // Check that EVERY lesson in the module has a completed entry
-    return module.lessons.every(lesson => completedLessonIds.has(lesson.id))
+    return moduleData.lessons.every(lesson => completedLessonIds.has(lesson.id))
   }
 
   /**
@@ -622,12 +622,12 @@ export class LessonProgressService {
     progressData: UserLessonProgress[]
   ): number {
     const modules = getModules();
-    const module = modules.find(m => m.id === moduleId);
-    if (!module) return 0;
+    const moduleData = modules.find(m => m.id === moduleId);
+    if (!moduleData) return 0;
     
     // AUTOMATED: Only count completed lessons that exist in current curriculum
     // This filters out deleted lessons from the database
-    const validLessonIds = new Set(module.lessons.map(l => l.id));
+    const validLessonIds = new Set(moduleData.lessons.map(l => l.id));
     const completedLessonsInModule = progressData.filter(p => 
       p.module_id === moduleId && 
       p.status === 'completed' &&
@@ -636,7 +636,7 @@ export class LessonProgressService {
     
     // AUTOMATED: Use actual lesson count from module.lessons.length
     // This ensures completion percentages are always accurate even when lessons are added/removed
-    const actualLessonCount = module.lessons?.length || 0;
+    const actualLessonCount = moduleData.lessons?.length || 0;
     
     if (actualLessonCount === 0) return 0;
     return Math.round((completedLessonsInModule / actualLessonCount) * 100);

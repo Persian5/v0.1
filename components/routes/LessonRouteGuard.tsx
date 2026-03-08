@@ -65,7 +65,7 @@ export function LessonRouteGuard({
 
   // Check if lesson exists
   const lesson = getLesson(moduleId, lessonId)
-  const module = getModule(moduleId)
+  const moduleData = getModule(moduleId)
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -92,7 +92,7 @@ export function LessonRouteGuard({
 
       try {
         // STEP 1: Validate lesson exists
-        if (!lesson || !module) {
+        if (!lesson || !moduleData) {
           setGuardState({
             isLoading: false,
             isAuthorized: false,
@@ -131,7 +131,7 @@ export function LessonRouteGuard({
 
         // STEP 3: Check premium access FIRST (CRITICAL - prevents redirecting to premium content)
         // This applies to BOTH completion and summary routes
-        if (module.requiresPremium) {
+        if (moduleData.requiresPremium) {
           try {
             // Check cache first (30-second cache to prevent duplicate API calls)
             const cachedAccess = getCachedModuleAccess(moduleId, user.id)
@@ -381,7 +381,7 @@ export function LessonRouteGuard({
           onSuccess={async () => {
             // After auth success, immediately check premium access BEFORE allowing access
             // This prevents free users from accessing premium content after sign-in
-            if (!isEmbedded && module?.requiresPremium) {
+            if (!isEmbedded && moduleData?.requiresPremium) {
               try {
                 // Get user after auth success
                 const { user: currentUser } = await SmartAuthService.initializeSession()
@@ -444,7 +444,7 @@ export function LessonRouteGuard({
               router.push('/modules')
             }
           }}
-          moduleTitle={module?.title}
+          moduleTitle={moduleData?.title}
         />
       </>
     )

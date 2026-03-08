@@ -14,14 +14,14 @@ export class ModuleProgressService {
       const user = await AuthService.getCurrentUser();
       if (!user) return false;
 
-      const module = getModule(moduleId);
-      if (!module || !module.lessons || module.lessons.length === 0) return false;
+      const moduleData = getModule(moduleId);
+      if (!moduleData || !moduleData.lessons || moduleData.lessons.length === 0) return false;
 
       // Get all lesson progress for this module
       const lessonProgress = await DatabaseService.getUserLessonProgress(user.id, moduleId);
 
       // Check if ALL lessons are completed
-      return module.lessons.every(lesson => {
+      return moduleData.lessons.every(lesson => {
         const progress = lessonProgress.find(
           p => p.module_id === moduleId && p.lesson_id === lesson.id
         );
@@ -46,14 +46,14 @@ export class ModuleProgressService {
       const user = await AuthService.getCurrentUser();
       if (!user) return null;
 
-      const module = getModule(moduleId);
-      if (!module) return null;
+      const moduleData = getModule(moduleId);
+      if (!moduleData) return null;
 
       // Get all lesson progress for this module
       const lessonProgress = await DatabaseService.getUserLessonProgress(user.id, moduleId);
 
       // Check if all lessons are completed
-      const allLessonsCompleted = module.lessons.every(lesson => {
+      const allLessonsCompleted = moduleData.lessons.every(lesson => {
         const progress = lessonProgress.find(
           p => p.module_id === moduleId && p.lesson_id === lesson.id
         );
@@ -87,11 +87,11 @@ export class ModuleProgressService {
 
   // Check if all lessons in a module are completed (this triggers module completion)
   static async checkModuleCompletion(moduleId: string): Promise<boolean> {
-    const module = getModule(moduleId);
-    if (!module) return false;
+    const moduleData = getModule(moduleId);
+    if (!moduleData) return false;
 
     // Check if all lessons in the module are completed
-    for (const lesson of module.lessons) {
+    for (const lesson of moduleData.lessons) {
       const isCompleted = await LessonProgressService.isLessonCompleted(moduleId, lesson.id);
       if (!isCompleted) {
         return false;
@@ -103,8 +103,8 @@ export class ModuleProgressService {
 
   // Get total XP earned in a module (sum from all lessons)
   static calculateModuleXp(moduleId: string): number {
-    const module = getModule(moduleId);
-    if (!module) return 0;
+    const moduleData = getModule(moduleId);
+    if (!moduleData) return 0;
 
     // The logic here is now functionally correct after the system-wide XP refactor.
     // It accurately calculates the total potential XP from a module by summing
@@ -114,7 +114,7 @@ export class ModuleProgressService {
     let totalXp = 0;
     
     // Sum up XP from all lessons in the module
-    for (const lesson of module.lessons) {
+    for (const lesson of moduleData.lessons) {
       const steps = getLessonSteps(moduleId, lesson.id);
       
       for (const step of steps) {

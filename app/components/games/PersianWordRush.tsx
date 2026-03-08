@@ -87,6 +87,17 @@ export function PersianWordRush({
   // Note: Animation states removed - were unused
 
   const { user, isEmailVerified } = useAuth()
+  const userId = user?.id
+  const currentLives = gameStats.lives
+
+  const clearGameTimers = useCallback(() => {
+    if (wordAnimationRef.current) {
+      clearTimeout(wordAnimationRef.current)
+    }
+    if (gameLoopRef.current) {
+      clearTimeout(gameLoopRef.current)
+    }
+  }, [])
 
   // Load user's vocabulary on component mount
   useEffect(() => {
@@ -280,20 +291,20 @@ export function PersianWordRush({
           }))
 
           // Record performance
-          if (filter && user?.id) {
+          if (filter && userId) {
             // Review mode: use VocabularyTrackingService (no remediation)
             VocabularyTrackingService.storeAttempt({
-              userId: user.id,
+              userId,
               vocabularyId: currentWord.word.id,
               wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
               gameType: 'review-persian-word-rush',
               isCorrect: false,
               contextData: { reviewMode: true }
             }).catch(console.error)
-          } else if (user?.id) {
+          } else if (userId) {
             // Regular mode: use VocabularyTrackingService
             VocabularyTrackingService.storeAttempt({
-              userId: user.id,
+              userId,
               vocabularyId: currentWord.word.id,
               wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
               gameType: 'persian-word-rush',
@@ -303,7 +314,7 @@ export function PersianWordRush({
           }
 
           // Check game over or shake word red
-          const newLives = gameStats.lives - 1
+          const newLives = currentLives - 1
           if (newLives <= 0) {
             setGameState('game-over')
           } else {
@@ -327,7 +338,7 @@ export function PersianWordRush({
         clearTimeout(wordAnimationRef.current)
       }
     }
-  }, [gameState, currentWord, shakeWordRed])
+  }, [gameState, currentWord, currentLives, filter, shakeWordRed, userId])
 
   // Handle choice selection
   const handleChoiceSelect = useCallback((choiceIndex: number) => {
@@ -366,10 +377,10 @@ export function PersianWordRush({
       }
 
       // Record performance
-      if (filter && user?.id) {
+      if (filter && userId) {
         // Review mode: use VocabularyTrackingService (no remediation)
         VocabularyTrackingService.storeAttempt({
-          userId: user.id,
+          userId,
           vocabularyId: currentWord.word.id,
           wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
           gameType: 'review-persian-word-rush',
@@ -382,7 +393,7 @@ export function PersianWordRush({
         // We use a minute-resolution timestamp to allow replaying same word but not spamming
         const actionId = `${currentWord.word.id}-${Math.floor(Date.now() / 60000)}`
         
-        ReviewSessionService.awardReviewXp(user.id, 1, {
+        ReviewSessionService.awardReviewXp(userId, 1, {
           gameType: 'word-rush',
           actionId: actionId,
           metadata: {
@@ -390,10 +401,10 @@ export function PersianWordRush({
             word: currentWord.word.en
           }
         }).catch(console.error)
-      } else if (user?.id) {
+      } else if (userId) {
         // Regular mode: use VocabularyTrackingService
         VocabularyTrackingService.storeAttempt({
-          userId: user.id,
+          userId,
           vocabularyId: currentWord.word.id,
           wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
           gameType: 'persian-word-rush',
@@ -403,7 +414,7 @@ export function PersianWordRush({
 
         // PHASE 3 FIX: Award XP for regular mode too (it's still practice)
         const actionId = `${currentWord.word.id}-${Math.floor(Date.now() / 60000)}`
-        ReviewSessionService.awardReviewXp(user.id, 1, {
+        ReviewSessionService.awardReviewXp(userId, 1, {
           gameType: 'word-rush',
           actionId: actionId,
           metadata: {
@@ -434,20 +445,20 @@ export function PersianWordRush({
       }))
 
       // Record performance
-      if (filter && user?.id) {
+      if (filter && userId) {
         // Review mode: use VocabularyTrackingService (no remediation)
         VocabularyTrackingService.storeAttempt({
-          userId: user.id,
+          userId,
           vocabularyId: currentWord.word.id,
           wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
           gameType: 'review-persian-word-rush',
           isCorrect: false,
           contextData: { reviewMode: true }
         }).catch(console.error)
-      } else if (user?.id) {
+      } else if (userId) {
         // Regular mode: use VocabularyTrackingService
         VocabularyTrackingService.storeAttempt({
-          userId: user.id,
+          userId,
           vocabularyId: currentWord.word.id,
           wordText: WordBankService.normalizeVocabEnglish(currentWord.word.en),
           gameType: 'persian-word-rush',
@@ -457,7 +468,7 @@ export function PersianWordRush({
       }
 
       // Check game over or shake word red
-      const newLives = gameStats.lives - 1
+      const newLives = currentLives - 1
       if (newLives <= 0) {
         setGameState('game-over')
       } else {
@@ -465,7 +476,7 @@ export function PersianWordRush({
         shakeWordRed()
       }
     }
-  }, [gameState, currentWord, correctChoice, gameStats.combo, gameStats.currentXp, gameStats.lives, gameStats.correctAnswers, gameStats.wordsAnswered, shakeWordGreen, shakeWordRed])
+  }, [gameState, currentWord, correctChoice, currentLives, filter, gameStats.combo, gameStats.currentXp, shakeWordGreen, shakeWordRed, userId])
 
   // Start game
   const startGame = useCallback(() => {
@@ -491,43 +502,22 @@ export function PersianWordRush({
 
   // Restart game
   const restartGame = useCallback(() => {
-    // Clear any running timers
-    if (wordAnimationRef.current) {
-      clearTimeout(wordAnimationRef.current)
-    }
-    if (gameLoopRef.current) {
-      clearTimeout(gameLoopRef.current)
-    }
-
+    clearGameTimers()
     startGame()
-  }, [startGame])
+  }, [clearGameTimers, startGame])
 
   // Exit game
   const exitGame = useCallback(() => {
-    // Clear any running timers
-    if (wordAnimationRef.current) {
-      clearTimeout(wordAnimationRef.current)
-    }
-    if (gameLoopRef.current) {
-      clearTimeout(gameLoopRef.current)
-    }
-
+    clearGameTimers()
     setGameState('menu')
     setCurrentWord(null)
     setChoices([])
-  }, [])
+  }, [clearGameTimers])
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (wordAnimationRef.current) {
-        clearTimeout(wordAnimationRef.current)
-      }
-      if (gameLoopRef.current) {
-        clearTimeout(gameLoopRef.current)
-      }
-    }
-  }, [])
+    return clearGameTimers
+  }, [clearGameTimers])
 
   // Loading state
   if (gameState === 'loading') {

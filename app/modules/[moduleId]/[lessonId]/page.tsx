@@ -75,7 +75,7 @@ function LessonPageContent() {
   
   // Get data from config
   const lesson = getLesson(moduleId, lessonId)
-  const module = getModule(moduleId);
+  const moduleData = getModule(moduleId);
   
   // Load module completion XP (derived from lesson progress)
   useEffect(() => {
@@ -99,7 +99,7 @@ function LessonPageContent() {
   useEffect(() => {
     const checkAuthAndAccessibility = async () => {
       // Early exit if lesson or module not found
-      if (!lesson || !module) {
+      if (!lesson || !moduleData) {
         return
       }
       
@@ -134,7 +134,7 @@ function LessonPageContent() {
         }
         
         // STEP 1: Check premium access FIRST (CRITICAL - prevents free users accessing premium lessons)
-        if (module?.requiresPremium) {
+        if (moduleData?.requiresPremium) {
           try {
             // Check cache first (30-second cache to prevent duplicate API calls)
             const cachedAccess = getCachedModuleAccess(moduleId, user.id)
@@ -393,7 +393,7 @@ function LessonPageContent() {
     setAppState(prev => ({ ...prev, showAuthModal: false }))
     
     // After auth success, check premium access FIRST
-    if (module?.requiresPremium) {
+    if (moduleData?.requiresPremium) {
       try {
         // Check cache first
         const { user } = SmartAuthService.getSessionState()
@@ -483,7 +483,7 @@ function LessonPageContent() {
   // Show premium modal if needed (authenticated users without premium) - Enhanced Preview
   if (appState.showPremiumModal) {
     // If lesson/module not found, show simple modal
-    if (!lesson || !module) {
+    if (!lesson || !moduleData) {
       return (
         <>
           <PremiumLockModal
@@ -505,7 +505,7 @@ function LessonPageContent() {
               moduleId={moduleId}
               lessonId={lessonId}
               lesson={lesson}
-              module={module}
+              module={moduleData}
             />
           </main>
         </BlurredPreviewContainer>
@@ -514,7 +514,7 @@ function LessonPageContent() {
           onClose={() => {
             router.push(`/modules/${moduleId}`)
           }}
-          moduleTitle={module?.title}
+          moduleTitle={moduleData?.title}
         />
       </>
     )
@@ -523,7 +523,7 @@ function LessonPageContent() {
   // Show lock screen if needed (sequential or prerequisites)
   if (appState.showLockScreen && appState.lockType) {
     // If lesson/module not found, show simple lock screen
-    if (!lesson || !module) {
+    if (!lesson || !moduleData) {
       return (
         <>
           <LockScreen
@@ -546,7 +546,7 @@ function LessonPageContent() {
               moduleId={moduleId}
               lessonId={lessonId}
               lesson={lesson}
-              module={module}
+              module={moduleData}
             />
           </main>
         </BlurredPreviewContainer>
@@ -565,7 +565,7 @@ function LessonPageContent() {
   // Show auth modal if needed (non-auth users)
   if (appState.showAuthModal) {
     // If lesson/module not found, show simple auth modal
-    if (!lesson || !module) {
+    if (!lesson || !moduleData) {
       return (
         <>
           <AuthModal
@@ -588,7 +588,7 @@ function LessonPageContent() {
               moduleId={moduleId}
               lessonId={lessonId}
               lesson={lesson}
-              module={module}
+              module={moduleData}
             />
           </main>
         </BlurredPreviewContainer>
@@ -618,7 +618,7 @@ function LessonPageContent() {
   return (
     <PageErrorBoundary>
     {/* Early check: If lesson or module isn't found, show NotFound */}
-    {!lesson || !module ? (
+    {!lesson || !moduleData ? (
       <NotFound type="lesson" moduleId={moduleId} lessonId={lessonId} />
     ) : (
     <div className="min-h-screen bg-background flex flex-col">

@@ -47,8 +47,8 @@ export class ModuleAccessService {
    */
   static async canAccessModule(moduleId: string): Promise<ModuleAccessCheck> {
     // Get module configuration
-    const module = getModule(moduleId)
-    if (!module) {
+    const moduleData = getModule(moduleId)
+    if (!moduleData) {
       return {
         canAccess: false,
         reason: 'not_authenticated',
@@ -59,7 +59,7 @@ export class ModuleAccessService {
     }
 
     // Check 1: Does this module require premium?
-    const requiresPremium = module.requiresPremium ?? false
+    const requiresPremium = moduleData.requiresPremium ?? false
     
     // Check 2: Does user have premium?
     const hasPremium = await hasPremiumAccess()
@@ -193,9 +193,9 @@ export class ModuleAccessService {
     
     // Process each module
     const modulesWithStatus = await Promise.all(
-      modules.map(async (module) => {
-        const requiresPremium = module.requiresPremium ?? false
-        const { prerequisitesComplete } = await this.checkPrerequisites(module.id)
+      modules.map(async (moduleData) => {
+        const requiresPremium = moduleData.requiresPremium ?? false
+        const { prerequisitesComplete } = await this.checkPrerequisites(moduleData.id)
         
         // Determine what to show
         const showPremiumBadge = requiresPremium && !hasPremium
@@ -203,7 +203,7 @@ export class ModuleAccessService {
         const canAccess = (!requiresPremium || hasPremium) && prerequisitesComplete
         
         return {
-          ...module,
+          ...moduleData,
           accessStatus: {
             canAccess,
             requiresPremium,
@@ -226,8 +226,8 @@ export class ModuleAccessService {
    * @returns True if module requires premium subscription
    */
   static moduleRequiresPremium(moduleId: string): boolean {
-    const module = getModule(moduleId)
-    return module?.requiresPremium ?? false
+    const moduleData = getModule(moduleId)
+    return moduleData?.requiresPremium ?? false
   }
 }
 

@@ -74,17 +74,17 @@ export function ModuleSnakePath({ modules, onModuleClick }: ModuleSnakePathProps
         <div className="absolute left-[3.75rem] top-0 bottom-0 w-3 bg-slate-200 rounded-full -z-10" />
 
         <div className="flex flex-col space-y-10">
-          {modules.map((module, index) => (
-            <div key={module.id} className="flex items-start gap-5 relative">
+          {modules.map((moduleData, index) => (
+            <div key={moduleData.id} className="flex items-start gap-5 relative">
                {/* Tile on the timeline (Left) */}
                <div className="shrink-0 relative z-10">
                  {/* We hide the default text in ModuleTile via CSS (hidden on mobile) and show it to the right */}
                  <div className="[&_div.text-center]:hidden"> 
                    <ModuleTile 
-                     {...module}
-                     state={module.uiState}
-                     progress={module.completionInfo?.completionPercentage}
-                     onClick={(e) => onModuleClick(module, e)}
+                     {...moduleData}
+                     state={moduleData.uiState}
+                     progress={moduleData.completionInfo?.completionPercentage}
+                     onClick={(e) => onModuleClick(moduleData, e)}
                      index={index}
                    />
                  </div>
@@ -93,13 +93,13 @@ export function ModuleSnakePath({ modules, onModuleClick }: ModuleSnakePathProps
                {/* Text Content (Right Side) - WIDER/HORIZONTAL */}
                <div className={cn(
                  "pt-3 transition-opacity duration-300 flex-1 min-w-[200px] pr-2",
-                 module.uiState === 'locked' ? "opacity-50 grayscale" : "opacity-100"
+                moduleData.uiState === 'locked' ? "opacity-50 grayscale" : "opacity-100"
                )}>
                  <h3 className="font-bold text-neutral-800 text-xl leading-tight mb-2">
-                   {module.title}
+                  {moduleData.title}
                  </h3>
                  <p className="text-sm font-medium text-neutral-500 leading-relaxed w-full text-balance">
-                   {module.description}
+                  {moduleData.description}
                  </p>
                </div>
             </div>
@@ -127,12 +127,12 @@ export function ModuleSnakePath({ modules, onModuleClick }: ModuleSnakePathProps
                 !isEvenRow && "flex-row-reverse"
               )}
             >
-              {rowModules.map((module, colIndex) => {
+              {rowModules.map((moduleData, colIndex) => {
                 const globalIndex = rowIndex * itemsPerRow + colIndex
                 const isLastInRow = colIndex === rowModules.length - 1
 
                 return (
-                  <div key={module.id} className="relative group z-10">
+                  <div key={moduleData.id} className="relative group z-10">
                     {/* Horizontal Connector to Next Item in Row */}
                     {!isLastInRow && (
                       <div className={cn(
@@ -157,10 +157,10 @@ export function ModuleSnakePath({ modules, onModuleClick }: ModuleSnakePathProps
                     )}
 
                     <ModuleTile 
-                      {...module}
-                      state={module.uiState}
-                      progress={module.completionInfo?.completionPercentage}
-                      onClick={(e) => onModuleClick(module, e)}
+                      {...moduleData}
+                      state={moduleData.uiState}
+                      progress={moduleData.completionInfo?.completionPercentage}
+                      onClick={(e) => onModuleClick(moduleData, e)}
                       index={globalIndex}
                     />
                   </div>

@@ -185,8 +185,8 @@ function buildCurriculumLexicon(): CurriculumLexicon {
   const connectorIntroductions: CurriculumLexicon['connectorIntroductions'] = {}
   
   // Scan all modules
-  for (const module of modules) {
-    const moduleId = module.id
+  for (const currentModule of modules) {
+    const moduleId = currentModule.id
     moduleVocab[moduleId] = {
       allVocabIds: [],
       lessonVocab: {}
@@ -195,7 +195,7 @@ function buildCurriculumLexicon(): CurriculumLexicon {
     connectorIntroductions[moduleId] = {}
     
     // Scan all lessons
-    for (const lesson of module.lessons) {
+    for (const lesson of currentModule.lessons) {
       const lessonId = lesson.id
       const lessonVocabIds: string[] = []
       
@@ -373,8 +373,8 @@ function getBaseVocabIds(
   const vocabIds: string[] = []
   const modules = getModules()
   
-  for (const module of modules) {
-    const moduleId = module.id
+  for (const currentModule of modules) {
+    const moduleId = currentModule.id
     
     // Add all vocab from previous modules
     if (isModuleBefore(moduleId, currentModuleId)) {
@@ -384,7 +384,7 @@ function getBaseVocabIds(
     
     // Current module: add vocab from PREVIOUS lessons ONLY (NOT current lesson)
     if (moduleId === currentModuleId) {
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         const lessonId = lesson.id
         
         // Add vocab from previous lessons only
@@ -413,8 +413,8 @@ function getBaseSuffixes(
   const suffixes: string[] = []
   const modules = getModules()
   
-  for (const module of modules) {
-    const moduleId = module.id
+  for (const currentModule of modules) {
+    const moduleId = currentModule.id
     
     // Add all suffixes from previous modules
     if (isModuleBefore(moduleId, currentModuleId)) {
@@ -430,7 +430,7 @@ function getBaseSuffixes(
     
     // Current module: add suffixes from PREVIOUS lessons ONLY
     if (moduleId === currentModuleId) {
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         const lessonId = lesson.id
         
         // Add suffixes from previous lessons only
@@ -463,12 +463,12 @@ function getBaseConnectors(
   const connectors: string[] = []
   const modules = getModules()
   
-  for (const module of modules) {
-    const moduleId = module.id
+  for (const currentModule of modules) {
+    const moduleId = currentModule.id
     
     // Add all connectors from previous modules
     if (isModuleBefore(moduleId, currentModuleId)) {
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         connectors.push(...(lexicon.connectorIntroductions[moduleId]?.[lesson.id] || []))
       }
       continue
@@ -476,7 +476,7 @@ function getBaseConnectors(
     
     // Current module: add connectors from PREVIOUS lessons ONLY (NOT current lesson)
     if (moduleId === currentModuleId) {
-      for (const lesson of module.lessons) {
+      for (const lesson of currentModule.lessons) {
         const lessonId = lesson.id
         
         // Add connectors from previous lessons only

@@ -66,11 +66,11 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   const moduleInfo = useMemo(() => {
     const lessonMatch = pathname?.match(/^\/modules\/([^/]+)\/[^/]+$/)
     if (lessonMatch) {
-      const module = getModule(lessonMatch[1])
-      if (module) {
+      const moduleData = getModule(lessonMatch[1])
+      if (moduleData) {
         // Extract module number from title (e.g., "Module 1: Greetings" -> "Module 1")
-        const match = module.title.match(/Module (\d+)/)
-        return match ? `Module ${match[1]}` : module.title.split(':')[0]
+        const match = moduleData.title.match(/Module (\d+)/)
+        return match ? `Module ${match[1]}` : moduleData.title.split(':')[0]
       }
     }
     return null

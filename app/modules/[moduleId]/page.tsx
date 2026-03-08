@@ -36,11 +36,11 @@ export default function ModulePage() {
   useSmartXp() // Keep hook for side effects
 
   // Get data from config
-  const module = getModule(moduleId as string)
+  const moduleData = getModule(moduleId as string)
   
   useEffect(() => {
     const loadAuthAndProgress = async () => {
-      if (!module) return;
+      if (!moduleData) return;
       
       try {
         setIsLoading(true)
@@ -59,7 +59,7 @@ export default function ModulePage() {
         setIsAuthenticated(authenticated)
         
         // Check module access with caching (only if authenticated and module requires it)
-        if (authenticated && module?.requiresPremium && user) {
+        if (authenticated && moduleData?.requiresPremium && user) {
           try {
             // Check cache first (30-second cache)
             const cachedAccess = getCachedModuleAccess(moduleId as string, user.id)
@@ -138,7 +138,7 @@ export default function ModulePage() {
     }
 
     loadAuthAndProgress()
-  }, [module, moduleId, router])
+  }, [moduleData, moduleId, router])
 
   // Helper function to check if a lesson is completed
   const isLessonCompleted = (moduleId: string, lessonId: string): boolean => {
@@ -152,25 +152,25 @@ export default function ModulePage() {
 
   // ======== INSTANT ACCESSIBILITY CALC (NO NETWORK LAG) ========
   const computeAccessibility = (): {[key: string]: boolean} => {
-    if (!module) return {}
+    if (!moduleData) return {}
 
     const result: {[key: string]: boolean} = {}
 
-    module.lessons.forEach((lesson) => {
+    moduleData.lessons.forEach((lesson) => {
       if (lesson.locked) {
-        result[`${module.id}-${lesson.id}`] = false
+        result[`${moduleData.id}-${lesson.id}`] = false
         return
       }
 
       if (!isAuthenticated) {
         // Unauthed: only Module1 Lesson1 accessible
-        result[`${module.id}-${lesson.id}`] = module.id === 'module1' && lesson.id === 'lesson1'
+        result[`${moduleData.id}-${lesson.id}`] = moduleData.id === 'module1' && lesson.id === 'lesson1'
         return
       }
 
       // Use fast accessibility check with the complete, unfiltered progress data
-      result[`${module.id}-${lesson.id}`] = LessonProgressService.isLessonAccessibleFast(
-        module.id, 
+      result[`${moduleData.id}-${lesson.id}`] = LessonProgressService.isLessonAccessibleFast(
+        moduleData.id, 
         lesson.id, 
         allProgress, 
         isAuthenticated
@@ -205,11 +205,11 @@ export default function ModulePage() {
     // Authenticated users fall through to normal Link navigation
   }
 
-  if (!module) {
+  if (!moduleData) {
     return <NotFound type="module" moduleId={moduleId as string} />
   }
 
-  const lessons = module.lessons
+  const lessons = moduleData.lessons
 
   if (error) {
     return (
@@ -230,7 +230,7 @@ export default function ModulePage() {
       <>
         <BlurredPreviewContainer>
           <ModulePreviewContent
-            module={module}
+            module={moduleData}
             lessons={lessons}
             accessibilityCache={accessibilityCache}
             badgeText="Sign up to unlock"
@@ -261,7 +261,7 @@ export default function ModulePage() {
       <>
         <BlurredPreviewContainer>
           <ModulePreviewContent
-            module={module}
+            module={moduleData}
             lessons={lessons}
             accessibilityCache={{}}
             badgeText={showPremiumModal ? 'Premium Required' : 'Locked'}
@@ -278,7 +278,7 @@ export default function ModulePage() {
               setShowPremiumModal(false)
               router.push('/modules')
             }}
-            moduleTitle={module?.title}
+            moduleTitle={moduleData?.title}
           />
         )}
 
@@ -303,10 +303,10 @@ export default function ModulePage() {
         <section className="py-4 sm:py-8 lg:py-12 px-3 sm:px-6 lg:px-8 bg-primary/5">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary mb-2 sm:mb-4">
-              {module.title}
+              {moduleData.title}
             </h1>
             <p className="text-sm sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Master the art of Persian {module.id.replace('module', '').toLowerCase() === '1' ? 'greetings' : module.description.split(' ')[1].toLowerCase()}
+              Master the art of Persian {moduleData.id.replace('module', '').toLowerCase() === '1' ? 'greetings' : moduleData.description.split(' ')[1].toLowerCase()}
             </p>
           </div>
         </section>
@@ -326,8 +326,8 @@ export default function ModulePage() {
             ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {lessons.map((lesson) => {
-                  const isCompleted = isLessonCompleted(module.id, lesson.id)
-                  const isAccessible = accessibilityCache[`${module.id}-${lesson.id}`] ?? false
+                  const isCompleted = isLessonCompleted(moduleData.id, lesson.id)
+                  const isAccessible = accessibilityCache[`${moduleData.id}-${lesson.id}`] ?? false
                 const isLocked = !isAccessible
                 
                 return (
@@ -367,8 +367,8 @@ export default function ModulePage() {
                   </CardContent>
                     <CardFooter className="pt-0 pb-3 sm:pb-6 px-3 sm:px-6">
                       <div className="w-full">
-                          <Link href={`/modules/${module.id}/${lesson.id}`} className="block" 
-                            onClick={(e)=>handleLessonClick(e, `/modules/${module.id}/${lesson.id}`, isLocked)}
+                          <Link href={`/modules/${moduleData.id}/${lesson.id}`} className="block"
+                            onClick={(e)=>handleLessonClick(e, `/modules/${moduleData.id}/${lesson.id}`, isLocked)}
                           >
                       <Button
                             variant={isCompleted ? "outline" : "default"}

@@ -49,7 +49,7 @@ export function LessonRunner({
   moduleId, 
   lessonId, 
   lessonData,
-  xp, 
+  xp: _xp, 
   addXp, 
   progress, 
   onProgressChange,
@@ -244,7 +244,7 @@ export function LessonRunner({
         learned,
       });
     }
-  }, [idx]);
+  }, [idx, learnedCache, lessonId, moduleId]);
 
   // Update progress when step changes
   useEffect(() => {

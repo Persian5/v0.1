@@ -67,14 +67,14 @@ export function LockScreen({
           next = await LessonProgressService.getFirstAvailableLesson()
         }
         
-        const module = getModule(next.moduleId)
+        const nextModule = getModule(next.moduleId)
         const lesson = getLesson(next.moduleId, next.lessonId)
         
-        if (module && lesson) {
+        if (nextModule && lesson) {
           setNextLesson({
             moduleId: next.moduleId,
             lessonId: next.lessonId,
-            moduleTitle: module.title,
+            moduleTitle: nextModule.title,
             lessonTitle: lesson.title
           })
         }

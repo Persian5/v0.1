@@ -27,16 +27,16 @@ export class VocabularyService {
   // Get all vocabulary from a specific module
   static getModuleVocabulary(moduleId: string): VocabularyItem[] {
     const { getModule } = require('../config/curriculum');
-    const module = getModule(moduleId);
+    const moduleData = getModule(moduleId);
     
-    if (!module) {
+    if (!moduleData) {
       return [];
     }
     
     const moduleVocabulary: VocabularyItem[] = [];
     
     // Aggregate vocabulary from all lessons in the module
-    for (const lesson of module.lessons) {
+    for (const lesson of moduleData.lessons) {
       if (lesson.vocabulary) {
         moduleVocabulary.push(...lesson.vocabulary);
   }
@@ -88,8 +88,8 @@ export class VocabularyService {
     const allModules = require('../config/curriculum').getModules();
     const allVocabulary: VocabularyItem[] = [];
     
-    for (const module of allModules) {
-      for (const lesson of module.lessons) {
+    for (const currentModule of allModules) {
+      for (const lesson of currentModule.lessons) {
         if (lesson.vocabulary) {
           allVocabulary.push(...lesson.vocabulary);
         }

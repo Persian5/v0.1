@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -73,19 +73,45 @@ export function AuthModal({
     }
   }, [user, isEmailVerified])
 
-  // PHASE 3: Auto-verify with token when available
-  useEffect(() => {
-    // Only run if in verify mode with token and type
-    if (mode !== 'verify') return
-    if (!storedVerificationToken || !storedVerificationType) return
-    if (isVerifying) return // Prevent duplicate calls
+  // PHASE 3: Handle successful verification
+  const handleVerificationSuccess = useCallback(async () => {
+    verificationLog('Verification success - refreshing session')
     
-    verificationLog('Auto-verifying email with token')
-    verifyEmail()
-  }, [mode, storedVerificationToken, storedVerificationType])
+    try {
+      // Refresh auth session to get latest user state
+      const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
+      await SmartAuthService.initializeSession()
+      
+      // Wait briefly for context to propagate
+      await new Promise(resolve => setTimeout(resolve, 400))
+      
+      // Clear verification state
+      setStoredVerificationToken(undefined)
+      setStoredVerificationType(undefined)
+      setIsVerifying(false)
+      setIsLoading(false)
+      
+      // Switch to success mode briefly
+      setMode('success')
+      
+      // Close modal and trigger success callback
+      setTimeout(() => {
+        onSuccess?.()
+        onClose()
+      }, 1500)
+      
+    } catch (error) {
+      verificationLog('Failed to refresh session after verification:', error)
+      // Still close modal even if refresh fails
+      setIsVerifying(false)
+      setIsLoading(false)
+      onSuccess?.()
+      onClose()
+    }
+  }, [onClose, onSuccess])
 
   // PHASE 3: Token-based email verification
-  const verifyEmail = async () => {
+  const verifyEmail = useCallback(async () => {
     if (!storedVerificationToken || !storedVerificationType) {
       verificationLog('Cannot verify: missing token or type')
       return
@@ -145,44 +171,18 @@ export function AuthModal({
       setStoredVerificationToken(undefined)
       setStoredVerificationType(undefined)
     }
-  }
-  
-  // PHASE 3: Handle successful verification
-  const handleVerificationSuccess = async () => {
-    verificationLog('Verification success - refreshing session')
+  }, [handleVerificationSuccess, onClose, onSuccess, storedVerificationToken, storedVerificationType])
+
+  // PHASE 3: Auto-verify with token when available
+  useEffect(() => {
+    // Only run if in verify mode with token and type
+    if (mode !== 'verify') return
+    if (!storedVerificationToken || !storedVerificationType) return
+    if (isVerifying) return // Prevent duplicate calls
     
-    try {
-      // Refresh auth session to get latest user state
-      const { SmartAuthService } = await import('@/lib/services/smart-auth-service')
-      await SmartAuthService.initializeSession()
-      
-      // Wait briefly for context to propagate
-      await new Promise(resolve => setTimeout(resolve, 400))
-      
-      // Clear verification state
-      setStoredVerificationToken(undefined)
-      setStoredVerificationType(undefined)
-      setIsVerifying(false)
-      setIsLoading(false)
-      
-      // Switch to success mode briefly
-      setMode('success')
-      
-      // Close modal and trigger success callback
-      setTimeout(() => {
-        onSuccess?.()
-        onClose()
-      }, 1500)
-      
-    } catch (error) {
-      verificationLog('Failed to refresh session after verification:', error)
-      // Still close modal even if refresh fails
-      setIsVerifying(false)
-      setIsLoading(false)
-      onSuccess?.()
-      onClose()
-    }
-  }
+    verificationLog('Auto-verifying email with token')
+    void verifyEmail()
+  }, [isVerifying, mode, storedVerificationToken, storedVerificationType, verifyEmail])
 
   // PHASE 5: Manual refresh verification status (replaces polling)
   const handleRefreshVerificationStatus = async () => {

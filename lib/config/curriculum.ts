@@ -2506,9 +2506,9 @@ export function getModuleLessonCount(module: Module): number {
 }
 
 export function getLesson(moduleId: string, lessonId: string) {
-  const module = getModule(moduleId);
-  if (!module) return undefined;
-  return module.lessons.find(l => l.id === lessonId);
+  const moduleData = getModule(moduleId);
+  if (!moduleData) return undefined;
+  return moduleData.lessons.find(l => l.id === lessonId);
 }
 
 export function getLessonSteps(moduleId: string, lessonId: string): LessonStep[] {
@@ -2540,15 +2540,15 @@ export function getLessonVocabulary(moduleId: string, lessonId: string): Vocabul
  * @returns Array of all vocabulary IDs from previous lessons in the module
  */
 export function generateCompleteReviewVocabulary(moduleId: string, currentLessonNumber: number): string[] {
-  const module = getModule(moduleId);
-  if (!module) return [];
+  const moduleData = getModule(moduleId);
+  if (!moduleData) return [];
   
   const allPreviousVocab: string[] = [];
   
   // Get vocabulary from all previous lessons in the module
   for (let lessonNum = 1; lessonNum < currentLessonNumber; lessonNum++) {
     const lessonId = `lesson${lessonNum}`;
-    const lesson = module.lessons.find(l => l.id === lessonId);
+    const lesson = moduleData.lessons.find(l => l.id === lessonId);
     
     if (lesson?.vocabulary) {
       lesson.vocabulary.forEach(vocab => {
