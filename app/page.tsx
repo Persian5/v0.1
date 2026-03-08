@@ -124,6 +124,11 @@ export default function HomePage() {
     router.push('/modules')
   }
 
+  const handleGetFullAccess = () => {
+    setIsLearningNavigating(true)
+    router.push('/pricing')
+  }
+
   const handleCreateAccount = () => {
     setAuthModalOpen(true)
   }
@@ -1004,7 +1009,7 @@ export default function HomePage() {
                 <Button 
                   className="w-full rounded-full bg-accent hover:bg-accent/90 text-white shadow-lg hover:shadow-xl transition-all py-6 text-lg font-semibold"
                   size="lg"
-                  onClick={handleStartLearning}
+                  onClick={handleGetFullAccess}
                   disabled={isLearningNavigating}
                 >
                   {isLearningNavigating ? (

@@ -303,12 +303,17 @@ export function ReviewAudioDefinitions({ filter, onExit }: ReviewAudioDefinition
   }
 
   if (vocabulary.length === 0) {
+    const emptyMessage = filter === 'mastered'
+      ? "You haven't mastered any words yet. Keep practicing to master words (5+ correct in a row)!"
+      : filter === 'hard-words'
+      ? "No hard words found. Keep learning and words you struggle with will appear here."
+      : "Complete some lessons first to unlock review games with your learned vocabulary!"
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FAF8F3]">
         <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg border-2 border-[#E63946]/30 shadow-sm">
           <p className="text-lg font-semibold mb-2 text-[#1E293B]">No vocabulary available</p>
           <p className="text-gray-600 mb-4">
-            Complete some lessons first to unlock review games with your learned vocabulary!
+            {emptyMessage}
           </p>
           <Button onClick={onExit} className="bg-[#E63946] hover:bg-[#DC2626] text-white">
             Go Back

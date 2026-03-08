@@ -121,7 +121,12 @@ export function PersianWordRush({
         }
         
         if (userVocabulary.length === 0) {
-          setVocabularyError('Complete some lessons first to unlock this game!')
+          const msg = filter === 'mastered'
+            ? "You haven't mastered any words yet. Keep practicing to master words (5+ correct in a row)!"
+            : filter === 'hard-words'
+            ? "No hard words found. Keep learning and words you struggle with will appear here."
+            : "Complete some lessons first to unlock this game!"
+          setVocabularyError(msg)
           setGameState('menu')
           return
         }

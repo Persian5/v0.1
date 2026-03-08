@@ -261,7 +261,6 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
     if (nextRoundPairs.length > 0) {
       setCurrentPairs(nextRoundPairs)
       setNextRoundPairs([]) // Clear for next pre-generation
-      vocabularyIndexRef.current = (vocabularyIndexRef.current + Math.min(2 + Math.floor(round / 2), 8)) % vocabulary.length
     } else {
       // Fallback: generate synchronously (should be rare, only if pre-generation failed)
       const nextNumPairs = Math.min(2 + Math.floor(newRound / 2), 8)
@@ -274,12 +273,17 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
 
   // Only show "no vocabulary" message if vocabulary is truly empty AND we're not loading
   if (!isLoading && vocabulary.length === 0) {
+    const emptyMessage = filter === 'mastered'
+      ? "You haven't mastered any words yet. Keep practicing to master words (5+ correct in a row)!"
+      : filter === 'hard-words'
+      ? "No hard words found. Keep learning and words you struggle with will appear here."
+      : "Complete some lessons first to unlock review games with your learned vocabulary!"
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center max-w-md mx-auto p-6">
           <p className="text-lg font-semibold mb-2">No vocabulary available</p>
           <p className="text-muted-foreground mb-4">
-            Complete some lessons first to unlock review games with your learned vocabulary!
+            {emptyMessage}
           </p>
           <Button onClick={onExit}>Go Back</Button>
         </div>
@@ -287,10 +291,15 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
     )
   }
 
-  // Don't render MatchingGame until arrays are ready (but no loading spinner - arrays generate in background)
-  // If arrays aren't ready yet, render empty (component will auto-update when arrays are ready)
   if (!currentRound || currentWords.length === 0 || currentSlots.length === 0) {
-    return null // Render nothing, component will update when arrays are ready
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading next round...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

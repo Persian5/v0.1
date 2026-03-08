@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     return addRateLimitHeaders(response, rateLimitResult.headers)
   } catch (error) {
     console.error("Error checking premium access:", error)
-    return NextResponse.json({ hasPremium: false }, { status: 200 })
+    return NextResponse.json({ error: "Premium check failed" }, { status: 500 })
   }
 }
 

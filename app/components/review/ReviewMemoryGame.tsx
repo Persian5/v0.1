@@ -307,7 +307,7 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
         // Track vocabulary performance (correct)
         const vocabItem = VocabularyService.findVocabularyById(card1.vocabularyId)
         if (vocabItem) {
-          const timeSpentMs = Date.now() - startTime.current
+          const timeSpentMs = Date.now() - roundStartTime.current
           VocabularyTrackingService.storeAttempt({
             userId: user.id,
             vocabularyId: card1.vocabularyId,
@@ -374,9 +374,7 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
   const pairsCount = cards.length / 2
   const getGridCols = () => {
     if (pairsCount <= 2) return 2 // 2 pairs: 2x2
-    if (pairsCount <= 4) return 4 // 4 pairs: 4x2
-    if (pairsCount <= 6) return 6 // 6 pairs: 6x2
-    return 4 // 8 pairs: 4x4
+    return 4 // 4+ pairs: 4 columns (mobile-safe)
   }
   const gridCols = getGridCols()
 
@@ -392,12 +390,17 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
   }
 
   if (vocabulary.length === 0) {
+    const emptyMessage = filter === 'mastered'
+      ? "You haven't mastered any words yet. Keep practicing to master words (5+ correct in a row)!"
+      : filter === 'hard-words'
+      ? "No hard words found. Keep learning and words you struggle with will appear here."
+      : "Complete some lessons first to unlock review games with your learned vocabulary!"
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FAF8F3]">
         <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg border-2 border-[#10B981]/30 shadow-sm">
           <p className="text-lg font-semibold mb-2 text-[#1E293B]">No vocabulary available</p>
           <p className="text-gray-600 mb-4">
-            Complete some lessons first to unlock review games with your learned vocabulary!
+            {emptyMessage}
           </p>
           <Button onClick={onExit} className="bg-[#10B981] hover:bg-[#059669] text-white">
             Go Back
@@ -542,9 +545,7 @@ export function ReviewMemoryGame({ filter, onExit }: ReviewMemoryGameProps) {
               {/* Grid: Dynamic columns based on number of pairs */}
               <div className={`grid gap-2 sm:gap-3 mx-auto relative ${
                 gridCols === 2 ? 'grid-cols-2 max-w-xs' :
-                gridCols === 4 ? 'grid-cols-4 max-w-lg' :
-                gridCols === 6 ? 'grid-cols-6 max-w-2xl' :
-                'grid-cols-4 max-w-2xl'
+                'grid-cols-4 max-w-lg'
               }`}>
               {cards.map((card) => {
                 // Dynamic card sizing: larger cards for 6+ pairs so text fits better

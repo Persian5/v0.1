@@ -2,200 +2,342 @@
 
 export const dynamic = 'force-dynamic'
 
-import React from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { SubscribeButton } from "@/components/SubscribeButton";
+import { useState } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { SubscribeButton } from "@/components/SubscribeButton"
+import { Check, ChevronDown, Loader2 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+
+const faqs = [
+  {
+    question: "What do I get for free?",
+    answer:
+      "Module 1 is completely free — no credit card, no signup required. It includes all lesson types, story games, XP tracking, and streaks. You get the full learning experience to try before you decide.",
+  },
+  {
+    question: "What does Full Access unlock?",
+    answer:
+      "Full Access gives you Modules 2 through 11, covering everything from family conversations to advanced expressions. You also get unlimited review games and every future module we release — included at no extra cost.",
+  },
+  {
+    question: "Can I cancel anytime?",
+    answer:
+      "Yes. Cancel in 2 clicks from your account settings, no questions asked. We also offer a 14-day money-back guarantee if you're not satisfied.",
+  },
+  {
+    question: "Do I need to know the Persian alphabet?",
+    answer:
+      "No. Finglish uses Persian written in English letters so you can start speaking immediately. Alphabet lessons are available later when you're ready.",
+  },
+]
 
 export default function PricingPage() {
   const router = useRouter()
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
-  // Client-side mount detection removed - not needed
-
-  const handleStartLearning = () => {
-    router.push('/modules')
-  };
+  const handleStartFree = () => {
+    setIsNavigating(true)
+    router.push("/modules")
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      
-      {/* Navbar from Landing Page */}      {/* Hero Section - Minimized top padding */}
-      <section className="flex flex-col items-center justify-center px-6 pt-4 pb-6 bg-primary/5">
-        {/* Title Outside Card - Reduced bottom margin MORE */}
-        <div className="w-full max-w-6xl mx-auto">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-primary text-center mb-4">
-            Start Learning Persian Today!
-          </h1>
-        </div>
-
-        {/* Pricing Card - Reduced vertical padding */}
-        <div className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl px-8 sm:px-10 py-6 text-center">
-          {/* Updated description */}
-          <p className="text-lg text-gray-600 mb-6 text-center">
-            Begin your Persian learning journey with our interactive lessons and games.
-          </p>
-
-          {/* Price Blocks Container */}
-          <div className="flex flex-col gap-4 w-full max-w-5xl mx-auto">
-            {/* Free Access Block */}
-            <div 
-              className="rounded-xl border-2 shadow-md p-6 bg-primary text-white hover:scale-105 active:scale-95 hover:ring-2 hover:ring-accent transition-all cursor-pointer flex flex-col justify-between text-center"
-              onClick={handleStartLearning}
-            >
-              <div>
-                <p className="font-semibold text-2xl">Free Access</p>
-                <p className="text-lg font-semibold text-white mt-1">Start learning Persian now</p>
-                <p className="text-sm text-white italic opacity-90">✨ Available immediately – No signup required</p>
-              </div>
-              <p className="text-sm text-primary-foreground/80 mt-2">Try all lessons and features for free</p>
-            </div>
-
-            {/* Premium Subscription Block */}
-            <div className="rounded-xl border-2 shadow-md p-6 bg-accent text-white flex flex-col justify-between text-center">
-              <div>
-                <p className="font-semibold text-2xl">Premium Access</p>
-                <p className="text-lg font-semibold text-white mt-1">$4.99/month - All modules unlocked</p>
-                <p className="text-sm text-white italic opacity-90">🎯 Full access to all content</p>
-              </div>
-              <div className="mt-4">
-                <SubscribeButton className="w-full bg-white text-accent hover:bg-gray-100">
-                  Subscribe Now - $4.99/month
-                </SubscribeButton>
-              </div>
-            </div>
+      <main className="flex-1">
+        {/* ============================================ */}
+        {/* HERO                                        */}
+        {/* ============================================ */}
+        <section className="pt-12 pb-8 md:pt-20 md:pb-12 px-4 bg-primary/5">
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="text-xs text-emerald-700 font-normal mb-4 tracking-wide uppercase">
+              Finglish by Iranopedia
+            </p>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary mb-5">
+              Unlock every Persian lesson
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Module 1 is free — no signup needed. Full Access starts at $0.99
+              for your first month, then $9.99/month. All 11 modules, review
+              games, and every future lesson included.
+            </p>
           </div>
-          
-          {/* CTA Button - Consistent across all screen sizes */}
-          <Button
-            className="w-full max-w-5xl mx-auto bg-[#E11D48] text-white font-semibold py-3 px-4 sm:py-4 sm:px-5 rounded-full shadow-md text-center mt-8 whitespace-nowrap overflow-hidden min-h-[54px] flex items-center justify-center"
-            onClick={handleStartLearning}
-          >
-            <span className="text-[12px] xs:text-sm sm:text-base md:text-lg font-semibold truncate">
-              🚀 Start Learning Persian Now
-            </span>
-          </Button>
+        </section>
 
-          {/* Feature Boxes Grid - Added more top margin */}
-          <div className="grid grid-cols-1 md:grid-cols-8 gap-6 mt-8 text-center max-w-5xl mx-auto">
-            {/* Box 1: What's Included - Reduced padding and heading margin */}
-            <div className="border rounded-lg p-5 bg-gray-50/50 shadow-sm md:col-span-4">
-              <h3 className="text-xl font-bold mb-2 text-primary">What's Included</h3>
-              <ul className="space-y-1 text-sm text-gray-700">
-                <li className="flex items-center justify-center gap-2">• Interactive lessons that actually stick</li>
-                <li className="flex items-center justify-center gap-2">• XP, streaks & milestones to track your growth</li>
-                <li className="flex items-center justify-center gap-2">• Real-life phrases you'll actually use</li>
-                <li className="flex items-center justify-center gap-2">• Designed for modern learners on the go</li>
-                <li className="flex items-center justify-center gap-2">• Cultural context and practical examples</li>
-                <li className="flex items-center justify-center gap-2">• Useful sentences — not textbook fluff</li>
-                <li className="flex items-center justify-center gap-2">• Speak from day one, no Persian background needed</li>
-              </ul>
-            </div>
+        {/* ============================================ */}
+        {/* PRICING CARDS                               */}
+        {/* ============================================ */}
+        <section className="py-12 md:py-20 bg-white px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+              {/* Free Starter */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="bg-gray-50 rounded-[32px] p-8 md:p-10"
+              >
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold mb-2 text-gray-900">
+                    Free Starter
+                  </h3>
+                  <div className="text-4xl font-bold text-primary">$0</div>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  {[
+                    "Full Module 1 (Greetings & Basics)",
+                    "All lesson types and story games",
+                    "XP, streaks, and progress tracking",
+                    "No credit card required",
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full border-2 border-gray-300 hover:border-primary hover:bg-primary/5 py-6 text-lg font-semibold"
+                  size="lg"
+                  onClick={handleStartFree}
+                  disabled={isNavigating}
+                >
+                  {isNavigating ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Start Free"
+                  )}
+                </Button>
+              </motion.div>
 
-            {/* Box 2: Coming Soon - Reduced padding and heading margin */}
-            <div className="border rounded-lg p-5 bg-gray-50/50 shadow-sm md:col-span-2">
-              <h3 className="text-xl font-bold mb-2 text-primary">Coming Soon</h3>
-              <ul className="space-y-1 text-sm text-gray-700">
-                <li className="flex items-center justify-center gap-2">🧠 AI pronunciation coach</li>
-                <li className="flex items-center justify-center gap-2">🧍 1-on-1 tutoring sessions</li>
-                <li className="flex items-center justify-center gap-2">🧵 Community forum</li>
-                <li className="flex items-center justify-center gap-2">🏆 Global leaderboard</li>
-                <li className="flex items-center justify-center gap-2">📚 Story mode dialogue</li>
-                <li className="flex items-center justify-center gap-2">✈️ Travel crash course</li>
-              </ul>
-            </div>
+              {/* Full Access */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="bg-gradient-to-br from-primary/10 via-white to-accent/10 rounded-[32px] p-8 md:p-10 border-2 border-primary relative overflow-hidden"
+              >
+                <div className="absolute -top-0.5 left-1/2 -translate-x-1/2">
+                  <div className="px-5 py-1.5 bg-primary text-white text-sm font-semibold rounded-b-xl">
+                    Most Popular
+                  </div>
+                </div>
 
-            {/* Box 3: Why Persian? - Reduced padding and heading margin */}
-            <div className="border rounded-lg p-5 bg-gray-50/50 shadow-sm md:col-span-2">
-              <h3 className="text-xl font-bold mb-2 text-primary">Why Persian?</h3>
-              <ul className="space-y-1 text-sm text-gray-700">
-                <li className="flex items-center justify-center gap-2">🌍 110M+ speakers worldwide</li>
-                <li className="flex items-center justify-center gap-2">📜 Rich literary tradition</li>
-                <li className="flex items-center justify-center gap-2">🏛️ Gateway to culture & history</li>
-                <li className="flex items-center justify-center gap-2">👨‍👩‍👧‍👦 Connect with family</li>
-                <li className="flex items-center justify-center gap-2">💼 Career opportunities</li>
-                <li className="flex items-center justify-center gap-2">🎵 Understand Persian music & poetry</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center text-primary mb-12">Frequently Asked Questions</h2>
-          
-          <div className="space-y-8">
-            <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-semibold text-primary mb-3">Is the app really free?</h3>
-              <p className="text-gray-700">Yes! All lessons and features are currently available for free. Start learning Persian immediately without any payment or signup required.</p>
-            </div>
-
-            <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-semibold text-primary mb-3">Do I need any prior knowledge of Persian?</h3>
-              <p className="text-gray-700">Not at all! Our lessons are designed for complete beginners. We start with the basics and gradually build up your skills using practical phrases and cultural context.</p>
-            </div>
-            
-            <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-semibold text-primary mb-3">What makes this different from other language apps?</h3>
-              <p className="text-gray-700">We focus specifically on Persian with cultural context from Iran. Our lessons include real-life situations, cultural references, and practical phrases that Persian speakers actually use — not just textbook Persian.</p>
-            </div>
-            
-            <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-semibold text-primary mb-3">How long are the lessons?</h3>
-              <p className="text-gray-700">Each lesson is designed to take 5-10 minutes, perfect for busy schedules. You can learn at your own pace and complete lessons whenever it's convenient for you.</p>
-            </div>
-            
-            <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-semibold text-primary mb-3">Will there be paid features in the future?</h3>
-              <p className="text-gray-700">We may introduce premium features like AI pronunciation coaching and 1-on-1 tutoring in the future, but all core lessons will remain accessible to everyone.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="py-16 px-6 bg-primary/5">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-primary mb-6">Ready to start your Persian journey?</h2>
-          <p className="text-xl text-gray-600 mb-8">Join thousands of learners who are already discovering the beauty of Persian language and culture.</p>
-          
-          <Button
-            size="lg"
-            className="bg-accent hover:bg-accent/90 text-white px-8 py-4 text-lg rounded-full shadow-lg"
-            onClick={handleStartLearning}
-            aria-label="Start learning Persian"
-          >
-            Start Learning Persian Now
-          </Button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-50 py-8 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-gray-500 text-sm mb-4">
-            © 2025 Iranopedia — Made with ❤️ for anyone learning Persian
-          </p>
-          <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-            <Link href="/" className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
-              Home
-            </Link>
-            <Link href="/modules" className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
-              Start Learning
-            </Link>
-            <a 
-              href="https://iranopedia.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-gray-600 transition-colors text-sm"
+                <div className="mb-6 mt-4">
+                  <h3 className="text-xl font-bold mb-2 text-gray-900">
+                    Full Access
+                  </h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold text-primary">
+                      $0.99
+                    </span>
+                    <span className="text-gray-500">first month</span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Then $9.99/month &middot; Beta pricing
+                  </p>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  {[
+                    "Everything in Free, plus\u2026",
+                    "Modules 2 through 11",
+                    "Unlimited review mode and games",
+                    "Every future lesson included",
+                    "14-day money-back guarantee",
+                    "Cancel anytime in 2 clicks",
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                      <span
+                        className={`text-gray-700 ${i === 0 ? "font-semibold" : ""}`}
                       >
-              Iranopedia
-            </a>
-          </nav>
-                    </div>
+                        {item}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <SubscribeButton
+                  className="w-full rounded-full bg-accent hover:bg-accent/90 text-white shadow-lg hover:shadow-xl transition-all py-6 text-lg font-semibold"
+                  size="lg"
+                >
+                  Get Full Access — $0.99
+                </SubscribeButton>
+              </motion.div>
+            </div>
+
+            {/* Trust bar */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap justify-center gap-6 md:gap-10 mt-10 text-sm text-gray-500"
+            >
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                <span>14-day money-back guarantee</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                <span>Cancel anytime in 2 clicks</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                <span>Built by Iranians</span>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ============================================ */}
+        {/* FAQ                                         */}
+        {/* ============================================ */}
+        <section className="py-16 md:py-24 bg-primary/5 px-4">
+          <div className="max-w-3xl mx-auto">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-3xl md:text-4xl font-bold text-primary text-center mb-12"
+            >
+              Common questions
+            </motion.h2>
+
+            <div className="space-y-4">
+              {faqs.map((faq, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.05 }}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full px-6 py-5 flex items-center justify-between text-left"
+                  >
+                    <span className="font-semibold text-lg text-gray-900">
+                      {faq.question}
+                    </span>
+                    <ChevronDown
+                      className={`h-5 w-5 text-gray-400 transition-transform duration-300 flex-shrink-0 ml-4 ${
+                        openFaq === i ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {openFaq === i && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-6 pb-5 text-gray-600 leading-relaxed">
+                          {faq.answer}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================ */}
+        {/* FINAL CTA                                   */}
+        {/* ============================================ */}
+        <section className="py-20 md:py-28 bg-gradient-to-br from-primary/5 via-white to-accent/5 px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-3xl mx-auto text-center"
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary mb-4 leading-tight">
+              Start free. Upgrade when you're ready.
+            </h2>
+            <p className="text-lg text-gray-600 mb-10 max-w-xl mx-auto">
+              Module 1 is on us. Full Access is $0.99 for your first month,
+              then $9.99/month with a 14-day guarantee.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-full border-2 border-gray-300 hover:border-primary hover:bg-primary/5 px-8 py-6 text-lg font-semibold"
+                onClick={handleStartFree}
+                disabled={isNavigating}
+              >
+                {isNavigating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Start Free"
+                )}
+              </Button>
+              <SubscribeButton
+                className="rounded-full bg-accent hover:bg-accent/90 text-white shadow-lg hover:shadow-xl transition-all px-8 py-6 text-lg font-semibold"
+                size="lg"
+              >
+                Get Full Access
+              </SubscribeButton>
+            </div>
+            <p className="text-sm text-gray-500 mt-6">
+              No credit card for free tier &middot; Cancel anytime &middot;
+              14-day money-back guarantee
+            </p>
+          </motion.div>
+        </section>
+      </main>
+
+      {/* ============================================ */}
+      {/* FOOTER                                       */}
+      {/* ============================================ */}
+      <footer className="bg-gray-50 py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="h-px bg-gray-200 mb-8" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">&copy; 2025 Iranopedia</p>
+            <nav className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+              <Link
+                href="/"
+                className="hover:text-primary transition-colors"
+              >
+                Home
+              </Link>
+              <Link
+                href="/modules"
+                className="hover:text-primary transition-colors"
+              >
+                Start Learning
+              </Link>
+              <a
+                href="https://iranopedia.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors"
+              >
+                Iranopedia
+              </a>
+            </nav>
+          </div>
+        </div>
       </footer>
     </div>
-  );
-} 
+  )
+}

@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
     
     // DEBUG: Always query current user directly for comparison (if user ID provided)
     const debugUserId = searchParams.get('debug_user_id')
-    if (debugUserId) {
+    if (process.env.NODE_ENV === 'development' && debugUserId) {
       // Direct single-user query (bypasses any potential view/materialization issues)
       const { data: debugUser, error: debugError } = await supabase
         .from('user_profiles')

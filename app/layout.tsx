@@ -55,7 +55,7 @@ export default function RootLayout({
             <ClientRootBoundary>
               <ConditionalHeader />
               {children}
-              <CrashTestButton />
+              {process.env.NODE_ENV === "development" && <CrashTestButton />}
             </ClientRootBoundary>
           </SmartAuthProvider>
         </ThemeProvider>

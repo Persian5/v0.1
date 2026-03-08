@@ -86,8 +86,9 @@ export async function POST(req: Request) {
 
         const supabaseUserId = session.metadata?.supabase_user_id;
         if (!supabaseUserId) {
-          console.warn("No supabase_user_id on session.metadata; skipping");
-          return NextResponse.json({ received: true }, { status: 200 });
+          // Do not acknowledge success when the checkout session cannot be
+          // mapped back to a Supabase user. Returning 500 makes Stripe retry.
+          throw new Error("Missing supabase_user_id on checkout session metadata");
         }
 
         const customerId = (session.customer as string) ?? null;
@@ -143,8 +144,9 @@ export async function POST(req: Request) {
 
         if (error) throw error;
         if (!row) {
-          console.warn("No user_subscriptions row for customer", customerId);
-          return NextResponse.json({ received: true }, { status: 200 });
+          // Do not acknowledge success when we cannot map the Stripe customer
+          // to a Supabase user. Returning 500 makes Stripe retry the event.
+          throw new Error(`No user_subscriptions row for customer ${customerId}`);
         }
 
         // 1) try root field

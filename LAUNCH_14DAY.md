@@ -1,182 +1,225 @@
-# 14-Day Launch Sprint
+# 14-Day Launch Plan
 
-**Start date:** When you're back "all in" (after March 7)
-**Goal:** Ship a non-broken v0.1 where real users can sign up, learn, and pay.
-
----
-
-## Dependency chain
-
-```
-Critical code fixes (items 1-5)
-       |
-       v
-Stripe LIVE + Vercel production deploy + Supabase URLs
-       |
-       v
-Smoke test golden path in production
-       |
-       v
-Legal pages (privacy, terms)
-       |
-       v
-Launch
-```
-
-Everything below follows this chain. Do not skip ahead.
+**Goal:** Launch a trustworthy v0.1 that works for real users.  
+**Principle:** Fix launch safety first, then trust/conversion issues, then deploy and validate.  
+**Do not use this sprint for cleanup or refactors.**
 
 ---
 
-## Days 1-3: Critical code fixes
+## Must Fix Before Launch
 
-These 5 items block everything. Each is a small, targeted change.
+1. Webhook missing-row behavior in `app/api/webhooks/route.ts`
+2. `check-premium` returning false on backend failure in `app/api/check-premium/route.ts`
+3. Next.js upgrade from `14.2.18` to patched `14.2.35+`
+4. Remove or dev-gate `CrashTestButton` in `app/layout.tsx`
+5. Gate leaderboard `debug_user_id` behind development mode
+6. Set Stripe LIVE and production env vars
+7. Verify Supabase production Site URL / Redirect URLs
+8. Fix landing-page premium CTA
+9. Fix pricing-page contradiction
+10. Add privacy + terms pages
+11. Run full golden-path smoke tests on the live app
 
-**Day 1:**
+## Should Fix Before Launch If Possible
 
-1. **Module 3 paywall bypass** (5 min)
-   - File: `lib/config/curriculum.ts` (~line 1847)
-   - Action: Add `requiresPremium: true` to Module 3 definition
-   - Verify: Free user cannot open Module 3 lessons
+1. Gate or remove noisy API-route logging in production
+2. Fix footer subscribe button or remove it
+3. Fix Module 1 story using untaught `khoshbakhtam`
+4. Fix story-completion fire-and-forget save path
+5. Fix XP exception-path rollback issue
+6. Add LIMIT to leaderboard fallback query
 
-2. **Leaderboard personal data** (10 min)
-   - File: `app/api/leaderboard/route.ts`
-   - Action: Delete lines 291-311 (hardcoded `881a4bff` UUID and `Armee E.` name)
-   - Action: Wrap lines 251-289 (`debug_user_id` block) in `if (process.env.NODE_ENV === 'development')`
-   - Verify: `?debug_user_id=xxx` returns nothing in production
+## After Launch / Ignore For Now
 
-3. **sessionCache null crash** (15 min)
-   - File: `lib/services/lesson-progress-service.ts` (line 228)
-   - Action: Replace `SmartAuthService['sessionCache']!.progress = ...` with null-safe pattern using `SmartAuthService.getSessionState()` + `SmartAuthService.updateUserData()`
-   - Verify: Complete a lesson without crash
-
-**Day 2:**
-
-4. **Webhook subscription creation** (30 min)
-   - File: `app/api/webhooks/route.ts` (lines 135-148)
-   - Action: When `user_subscriptions` row is missing, create it (upsert) instead of returning early
-   - Verify: New user pays via Stripe checkout, `user_subscriptions` row exists after webhook
-
-5. **Leaderboard service role key** (30 min)
-   - File: `app/api/leaderboard/route.ts` (line 130)
-   - Action: Add RLS policy allowing public read of `display_name` + `total_xp` on `user_profiles`, switch to anon key
-   - Verify: Leaderboard loads, no PII exposed beyond display name + XP
-
-**Day 3:**
-
-6. **Run `npm run build`** and fix any build errors
-7. **Run the app locally** and walk through: signup → email verify → Module 1 Lesson 1 → complete → dashboard → try Module 2 (paywall) → try Module 3 (paywall) → review games
-
----
-
-## Days 4-5: Stripe LIVE + production deploy
-
-**Day 4: Stripe LIVE**
-
-1. In Stripe dashboard: switch to live mode
-2. Create production webhook endpoint: `https://yourdomain.com/api/webhooks`
-3. Subscribe to events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
-4. Copy live keys: `sk_live_...`, `whsec_...`
-5. Create live price ($4.99/month) and copy `price_...` ID
-
-**Day 5: Vercel production deploy**
-
-1. In Vercel: connect GitHub repo (if not done), set root directory
-2. Set environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `STRIPE_SECRET_KEY` (live)
-   - `STRIPE_PRICE_ID` (live)
-   - `STRIPE_WEBHOOK_SECRET` (live)
-3. In Supabase dashboard: set Site URL to production domain, add production domain to Redirect URLs
-4. Deploy and verify build succeeds
-
----
-
-## Days 6-8: Smoke test in production
-
-Walk through every critical path on the live URL. Fix only what blocks the golden path.
-
-**Test 1: Free user flow**
-- Land on homepage
-- Sign up with email/password
-- Verify email
-- Complete onboarding
-- Open Module 1, complete Lesson 1
-- Check XP on dashboard
-- Try Module 2 → paywall modal appears
-- Try Module 3 → paywall modal appears
-
-**Test 2: Payment flow**
-- Click "Upgrade" / pricing
-- Complete Stripe checkout (use a real card, refund after)
-- Verify `user_subscriptions` row in Supabase
-- Open Module 2 → access granted
-- Complete a premium lesson
-
-**Test 3: Review games**
-- Open /review
-- Play one game with "all learned" filter
-- Verify XP is awarded
-
-**Test 4: Returning user**
-- Log out
-- Log back in
-- Progress, XP, streak still visible
-- "Continue learning" goes to correct lesson
-
----
-
-## Days 9-10: Legal pages + polish
-
-1. Create `/privacy` page (minimal privacy policy)
-2. Create `/terms` page (minimal terms of service)
-3. Link from footer and signup flow
-4. Fix any bugs found during smoke tests
-
----
-
-## Days 11-12: Buffer
-
-Reserved for:
-- Fixing bugs from smoke tests
-- Any critical issue that surfaced
-- Final UI polish on golden path only
-
----
-
-## Days 13-14: Launch
-
-1. Final smoke test pass
-2. Switch to custom domain (if ready)
-3. Announce to waitlist
-4. Monitor Vercel logs + Supabase for 24 hours
-
----
-
-## What is NOT in this sprint
-
-- OAuth (Google/Apple)
-- Analytics beyond Vercel Analytics
-- Feedback forms
-- Subscription management page
-- Cross-browser QA matrix
+- OAuth
+- Analytics expansion
+- Subscription portal
+- Cross-browser matrix
+- Performance optimization
 - Image compression
-- Performance profiling
-- Code cleanup / refactoring
+- Refactors and code cleanup
 - New features
 
 ---
 
-## File reference
+## Dependency Order
 
-| Area | Key files |
-|------|-----------|
-| Curriculum content | `lib/config/curriculum.ts` |
-| Paywall / access | `lib/services/module-access-service.ts`, `app/api/check-module-access/route.ts`, `components/PremiumLockModal.tsx` |
-| Module pages | `app/modules/page.tsx`, `app/modules/[moduleId]/page.tsx`, `app/modules/[moduleId]/[lessonId]/page.tsx` |
-| Review hub + games | `app/review/page.tsx`, `app/components/review/Review*.tsx`, `app/components/games/PersianWordRush.tsx` |
-| Auth | `components/auth/AuthProvider.tsx`, `components/auth/AuthModal.tsx`, `lib/services/smart-auth-service.ts` |
-| Stripe | `app/api/checkout/route.ts`, `app/api/webhooks/route.ts`, `app/api/check-premium/route.ts`, `lib/utils/subscription.ts` |
-| Leaderboard | `app/api/leaderboard/route.ts`, `app/leaderboard/page.tsx` |
-| Dashboard | `app/dashboard/page.tsx`, `app/components/dashboard/*.tsx` |
+```
+Payment correctness + security blockers
+        ↓
+Trust / conversion fixes
+        ↓
+Production config (Stripe + Vercel + Supabase)
+        ↓
+Live smoke tests
+        ↓
+Legal pages + launch buffer
+        ↓
+Launch
+```
+
+---
+
+## Day 1 — Payment correctness
+
+1. Fix webhook missing-row behavior in `app/api/webhooks/route.ts`
+2. Fix `check-premium` to return 5xx on real failures
+3. Verify checkout → webhook → `user_subscriptions` works in test mode
+
+**Done when:** a new paying test user always gets a valid subscription row and premium access.
+
+---
+
+## Day 2 — Security blockers
+
+1. Gate `debug_user_id` behind development mode
+2. Remove or dev-gate `CrashTestButton`
+3. Gate or remove noisy `console.log` calls in `app/api/leaderboard/route.ts` and `app/api/webhooks/route.ts`
+
+**Done when:** production code has no intentional crash button and no debug data path.
+
+---
+
+## Day 3 — Platform security baseline
+
+1. Upgrade Next.js to patched 14.x (`14.2.35+`)
+2. Run `npm run build`
+3. Run the app locally and verify auth, modules, lesson load, dashboard, paywall
+
+**Done when:** app builds cleanly and the local golden path still works after the upgrade.
+
+---
+
+## Day 4 — Trust and conversion fixes
+
+1. Fix landing-page premium CTA so it goes to the correct pricing / payment path
+2. Fix pricing-page FAQ contradiction (remove “everything is free”)
+3. Fix or remove the dead footer subscribe button
+4. Add a real header/navigation to pricing if still missing
+
+**Done when:** top-of-funnel pages no longer make the product feel amateur or contradictory.
+
+---
+
+## Day 5 — Learning quality fixes that matter before launch
+
+1. Fix Module 1 story using untaught `khoshbakhtam`
+2. Verify stub modules (4-11) are not misleadingly exposed in the UI
+3. If story completion is still fragile, fix the fire-and-forget save path
+
+**Done when:** the free learning path feels coherent and does not preview material incorrectly.
+
+---
+
+## Day 6 — Stripe LIVE
+
+1. Create live product / price in Stripe
+2. Create live webhook endpoint
+3. Add live keys and webhook secret to Vercel
+4. Verify checkout session creation still works
+
+**Done when:** the production app can accept real payment configuration.
+
+---
+
+## Day 7 — Production config
+
+1. Verify Vercel env vars
+2. Verify Supabase Site URL and Redirect URLs
+3. Verify production domain / `*.vercel.app` auth redirects
+4. Deploy to production
+
+**Done when:** the live app can sign up, log in, and hit the pricing/payment path correctly.
+
+---
+
+## Day 8 — Free-user smoke tests on live app
+
+Test the full free path:
+1. Homepage loads
+2. Sign up
+3. Email verify
+4. Complete onboarding
+5. Open Module 1
+6. Complete a lesson
+7. Dashboard shows XP / streak / progress
+8. Module 2 paywall appears
+9. Module 3 paywall appears
+
+Fix anything that breaks this path before moving on.
+
+---
+
+## Day 9 — Paid-user smoke tests on live app
+
+1. Start from pricing / premium CTA
+2. Complete Stripe checkout
+3. Verify `user_subscriptions` row
+4. Verify premium access unlocks
+5. Complete a premium lesson
+6. Log out / log back in and confirm premium remains
+
+Fix anything that breaks payment trust or unlock behavior.
+
+---
+
+## Day 10 — Review / dashboard / return-user smoke tests
+
+1. Open review mode
+2. Play each review game at least once
+3. Verify XP updates correctly
+4. Verify dashboard values still make sense
+5. Verify returning-user flow: log back in, continue learning, resume progress
+
+---
+
+## Day 11 — Legal minimum
+
+1. Create `/privacy`
+2. Create `/terms`
+3. Link both where needed
+4. Verify pages are reachable from the live site
+
+---
+
+## Day 12 — Buffer for real bugs only
+
+Use this day only for:
+- launch blockers
+- trust / conversion problems
+- premium unlock problems
+- golden-path breakage
+
+Do **not** use this day for cleanup.
+
+---
+
+## Day 13 — Final validation
+
+1. Re-run the complete golden path
+2. Re-run payment path
+3. Re-run return-user path
+4. Check production logs
+5. Make final go / no-go call
+
+---
+
+## Day 14 — Launch
+
+1. Announce to waitlist
+2. Monitor Vercel + Supabase + Stripe for the first 24 hours
+3. Respond only to real production issues
+4. Do not ship new features
+
+---
+
+## File Map for This Sprint
+
+| Area | Files |
+|------|-------|
+| Payments | `app/api/checkout/route.ts`, `app/api/webhooks/route.ts`, `app/api/check-premium/route.ts`, `lib/utils/subscription.ts` |
+| Leaderboard security | `app/api/leaderboard/route.ts` |
+| Root layout | `app/layout.tsx` |
+| Landing / pricing trust | `app/page.tsx`, `app/pricing/page.tsx` |
+| Curriculum / lesson quality | `lib/config/curriculum.ts`, `app/components/LessonRunner.tsx` |
+| Production config | `ENV_VARS_REQUIRED.md`, Vercel dashboard, Supabase dashboard, Stripe dashboard |
