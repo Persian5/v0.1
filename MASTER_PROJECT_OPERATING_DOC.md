@@ -86,7 +86,7 @@ A full UX audit identified 14 new items (see `V0.1_LAUNCH_CHECKLIST.md` items 21
 **Trust-damaging issues:**
 - "FAQ" buttons go to `/pricing` instead of an FAQ (`SummaryView.tsx`, `account/page.tsx`)
 - CompletionView shows total account XP instead of earned XP when `xpGained` is 0 (`CompletionView.tsx`)
-- Billing success fakes verification with a 2s timeout instead of polling the API (`billing/success/page.tsx`)
+- ~~Billing success fakes verification with a 2s timeout~~ **Resolved:** Now polls `/api/verify-checkout-session` for real verification (`billing/success/page.tsx`)
 - Account page streak is fake (XP > 20 = "Active") and password change shows no success feedback (`account/page.tsx`)
 - PersianWordRush claims speed increases but speed is constant (`PersianWordRush.tsx`)
 

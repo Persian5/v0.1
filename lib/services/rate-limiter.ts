@@ -133,5 +133,6 @@ export const RATE_LIMITS = {
   MODULE_ACCESS: { maxRequests: 50, windowMs: 60 * 1000 },      // 50 req per minute (increased for safety)
   USER_STATS: { maxRequests: 10, windowMs: 60 * 1000 },         // 10 req per minute
   CHECK_PREMIUM: { maxRequests: 20, windowMs: 60 * 1000 },      // 20 req per minute
+  VERIFY_CHECKOUT: { maxRequests: 30, windowMs: 60 * 1000 },   // 30 req per minute (post-payment polling)
 } as const
 
