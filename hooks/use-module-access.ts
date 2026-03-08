@@ -5,6 +5,11 @@ import { getCachedModuleAccess, setCachedModuleAccess } from '@/lib/utils/module
 
 export type ModuleAccessReason = 'no_premium' | 'incomplete_prerequisites' | undefined
 
+/** Normalize cache/API string to ModuleAccessReason (cache stores plain strings from JSON). */
+function toModuleAccessReason(s: string | undefined): ModuleAccessReason {
+  return s === 'no_premium' || s === 'incomplete_prerequisites' ? s : undefined
+}
+
 export interface ModuleAccessResult {
   canAccess: boolean
   reason: ModuleAccessReason
@@ -49,14 +54,14 @@ export function useModuleAccess(moduleId: string | null, userId: string | null):
     try {
       const cached = getCachedModuleAccess(moduleId, userId)
       if (cached) {
-        const reason: ModuleAccessReason =
-          cached.reason === 'no_premium' || cached.reason === 'incomplete_prerequisites'
-            ? cached.reason
-            : undefined
         setResult(prev => ({
           ...prev,
-          ...cached,
-          reason,
+          canAccess: cached.canAccess,
+          reason: toModuleAccessReason(cached.reason),
+          requiresPremium: cached.requiresPremium,
+          hasPremium: cached.hasPremium,
+          prerequisitesComplete: cached.prerequisitesComplete,
+          missingPrerequisites: cached.missingPrerequisites,
           isLoading: false,
           refetch: fetchAccess,
         }))
@@ -79,7 +84,7 @@ export function useModuleAccess(moduleId: string | null, userId: string | null):
       setResult(prev => ({
         ...prev,
         canAccess: data.canAccess,
-        reason: data.reason,
+        reason: toModuleAccessReason(data.reason),
         requiresPremium: data.requiresPremium ?? false,
         hasPremium: data.hasPremium ?? false,
         prerequisitesComplete: data.prerequisitesComplete ?? true,
