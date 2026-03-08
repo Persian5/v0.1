@@ -49,9 +49,14 @@ export function useModuleAccess(moduleId: string | null, userId: string | null):
     try {
       const cached = getCachedModuleAccess(moduleId, userId)
       if (cached) {
+        const reason: ModuleAccessReason =
+          cached.reason === 'no_premium' || cached.reason === 'incomplete_prerequisites'
+            ? cached.reason
+            : undefined
         setResult(prev => ({
           ...prev,
           ...cached,
+          reason,
           isLoading: false,
           refetch: fetchAccess,
         }))

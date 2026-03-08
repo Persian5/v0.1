@@ -539,15 +539,17 @@ export class VocabularyTrackingService {
   }
 
   /**
-   * Get mastered words (5 consecutive correct OR mastery_level = 5)
+   * Get mastered words via the user_word_mastery view.
+   * The view enforces: consecutive_correct >= 5, accuracy >= 90%, total_attempts >= 3,
+   * AND at least one correct recall-based attempt (input/text-sequence/final).
    */
   static async getMasteredWords(userId: string): Promise<WeakWord[]> {
     try {
       const { data, error } = await supabase
-        .from('vocabulary_performance')
+        .from('user_word_mastery')
         .select('*')
         .eq('user_id', userId)
-        .or('consecutive_correct.gte.5,mastery_level.eq.5')
+        .eq('status', 'mastered')
         .order('updated_at', { ascending: false })
 
       if (error) {
@@ -736,7 +738,9 @@ export class VocabularyTrackingService {
   }
 
   /**
-   * Fallback method using old logic (if view doesn't exist yet)
+   * Fallback method using old logic (if view doesn't exist yet).
+   * Includes recall-aware mastery check: queries vocabulary_attempts for
+   * correct recall-based attempts to stay aligned with the view logic.
    * @private
    */
   private static async getDashboardStatsFallback(userId: string): Promise<{
@@ -747,13 +751,21 @@ export class VocabularyTrackingService {
     wordsToReview: WeakWord[]
   }> {
     try {
-      const { data, error } = await supabase
-        .from('vocabulary_performance')
-        .select('*')
-        .eq('user_id', userId)
+      const [perfResult, recallResult] = await Promise.all([
+        supabase
+          .from('vocabulary_performance')
+          .select('*')
+          .eq('user_id', userId),
+        supabase
+          .from('vocabulary_attempts')
+          .select('vocabulary_id')
+          .eq('user_id', userId)
+          .eq('is_correct', true)
+          .in('game_type', ['input', 'text-sequence', 'final'])
+      ])
 
-      if (error) {
-        console.error('Error fetching dashboard stats (fallback):', error)
+      if (perfResult.error) {
+        console.error('Error fetching dashboard stats (fallback):', perfResult.error)
         return {
           wordsLearned: 0,
           masteredWords: 0,
@@ -763,25 +775,29 @@ export class VocabularyTrackingService {
         }
       }
 
-      const performances = data || []
+      const performances = perfResult.data || []
+      const recallVerifiedIds = new Set(
+        (recallResult.data || []).map(r => r.vocabulary_id)
+      )
 
       // Words Learned: Any word with total_attempts > 0
       const wordsLearned = performances.filter(p => p.total_attempts > 0).length
 
-      // Mastered Words: NEW CRITERIA - consecutive_correct >= 5 AND accuracy >= 90% AND total_attempts >= 3
+      // Mastered Words: consecutive_correct >= 5 AND accuracy >= 90% AND total_attempts >= 3
+      // AND at least one correct recall-based attempt
       const masteredWords = performances.filter(p => {
         if (p.total_attempts < 3) return false
         const accuracy = p.total_attempts > 0 ? (p.total_correct / p.total_attempts) * 100 : 0
-        return p.consecutive_correct >= 5 && accuracy >= 90
+        return p.consecutive_correct >= 5 && accuracy >= 90 && recallVerifiedIds.has(p.vocabulary_id)
       }).length
 
-      // Hard Words: NEW CRITERIA - (accuracy < 70% OR consecutive_correct < 2) AND total_attempts >= 2 AND NOT mastered
+      // Hard Words: (accuracy < 70% OR consecutive_correct < 2) AND total_attempts >= 2 AND NOT mastered
       const masteredVocabIds = new Set(
         performances
           .filter(p => {
             if (p.total_attempts < 3) return false
             const accuracy = p.total_attempts > 0 ? (p.total_correct / p.total_attempts) * 100 : 0
-            return p.consecutive_correct >= 5 && accuracy >= 90
+            return p.consecutive_correct >= 5 && accuracy >= 90 && recallVerifiedIds.has(p.vocabulary_id)
           })
           .map(p => p.vocabulary_id)
       )

@@ -93,7 +93,9 @@ export function LessonRunner({
   const isAwardingXpRef = useRef(false);
   // FIX 3: Story completion idempotency guard
   const storyCompleteGuardRef = useRef(false);
-  
+  // Session XP actually awarded this lesson (for completion screen) - only counts when result.granted
+  const sessionXpAwardedRef = useRef(0);
+
   // Sync refs with state for re-render consistency
   useEffect(() => {
     remediationQueueRef.current = remediationQueue;
@@ -128,6 +130,7 @@ export function LessonRunner({
     currentStepTrackedRef.current = new Set();
     isAwardingXpRef.current = false;
     storyCompleteGuardRef.current = false;
+    sessionXpAwardedRef.current = 0;
     
     console.log(`[LessonRunner] State reset for lesson: ${moduleId}/${lessonId}`);
   }, [moduleId, lessonId]);
@@ -346,18 +349,18 @@ export function LessonRunner({
         
         // Only navigate if lesson was successfully marked complete
         startTransition(() => {
-          router.push(`/modules/${moduleId}/${lessonId}/completion?xp=${xp}`);
+          router.push(`/modules/${moduleId}/${lessonId}/completion?xp=${sessionXpAwardedRef.current}`);
         });
       })();
     }
-  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, router, xp, user]);
+  }, [idx, steps.length, isInRemediation, storyCompleted, lessonData, moduleId, lessonId, router, user]);
 
   // Prefetch completion route when 80% done to avoid blank screen while chunk loads
   useEffect(() => {
     if (steps.length > 0 && idx / steps.length >= 0.8) {
-      router.prefetch(`/modules/${moduleId}/${lessonId}/completion?xp=${xp}`);
+      router.prefetch(`/modules/${moduleId}/${lessonId}/completion?xp=${sessionXpAwardedRef.current}`);
     }
-  }, [idx, steps.length, router, moduleId, lessonId, xp]);
+  }, [idx, steps.length, router, moduleId, lessonId]);
 
   // Always scroll to top when moving to a new item (regular or remediation)
   useEffect(() => {
@@ -438,6 +441,9 @@ export function LessonRunner({
         // Get XP amount from curriculum
         const xpReward = XpService.getStepXp(currentStep);
         
+        // Capture XP before award for session tracking (actual amount from result if available)
+        const xpBeforeAward = SmartAuthService.getUserXp();
+        
         // Award XP idempotently (database enforces once-per-step)
         const result = await XpService.awardXpOnce({
           userId: user.id,
@@ -453,8 +459,13 @@ export function LessonRunner({
           }
         });
         
-        // Log if step was already completed
-        if (!result.granted) {
+        // Track session XP for completion screen (only when actually granted)
+        if (result.granted) {
+          const awardedAmount = result.newXp !== undefined
+            ? result.newXp - xpBeforeAward
+            : xpReward.amount;
+          sessionXpAwardedRef.current += awardedAmount;
+        } else {
           console.log(`Step already completed: ${stepUid} (reason: ${result.reason})`);
         }
         
@@ -892,7 +903,7 @@ export function LessonRunner({
       .catch((err) => console.error('Failed to mark lesson completed (story):', err));
 
     // Navigate to the dedicated completion route so the usual flow (and Next-Lesson logic) picks up
-    router.push(`/modules/${moduleId}/${lessonId}/completion`);
+    router.push(`/modules/${moduleId}/${lessonId}/completion?xp=${sessionXpAwardedRef.current}`);
   };
 
   // Find vocabulary item by ID across all available vocabulary

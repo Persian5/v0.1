@@ -321,17 +321,17 @@ export function MatchingGame({
         <div className="w-full max-w-[95%] sm:max-w-[90%] lg:max-w-[85%] xl:max-w-[80%] flex flex-col">
           {/* Header */}
           <div className="text-center mb-3 sm:mb-5">
-            <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold mb-1 text-primary">
-              MATCH THE WORDS
+            <h2 className="text-lg sm:text-xl font-semibold mb-1 text-primary">
+              Match the words
             </h2>
-            <p className="text-sm xs:text-base text-muted-foreground mb-3">
-              Click on a Persian word, then click its English match to connect them
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Tap a Finglish word, then tap its English meaning
             </p>
           </div>
         
         <div className="w-full">
-          {/* Section header for Persian words */}
-          <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">Persian Words</h3>
+          {/* Finglish label */}
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2 sm:mb-3 font-medium">Finglish</p>
           
           {/* Persian words - side by side */}
             <div className="flex flex-row flex-wrap sm:flex-nowrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
@@ -343,15 +343,15 @@ export function MatchingGame({
               return (
                 <div key={w.id} className="flex-1 min-w-[45%] sm:min-w-0">
                   <motion.div
-                    className={`p-3 sm:p-4 md:p-6 rounded-lg border-2 select-none touch-action-none ${
+                    className={`p-3 sm:p-4 md:p-6 rounded-2xl border-2 border-l-4 select-none touch-action-none ${
                       isMatched
-                        ? "border-green-500 bg-green-100" // Matched state - green border with light green fill
+                        ? "border-green-500 border-l-green-600 bg-green-50"
                         : isIncorrect
-                          ? "border-red-500 bg-red-100" // Incorrect selection - red border with light red fill
+                          ? "border-red-500 border-l-red-600 bg-red-50"
                           : isSelected 
-                            ? "border-primary bg-blue-100" // Selected state - blue fill to distinguish from match
-                              : "border-primary/20 bg-primary/5 hover:bg-primary/10" // Default state - very light primary bg with darker hover
-                    } shadow-md ${isMatched || isIncorrect ? "cursor-default" : "cursor-pointer"} h-full flex items-center justify-center ${wordHeightClasses} transition-all sm:hover:scale-[1.02] active:scale-[0.98]`}
+                            ? "border-primary border-l-primary bg-primary/15 shadow-lg"
+                              : "border-primary/20 border-l-primary/40 bg-primary/5 hover:bg-primary/10"
+                    } shadow-sm ${isMatched || isIncorrect ? "cursor-default" : "cursor-pointer"} h-full flex items-center justify-center ${wordHeightClasses} transition-all sm:hover:scale-[1.02] active:scale-[0.98]`}
                     onClick={() => {
                       if (!isMatched && !isIncorrect) handleWordClick(w.id);
                     }}
@@ -371,8 +371,8 @@ export function MatchingGame({
             })}
           </div>
 
-          {/* Section header for English meanings */}
-          <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3 text-primary">English Meanings</h3>
+          {/* English label */}
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2 sm:mb-3 font-medium">English</p>
           
           {/* English word bank - below */}
             <div className="flex flex-row flex-wrap justify-center gap-2 sm:gap-3">
@@ -390,15 +390,15 @@ export function MatchingGame({
                   onClick={() => {
                     if (!isMatched && !showFeedback) handleSlotClick(slot.id);
                   }}
-                  className={`flex-1 min-w-[45%] sm:min-w-0 p-3 sm:p-4 rounded-lg border-2 transition-all select-none touch-action-none ${
+                  className={`flex-1 min-w-[45%] sm:min-w-0 p-3 sm:p-4 rounded-2xl border-2 transition-all select-none touch-action-none ${
                     isMatched && isCorrect
-                      ? 'border-green-500 bg-green-100'
+                      ? 'border-green-500 bg-green-50'
                       : isIncorrect
-                        ? 'border-red-500 bg-red-100'
+                        ? 'border-red-500 bg-red-50'
                         : isSelected
-                          ? 'border-primary bg-blue-100'
-                            : 'border-gray-200 hover:border-gray-300 bg-gray-50 hover:bg-gray-100'
-                  } ${!isMatched && !isIncorrect ? 'cursor-pointer' : 'cursor-default'} ${slotHeightClasses} shadow-md flex items-center justify-center sm:hover:scale-[1.02] active:scale-[0.98]`}
+                          ? 'border-primary bg-primary/15 shadow-lg'
+                            : 'border-gray-200 hover:border-gray-300 bg-gray-50/80 hover:bg-gray-100'
+                  } ${!isMatched && !isIncorrect ? 'cursor-pointer' : 'cursor-default'} ${slotHeightClasses} shadow-sm flex items-center justify-center sm:hover:scale-[1.02] active:scale-[0.98]`}
                   animate={
                     isIncorrect ? { x: [0, -10, 10, -10, 10, 0] } : {}
                   }
@@ -421,7 +421,7 @@ export function MatchingGame({
                 exit={{ opacity: 0 }}
                 className="text-center text-red-500 mt-4 text-sm sm:text-base font-medium"
               >
-                Almost! Try again.
+                Not quite -- try another pair
               </motion.p>
             )}
           </AnimatePresence>

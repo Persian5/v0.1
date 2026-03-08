@@ -51,7 +51,7 @@ curriculum.ts (content) --> Services (business logic) --> React Components (UI) 
 ## Payments (Active)
 
 - **Provider:** Stripe (currently sandbox; LIVE setup is a launch blocker)
-- **Model:** $4.99/month subscription
+- **Model:** Beta: $0.99 first month, then $9.99/month. Module 1 free; Full Access unlocks Modules 2–11.
 - **Flow:** `/api/checkout` creates Stripe Checkout session --> Stripe hosted page --> `/api/webhooks` handles events --> `user_subscriptions` table updated
 - **Access check:** `ModuleAccessService.canAccessModule()` (server) and `/api/check-module-access` (API) check `requiresPremium` flag + `user_subscriptions` table
 - **UI:** `PremiumLockModal` shown when access denied

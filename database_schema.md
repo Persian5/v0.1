@@ -300,14 +300,16 @@
   - `effective_mastery_level` (SMALLINT) - Mastery level with decay applied (reduces by 1 if inactive >14 days)
 - **Status Logic** (mutually exclusive):
   - **Unclassified**: `total_attempts < 3` (not enough data to classify)
-  - **Mastered**: `consecutive_correct >= 5 AND accuracy >= 90 AND total_attempts >= 3`
+  - **Mastered**: `consecutive_correct >= 5 AND accuracy >= 90 AND total_attempts >= 3 AND at least one correct recall-based attempt (game_type IN 'input', 'text-sequence', 'final')`
   - **Hard**: `(accuracy < 70 OR consecutive_correct < 2) AND total_attempts >= 2 AND NOT mastered`
   - **Learning**: Everything else (in progress, has 3+ attempts, not mastered, not hard)
+- **Recall Requirement**: A word cannot be classified as 'mastered' unless the user has answered it correctly in at least one recall-based game type (input, text-sequence, or final). Recognition-only success (flashcards, quizzes, matching) is not sufficient.
 - **Edge Cases Handled**:
   - Division by zero: Checks `total_attempts >= 2` or `>= 3` before division (no NULLIF needed)
   - Null values: All calculations handle NULL safely
   - Boundary conditions: Uses `>=` and `<` for exact thresholds (90%, 70%, etc.)
   - Mutual exclusivity: Mastered words explicitly excluded from hard words
+  - Recall verification: EXISTS subquery on vocabulary_attempts for recall game types
 - **Decay Logic**: `effective_mastery_level = GREATEST(0, mastery_level - 1)` if `last_correct_at IS NULL` or `last_correct_at < NOW() - INTERVAL '14 days'`
 - **Security**: `GRANT SELECT` to `authenticated` and `anon`
 - **Performance**: Uses indexes on base table for efficient queries

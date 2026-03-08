@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Medal, Star, Sparkles, Home, RotateCcw, ArrowRight } from "lucide-react"
+import { Medal, Star, Sparkles, Home, RotateCcw, ArrowRight, Gamepad2 } from "lucide-react"
 import { motion } from "framer-motion"
-import { getModule } from "@/lib/config/curriculum"
+import { getModule, getNextAvailableModule } from "@/lib/config/curriculum"
 import { VocabularyService } from "@/lib/services/vocabulary-service"
 import { PremiumLockModal } from "@/components/PremiumLockModal"
 import { getCachedModuleAccess, setCachedModuleAccess } from "@/lib/utils/module-access-cache"
@@ -69,13 +69,16 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   
   const currentModule = getModule(moduleId);
-  const completionData = MODULE_COMPLETION_DATA[moduleId];
-  
-  // Get next module info
-  const nextModuleId = moduleId === "module1" ? "module2" : moduleId === "module2" ? "module3" : "module4";
-  const nextModule = getModule(nextModuleId);
-  const isNextModuleAvailable = nextModule?.available || false;
-  
+  const completionData = MODULE_COMPLETION_DATA[moduleId] ?? {
+    title: `${currentModule?.title || "Module"} Complete!`,
+    description: "You've mastered this module!",
+    motivationalMessage: "Great work! Keep learning.",
+    skillsLearned: []
+  };
+  const nextModule = getNextAvailableModule(moduleId);
+  const isNextModuleAvailable = !!nextModule;
+  const isFrontier = !isNextModuleAvailable;
+
   // ALWAYS run hooks before any early returns (React Rules of Hooks)
   useEffect(() => {
     // Get all vocabulary learned in this module
@@ -83,31 +86,31 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
     setVocabularyLearned(moduleVocabulary.map((item: any) => item.finglish));
   }, [moduleId]);
 
-  // Early return AFTER all hooks
-  if (!currentModule || !completionData) {
+  // Early return AFTER all hooks - only require currentModule (completionData has fallback)
+  if (!currentModule) {
     return null;
   }
 
   const handleNextModule = async () => {
-    if (!isNextModuleAvailable) return;
-    
-    // ✅ FIX: Check premium access BEFORE navigating
-    if (nextModule?.requiresPremium) {
+    if (!nextModule) return;
+
+    // Check premium access BEFORE navigating
+    if (nextModule.requiresPremium) {
       const { user } = SmartAuthService.getSessionState()
       if (user) {
         try {
           // Check cache first
-          const cachedAccess = getCachedModuleAccess(nextModuleId, user.id)
+          const cachedAccess = getCachedModuleAccess(nextModule.id, user.id)
           let accessData
           
           if (cachedAccess) {
             accessData = cachedAccess
           } else {
             // Cache miss - fetch from API
-            const accessResponse = await fetch(`/api/check-module-access?moduleId=${nextModuleId}`)
+            const accessResponse = await fetch(`/api/check-module-access?moduleId=${nextModule.id}`)
             if (accessResponse.ok) {
               accessData = await accessResponse.json()
-              setCachedModuleAccess(nextModuleId, user.id, accessData)
+              setCachedModuleAccess(nextModule.id, user.id, accessData)
             }
           }
           
@@ -124,15 +127,19 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
     }
     
     // User has access (or module doesn't require premium) - navigate
-    router.push(`/modules/${nextModuleId}`);
+    router.push(`/modules/${nextModule.id}`);
   };
 
   const handleRepracticeModule = () => {
     router.push(`/modules/${moduleId}`);
   };
 
-  const handleViewDashboard = () => {
+  const handleViewModules = () => {
     router.push('/modules');
+  };
+
+  const handleReviewGames = () => {
+    router.push('/review');
   };
 
   return (
@@ -158,15 +165,15 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
         transition={{ delay: 0.3, duration: 0.6 }}
       >
         <h1 className="text-4xl font-bold mb-4 text-green-600">
-          {completionData.title}
+          {isFrontier ? "🎉 You're all caught up!" : completionData.title}
         </h1>
-        
+
         <p className="text-xl text-gray-700 mb-2">
-          {completionData.description}
+          {isFrontier ? "You've completed all available Finglish lessons." : completionData.description}
         </p>
-        
+
         <p className="text-lg text-green-600 font-medium mb-8">
-          {completionData.motivationalMessage}
+          {isFrontier ? "More Finglish lessons coming soon." : completionData.motivationalMessage}
         </p>
       </motion.div>
 
@@ -203,23 +210,25 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
         </div>
       </motion.div>
 
-      {/* Skills Learned Section */}
-      <motion.div
-        className="bg-gray-50 rounded-xl p-6 mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.6 }}
-      >
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Skills You've Mastered</h3>
-        <ul className="space-y-2">
-          {completionData.skillsLearned.map((skill, index) => (
-            <li key={index} className="flex items-center gap-3 text-left">
-              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-              <span className="text-gray-700">{skill}</span>
-            </li>
-          ))}
-        </ul>
-      </motion.div>
+      {/* Skills Learned Section - only when we have skills data */}
+      {completionData.skillsLearned.length > 0 && (
+        <motion.div
+          className="bg-gray-50 rounded-xl p-6 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+        >
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Skills You've Mastered</h3>
+          <ul className="space-y-2">
+            {completionData.skillsLearned.map((skill, index) => (
+              <li key={index} className="flex items-center gap-3 text-left">
+                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                <span className="text-gray-700">{skill}</span>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      )}
 
       {/* Action Buttons */}
       <motion.div 
@@ -228,45 +237,64 @@ export function ModuleCompletion({ moduleId, totalXpEarned }: ModuleCompletionPr
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.6 }}
       >
-        {/* Next Module Button */}
-        <Button 
-          className={`w-full text-lg py-6 ${
-            isNextModuleAvailable 
-              ? 'bg-green-600 hover:bg-green-700' 
-              : 'bg-gray-400 cursor-not-allowed'
-          }`}
-          onClick={handleNextModule}
-          disabled={!isNextModuleAvailable}
-        >
-          {isNextModuleAvailable ? (
-            <>
+        {isFrontier ? (
+          /* Frontier: Review Games, Replay Lessons, Back to Modules */
+          <div className="space-y-3">
+            <Button
+              className="w-full text-lg py-6 bg-green-600 hover:bg-green-700"
+              onClick={handleReviewGames}
+            >
+              <Gamepad2 className="h-5 w-5 mr-2" />
+              Review Games
+            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="w-full py-3"
+                onClick={handleRepracticeModule}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Replay Lessons
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full py-3"
+                onClick={handleViewModules}
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Back to Modules
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* Next module available: Next Module + secondary actions */
+          <>
+            <Button
+              className="w-full text-lg py-6 bg-green-600 hover:bg-green-700"
+              onClick={handleNextModule}
+            >
               Next Module <ArrowRight className="ml-2 h-5 w-5" />
-            </>
-          ) : (
-            'More Modules Coming Soon!'
-          )}
-        </Button>
-        
-        {/* Secondary Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            className="w-full py-3"
-            onClick={handleRepracticeModule}
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Re-Practice {currentModule?.title || 'Module'}
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="w-full py-3"
-            onClick={handleViewDashboard}
-          >
-            <Home className="h-4 w-4 mr-2" />
-            View Dashboard
-          </Button>
-        </div>
+            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="w-full py-3"
+                onClick={handleRepracticeModule}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Re-Practice {currentModule.title}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full py-3"
+                onClick={handleViewModules}
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Back to Modules
+              </Button>
+            </div>
+          </>
+        )}
       </motion.div>
       
       {/* Premium Lock Modal */}

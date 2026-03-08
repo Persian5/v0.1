@@ -407,12 +407,16 @@ export class XpService {
         console.log(`✅ XP awarded: ${amount} (${source}) - ${idempotencyKey}`)
         
         // PHASE 1 FIX: Use atomic newXp from RPC as source of truth
-        // Unconditionally set the UI to match the database state
-        // This prevents race conditions where optimistic updates might drift
+        // Staleness guard: ignore lower reconciliation values to prevent stale/out-of-order
+        // DB responses from causing visible XP regressions in the UI (e.g. rapid steps,
+        // already-awarded rollback). Only apply when newXp >= current displayed value.
         if (newXp !== undefined) {
           try {
             const { SmartAuthService } = await import('./smart-auth-service')
-            SmartAuthService.setXpDirectly(newXp)
+            const currentXp = SmartAuthService.getUserXp()
+            if (newXp >= currentXp) {
+              SmartAuthService.setXpDirectly(newXp)
+            }
             
             // STREAK FIX: Fetch and update streak after XP award
             // The database trigger (trg_update_streak) updates streak_count when XP is awarded
@@ -437,28 +441,28 @@ export class XpService {
       } else {
         // XP already awarded (race condition - cache was empty but DB had it)
         // Cache already set above (correct - prevents future attempts)
-        
-        // PHASE 1 FIX: Use atomic newXp from RPC as source of truth
+        // Staleness guard: do not apply lower newXp - we optimistically added, so
+        // applying would cause visible XP drop. Skip reconciliation when newXp < current.
         try {
           const { SmartAuthService } = await import('./smart-auth-service')
           if (newXp !== undefined) {
-             // Unconditionally set the UI to match the database state
-             // Even if "already awarded", we want the UI to show the correct total
+            const currentXp = SmartAuthService.getUserXp()
+            if (newXp >= currentXp) {
               SmartAuthService.setXpDirectly(newXp)
-              
-              // STREAK FIX: Also update streak when already awarded
-              try {
-                const { DatabaseService } = await import('@/lib/supabase/database')
-                const profile = await DatabaseService.getUserProfile(userId)
-                if (profile && profile.streak_count !== undefined) {
-                  SmartAuthService.updateUserData({ 
-                    streakCount: profile.streak_count,
-                    lastActivityDate: profile.last_activity_date || null
-                  })
-                }
-              } catch (streakError) {
-                console.warn('Failed to update streak cache (already awarded case):', streakError)
+            }
+            // STREAK FIX: Also update streak when already awarded
+            try {
+              const { DatabaseService } = await import('@/lib/supabase/database')
+              const profile = await DatabaseService.getUserProfile(userId)
+              if (profile && profile.streak_count !== undefined) {
+                SmartAuthService.updateUserData({
+                  streakCount: profile.streak_count,
+                  lastActivityDate: profile.last_activity_date || null
+                })
               }
+            } catch (streakError) {
+              console.warn('Failed to update streak cache (already awarded case):', streakError)
+            }
           }
         } catch (error) {
           console.warn('Failed to reconcile XP:', error)

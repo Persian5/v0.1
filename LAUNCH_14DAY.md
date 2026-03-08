@@ -2,23 +2,31 @@
 
 **Goal:** Launch a trustworthy v0.1 that works for real users.  
 **Principle:** Fix launch safety first, then trust/conversion issues, then deploy and validate.  
-**Do not use this sprint for cleanup or refactors.**
+**Do not use this sprint for cleanup or refactors.**  
+**Last updated:** February 26, 2026
+
+---
+
+## Completed (as of Feb 26, 2026)
+
+
+- **Webhook missing-row behavior** — `app/api/webhooks/route.ts`: returns 500 when `supabase_user_id` missing on checkout; throws when no `user_subscriptions` row for subscription events.
+- **check-premium** — `app/api/check-premium/route.ts`: returns 5xx on real backend failures instead of masking as `hasPremium: false`.
+- **CrashTestButton** — `app/layout.tsx`: rendered only when `NODE_ENV === "development"`.
+- **Leaderboard debug_user_id** — `app/api/leaderboard/route.ts`: used only when `NODE_ENV === "development"`.
+- **Landing-page premium CTA** — `app/page.tsx`: "Get Full Access" now routes to `/pricing` via `handleGetFullAccess`.
+- **Pricing page** — `app/pricing/page.tsx`: Full rebuild. New copy, pricing ($0.99 first month, then $9.99/month), trust bar, 4-question FAQ accordion, dual final CTA. No contradictory "everything is free" copy.
+- **Review games** — Filter-specific empty states, Memory timeSpentMs fix, Matching Marathon duplicate-advance fix, mobile layout for 6+ pairs.
 
 ---
 
 ## Must Fix Before Launch
 
-1. Webhook missing-row behavior in `app/api/webhooks/route.ts`
-2. `check-premium` returning false on backend failure in `app/api/check-premium/route.ts`
-3. Next.js upgrade from `14.2.18` to patched `14.2.35+`
-4. Remove or dev-gate `CrashTestButton` in `app/layout.tsx`
-5. Gate leaderboard `debug_user_id` behind development mode
-6. Set Stripe LIVE and production env vars
-7. Verify Supabase production Site URL / Redirect URLs
-8. Fix landing-page premium CTA
-9. Fix pricing-page contradiction
-10. Add privacy + terms pages
-11. Run full golden-path smoke tests on the live app
+1. Next.js upgrade from `14.2.18` to patched `14.2.35+`
+2. Set Stripe LIVE and production env vars
+3. Verify Supabase production Site URL / Redirect URLs
+4. Add privacy + terms pages
+5. Run full golden-path smoke tests on the live app
 
 ## Should Fix Before Launch If Possible
 
@@ -28,6 +36,16 @@
 4. Fix story-completion fire-and-forget save path
 5. Fix XP exception-path rollback issue
 6. Add LIMIT to leaderboard fallback query
+
+### UX quick wins from Feb 26 audit (see `V0.1_LAUNCH_CHECKLIST.md` items 21-34)
+
+7. Fix "FAQ" buttons to link to pricing page FAQ anchor or remove (`SummaryView.tsx`, `account/page.tsx`)
+8. Fix CompletionView XP display: `xpGained ?? totalXp` -> `xpGained ?? 0` (`CompletionView.tsx`)
+9. Remove PersianWordRush speed claim ("Speed increases as you progress") or implement it
+10. Show password change success feedback on account page
+11. Remove emojis from billing success, leaderboard footer, PersianWordRush
+12. Unify branding to "Finglish" across all footers and metadata
+13. Unify route labels: pick one name per route (Learn vs Modules, Dashboard vs Progress)
 
 ## After Launch / Ignore For Now
 
@@ -39,6 +57,11 @@
 - Image compression
 - Refactors and code cleanup
 - New features
+- Review game visual consistency (replace hardcoded hex colors with `primary`/`accent` tokens)
+- Fix billing success page to poll API instead of 2s timeout
+- Fix hardcoded module chain in CompletionView
+- Fix static completion/summary copy to vary by lesson
+- Fix LessonRunner game-load errors awarding XP
 
 ---
 
@@ -60,20 +83,20 @@ Launch
 
 ---
 
-## Day 1 — Payment correctness
+## Day 1 — Payment correctness (Done)
 
-1. Fix webhook missing-row behavior in `app/api/webhooks/route.ts`
-2. Fix `check-premium` to return 5xx on real failures
+1. ~~Fix webhook missing-row behavior in `app/api/webhooks/route.ts`~~ Done
+2. ~~Fix `check-premium` to return 5xx on real failures~~ Done
 3. Verify checkout → webhook → `user_subscriptions` works in test mode
 
 **Done when:** a new paying test user always gets a valid subscription row and premium access.
 
 ---
 
-## Day 2 — Security blockers
+## Day 2 — Security blockers (Done)
 
-1. Gate `debug_user_id` behind development mode
-2. Remove or dev-gate `CrashTestButton`
+1. ~~Gate `debug_user_id` behind development mode~~ Done
+2. ~~Remove or dev-gate `CrashTestButton`~~ Done
 3. Gate or remove noisy `console.log` calls in `app/api/leaderboard/route.ts` and `app/api/webhooks/route.ts`
 
 **Done when:** production code has no intentional crash button and no debug data path.
@@ -90,24 +113,31 @@ Launch
 
 ---
 
-## Day 4 — Trust and conversion fixes
+## Day 4 — Trust and conversion fixes (Done)
 
-1. Fix landing-page premium CTA so it goes to the correct pricing / payment path
-2. Fix pricing-page FAQ contradiction (remove “everything is free”)
+1. ~~Fix landing-page premium CTA so it goes to the correct pricing / payment path~~ Done (routes to `/pricing`)
+2. ~~Fix pricing-page FAQ contradiction~~ Done (full pricing page rebuild; no contradictory copy)
 3. Fix or remove the dead footer subscribe button
 4. Add a real header/navigation to pricing if still missing
+5. Fix "FAQ" buttons that go to `/pricing` instead of FAQ (`SummaryView.tsx`, `account/page.tsx`)
+6. Remove emojis from billing success, leaderboard footer, PersianWordRush
 
 **Done when:** top-of-funnel pages no longer make the product feel amateur or contradictory.
 
 ---
 
-## Day 5 — Learning quality fixes that matter before launch
+## Day 5 — Learning quality + UX quick wins
 
 1. Fix Module 1 story using untaught `khoshbakhtam`
 2. Verify stub modules (4-11) are not misleadingly exposed in the UI
 3. If story completion is still fragile, fix the fire-and-forget save path
+4. Fix CompletionView XP display (`xpGained ?? totalXp` -> `xpGained ?? 0`)
+5. Remove PersianWordRush speed claim or implement speed scaling
+6. Fix account page: show password change success feedback, fix fake streak data
+7. Unify branding to "Finglish" across footers and metadata
+8. Unify route labels (Learn/Modules -> one name, Dashboard/Progress -> one name)
 
-**Done when:** the free learning path feels coherent and does not preview material incorrectly.
+**Done when:** the free learning path feels coherent, completion screens show correct data, and the app feels like one product.
 
 ---
 
@@ -210,6 +240,16 @@ Do **not** use this day for cleanup.
 2. Monitor Vercel + Supabase + Stripe for the first 24 hours
 3. Respond only to real production issues
 4. Do not ship new features
+
+---
+
+## Post-Launch Product Improvements
+
+After launch, prioritize these high-impact upgrades (see `MASTER_PROJECT_OPERATING_DOC.md` Product Improvement Audit and `V0.1_LAUNCH_CHECKLIST.md` items 35–40):
+
+1. **Diaspora microcopy** (fastest, best differentiation) — Add 5–8 diaspora framing phrases: "Ready to chat with family?", "One step closer to talking with grandma", etc.
+2. **Practice Your Weak Words** — Prominent dashboard CTA when user has hard words; default review to hard-words filter.
+3. **Smarter lesson completion** — Session-level correct/incorrect tracking; vary completion copy by performance (excellent / solid / needs review).
 
 ---
 

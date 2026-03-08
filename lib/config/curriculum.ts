@@ -247,6 +247,7 @@ export const curriculumData: Module[] = [
           audioMeaning("esm"),
           flashcard(vocabulary, "chi"),
           vocabQuiz(vocabulary, "chi", "vocab-reverse"),
+          input("How do you say 'What' in Persian?", "Chi"),
           flashcard(vocabulary, "chiye"),
           vocabQuiz(vocabulary, "chiye", "vocab-normal"),
           matching(["esme", "shoma", "chiye", "man"]),
@@ -2478,6 +2479,21 @@ export function getModules(): Module[] {
 
 export function getModule(moduleId: string): Module | undefined {
   return curriculumData.find(m => m.id === moduleId);
+}
+
+/**
+ * Get the next available module in curriculum order.
+ * Returns the first module after the current one that has available: true and lessons.
+ * Returns undefined when at the frontier (no next available module).
+ */
+export function getNextAvailableModule(moduleId: string): Module | undefined {
+  const idx = curriculumData.findIndex(m => m.id === moduleId);
+  if (idx < 0) return undefined;
+  for (let i = idx + 1; i < curriculumData.length; i++) {
+    const m = curriculumData[i];
+    if (m.available && (m.lessons?.length ?? 0) > 0) return m;
+  }
+  return undefined;
 }
 
 /**

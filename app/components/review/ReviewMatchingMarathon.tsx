@@ -88,9 +88,9 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
 
   // Internal helper: Generate pairs from specific vocabulary array
   const generatePairsFromVocab = (vocab: VocabularyItem[], numPairs: number) => {
-    if (vocab.length === 0) return
+    if (vocab.length < 2) return
     
-    // Ensure minimum 2 pairs
+    // Ensure minimum 2 pairs, capped by available vocabulary
     const actualNumPairs = Math.max(2, Math.min(numPairs, vocab.length))
     const pairs: Array<{ words: Array<{ id: string; text: string; slotId: string }>; slots: Array<{ id: string; text: string }> }> = []
     
@@ -279,7 +279,7 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
       ? "No hard words found. Keep learning and words you struggle with will appear here."
       : "Complete some lessons first to unlock review games with your learned vocabulary!"
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/5 to-background">
         <div className="text-center max-w-md mx-auto p-6">
           <p className="text-lg font-semibold mb-2">No vocabulary available</p>
           <p className="text-muted-foreground mb-4">
@@ -293,7 +293,7 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
 
   if (!currentRound || currentWords.length === 0 || currentSlots.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/5 to-background">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
           <p className="text-muted-foreground">Loading next round...</p>
@@ -303,38 +303,38 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-primary/5 to-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b px-4 py-3">
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* XP Display */}
-            <div className="flex items-center gap-2 px-3 py-1 bg-accent/10 rounded-lg border border-accent/20">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 rounded-full">
               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-sm font-semibold text-primary">{xp.toLocaleString()}</span>
+              <span className="text-sm font-medium text-primary">{xp.toLocaleString()}</span>
             </div>
             
             {/* Lives */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 px-3 py-1.5">
               {Array.from({ length: 3 }).map((_, i) => (
                 <Heart
                   key={i}
-                  className={`h-5 w-5 ${
-                    i < lives ? 'text-red-500 fill-red-500' : 'text-gray-300'
+                  className={`h-5 w-5 transition-colors ${
+                    i < lives ? 'text-accent fill-accent' : 'text-gray-300'
                   }`}
                 />
               ))}
             </div>
             
             {/* Round Counter */}
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              <span className="text-sm font-semibold">Round {round}</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full">
+              <Target className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Round {round}</span>
             </div>
           </div>
 
-          <Button variant="ghost" size="sm" onClick={onExit}>
-            <X className="h-4 w-4 mr-2" />
+          <Button variant="ghost" size="sm" onClick={onExit} className="text-gray-500 hover:text-gray-700">
+            <X className="h-4 w-4 mr-1" />
             Exit
           </Button>
         </div>
@@ -366,33 +366,38 @@ export function ReviewMatchingMarathon({ filter, onExit }: ReviewMatchingMaratho
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           >
             <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-white rounded-lg p-8 max-w-md mx-4 text-center"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", damping: 20 }}
+              className="bg-white rounded-[28px] p-8 md:p-10 max-w-md mx-4 text-center shadow-2xl border border-gray-100"
             >
-              <h2 className="text-2xl font-bold mb-4">Game Over</h2>
-              <p className="text-muted-foreground mb-6">
-                You completed {round - 1} round{round - 1 !== 1 ? 's' : ''}!
-              </p>
+              {round - 1 >= 5 && (
+                <p className="text-sm font-semibold text-primary mb-2">Afarin!</p>
+              )}
+              <h2 className="text-2xl font-bold mb-2 text-gray-900">Game Over</h2>
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <div className="px-4 py-2 bg-primary/10 rounded-full">
+                  <span className="text-lg font-bold text-primary">{round - 1}</span>
+                  <span className="text-sm text-gray-600 ml-1">round{round - 1 !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
               <div className="flex gap-3">
-                <Button variant="outline" onClick={onExit} className="flex-1">
+                <Button variant="outline" onClick={onExit} className="flex-1 rounded-full py-5">
                   Exit
                 </Button>
                 <Button
                   onClick={() => {
-                    // Reset game
                     setLives(3)
                     setRound(1)
                     setCurrentRoundIndex(0)
-                    vocabularyIndexRef.current = 0 // Reset vocabulary index
-                    // Reshuffle vocabulary for fresh start
+                    vocabularyIndexRef.current = 0
                     const reshuffled = shuffle([...vocabulary])
                     setVocabulary(reshuffled)
-                    generatePairsFromVocab(reshuffled, 2) // Start with 2 pairs
+                    generatePairsFromVocab(reshuffled, 2)
                     setIsGameOver(false)
                     roundStartTime.current = Date.now()
                   }}
-                  className="flex-1"
+                  className="flex-1 rounded-full bg-accent hover:bg-accent/90 text-white py-5"
                 >
                   Play Again
                 </Button>

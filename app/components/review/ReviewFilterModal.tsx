@@ -29,7 +29,7 @@ const FILTER_OPTIONS: Array<{
   {
     id: 'mastered',
     title: 'Mastered Words',
-    description: 'Review words you\'ve mastered (5+ correct in a row)',
+    description: 'Words you\'ve proven you know (5+ streak with recall success)',
     icon: <Trophy className="h-5 w-5" />
   },
   {
