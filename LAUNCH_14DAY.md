@@ -17,6 +17,7 @@
 - **Landing-page premium CTA** — `app/page.tsx`: "Get Full Access" now routes to `/pricing` via `handleGetFullAccess`.
 - **Pricing page** — `app/pricing/page.tsx`: Full rebuild. New copy, pricing ($0.99 first month, then $9.99/month), trust bar, 4-question FAQ accordion, dual final CTA. No contradictory "everything is free" copy.
 - **Review games** — Filter-specific empty states, Memory timeSpentMs fix, Matching Marathon duplicate-advance fix, mobile layout for 6+ pairs.
+- **Billing success verification** — `app/billing/success/page.tsx`: polls `/api/verify-checkout-session` for real payment state; handles processing/verified/failed/timeout/invalid/unauthenticated; refreshes premium cache on success; emoji removed.
 
 ---
 
@@ -58,7 +59,7 @@
 - Refactors and code cleanup
 - New features
 - Review game visual consistency (replace hardcoded hex colors with `primary`/`accent` tokens)
-- Fix billing success page to poll API instead of 2s timeout
+- ~~Fix billing success page to poll API instead of 2s timeout~~ Done
 - Fix hardcoded module chain in CompletionView
 - Fix static completion/summary copy to vary by lesson
 - Fix LessonRunner game-load errors awarding XP
@@ -120,7 +121,7 @@ Launch
 3. Fix or remove the dead footer subscribe button
 4. Add a real header/navigation to pricing if still missing
 5. Fix "FAQ" buttons that go to `/pricing` instead of FAQ (`SummaryView.tsx`, `account/page.tsx`)
-6. Remove emojis from billing success, leaderboard footer, PersianWordRush
+6. ~~Remove emojis from billing success~~ Done. Leaderboard footer and PersianWordRush remain.
 
 **Done when:** top-of-funnel pages no longer make the product feel amateur or contradictory.
 
@@ -257,7 +258,7 @@ After launch, prioritize these high-impact upgrades (see `MASTER_PROJECT_OPERATI
 
 | Area | Files |
 |------|-------|
-| Payments | `app/api/checkout/route.ts`, `app/api/webhooks/route.ts`, `app/api/check-premium/route.ts`, `lib/utils/subscription.ts` |
+| Payments | `app/api/checkout/route.ts`, `app/api/webhooks/route.ts`, `app/api/check-premium/route.ts`, `app/api/verify-checkout-session/route.ts`, `app/billing/success/page.tsx`, `lib/utils/subscription.ts` |
 | Leaderboard security | `app/api/leaderboard/route.ts` |
 | Root layout | `app/layout.tsx` |
 | Landing / pricing trust | `app/page.tsx`, `app/pricing/page.tsx` |
